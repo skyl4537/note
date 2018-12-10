@@ -1,0 +1,68 @@
+ * 文件上传
+   * 客户端
+     * 文件上传页面(form)
+       * 请求方式一定是POST.
+       * 文件上传域(<input type='file'>)必须具有name属性.
+       * 表单的enctype属性值设置为"multipart/form-data".
+	   
+   * 服务器端
+     * 导入工具包: commons-fileupload.jar 和 commons-io.jar 包.
+     * 实现的步骤: 
+       * 实例化DiskFileItemFactory工厂类.
+       * 实例化ServletFileUpload类.
+         ServletFileUpload upload = new ServletFileUpload(factory);
+       * 利用upload的parseRequest(request)方法从Request对象中获取文件上传的内容(List集合).
+       * 遍历获取到的List集合.
+         * 如果是普通项 - 获取普通项的文本内容.
+	   * isFormField():判断当前是否是普通项,true表示是.
+	   * getFieldName():获取普通项的name属性值.
+	   * getString():获取普通项的文本内容.
+	 * 如果是文件项
+	   * getName():获取上传文件的名称.
+	   * getInputStream():获取上传文件的输入流.
+	   * 通过保存的路径,创建文件的输出流.
+	   * 利用IOUtils.copy(inputStream,OutputStream)方法将上传文件进行保存.
+     * 将文件上传至WEB-INF目录下:
+       * WEN-INF目录外与WEB-INF目录中的区别:
+         * WEN-INF目录外:在浏览器中可以访问的(安全低).
+	 * WEB-INF目录中:在浏览器中不能访问的.
+
+
+
+
+ * 文件下载
+   * 客户端
+     * 显示文件下载列表(一):
+       <h4><a href="${pageContext.request.contextPath }/downs/1.txt">1.txt</a></h4>
+       <h4><a href="${pageContext.request.contextPath }/downs/2.xls">2.xls</a></h4>
+       <h4><a href="${pageContext.request.contextPath }/downs/3.zip">3.zip</a></h4>
+       <h4><a href="${pageContext.request.contextPath }/downs/4.jpg">4.jpg</a></h4>
+       * 问题:
+         * 如果浏览器本身支持下载文件的格式,并不提供下载,而是直接显示.
+	 * 如果浏览器本身不支持下载文件格式,提供下载功能.
+     * 显示文件下载列表(二):
+       <h4><a href="${pageContext.request.contextPath }/down?filename=1.txt">1.txt</a></h4>
+       <h4><a href="${pageContext.request.contextPath }/downs?filename=2.xls">2.xls</a></h4>
+       <h4><a href="${pageContext.request.contextPath }/downs?filename=3.zip">3.zip</a></h4>
+       <h4><a href="${pageContext.request.contextPath }/downs?filename=4.jpg">4.jpg</a></h4>
+   * 服务器端
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+	 
+	 
