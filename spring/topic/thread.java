@@ -8,7 +8,7 @@
 			使用线程池可以进行统一的分配,调优和监控.
 			
 	1.生命周期
-		线程池是一个进程级的重量级资源. 默认的生命周期和 JVM 一致. 即从开启线程池开始,到 JVM 关闭为止.
+		线程池是一个进程级的重量级资源. 默认生命周期和 JVM 一致. 即从开启线程池开始,到 JVM 关闭为止.
 		如果手工调用 shutdown() 方法,那么线程池执行所有的任务后,自动关闭.
 		
 		
@@ -617,9 +617,92 @@
 		ThreadLocal的目的是为了解决多线程访问资源时的共享问题
 
 
+#多线程与final
+	final+基本变量	->	//通常用作常量; 像圆周率
+	final+引用变量	->	//保证不会再指向别的引用,"但引用里的值可能变动"
+	final+类		->	//该类不能作为父类被继承
+	final+方法		->	//该方法不能被重写
+	
+		public static void main(String[] args) {
+			final int i1 = 99;
+			final String s1 = "s";
+			final Info info = new Info();
+			info.data = "info";
 
+			//2018-12-10 20:09:14.840 -> 1 - main ==> 99 s data --> 为什么还是s; age却变成28???
+			dosth(i1, s1, info);
+			System.out.println(SystemUtils.getAll() + i1 + " " + s1 + " " + info.data);
 
+			ExecutorService executor = Executors.newSingleThreadExecutor();
+			executor.execute(() -> {
+				// i1 = 105; //报错
+				// s1 = "SS"; //报错
+				// p1 = new Person(); //报错--> 引用不可变,但数据可变
 
+				try {
+					TimeUnit.SECONDS.sleep(1);
+
+					//2018-12-10 20:09:15.953 -> 11 - pool-1-thread-1 ==> 99 s data
+					dosth(i1, s1, info);
+					System.out.println(SystemUtils.getAll() + i1 + " " + s1 + " " + info.data);
+				} catch (InterruptedException e) {
+					e.printStackTrace();
+				} finally {
+					executor.shutdown(); //关闭
+				}
+			});
+
+			// i1 = 100; //报错
+			// s1 = "ss"; //报错
+			info.data = "info data";
+		}
+
+		// 只是传入了一份"拷贝", 不会改变原有的值
+		private static void dosth(int i, String s, Info info) {
+			i = i++; // i1拷贝变成了100
+			s = s + i; // s1拷贝指向了"s100"
+			info.data = "data"; // p1拷贝还是指向p1所对应的对象,然后改变其age属性
+		}
+	
+	//0.为什么内部线程中引用外部对象要加final修饰符呢???
+	因为,被内部线程引用的外部对象受到外部线程作用域的制约,有其特定的生命周期.
+	'当外部对象在外部线程中生命周期已经结束,而内部线程中还在持续使用,怎样解决问题???'
+	内部线程变量要访问一个已不存在的外部变量??? 这个时候就需要在外部变量前添加final修饰符, 
+	其实内部线程使用的这个变量就是外部变量的一个'复制品', 即使外部变量生命周期已经结束,内部复制品依然可用.
+
+#Timer和ScheduledExecutorService
+	'Timer: 单线程,串行执行; 单任务异常,整体任务停止'
+	'Executors: 并行执行,互不影响; 单任务异常,自身停止,其他任务不影响' 
+         
+	//一开始, Task_A 能正常1秒执行一次. 
+	//Task_B 启动后, 由于 Task_B 完成需要2秒, 导致 Task_A 要等到 Task_B 执行完才能执行.
+	//更可怕的是, Task_C 启动后, 抛了异常, 导致整个定时任务全部挂了!!!
+	// A A A B A B C(x)
+	Timer timer = new Timer();
+	timer.schedule(Task_A, 0, 1 * 1000); //1s执行一次
+	timer.schedule(Task_B, 2 * 1000, 2 * 1000); //延迟2s,2s执行一次. (完成消耗2s)
+	timer.schedule(Task_C, 5 * 1000, 5 * 1000); //延迟5s,5s执行一次. (抛出异常)
+
+	//Task_B, Task_C 不再影响 Task_A 定时执行
+	//Task_C 抛出异常后, 只影响自身不再执行, 其他无碍!!!
+	// A A B A A A C(x) A B A A A A B
+	ScheduledExecutorService pool = Executors.newScheduledThreadPool(2);
+	pool.scheduleWithFixedDelay(Task_A, 0, 1, TimeUnit.SECONDS);
+	pool.scheduleWithFixedDelay(Task_B, 2, 2, TimeUnit.SECONDS);
+	pool.scheduleWithFixedDelay(Task_C, 5, 5, TimeUnit.SECONDS);
+	
+	0.需要注意的是
+		//(1).newSingleThreadScheduledExecutor(); 等效于 newScheduledThreadPool(1);'
+		//单线程,串行执行; 但单任务抛出异常,只影响自身,不影响其他
+		//(2).对于抛出异常的任务,若想在抛出异常后,还可以继续循环执行 -> try-catch包裹!
+		
+	1.取消单个或整体
+		Task_A.cancel(); 
+		timer.cancel();
+	
+		ScheduledFuture<?> future = scheduled.scheduleWithFixedDelay(task1, 1, 1, TimeUnit.SECONDS);
+		future.cancel(true); //单个
+		pool.shutdown();//整体
 
 
 
