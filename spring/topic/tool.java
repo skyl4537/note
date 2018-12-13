@@ -89,7 +89,7 @@
 		(2).使用内置的基本对象; //${! #strings.isEmpty(msg)}
 		(3).内置的一些工具对象; //
 		
-	##{...}	---> 消息表达式,与 th:text 一起使用; 用于将维护在 properties 文件中的静态文本显示到页面,适用于国际化等场景		
+	##{...}	---> 用于获取 properties 文件内容,常用于'国际化'场景
 		home.welcome=this messages is from home.properties! //properties文件
 		
 		<p th:text="#{home.welcome}">This text will not be show!</p> //读取properties文件中的 home.welcome

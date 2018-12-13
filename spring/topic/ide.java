@@ -8,6 +8,8 @@
 	Ctrl+H				//查看类的继承关系
 	Ctrl+Shift+Alt+N	//当前工作空间查找java文件
 	
+	Ctrl+Shift+U		//大小写转化
+	Ctrl+G				//定位行
 	Ctrl+Shift+BackSpace	//返回上次修改
 	
 	
@@ -184,7 +186,7 @@ Ctrl+U，转到父类
 Ctrl+Alt+S，打开设置对话框
 Alt+Shift+Inert，开启/关闭列选择模式
 Ctrl+Alt+Shift+S，打开当前项目/模块属性
-Ctrl+G，定位行
+// Ctrl+G，定位行
 Alt+Home，跳转到导航栏
 Ctrl+Enter，上插一行
 Ctrl+Backspace，按单词删除

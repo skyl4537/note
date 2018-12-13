@@ -536,9 +536,67 @@
 		另外, controller要配置在springmvc.xml(子容器)中,否则客户端请求时会找不到对应的controller而出错
 
 
+#国际化
+	0.两种方式
+		(1).页面能够根据'浏览器的语言设置'情况对文本(不是内容),时间,数值进行本地化处理
+		(2).页面可以通过超链接切换 Locale, 而不再依赖于'浏览器的语言设置'情况
 
+	1.资源文件
+		目录'/resources/i18n/'新建文件,'login.properties','login_zh_CN.properties'和'login_en_US.properties'
+		其中: ①是默认配置; ②是中文环境; ③是英文环境
+		分别编辑: 'login.user=用户名'; 'login.user=用户名'; 'login.user=user'
+		
+	2.配置ResourceBundleMessageSource
+		<bean id="messageSource" //xml实现
+			class="org.springframework.context.support.ResourceBundleMessageSource">
+			<property name="basename" value="i18n.login"></property> //注意value值
+		</bean>
+	
+		spring.messages.basename=i18n.login //boot实现.(默认messages)
+	
+	3.获取资源文件值
+		<%@ taglib prefix="fmt" uri="http://java.sun.com/jsp/jstl/fmt" %> //jsp页面 ==> fmt
+		<fmt:bundle basename="i18n.login"> 
+			<fmt:message key="login.user"/>
+		</fmt:bundle>
+		
+		<span th:text="#{login.user}"/> //boot-thymeleaf页面 ==> #{}
+		
+	2.超链接切换
+		//到此,已经可以实现方式(1), 对于方式(2),还需以下两步配置:
+		//注意: 实现方式(2),则方式(1)不起作用.
+		
+		//1.页面配置超链接
+		<p>
+			<a href="<%=request.getContextPath()%>/?l=zh_CN">中文</a>&nbsp;&nbsp;
+			<a href="<%=request.getContextPath()%>/?l=en_US">英文</a>&nbsp;&nbsp;
+			<span th:text="#{login.user}"/>
+		</p>
+		
+		//2.后台注册自定义国际化配置
+		@Configuration
+		public class MyWebMvcConfigurer implements WebMvcConfigurer {
+			@Bean
+			public LocaleResolver localeResolver() { //注册自定义国际化配置
+				return new LocaleResolver() {
+					@Override
+					public Locale resolveLocale(HttpServletRequest request) {
+						Locale locale = Locale.getDefault();//默认
+						String parameter = request.getParameter("l");//获取自定义
+						if (!StringUtils.isEmpty(parameter)) {
+							String[] split = parameter.split("_");//zh_CN
+							locale = new Locale(split[0], split[1]);
+						}
+						return locale;
+					}
 
-
+					@Override
+					public void setLocale(HttpServletRequest request, HttpServletResponse response, Locale locale) {}
+				};
+			}
+		}
+	
+	3.底层原理
 
 
 

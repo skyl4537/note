@@ -239,7 +239,7 @@
 	| 删除接口        | emp/{id}  | DELETE   |
 	
 	//将请求 POST 转化为 PUT,DELETE
-	// (1).配置 HiddenHttpMethodFilter. (springboot已自动配置)
+	// (1).配置 HiddenHttpMethodFilter. (boot已自动配置)
 		<filter>
 			<filter-name>HiddenHttpMethodFilter</filter-name>  
 			<filter-class>org.springframework.web.filter.HiddenHttpMethodFilter</filter-class>  
