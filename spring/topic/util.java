@@ -36,12 +36,16 @@
 		//	"%"会将结果数字乘以100 后面再加上% 123.123 ->#.00%  ->12312.30%
 
 	2.使用占位符拼接字符串
-		String domain = "www.baidu.com";  
-		int iVisit = 0;  
-
-		syso(String.format("该域名%s被访问了%s次.", domain , iVisit));
-		syso(MessageFormat.format("该域名{0}被访问了{1}次.", domain , iVisit)); 
-	
+		MessageFormat.format("域名{0}被访问了{1}次", "\"www.qq.com\"", 123.456); //域名"www.qq.com"被访问了123.456次
+		
+		//String.format() ==> 创建格式化的字符串; 及连接多个字符串对象.
+		String.format("域名%s被访问了%3.2f次", "\"www.qq.com\"", 123.456); //域名"www.qq.com"被访问了123.46次
+		
+		//先转化十六进制,再高位补0
+		String.format("%04d",Integer.parseInt(String.format("%x", 16))); //0010
+		
+		/String.format()具体详见: https://www.cnblogs.com/Dhouse/p/7776780.html
+		
 #通过类目获取类的对象
 	@Component
 	public class MyApplicationContextAware implements ApplicationContextAware {// 获取bean的工具类
@@ -323,10 +327,10 @@
 		request.setEntity(entity);
 		
 		//查看HTTP数据格式
-		syso(entity.getContentType()); //Content-Type: application/x-www-form-urlencoded; charset=UTF-8
-		syso(entity.getContentLength()); //39
-		syso(EntityUtils.getContentCharSet(entity)); //UTF-8
-		syso(EntityUtils.toString(entity)); //p1=%E4%B8%AD%E5%9B%BD&p2=v2
+		sout(entity.getContentType()); //Content-Type: application/x-www-form-urlencoded; charset=UTF-8
+		sout(entity.getContentLength()); //39
+		sout(EntityUtils.getContentCharSet(entity)); //UTF-8
+		sout(EntityUtils.toString(entity)); //p1=%E4%B8%AD%E5%9B%BD&p2=v2
 		// Content-Type: application/x-www-form-urlencoded; charset=UTF-8
 		// 28
 		// UTF-8

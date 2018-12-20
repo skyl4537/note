@@ -8,9 +8,14 @@
 	Ctrl+H				//查看类的继承关系
 	Ctrl+Shift+Alt+N	//当前工作空间查找java文件
 	
-	Ctrl+Shift+U		//大小写转化
 	Ctrl+G				//定位行
 	Ctrl+Shift+BackSpace	//返回上次修改
+	
+	Shift+Alt+↑/↓		//上下移动-单行语句
+	Shift+Ctrl+↑/↓		//上下移动-整个方法
+	Ctrl+D				//整行复制
+	Ctrl+X				//整行删除
+	Ctrl+Shift+U		//大小写转化
 	
 	
 #idea设置

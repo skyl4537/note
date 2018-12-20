@@ -6,27 +6,27 @@
 		//男 <input type="radio" name="gender" value="1" />
 
 
-#重定向和转发
-	0.重定向
-		Servlet接收到浏览器请求并处理后,响应浏览器 302状态码和新地址;
-		状态码302要求浏览器去请求新地址,整个过程浏览器发出 2次请求.
-
-	1.转发
+#转发和重定向
+	0.转发
 		Servlet接收到浏览器请求后,进行一定的处理,先不进行响应,
 		而是在服务器端内部 0转发0 给其他Servlet程序继续处理.
 		浏览器只发出 1次请求,'浏览器url不会改变',用户也感知不到请求被转发.
+
+	1.重定向
+		Servlet接收到浏览器请求并处理后,响应浏览器 302状态码和新地址;
+		状态码302要求浏览器去请求新地址,整个过程浏览器发出 2次请求.
 		
-	2.区别重定向和转发
-		2; 1	//发送请求次数
-		是; 否	//浏览器地址是否改变
-		否; 是	//是否共享对象 request
-		否; 是	//是否传递request中数据
-		否; 是	//目标资源是否可以是WEB-INF下资源
+	2.区别
+		1; 2	//发送请求次数(request个数)
+		否; 是	//浏览器地址是否改变
+		是; 否	//是否共享对象 request
+		是; 否	//是否传递request中数据
+		是; 否	//目标资源是否可以是WEB-INF下资源
 		
-		response.sendRedirect("重定向地址"); //重定向
-	
 		request.setAttribute(key, value); //转发前绑定数据,在目标资源取出数据
 		request.getRequestDispatcher("转发地址").forward(request, response);
+	
+		response.sendRedirect("重定向地址"); //重定向
 
 #jsp页面(Java Server Pages)
 	本质就是一个Servlet; JSP善于处理页面显示; Servlet善于处理业务逻辑, 二者结合使用.
@@ -224,10 +224,15 @@
 		Cookie[] cookies = request.getCookies();
 
 #Session
-	Cookie局限: 增加客户端与服务端的数据传输量; 浏览器对 Cookie 数量的限制.
+	// 之前文章中介绍过Session，Session是另一种记录客户状态的机制，不同的是Cookie保存在客户端浏览器中，
+	// 而Session保存在服务器上。客户端浏览器访问服务器的时候，服务器把客户端信息以某种形式记录在服务器上。
+	// 这就是Session。客户端浏览器再次访问时只需要从该Session中查找该客户的状态就可以了。
+	// 今天我们来聊一下如果销毁session。
+
+	Cookie局限: 增加客户端与服务端的数据传输量; 浏览器对Cookie数量的限制.
 	
-	Session: 将用户数据保存在服务端 Session 对象中,然后传递给用户一个名为
-	JSESSIONID 的 Cookie, 通过它可以获取到用户信息的 Session.
+	Session: 将用户数据保存在服务端Session对象中,然后传递给用户一个名为
+			 JSESSIONID 的 Cookie, 通过它可以获取到用户信息的 Session.
 	
 	0.Session的工作原理
 		(0).Session 的创建时机是在 request.getSession(); 方法第一次被调用时.
@@ -331,10 +336,18 @@
 			public void destroy() {}
 		}
 
-#监听器
-	用于监听JavaWeb程序中的事件(生命周期; 数据绑定).
-	如: ServletContext,HttpSession,ServletRequest 的创建,修改和删除.
+##监听器
+	监听器: 专门用于对其他对象身上发生的事件或状态改变进行监听和相应处理的对象,当被监视的对象发生情况时,立即采取相应的行动
 	
+	Servlet监听器: 
+		(0).用于监听web程序'三大域对象(PageContext 除外)'的创建与销毁事件, 及属性发生变化事件.
+		(1).其中,PageContext 生命周期为当前页面,所以不用监听.
+		(2).注册和调用过程都是由web容器自动完成的,当监听的事件被触发时,自动调用自定义的处理方法.
+		(3).一个web程序只会为每个事件监听器创建一个对象,所以在自定义事件监听器时,应考虑多线程安全问题.
+		
+	//四大域对象: ServletContext(context域), HttpSession(session域), ServletRequest(request域), PageContext(page域)
+	  
+
 	0.ServletContext -> 统计网站访问量
 		// 每个 Web 应用中都有一个 ServletContext, 其存储的资源可被应用内的各个模块所共享. 
 		// 在 web 应用的生命周期中, ServletContext 对象是最早被创建, 最晚被销毁.
@@ -343,43 +356,69 @@
 		项目启动后,读取数据库内容,设置全局属性, 在其它 Servlet 进行全局属性访问
 		app关闭时,存储当前访问量到本地文件(数据库); app启动时,读取本地文件中的访问量,开始自增
 	
-		//xml配置:
-		<listener>
-			<listener-class>com.atguigu.login.listener.MyServletContextListener</listener-class>
-		</listener>
-	
-		//boot配置:
-		全局注解和局部注解: @ServletComponentScan, @WebListener
-	
 		@Slf4j
-		@WebListener
-		public class MyServletContextListener implements ServletContextListener {
+		@WebListener //注册servlet监听,配合使用 @ServletComponentScan
+		// <listener>
+		//     <listener-class>com.example.config.MyServletListener</listener-class> //xml方式配置
+		// </listener>
+		public class MyServletListener implements ServletContextListener, HttpSessionListener, ServletRequestListener {
 
-			@Autowired
-			ServletContext context; //注解获取对象
-
-			// web应用启动时调用
+			//(1).SC对象创建时调用(web程序在服务器上部署时).
+			//    主要作用: 创建数据库连接池; 创建Spring的IOC容器; 读取当前WEB应用的初始化参数
 			@Override
-			public void contextInitialized(ServletContextEvent sce) {
-				// 添加此方法, 防止 @Autowired 失败!!
-				// 因为项目启动时,相应的 BeanFactory 还没加载,出现空指针问题
-				WebApplicationContextUtils.getRequiredWebApplicationContext(sce.getServletContext())
-						.getAutowireCapableBeanFactory().autowireBean(this);
-
+			public void contextInitialized(ServletContextEvent sce) { //web应用启动(关闭)时,会通知事件:ServletContextEvent
+				//SC对象为整个web程序的共享内存,任何请求都可以访问其中的内容. SC对象在整个web程序的生命周期中最早被创建,最晚被销毁.
 				ServletContext sc = sce.getServletContext();
-				sc.setAttribute("start", getNowInstant());// 设置自定义属性-启动时的时间戳
-				log.warn("SPRINGBOOT START AT: " + LocalDateTime.now());
+
+				sc.setAttribute("start", System.currentTimeMillis());// 设置自定义属性 --> 启动时的时间戳
+				log.warn("START AT: " + LocalDateTime.now());
 			}
 
-			// web应用关闭时调用 -> (只有 Run_As->sp_app 这种方式启动,关闭时才会回调此方法)
+			//(2).SC对象销毁时调用(web程序从服务器卸载时)
+			//	  SpringBoot项目 --> 只有'Run_As->Boot_App'这种方式启动,关闭时才会回调此方法
 			@Override
 			public void contextDestroyed(ServletContextEvent sce) {
-				long start = (long) context.getAttribute("start");// 读取自定义属性-应用总的运行时间(ms)
-				log.warn("SPRINGBOOT END AT: " + LocalDateTime.now() + ", ALL TIME(ms): " + (getNowInstant() - start));
+				long start = (long) sce.getServletContext().getAttribute("start");// 读取自定义属性 => 应用总的运行时间(ms)
+				log.warn("END AT: " + LocalDateTime.now() + ", TIME(ms): " + (System.currentTimeMillis() - start));
 			}
 
-			public long getNowInstant() { //默认不是东八区
-				return Instant.now().atOffset(ZoneOffset.ofHours(8)).toEpochSecond();
+			//每次请求开始时调用
+			@Override
+			public void requestInitialized(ServletRequestEvent sre) {
+
+			}
+
+			//每次请求结束时调用
+			@Override
+			public void requestDestroyed(ServletRequestEvent sre) {
+
+			}
+
+			//session对象创建时调用: 浏览器与服务器建立会话时
+			@Override
+			public void sessionCreated(HttpSessionEvent se) {
+
+			}
+
+			//session对象销毁时调用:
+			// (0).关闭浏览器. 关闭再打开,没办法自动登录,代表session被结束,但不意味着session被销毁.
+			//     session的创建和销毁是在服务器端进行的. 当浏览器访问服务器就会创建一个sessionID,浏览器通过这个ID来访问服务器中所存储的session.
+			//     关闭浏览器后,再次打开并访问服务器,此时浏览器已丢失之前的sessionID,也就找不到服务器端的session对象,所以无法自动登录.
+			//     之前的session对象会在session-timeout时间后自动销毁.
+			//
+			// (1).服务器端显示调用 HttpSession.invalidate();
+			//
+			// (2).Session过期. 浏览器关闭,或浏览器闲置一段时间(session-timeout值)没有请求服务器,session会自动销毁.
+			//     这个时间是根据服务器来计算的,而不是客户端. 所以在调试程序时,应该修改服务器端时间来测试,而不是客户端.
+			//     (a).配置apache-tomcat-9.0.13\conf\web.xml,默认30min
+			//          <session-config>
+			//              <session-timeout>30</session-timeout>
+			//          </session-config>
+			//     (b).在项目的web.xml中设置,方法同上
+			//     (c).通过Java代码设置: session.setMaxInactiveInterval(30*60);//以秒为单位,即在没有活动30分钟后,session失效
+			@Override
+			public void sessionDestroyed(HttpSessionEvent se) {
+
 			}
 		}
 	
@@ -413,3 +452,60 @@
 	使用后: 用户表 -> 用户&角色 <- 角色表 -> 角色&菜单 <- 菜单表
 
 
+///--------<<<Cookie-Session>>>------------------------------------------------------------------------
+https://blog.csdn.net/u013210620/article/details/52318884
+	
+	
+	
+	
+	
+///--------<<<监听器-listener>>>------------------------------------------------------------------------
+#基础概念
+	监听器: 用于对其他对象身上发生的事件或状态改变进行监听和相应处理的对象,当被监视的对象发生情况时,立即采取相应的行动
+
+	//四大域对象: ServletContext; HttpSession; ServletRequest; PageContext
+	Servlet监听器: 
+		(a).用于监听web程序'三大域对象(PageContext 除外)'的创建与销毁事件, 及属性发生变化事件.
+		(b).其中,PageContext 生命周期为当前页面,所以不用监听.
+		(c).注册和调用过程都是由web容器自动完成的; 当监听的事件被触发时,自动调用自定义的处理方法.
+		(d).一个web程序只会为每个事件监听器创建一个对象,所以在自定义事件监听器时,应考虑多线程安全问题.
+		
+	Servlet监听器分类(按监听的事件类型): 
+		(1).三大域对象'创建和销毁'的事件监听器
+		(2).三大域对象'属性的增加和删除'的事件除听器
+		(3).监听绑定到 HttpSession 域中的某个对象的状态的事件监听器
+		
+#三大域对象创建和销毁的事件监听器
+	1.配置方式
+		<listener> //xml配置
+			<listener-class>com.example.config.MyServletListener</listener-class>
+		</listener>
+		
+		@WebListener + @ServletComponentScan //注解配置
+	
+	2.代码实现
+	
+	
+	
+#三大域对象属性的增加和删除的事件除听器
+	
+	
+#监听绑定到HttpSession域中的某个对象的状态的事件监听器
+		
+		
+
+	0.ServletContext -> 统计网站访问量
+		// 每个 Web 应用中都有一个 ServletContext, 其存储的资源可被应用内的各个模块所共享. 
+		// 在 web 应用的生命周期中, ServletContext 对象是最早被创建, 最晚被销毁.
+	
+		//主要作用: 在app 启动/停止 时,添加要处理的逻辑!!
+		项目启动后,读取数据库内容,设置全局属性, 在其它 Servlet 进行全局属性访问
+		app关闭时,存储当前访问量到本地文件(数据库); app启动时,读取本地文件中的访问量,开始自增	
+	
+	
+	
+	
+	
+	
+	
+	

@@ -435,57 +435,62 @@
 			}
 		}
 
-#文件上传下载
-	0.单文件上传
-		<form action="/demo/upload" method="post" enctype="multipart/form-data"> //必须: 有enctype, POST类型
+#文件上传
+	0.流程步骤
+		(1).<form>表单: POST提交 + enctype="multipart/form-data"
+		(2).文件上传域(<file>标签)必须要有name属性: <input type='file' name="file">
+		(2).后台使用 MultipartFile 接收文件资源
+	
+	1.单文件上传
+		<form action="/upload" method="post" enctype="multipart/form-data">
 			File0: <input type="file" name="file"><br>
 			//File1: <input type="file" name="file"><br> //多文件上传
 			Desc: <input type="text" name="desc"><br>
 			<input type="submit" value="提交">
 		</form>
 		
-		//获取"upload"文件夹
-		public File getUploadDir() throws FileNotFoundException {
-			File dir = new File(ResourceUtils.getURL("").getPath(), "/upload"); //项目根目录下
-			if (!dir.exists()) {
-				dir.mkdirs(); //创建目录,包括必需但不存在的父目录.(区别于 mkdir())
-			}
-			return dir;
-		}
-		
 		@ResponseBody
 		@RequestMapping("/upload")
 		public String upload(@RequestParam("file") MultipartFile file, @RequestParam("desc") String desc) {
-			if (file.isEmpty()) {
-				return "请选择文件!";
+            //<form>表单中文件name, 文件名字, 文件大小
+            System.out.println(file.getName() + " - " + file.getOriginalFilename() + " - " + file.getSize());
+			file.transferTo(new File(getUploadDir(), file.getOriginalFilename())); //文件另存
+		}
+		
+		public File getUploadDir() throws FileNotFoundException {
+			File dir = new File(ResourceUtils.getURL("").getPath(), "/upload"); //项目根目录下
+			if (!dir.exists()) {
+				dir.mkdirs(); //创建当前及父目录.(区别于 mkdir())
 			}
-
-			try {
-				file.transferTo(new File(getUploadDir(), file.getOriginalFilename())); //文件另存
-				return "文件上传成功";
-			} catch (Exception e) {
-				log.error("testFileUp---文件上传失败: ", e);
-				return "文件上传失败";
-			}
+			return dir;
 		}
 	
-	1.多文件上传
-		@ResponseBody
-		@PostMapping("/uploadBatch")
-		public String uploadBatch(HttpServletRequest request) {
-			try {
-				List<MultipartFile> files = ((MultipartHttpServletRequest) request).getFiles("file");
-				for (MultipartFile file : files) {
-					if (!file.isEmpty()) {
-						file.transferTo(new File(getUploadDir(), file.getOriginalFilename()));
-					}
-				}
-			} catch (Exception e) {
-				log.error("batchUplocad---文件上传失败: ", e);
-				return "上传失败";
-			}
-			return "上传成功";
+	2.多文件上传
+		@PostMapping("/uploads")
+		public void batchUplocad(@RequestParam("file") List<MultipartFile> files,
+								   @RequestParam("desc") List<String> descs) {
+			files.forEach(x->x.transferTo(getUploadDir(),x.getOriginalFilename())); //文件另存 
+			descs.forEach(log::info); //文件描述
 		}
+		
+	3.配置上传文件的大小
+		spring.servlet.multipart.max-file-size=10MB //单个文件
+		spring.servlet.multipart.max-request-size=20MB //一次请求多个文件
+		
+		@Bean //或者,代码配置
+		MultipartConfigElement multipartConfigElement() {
+			MultipartConfigFactory factory = new MultipartConfigFactory();
+			factory.setMaxFileSize("10MB");//单个文件
+			factory.setMaxRequestSize("20MB");//一次请求多个文件
+			return factory.createMultipartConfig();
+		}
+		
+	4.
+		
+#文件下载
+	response.setContentType("application/force-download"); //设置强制下载不打开
+	response.addHeader("Content-Disposition", "attachment;fileName=" + fileName); //设置文件名
+	
 		
 #异常处理
 	0.处理顺序
@@ -540,38 +545,37 @@
 	0.两种方式
 		(1).页面能够根据'浏览器的语言设置'情况对文本(不是内容),时间,数值进行本地化处理
 		(2).页面可以通过超链接切换 Locale, 而不再依赖于'浏览器的语言设置'情况
-
-	1.资源文件
-		目录'/resources/i18n/'新建文件,'login.properties','login_zh_CN.properties'和'login_en_US.properties'
-		其中: ①是默认配置; ②是中文环境; ③是英文环境
-		分别编辑: 'login.user=用户名'; 'login.user=用户名'; 'login.user=user'
 		
-	2.配置ResourceBundleMessageSource
+	1.资源文件 '基名_语言代码_国家代码'
+		目录'/resources/i18n/'新建'properties'文件, login; login_zh_CN; login_en_US
+		分别对应: ①是默认配置; ②是中文环境; ③是英文环境
+		分别编辑: login.user=用户名; login.user=用户名; login.user=user
+		
+	2.配置basename
 		<bean id="messageSource" //xml实现
 			class="org.springframework.context.support.ResourceBundleMessageSource">
 			<property name="basename" value="i18n.login"></property> //注意value值
 		</bean>
 	
-		spring.messages.basename=i18n.login //boot实现.(默认messages)
+		//boot默认已配置 ResourceBundleMessageSource 
+		spring.messages.basename=i18n.login //(默认basename: messages)
 	
-	3.获取资源文件值
-		<%@ taglib prefix="fmt" uri="http://java.sun.com/jsp/jstl/fmt" %> //jsp页面 ==> fmt
-		<fmt:bundle basename="i18n.login"> 
+	3.前台页面
+		<%@ taglib prefix="fmt" uri="http://java.sun.com/jsp/jstl/fmt" %> //jsp ==> fmt标签
+		<fmt:bundle basename="i18n.login"> //可省,由basename指定
 			<fmt:message key="login.user"/>
 		</fmt:bundle>
 		
-		<span th:text="#{login.user}"/> //boot-thymeleaf页面 ==> #{}
+		<span th:text="#{login.user}"/> //thymeleaf ==> #{}标签
 		
-	2.超链接切换
+	4.超链接切换
 		//到此,已经可以实现方式(1), 对于方式(2),还需以下两步配置:
 		//注意: 实现方式(2),则方式(1)不起作用.
 		
 		//1.页面配置超链接
-		<p>
-			<a href="<%=request.getContextPath()%>/?l=zh_CN">中文</a>&nbsp;&nbsp;
-			<a href="<%=request.getContextPath()%>/?l=en_US">英文</a>&nbsp;&nbsp;
-			<span th:text="#{login.user}"/>
-		</p>
+		<a href="<%=request.getContextPath()%>/?l=zh_CN">中文</a>&nbsp;&nbsp;
+		<a href="<%=request.getContextPath()%>/?l=en_US">英文</a>&nbsp;&nbsp;
+		<span th:text="#{login.user}"/>
 		
 		//2.后台注册自定义国际化配置
 		@Configuration
@@ -588,18 +592,30 @@
 							locale = new Locale(split[0], split[1]);
 						}
 						return locale;
-					}
 
 					@Override
 					public void setLocale(HttpServletRequest request, HttpServletResponse response, Locale locale) {}
+					}
 				};
 			}
 		}
 	
-	3.底层原理
+	5.底层原理
+		//国际化(CHINA,US): 时间-数值-货币
+        Locale locale = Locale.US;
+        double NUMBER = 12345.67;
 
+        DateFormat dateFormat = DateFormat.getDateTimeInstance(DateFormat.LONG, DateFormat.MEDIUM, locale);
+        String now = dateFormat.format(new Date()); //2018年12月14日 11:03:30; December 14, 2018 11:13:24 AM
 
+        NumberFormat numberInstance = NumberFormat.getNumberInstance(locale);
+        String number = numberInstance.format(NUMBER); //12,345.67; 12,345.67
 
+        NumberFormat currencyInstance = NumberFormat.getCurrencyInstance(locale);
+        String currency = currencyInstance.format(NUMBER); //￥12,345.67; $12,345.67
+
+        ResourceBundle resourceBundle = ResourceBundle.getBundle("i18n.login", locale);
+        resourceBundle.getString("login.user"); //获取指定国际化资源文件的参数值
 
 
 

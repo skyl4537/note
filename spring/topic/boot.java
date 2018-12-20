@@ -617,7 +617,6 @@
 		
 		//通过 @Autowired 方式取值 MyProperties
 		logger.info("MyProperties--res: {}", JSON.toJSON(myProperties));
-		
 			{
 			  "info": {
 				"enabled": false,
@@ -643,6 +642,17 @@
 		
 		//(2).对于批量属性
 		建议采用以上 @ConfigurationProperties 方式.
+		
+	3.通过IO读取
+		// 默认从此类所在包下读取,path需要添加前缀"/"
+		InputStream in = getClass().getResourceAsStream("/my.properties");
+		
+		// 默认从ClassPath下读取,path不需要添加前缀
+		// InputStream in = getClass().getClassLoader().getResourceAsStream("my.properties");
+		Properties properties = new Properties();
+		properties.load(new InputStreamReader(in, "UTF-8")); //U8方式读取
+		properties.forEach((key, value) -> log.info(key + " - " + value));
+		
 		
 #@Value("#{}")与@Value("${}")的区别
 	//(1).@Value("#{}") -> 通过SpEl表达式获取: 常量; bean属性值; 调用bean的某个方法

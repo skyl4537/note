@@ -24,8 +24,8 @@
 
 	剪切当前行或选中的内容	Ctrl+D			Ctrl+X
 	粘贴当前行或选中的内容	Ctrl+Alt+↓		Ctrl+D
-	整个方法上下移动		*				Shift+Alt+↑/↓
-	单行语句上下移动		Alt+↑/↓			Shift+Ctrl+↑/↓
+	// 整个方法上下移动		*				Shift+Alt+↑/↓
+	// 单行语句上下移动		Alt+↑/↓			Shift+Ctrl+↑/↓
 	折叠/展开代码块			Shift+Ctrl+/ *	Shift+Ctrl+减/加号
 	
 	自动生成get/set			*				Alt+Insert

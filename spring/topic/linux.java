@@ -280,6 +280,17 @@
 	
 	wget -i filelist.txt //先将各url写入文件.(一行一个??)
 	
+#ulimit: 限制系统用户对shell资源的访问
+	#-a: 显示当前所有的资源限制
+	#-n <size>: 指定(显示)同一时间最多打开文件数
+	#-u <size>: 指定(显示)用户最多可开启的程序数目
+	
+	sudo nano /etc/security/limits.conf //最大句柄数(永久生效)
+	//追加: *                -       nofile          10240
+
+	
+	
+	
 	
 ///------------------------<<<常用命令>>>-------------------------------------------------------------
 '常用命令': http://www.runoob.com/w3cnote/linux-useful-command.html
@@ -384,8 +395,11 @@
 #crontab
 	rpm -qa | grep crontab //检查是否安装(rpm: Red-Hat Package Manager)
 	
-	//crontab的执行日志存放在 /var/log/cron.log
-	crontab -l(e/r) //列出(编辑/删除)当前用户的定时任务		
+	sudo /etc/init.d/cron start-stop-restart //命令形式
+	sudo service cron start-stop-restart //服务形式
+
+	//执行日志在 /var/log/cron.log; ubuntu: http://www.cnblogs.com/nieqibest/p/9353927.html
+	crontab -l(e/r) //列出(编辑/删除)当前用户的定时任务
 
 	//分 时 日 月 周 (user可省) cmd
 	m h dom mon dow (user)  command
@@ -402,7 +416,7 @@
 
 	#!/bin/bash
 	#执行结果赋值给变量
-	DATE=$(date '+%Y-%M-%D %H:%m:%s') //%对于crontab是关键字; 而对于shell脚本则不是,不需要转义
+	DATE=$(date '+%Y-%m-%d %H:%M:%S') //%对于crontab是关键字; 而对于shell脚本则不是,不需要转义
 	LSOF=$(lsof -p $(lsof -t +D /var/lib/webpark/logs/device) |wc -l)
 	CLOSE=$(netstat -anp |grep java |grep CLOSE |wc -l)
 
