@@ -1,64 +1,57 @@
 
 
-#JSON-Handle ///Chrome插件
+
+//{-----------<<<mini-tool>>>------------------------------------------------------------------
+#JSON-Handle //Chrome插件
 	浏览器输入: chrome://extensions/
 	将下载后的文件拖入浏览器即可
 
-#cmder	///cmd升级版
+#cmder	//cmd升级版
 	下载: http://cmder.net/	(mini与full版: 差别在于有没有内建msysgit工具)
 	
 	右键菜单: '配置系统环境变量,然后使用系统cmd执行命令: Cmder.exe /register ALL'
 	中文乱码: 'settings -> Environment -> 添加: set LANG=zh_CN.UTF-8'
 	
-#lombok
+//}
+	
+//{-----------<<<lombok>>>------------------------------------------------------------------
 	///减少很多重复代码的书写. 比如:getter/setter/toString等
-        <dependency>
-            <groupId>org.projectlombok</groupId>
-            <artifactId>lombok</artifactId>
-            <scope>provided</scope>
-        </dependency>		
+	<dependency>
+		<groupId>org.projectlombok</groupId>
+		<artifactId>lombok</artifactId>
+		<scope>provided</scope>
+	</dependency>		
 
-	0.eclipse
-		下载: https://projectlombok.org/download
-		将 lombok.jar 放在eclipse安装目录下,与 eclipse/sts.ini 同级
-		当前目录打开cmder, 使用命令: "java -jar ./lombok.jar",弹框选择 Install/Update
-		成功标识: sts.ini最后一行, -javaagent:F:\sts-bundle\sts-3.9.3.RELEASE\lombok.jar
+#eclipse
+	下载: https://projectlombok.org/download
+	将 lombok.jar 放在eclipse安装目录下,与 eclipse/sts.ini 同级
+	当前目录打开cmder, 使用命令: "java -jar ./lombok.jar",弹框选择 Install/Update
+	成功标识: sts.ini最后一行, -javaagent:F:\sts-bundle\sts-3.9.3.RELEASE\lombok.jar
+
+#idea
+	下载: https://github.com/mplushnikov/lombok-intellij-plugin/releases
+	Settings-Plugins-'install from disk',选择下载的*.zip.即可安装成功	
 	
-	1.idea
-		下载: https://github.com/mplushnikov/lombok-intellij-plugin/releases
-		Settings-Plugins-'install from disk',选择下载的*.zip.即可安装成功	
-		
-	2.常用注解
-		@Slf4j: 生成slf4j注解式logger
-		@NonNull: 调用字段的setter方法时,传参为null,则报空指针异常.
-		@Data: 组合注解 //包含 @Getter; @Setter; @ToString, @EqualsAndHashCode; 无参构造函数.
-		
-		@Accessors: 定制化@Getter与@Setter
-		//(chain = true): 链式编写setter方法,如 Person hua = new Person().setName("HUA").setAge(18);
-		//(fluent  = true): 流式编写setter方法,如 Person wang = new Person().name("WANG").age(18);
-		
-		@NoArgsConstructor: 无参构造
-		@AllArgsConstructor: 全参构造.(此时没有无参构造)
-		@RequiredArgsConstructor: 只含 @NonNull字段 的构造函数
-		
-		@SneakyThrows(*.class): 
-		//用在'方法'上,可将方法中的代码用 try-catch 语句包裹起来.
-		//捕获异常并在 catch 中用 Lombok.sneakyThrow(e) 把异常抛出
+#常用注解
+	@Slf4j: 生成slf4j注解式logger
+	@NonNull: 调用字段的setter方法时,传参为null,则报空指针异常.
+	@Data: 组合注解 //包含 @Getter; @Setter; @ToString, @EqualsAndHashCode; 无参构造函数.
 	
+	@Accessors: 定制化@Getter与@Setter
+	//(chain = true): 链式编写setter方法,如 Person hua = new Person().setName("HUA").setAge(18);
+	//(fluent  = true): 流式编写setter方法,如 Person wang = new Person().name("WANG").age(18);
 	
+	@NoArgsConstructor: 无参构造
+	@AllArgsConstructor: 全参构造.(此时没有无参构造)
+	@RequiredArgsConstructor: 只含 @NonNull字段 的构造函数
 	
+	@SneakyThrows(*.class): 
+	//用在'方法'上,可将方法中的代码用 try-catch 语句包裹起来.
+	//捕获异常并在 catch 中用 Lombok.sneakyThrow(e) 把异常抛出
 	
+//}	
 	
-	
-	
-	
-	
-	
-	
-	
-	
-///---------------<<<thymeleaf>>>------------------------------------------------------------------
-	
+//{-----------<<<thymeleaf>>>---------------------------------------------------------------
 	模板引擎:'将后台数据 填充 到前台模板的表达式中!' //thymeleaf; freemarker; jsp; velocity;
 
 #sts代码提示
@@ -285,8 +278,9 @@
 		<a th:href="@{/logDir}" //activeUri为 'logDir' 时,高亮
 			th:class="${activeUri=='logDir'?'nav-link active':'nav-link'}">>
 
+//}
 
-///--------<<<<<<Maven>>>>>>---------------------------------------------------------------------
+//{-----------<<<<Maven>>>------------------------------------------------------------------
 	'约定>配置>编码' -> 能用配置解决的问题就不编码,能基于约定的就不进行配置
 	
 #基本概念
@@ -415,18 +409,17 @@
 		这样,就可以优先访问阿里云仓库了.
 		
 	1.加入第三方jar
-		///(0).配置mvn
-		<server> 
+		<server> //(0).配置mvn
 		  <id>thirdparty</id>
 		  <username>admin</username>
 		  <password>admin123</password>
 		</server>
 		
-		///(1).使用cmd命令将第三方包加入私服
+		//(1).使用cmd命令将第三方包加入私服
 		mvn deploy:deploy-file -DgroupId=com.bluecard -DartifactId=wxpay-sdk-0.0.3 -Dversion=0.0.3 -Dpackaging=jar -Dfile=G:\wxpay-sdk-0.0.3.jar -Durl=http://192.168.102.20:8081/nexus/content/repositories/thirdparty/ -DrepositoryId=thirdparty
 		//其中, -DgroupId="随意指定"; -DartifactId="第三方jar包名"; -Dversion="版本号"; -Dfile="jar所在本地路径"; -Durl="私服路径"
 
-		///(2).项目pom文件添加引用
+		//(2).项目pom文件添加引用
 		<dependency>
 		  <groupId>com.bluecard</groupId> //同上文 -DgroupId
 		  <artifactId>wxpay-sdk-0.0.3</artifactId> //同上文 -DartifactId
@@ -570,11 +563,9 @@
 	(3).右键项目--> run as --> maven build(以前写过,选择第二个) -->输入
 		tomcat7:deploy(第一次发布); tomcat7:redeploy(非第一次发布).
 	
-
-
-
+//}
 	
-///-----------<<<SonarQube>>>---------------------------------------------------------------------	
+//{-----------<<<SonarQube>>>---------------------------------------------------------------
 	'代码质量管理平台,可以快速的定位代码中潜在的或者明显的错误'
 	
 #下载配置
@@ -683,8 +674,8 @@
 		
 	//(6).Merge this if statement with the enclosing one.
 		//合并可折叠的"if"语句
-		if (flag0) { if (flag1) { // dosth... } }
-		if (flag0 && flag1) { // dosth... } //修改后
+		if (flag0) { if (flag1) {  dosth... } }
+		if (flag0 && flag1) {  dosth... } //修改后
 		
 	//(7).Variable 'bEnvInited' explicitly initialized to 'false' (default value for its type).
 		//显示初始化不需要,boolean类型默认false ????????
@@ -719,8 +710,175 @@
 	//(13).String.indexOf(char) is faster than String.indexOf(String).
 		int index = str.indexOf("s"); ---> int index = str.indexOf('s');
 		
-		
+//}		
 
+//{-----------<<<SystemUtil>>>>--------------------------------------------
+#常用工具
+	public class SystemUtil {
+		//获取项目class路径
+		public static String getClassPath() throws FileNotFoundException {
+			// ClassUtils.getDefaultClassLoader().getResource("").getPath();//等同
+			return ResourceUtils.getURL("classpath:").getPath();
+		}
+
+		//获取项目根路径
+		public static String getFilePath() throws FileNotFoundException {
+			return ResourceUtils.getURL("").getPath();
+		}
+		
+		//系统换行
+		public static String newline() {
+			return System.getProperty("line.separator");
+		}
+	}
+	
+#常用解析
+	0.org.apache.commons.lang3.StringUtils
+		isEmpty(); //为空判断标准是: str==null 或 str.length()==0
+		isBlank(); //在isEmpty()的基础上增加: 制表符,换行符,换页符,回车符...等
+
+	1.保留两位有效小数
+		double num = 12.1250/12.1251;
+		String num0 = String.format("%.2f", num);// 12.13/12.13
+		String num1 = new DecimalFormat("#0.00").format(num);// 12.12/12.13
+		
+		//DecimalFormat特殊字符说明
+		//	"0"指定位置不存在数字则显示为0: 123.123 ->0000.0000 ->0123.1230
+		//	"#"指定位置不存在数字则不显示: 123.123 ->####.####  ->123.123
+		//	"."小数点
+		//	"%"会将结果数字乘以100 后面再加上% 123.123 ->#.00%  ->12312.30%
+
+	2.使用占位符拼接字符串
+		MessageFormat.format("域名{0}被访问了{1}次", "\"www.qq.com\"", 123.456); //域名"www.qq.com"被访问了123.456次
+		
+		//String.format() ==> 创建格式化的字符串; 及连接多个字符串对象.
+		String.format("域名%s被访问了%3.2f次", "\"www.qq.com\"", 123.456); //域名"www.qq.com"被访问了123.46次
+		
+		//先转化十六进制,再高位补0
+		String.format("%04d",Integer.parseInt(String.format("%x", 16))); //0010
+		
+		/String.format()具体详见: https://www.cnblogs.com/Dhouse/p/7776780.html
+		
+#通过类目获取类的对象
+	@Component
+	public class MyApplicationContextAware implements ApplicationContextAware {// 获取bean的工具类
+
+		private static ApplicationContext context;
+
+		// 实现ApplicationContextAware接口的回调方法，设置上下文环境
+		@Override
+		public void setApplicationContext(ApplicationContext context) throws BeansException {
+			MyApplicationContextAware.context = context;
+		}
+
+		// 获取applicationContext
+		public static ApplicationContext getApplicationContext() {
+			return context;
+		}
+
+		// 通过name获取Bean.
+		public static Object getBean(String name) {
+			return context.getBean(name);
+
+		}
+
+		// 通过clazz获取Bean.
+		public static <T> T getBean(Class<T> clazz) {
+			return context.getBean(clazz);
+		}
+
+		// 通过name及clazz返回指定的Bean
+		public static <T> T getBean(String name, Class<T> clazz) {
+			return context.getBean(name, clazz);
+		}
+	}
+	
+//}
+	
+//{-----------<<<fastjson>>>---------------------------------------------
+	<dependency>
+		<groupId>com.alibaba</groupId>
+		<artifactId>fastjson</artifactId>
+		<version>1.2.47</version>
+	</dependency>
+
+	// QuoteFieldNames --> 输出key时是否使用双引号,默认为true
+	// WriteMapNullValue --> 是否输出值为null的字段,默认为false
+	// WriteNullListAsEmpty --> List字段如果为null,输出为[],而非null
+	// WriteNullNumberAsZero --> 数值字段如果为null,输出为0,而非null
+	// WriteNullStringAsEmpty --> 字符类型字段如果为null,输出为"",而非null (√)
+	// WriteNullBooleanAsFalse --> Boolean字段如果为null,输出为false,而非null
+	
+	//list -> JSONString
+	JSON.toJSONString(list, SerializerFeature.WriteNullStringAsEmpty); 
+	
+	//Demo
+	JSONObject json = new JSONObject();
+	System.out.println(json.getInteger("a")); //null
+	System.out.println(json.getIntValue("a")); //0
+	
+	//X->String
+	String json = JSON.toJSONString(list / map / bean);
+	String json = JSON.toJSONString(list, true);//args1: json是否格式化(有空格和换行).
+	
+	//X->JSON (必须有get/set)
+	JSONObject obj = JSON.parseObject(JSON.toJSONString(person));//javabean
+	JSONObject obj = JSON.parseObject(JSON.toJSONString(map));//map
+	JSONArray array = JSON.parseArray(JSON.toJSONString(list));//list
+
+	//JSON->X (必须有空构造方法)
+	Person person = JSON.parseObject(json, Person.class);
+	Map map = JSON.parseObject(json, Map.class);
+	List<Person> list = JSON.parseArray(json, Person.class);
+
+//}
+	
+//{-----------<<<Scheduled>>>---------------------------------------------
+	///任务调度可以用'Quartz',但对于简单的定时任务可以使用内置的'Scheduled'
+		initialDelay //项目启动后,延迟多少毫秒执行任务
+		fixedRate //每隔多少毫秒执行一次 (当 任务耗时>频率 时,下次开始时间=上次结束时间);
+		fixedDelay //每次执行完毕,延迟多少毫秒再次执行
+		cron //详细配置方法执行频率
+
+
+	// cron表达式: [秒] [分] [时] [日] [月] [周] [年(可省)]
+	//
+	// 秒(0~59); 分(0~59); 时(0~23); 天(0~31,和月份有关); 月(0~11); 星期(1~7,1为周日); 年(1970~2099)
+	//
+	// * 表示所有值. 比如在分钟里表示每一分钟触发
+	// ? 表示不指定值,不关心当前位置设置的值. 比如不关心是周几,则周的位置填写?
+	// - 表示区间. 小时设置为10-12表示10,11,12点均会触发
+	// , 表示多个值. 小时设置成10,12表示10点和12点都会触发
+	// / 表示递增触发. 5/15表示从第5秒开始,每隔15秒触发
+
+	@Scheduled(cron = "*/5 * * * * ?")
+	public void task() {
+		log.debug("ScheduledTask---{}", CommUtils.getNow(true));
+	}
+	
+	// 0 0 10,14,16 * * ? 每天上午10点，下午2点，4点
+	// 0 0/30 9-17 * * ? 朝九晚五工作时间内每半小时
+	// 0 0 12 ? * WED 表示每个星期三中午12点
+	// 0 0 12 * * ? 每天12点触发
+	// 0 15 10 ? * * 每天10点15分触发
+	// 0 15 10 * * ? 每天10点15分触发
+	// 0 15 10 * * ? * 每天10点15分触发
+	// 0 15 10 * * ? 2005 2005年每天10点15分触发
+	// 0 * 14 * * ? 每天下午的 2点到2点59分每分触发
+	// 0 0/5 14 * * ? 每天下午的 2点到2点59分(整点开始，每隔5分触发)
+	// 0 0/5 14,18 * * ? 每天下午的 2点到2点59分、18点到18点59分(整点开始，每隔5分触发)
+	// 0 0-5 14 * * ? 每天下午的 2点到2点05分每分触发
+	// 0 10,44 14 ? 3 WED 3月每周三下午的 2点10分和2点44分触发
+	// 0 15 10 ? * MON-FRI 从周一到周五每天上午的10点15分触发
+	// 0 15 10 15 * ? 每月15号上午10点15分触发
+	// 0 15 10 L * ? 每月最后一天的10点15分触发
+	// 0 15 10 ? * 6L 每月最后一周的星期五的10点15分触发
+	// 0 15 10 ? * 6L 2002-2005 从2002年到2005年每月最后一周的星期五的10点15分触发
+	// 0 15 10 ? * 6#3 每月的第三周的星期五开始触发
+	// 0 0 12 1/5 * ? 每月的第一个中午开始每隔5天触发一次
+	// 0 11 11 11 11 ? 每年的11月11号 11点11分触发(光棍节)
+
+//}
 
 	
 	

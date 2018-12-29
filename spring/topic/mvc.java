@@ -428,7 +428,6 @@
 			public void addInterceptors(InterceptorRegistry registry) {
 				WebMvcConfigurer.super.addInterceptors(registry);
 
-				//静态资源: *.css; *.js --> SpringBoot已做好了静态资源映射
 				registry.addInterceptor(new MyHandlerInterceptor())//
 						.addPathPatterns("/**")//需要拦截 (/**表所有)
 						.excludePathPatterns("/flower/**");//不拦截
@@ -543,8 +542,8 @@
 
 #国际化
 	0.两种方式
-		(1).页面能够根据'浏览器的语言设置'情况对文本(不是内容),时间,数值进行本地化处理
-		(2).页面可以通过超链接切换 Locale, 而不再依赖于'浏览器的语言设置'情况
+		(1).页面根据'浏览器的语言设置'对文本(不是内容),时间,数值进行本地化处理
+		(2).页面可以通过'超链接'切换 Locale, 而不再依赖于浏览器的语言设置情况
 		
 	1.资源文件 '基名_语言代码_国家代码'
 		目录'/resources/i18n/'新建'properties'文件, login; login_zh_CN; login_en_US
@@ -573,8 +572,8 @@
 		//注意: 实现方式(2),则方式(1)不起作用.
 		
 		//1.页面配置超链接
-		<a href="<%=request.getContextPath()%>/?l=zh_CN">中文</a>&nbsp;&nbsp;
-		<a href="<%=request.getContextPath()%>/?l=en_US">英文</a>&nbsp;&nbsp;
+		<a href="<%=request.getContextPath()%>/?l=zh_CN">中文</a>
+		<a href="<%=request.getContextPath()%>/?l=en_US">英文</a>
 		<span th:text="#{login.user}"/>
 		
 		//2.后台注册自定义国际化配置

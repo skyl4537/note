@@ -150,13 +150,20 @@
 	#-x: 从备份文件中还原文件		->	extrac
 	#-t: 列出备份文件的内容			->	list
 	#-r: 新增文件到已备份文件的尾部	->	append
+	#-g: 增量备份
 
-	tar -zcvf test.tar.gz test		#压缩文件test
+	tar -zcvf test.tar.gz test		//压缩文件test
 	
-	tar -zxvf test.tar.gz			#解压到"当前目录"
-	tar -zxvf test.tar.gz -C test/	#解压到<指定目录>
+	tar -zxvf test.tar.gz			//解压到<当前>目录
+	tar -zxvf test.tar.gz -C test/	//解压到<指定>目录
 	
-	tar -ztvf test.tar.gz			#列出归档文件的内容
+	tar -ztvf test.tar.gz			//列出归档文件的内容
+	
+	echo -n "123" > test	//-n表示不换行,即结尾没有换行符
+	tar -g snapshot -zcvf test0.tar.gz test	//第1次归档(123)
+	echo "456" >> test		//追加test末尾
+	tar -g snapshot -zcvf test1.tar.gz test	//第2次归档(123456)
+	tar -g snapshot -zcvf test2.tar.gz test	//第3次归档(空的,因为没有修改)
 	
 # echo: ""会将内容转义; ''不会转义,原样输出
 
@@ -390,7 +397,7 @@
 	yum -y install nano //安装
 	nano 路径+文件名 //新建/打开
 	退出: Ctrl+x (y确认); 保存修改: Ctrl+o; 取消返回: Ctrl+c
-	剪贴/删除一整行: Ctrl+k; 复制一整行: Alt+6; 粘贴: Ctrl+U 
+	剪贴/删除整行: Ctrl+k; 复制整行: Alt+6; 粘贴: Ctrl+U 
 	
 #crontab
 	rpm -qa | grep crontab //检查是否安装(rpm: Red-Hat Package Manager)
@@ -398,7 +405,7 @@
 	sudo /etc/init.d/cron start-stop-restart //命令形式
 	sudo service cron start-stop-restart //服务形式
 
-	//执行日志在 /var/log/cron.log; ubuntu: http://www.cnblogs.com/nieqibest/p/9353927.html
+	执行日志在 /var/log/cron.log; //对于ubuntu: http://www.cnblogs.com/nieqibest/p/9353927.html
 	crontab -l(e/r) //列出(编辑/删除)当前用户的定时任务
 
 	//分 时 日 月 周 (user可省) cmd

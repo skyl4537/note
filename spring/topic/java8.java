@@ -7,8 +7,9 @@
 6. 接口中的默认方法与静态方法
 7. 其他新特性
 
-///--------------<<<<<jdk8>>>>>---------------------------------------------------------
+///--------------<<<jdk8>>>---------------------------------------------------------
 
+//{--------------<<<lambda>>>-------------------------------------------------------
 #lambda
 	//更新前
 		List<String> list = Arrays.asList("java", "scala", "python");//数组转list
@@ -37,31 +38,15 @@
 	可以在任意接口上使用 @FunctionalInterface 注解,来检查是否是函数式接口.
 	同时 javadoc 也会包含一条声明,说明这个接口是一个函数式接口.
 	
-#内置四大核心函数式接口
-	(0).消费型接口 -> //入参T类型,返回无
-		Consumer<T> { void accept(T t);	}
+#四大函数式接口
+	1.消费型接口
+		Consumer<T> { void accept(T t);	} //入参T类型,返回无
 	
-		/** DEMO: 将入参进行消费 */
-		public static <T> void doConsumer(T t, Consumer<T> consumer) {
-			consumer.accept(t);
-		}
-		doConsumer(10.0, x -> System.out.println("doConsumer: " + x));
-	
-	(1).供给型接口 —> //无入参,返回T类型
-		Supplier<T> { T get(); }
-		
-		/** DEMO: 产生一个size为n的list */
-		public static List<Integer> doSupplier(Integer n, Supplier<Integer> supplier) {
-			List<Integer> list = new ArrayList<>();
-			for (int i = 0; i < n; i++) {
-				list.add(supplier.get());
-			}
-			return list;
-		}
-		doSupplier(5, () -> new Random().nextInt(10)).forEach(System.out::print); //79984
+	2.供给型接口
+		Supplier<T> { T get(); } //无入参,返回T类型
 
-	(2).函数型接口—入参T类型返回R类型
-		Function<T, R> { R apply(T t); }
+	3.函数型接口
+		Function<T, R> { R apply(T t); } //入参T类型,返回R类型
 		
 		IntFunction<R> { R apply(int value); } //扩展实现
 		LongFunction<R> { R apply(long value); }
@@ -71,49 +56,31 @@
 		ToLongFunction<T> { long applyAsLong(T value); }
 		ToDoubleFunction<T> { double applyAsDouble(T value); }
 	
-		/** DEMO: 对入参String进行处理,结果返回Integer */
-		public static Integer doFunction(String s, Function<String, Integer> function) {
-			return function.apply(s);
-		}
-		Integer res = doFunction("123", (x) -> Integer.parseInt(x));
-
-	(3).断定型接口—入参T类型返回boolean类型
-		Predicate<T> { boolean test(T t); }
-	
-		/** DEMO: 过滤list中length>3的元素 */
-		public static List<String> doPredicate(List<String> list, Predicate<String> predicate) {
-			List<String> res = new ArrayList<>();
-			for (String s : list) {
-				if (predicate.test(s)) {
-					res.add(s);
-				}
-			}
-			return res;
-		}
-		doPredicate(list, (x) -> x.length() > 3).forEach(System.out::println);
+	4.断定型接口
+		Predicate<T> { boolean test(T t); } //入参T类型,返回boolean类型
 	
 #方法引用
 	定义: 当要传递给lambda体的操作,已经有方法实现了,可以直接使用方法引用!
 	//使用操作符"::"将方法名和对象或类的名字分隔开来.
-	/**引用方法的参数列表 和 返回值,与函数式接口的一致,就可以方法引用*/
+	//引用方法的参数列表 和 返回值,与函数式接口的一致,就可以方法引用
 
-	(0).对象::实例方法
-		(x) -> System.out.println(x);
+	(1).对象::实例方法
+		x -> System.out.println(x);
 		System.out::println; //PrintStream ps = System.out;//对象
 	
-	(1).类::静态方法
+	(2).类::静态方法
 		Comparator<Integer> com0 = (x, y) -> Integer.compare(x, y);
-		Comparator<Integer> com01 = Integer::compare;
+		Comparator<Integer> com1 = Integer::compare;
 	
-	(2).类::实例方法
-		Comparator<Integer> com1 = (x, y) -> x.compareTo(y);
+	(3).类::实例方法
+		Comparator<Integer> com2 = (x, y) -> x.compareTo(y);
 		//当lambda参数 arg0 是引用方法的调用者,arg1 是引用方法的参数(或无参数),可用 ClassName::methodName
-		Comparator<Integer> com11 = Integer::compareTo;
+		Comparator<Integer> com3 = Integer::compareTo;
 	
 #构造器引用 ClassName::new
 	与函数式接口相结合,自动与函数式接口中方法兼容.
 	可以把构造器引用赋值给定义的方法,与构造器参数列表要与接口中抽象方法的参数列表一致.
-	/**需要调用的构造器参数列表,与函数式接口的参数列表保持一致*/
+	//需要调用的构造器参数列表,与函数式接口的参数列表保持一致
 	
 		//(1).无参构造器
 		Supplier<Flower> supplier = () -> new Flower();
@@ -133,8 +100,10 @@
 		
 		Function<Integer, String[]> function = String[]::new;
 		String[] res = function.apply(10);
-	
-#Stream
+
+//}		
+
+//{--------------<<<Stream>>>-------------------------------------------------------
 	Stream是数据渠道, 是用于操作数据源(集合,数组等)所生成的元素序列.
 	//集合讲的是数据,Stream讲的是计算.
 		(1).Stream 不会存储元素.
@@ -143,7 +112,7 @@
 	
 	创建流(转化数据源) -> 中间操作(定义中间操作链,但不会立即执行) -> 终止操作(执行中间操作链,并产生结果)
 	
-	(1).创建流
+	1.创建流
 		Person p1 = new Person(1, "zhao", 17, 197.5, Gender.MAN);
 		Person p2 = new Person(2, "qian", 18, 187.5, Gender.MAN);
 		Person p3 = new Person(3, "sui", 19, 177.5, Gender.MAN);
@@ -153,7 +122,7 @@
 	
 		//通过 Collection 系列集合提供的 stream() 或 parallelStream()
 		Stream<Person> stream = list.stream();
-		Stream<Person> parallelStream = list.parallelStream();
+		Stream<Person> parallelStream = list.parallelStream(); //并行流
 	
 		//通过 Arrays 中的静态方法 stream()
 		Stream<Person> stream = Arrays.stream(array);
@@ -165,50 +134,70 @@
 		Stream<Integer> stream = Stream.iterate(1, (x) -> x + 3); //迭代
 		Stream<Double> stream = Stream.generate(Math::random); //生成
 		
-	(2).中间-筛选与切片
-		// (1).惰性求值: 中间操作不会立即执行; 只有执行了终止操作(forEach()),中间操作才会执行
-		// (2).内部迭代: 迭代操作 forEach 是由Stream API自动完成
-		// (3).短路操作: 当前流中age{18,28,38,48,58},但"短路"只打印3次; 说明当找到2个元素后,filter()判断不再执行
-		list.stream()
-				.filter((x) -> {System.out.println("短路");return x.age > 20;})// 元素过滤
-				.limit(2)// 指定结果集大小
-				.skip(1)// 跳过前n个元素; 当n大于元素总数,返回空流.
-				.distinct()// 通过hashCode()和equals()去重
-				.forEach(System.out::println);// 终止操作
+	2.中间の筛选与切片
+		//惰性求值: 中间操作不会立即执行; 只有执行了终止操作(forEach()),中间操作才会执行
+		//内部迭代: 迭代操作 forEach 是由Stream API自动完成
+		//短路操作: 以下 age=21 不打印,体现了短路操作.
+        list.stream()
+                .filter(x -> {
+                    System.out.println("比较");
+                    return x.age > 17; //过滤条件
+                })
+                .limit(3) //结果集大小
+                .skip(1) //跳过结果集中的前n个元素; 当n大于元素总数,返回空流.
+                .distinct() //通过 hashCode() 和 equals() 去重
+                .forEach(System.out::println);//终止操作 -> 最终结果集为 3-1 个
+        // 比较 (17 -> 不满足)
+        // 比较 (18 -> 满足,但跳过)
+        // 比较 (19 -> 满足,打印输出) Person(id=3, name=sui, age=19, height=177.5, gender=MAN, flag=false)
+        // 比较 (20 -> 满足,打印输出) Person(id=4, name=li, age=20, height=167.5, gender=WOMEN, flag=false)
+        // 		(21 -> 短路操作,不比较) 
 	
-	(3).中间-映射
-		list.stream()
-				.map(/* (x) -> x.name */Person::getName)// 传入lambda,转换流中所有元素,产生新的元素
-				.flatmap() // 和map类似,但元素转换后得到新流, 结果是将子流中的元素压缩到父流中!!
-				.forEach(System.out::println);
+	3.中间の映射
+        list.stream()
+                .peek(x -> x.age += 5) //区别 peek() 和 map()
+                // .map(x -> {
+                //     x.age += 5; //传入lambda,转换流中所有元素,产生新的元素
+                //     return x;
+                // })
+                //.flatmap() //和map类似,但元素转换后得到新流, 结果是将子流中的元素压缩到父流中!!
+                .forEach(System.out::println);
+				
+		(1).map()和peek()
+			//map()入参: <R> Stream<R> map(Function<? super T, ? extends R> mapper);
+			Function<Integer,String> f = x -> {return  "hello" + i;};
+			
+			//peek()入参: Stream<T> peek(Consumer<? super T> action);
+			Consumer<Integer> c =  i -> System.out.println("hello" + i);
+					
+			//Function 比 Consumer 多了一个 return.
 		
-		//[注]: map() 和 flatmap() 类似List的 add() 和 addAll()
+		(2).map()和flatmap() //类比list的add()和addAll()
 			List<String> list0 = Arrays.asList("a", "b");
 
 			List list1 = new ArrayList<>();
 			list1.add("aa");
 
 			list1.add(list0); //list0作为list1中的一个元素
-			System.out.println(list1);// [aa, [a, b]]
+			System.out.println(list1); //[aa, [a, b]]
 
-			list1.addAll(list0);// list0中的元素融入list1中
-			System.out.println(list1);// [aa, a, b]
+			list1.addAll(list0); //list0中的元素融入list1中
+			System.out.println(list1); //[aa, a, b]
 		
-	(4).中间-排序
-		list.stream()
-				// .sorted()// 自然排序(调用compare()方法); 非自然排序(自定义排序方法)
-				// .sorted((x, y) -> (x.name).compareTo(y.name))//(1).按名字排序
-				// .sorted((x, y) -> Double.compare(x.height, y.height))// (2).按身高排序
-				.sorted((x, y) -> {// (3).先按年龄排序,再按性别排序
-					if (x.age == y.age) {
-						return x.gender.compareTo(y.gender);
-					} else {
-						return Integer.compare(x.age, y.age);
-					}
-				}).forEach(System.out::println);
+	4.中间の排序
+        list.stream()
+                //.sorted() //自然排序(调用compare()方法); 非自然排序(自定义排序方法)
+                //.sorted((x, y) -> (x.name).compareTo(y.name)) //按名字排序
+                //.sorted((x, y) -> Double.compare(x.height, y.height)) //按身高排序
+                .sorted((x, y) -> { //先按年龄排序,再按性别排序
+                    if (x.age == y.age) {
+                        return x.gender.compareTo(y.gender);
+                    } else {
+                        return Integer.compare(x.age, y.age);
+                    }
+                }).forEach(System.out::println);
 	
-	(5).终止-查找和匹配
-		///终止操作: 从流的流水线生成结果,结果可以是不是流的任何值. 如:List,Integer,甚至void
+	5.终止の查找和匹配 -> //从流的流水线生成结果,结果可以是不是流的任何值. 如:List,Integer,甚至void
 	
 		// allMatch / anyMatch / noneMatch(): 是否都满足 / 有一个满足 / 都不满足.
 		boolean allMatch = list.stream().allMatch((x) -> x.age > 30);
@@ -224,11 +213,11 @@
 		Optional<Person> max = list.stream() //获取最高身高者的所有属性
 				.max((x, y) -> Double.compare(x.height, y.height));
 	
-		Optional<Double> min = list.stream()// 只获取最低身高的值
+		Optional<Double> min = list.stream() //只获取最低身高的值
 				.map(x -> x.height)
 				.min(Double::compare);
 	
-	(6).终止-归约和收集
+	6.终止の归约和收集
 		///归约 reduce(): 将流中元素反复结合,最终生成一个值
 		Optional<Double> reduce = list.stream().map(x -> x.height).reduce((x, y) -> x + y);
 		
@@ -309,20 +298,19 @@
 		而在fork/join框架实现中,如果某个子问题由于等待另外一个子问题的完成而无法继续运行.
 		那么处理该子问题的线程会主动寻找其他尚未运行的子问题来执行.这种方式减少了线程的等待时间,提高了性能.
 	
+//}	
 	
+//{--------------<<<时间日期API>>>--------------------------------------------------
+#java8之前 java.util.Date 和 Calendar 的弊端
+	首先, 所有属性都是可变的,且线程不安全. 【**最重要**】
+	其次, 星期和月份从 0 开始计数.
 	
-#时间日期API
-	(0).Java8之前 java.util.Date 和 Calendar 的弊端
-		///首先,(**最重要**)的是 所有属性都是可变的,且线程不安全
-		///其次, 星期和月份从 0 开始计数
-	
-		public static void main(String[] args) {//演示线程不安全.
+		public static void main(String[] args) { //演示线程不安全.
 			Calendar birth = Calendar.getInstance();
 			birth.set(1995, Calendar.MAY, 26);
 			Calendar now = Calendar.getInstance();
-			System.out.println(daysBetween0(birth, now)); // 输出结果为14963，值不固定
-			System.out.println(daysBetween0(birth, now)); // 输出结果显示 0?
-
+			System.out.println(daysBetween(birth, now)); // 输出结果为14963,值不固定
+			System.out.println(daysBetween(birth, now)); // 输出结果显示 0?
 		}
 
 		//如果连续计算两个Date实例的话,第二次会取得0
@@ -339,102 +327,99 @@
 				daysBetween++;
 			}
 			return daysBetween;
-		}
+		///}
 
-	(1).LocalDate, LocalTime, LocalDateTime
-		/**类的实例是不可变的对象*/ 
-		分别表示使用 ISO-8601 日历系统的日期,时间,日期和时间. 人读的时间(非时间戳).
-		它们提供了简单的日期或时间,并不包含当前的时间信息.也不包含与时区相关的信息。
-		
-		///LocalDate, LocalTime, LocalDateTime 分别表示本地日期(年月日),时间(时分秒),及时间日期
-		///三者的API使用方式类似,下面以 LocalDateTime 为例介绍
-
-		//通过 now(); parse(); of(); 三种静态方法获取实例对象
-		LocalDateTime ldt0 = LocalDateTime.now(); //2018-10-19T20:36:26.216
-		LocalDateTime ldt1 = LocalDateTime.parse("2018-01-02T20:58:30.123");//必须有T
-		LocalDateTime ldt2 = LocalDateTime.of(2016, 10, 26, 12, 10, 55, 255 * 1000 * 1000); //最后参数为纳秒
-
-		//增减操作: 分别使用 plus 和 minus 关键字
-		//plusDays(n); plusWeeks(n);... plus(Period.ofDays(n)); plus(Period.ofWeeks(n));...
-		LocalDateTime plusDays = ldt0.plusDays(2);
-		LocalDateTime plusDays = ldt0.plus(Period.ofDays(2));
-		
-		//获得 年,月,日...,年份天数(1-366),月份天数(1-31),星期几(DayOfWeek枚举值)
-		int monthValue = ldt0.getMonthValue();
-		int dayOfYear = ldt0.getDayOfYear(); //int类型293
-		DayOfWeek dayOfWeek = ldt0.getDayOfWeek();
-		System.out.println(dayOfWeek + " * " + dayOfWeek.getValue()); //DayOfWeek类型: SATURDAY * 6
-		
-		//将月份天数,年份天数,月份,年份 修改为指定值,并返回新的 LocalDate 对象
-		LocalDateTime withDayOfYear = ldt0.withDayOfYear(2); //2018-01-02T09:49:05.637
-		LocalDateTime withYear = ldt0.withYear(1990); //1990-10-20T09:49:05.637
-		
-		//until(); 获取两个LocalDate的相差天数
-		LocalDateTime target = LocalDateTime.parse("2018-12-31T23:59:59");
-		long until = ldt0.until(target, ChronoUnit.DAYS);//72, 若将ldt0和target调换,则返回负数
-		
-		//isBefore(); isAfter(); 比较两个日期的先后顺序
-		boolean before = ldt0.isBefore(target);
-		
-		//isLeapYear(); LocalDate特有方法,判断是否是闰年
-		boolean leapYear = LocalDate.now().isLeapYear();
-		
-	(2).Instant
-		///时间戳对象, 以Unix元年(1970年1月1日0点)开始所经历的描述进行运算.
+#LocalDate+LocalTime+LocalDateTime ///类的实例是不可变的对象
+	分别表示使用 ISO-8601 日历系统的日期,时间,日期和时间. 人读的时间(非时间戳).
+	它们提供了简单的日期或时间,并不包含当前的时间信息.也不包含与时区相关的信息。
 	
-		//通过now()静态方法获取对象
-		Instant instant = Instant.now();//默认获取 UTC 时区时间戳,北京是 UTC+8
-		OffsetDateTime atOffset = instant.atOffset(ZoneOffset.ofHours(8));//北京时间戳
-		
-		long epochMilli = instant.toEpochMilli();//毫秒, 等同于 System.currentTimeMillis()
-		long epochSecond = instant.getEpochSecond();//秒
-		
-	(3).Duration 和 Period 
-		///分别表示时间间隔的两个维度. 前者用秒和纳秒来区分时间,后者用年月日.
-		
-		//between();
-		Duration duration = Duration.between(LocalDateTime.parse("2018-02-12T22:30:10"),
-				LocalDateTime.parse("2018-02-20T22:58:20"));
-		System.out.println(duration.getSeconds());//时间间隔n秒		
-		System.out.println(duration.toDays() + " * " + duration.toHours() + " * " + duration.toMinutes() + " * "
-				+ duration.toMillis());//时间间隔分别转化为 日,时,分,秒
+	//LocalDate, LocalTime, LocalDateTime 分别表示本地日期(年月日),时间(时分秒),及时间日期
+	//三者的API使用方式类似,下面以 LocalDateTime 为例介绍
 
-		Period period = Period.between(LocalDate.parse("2018-02-18"), LocalDate.parse("2019-05-14"));
-		System.out.println(period.getYears() + " * " + period.getMonths() + " * " + period.getDays());//年月日
-		
-	(4).TemporalAdjuster
-		///时间校正器. 提供了日期操纵的接口. 如:将日期调整到"下个周末"
-		///TemporalAdjusters是系统提供的接口实现类. 类似 Excutor,Excutors
-		
-		LocalDateTime ldt = LocalDateTime.now();//今天周六
-		LocalDateTime with0 = ldt.with(TemporalAdjusters.nextOrSame(DayOfWeek.SATURDAY));//返回今天日期
-		LocalDateTime with1 = ldt.with(TemporalAdjusters.next(DayOfWeek.SATURDAY));//返回下周六日期
-		
-		LocalDateTime with2 = ldt.with(TemporalAdjusters.lastInMonth(DayOfWeek.SATURDAY));//本月最后一个周六日期
-		LocalDateTime with3 = ldt.with(TemporalAdjusters.lastDayOfMonth());//本月最后一天
-		
-	(5).DateTimeFormatter ///格式化
-		
-		// String转日期
-		LocalDateTime ldt0 = LocalDateTime.parse("2018-12-02T16:46:48.154", DateTimeFormatter.ISO_LOCAL_DATE_TIME); //有个T
-		LocalDateTime ldt1 = LocalDateTime.parse("2018-12-02 16:46:48.154",
-				DateTimeFormatter.ofPattern("yyyy-MM-dd HH:mm:ss.SSS"));
+	//通过 now(); parse(); of(); 三种静态方法获取实例对象
+	LocalDateTime ldt0 = LocalDateTime.now(); //2018-10-19T20:36:26.216
+	LocalDateTime ldt1 = LocalDateTime.parse("2018-01-02T20:58:30.123");//必须有T
+	LocalDateTime ldt2 = LocalDateTime.of(2016, 10, 26, 12, 10, 55, 255 * 1000 * 1000); //最后参数为纳秒
 
-		// 日期转String
-		String formatDate0 = ldt.format(DateTimeFormatter.ISO_LOCAL_DATE_TIME);// 2018-10-20T14:23:29.578
-		String formatDate1 = ldt.format(DateTimeFormatter.ofPattern("yyyy-MM-dd HH:mm:ss.SSS"));// 2018-10-20 14:23:29.578
+	//增减操作: 分别使用 plus 和 minus 关键字
+	//plusDays(n); plusWeeks(n);... plus(Period.ofDays(n)); plus(Period.ofWeeks(n));...
+	LocalDateTime plusDays = ldt0.plusDays(2);
+	LocalDateTime plusDays = ldt0.plus(Period.ofDays(2));
+	
+	//获得 年,月,日...,年份天数(1-366),月份天数(1-31),星期几(DayOfWeek枚举值)
+	int monthValue = ldt0.getMonthValue();
+	int dayOfYear = ldt0.getDayOfYear(); //int类型293
+	DayOfWeek dayOfWeek = ldt0.getDayOfWeek();
+	System.out.println(dayOfWeek + " * " + dayOfWeek.getValue()); //DayOfWeek类型: SATURDAY * 6
+	
+	//将月份天数,年份天数,月份,年份 修改为指定值,并返回新的 LocalDate 对象
+	LocalDateTime withDayOfYear = ldt0.withDayOfYear(2); //2018-01-02T09:49:05.637
+	LocalDateTime withYear = ldt0.withYear(1990); //1990-10-20T09:49:05.637
+	
+	//until(); 获取两个LocalDate的相差天数
+	LocalDateTime target = LocalDateTime.parse("2018-12-31T23:59:59");
+	long until = ldt0.until(target, ChronoUnit.DAYS);//72, 若将ldt0和target调换,则返回负数
+	
+	//isBefore(); isAfter(); 比较两个日期的先后顺序
+	boolean before = ldt0.isBefore(target);
+	
+	//isLeapYear(); LocalDate特有方法,判断是否是闰年
+	boolean leapYear = LocalDate.now().isLeapYear();
 		
-	(6).与传统日期处理的转换
-		///遗留类.from(); 遗留类.to新类();
-		Date date = Date.from(instant);// Sat Oct 20 14:35:01 CST 2018
-		Instant instant = date.toInstant();// 2018-10-20T06:35:01.958Z
+#Instant ///时间戳对象, 以Unix元年(1970年1月1日0点)开始所经历的描述进行运算.
+	
+	//通过now()静态方法获取对象
+	Instant instant = Instant.now();//默认获取 UTC 时区时间戳,北京是 UTC+8
+	OffsetDateTime atOffset = instant.atOffset(ZoneOffset.ofHours(8));//北京时间戳
+	
+	long epochMilli = instant.toEpochMilli();//毫秒, 等同于 System.currentTimeMillis()
+	long epochSecond = instant.getEpochSecond();//秒
 		
-		Timestamp timestamp = Timestamp.from(instant);//2018-10-20 14:52:12.611
-		Instant instant2 = timestamp.toInstant();//2018-10-20T06:52:12.611Z
+#Duration+Period ///分别表示时间间隔的两个维度. 前者用秒和纳秒来区分时间,后者用年月日.
+	//between();
+	Duration duration = Duration.between(LocalDateTime.parse("2018-02-12T22:30:10"),
+			LocalDateTime.parse("2018-02-20T22:58:20"));
+	System.out.println(duration.getSeconds());//时间间隔n秒		
+	System.out.println(duration.toDays() + " * " + duration.toHours() + " * " + duration.toMinutes() + " * "
+			+ duration.toMillis());//时间间隔分别转化为 日,时,分,秒
+
+	Period period = Period.between(LocalDate.parse("2018-02-18"), LocalDate.parse("2019-05-14"));
+	System.out.println(period.getYears() + " * " + period.getMonths() + " * " + period.getDays());//年月日
 		
-#接口变动
-	//以前接口中只允许存在: 全局常量 和 接口方法;
-	//java8新增 默认方法 和 静态方法.
+#TemporalAdjuster
+	///时间校正器. 提供了日期操纵的接口. 如:将日期调整到"下个周末"
+	///TemporalAdjusters是系统提供的接口实现类. 类似 Excutor,Excutors
+	
+	LocalDateTime ldt = LocalDateTime.now();//今天周六
+	LocalDateTime with0 = ldt.with(TemporalAdjusters.nextOrSame(DayOfWeek.SATURDAY));//返回今天日期
+	LocalDateTime with1 = ldt.with(TemporalAdjusters.next(DayOfWeek.SATURDAY));//返回下周六日期
+	
+	LocalDateTime with2 = ldt.with(TemporalAdjusters.lastInMonth(DayOfWeek.SATURDAY));//本月最后一个周六日期
+	LocalDateTime with3 = ldt.with(TemporalAdjusters.lastDayOfMonth());//本月最后一天
+		
+#DateTimeFormatter ///格式化
+	// String转日期
+	LocalDateTime ldt0 = LocalDateTime.parse("2018-12-02T16:46:48.154", DateTimeFormatter.ISO_LOCAL_DATE_TIME); //有个T
+	LocalDateTime ldt1 = LocalDateTime.parse("2018-12-02 16:46:48.154",
+			DateTimeFormatter.ofPattern("yyyy-MM-dd HH:mm:ss.SSS"));
+
+	// 日期转String
+	String formatDate0 = ldt.format(DateTimeFormatter.ISO_LOCAL_DATE_TIME);// 2018-10-20T14:23:29.578
+	String formatDate1 = ldt.format(DateTimeFormatter.ofPattern("yyyy-MM-dd HH:mm:ss.SSS"));// 2018-10-20 14:23:29.578
+		
+#与传统日期处理的转换 ///遗留类.from(); 遗留类.to新类();
+	Date date = Date.from(instant);// Sat Oct 20 14:35:01 CST 2018
+	Instant instant = date.toInstant();// 2018-10-20T06:35:01.958Z
+	
+	Timestamp timestamp = Timestamp.from(instant);//2018-10-20 14:52:12.611
+	Instant instant2 = timestamp.toInstant();//2018-10-20T06:52:12.611Z
+
+//}
+	
+//{--------------<<<接口变动>>>-----------------------------------------------------
+#接口
+	以前接口中只允许存在: 全局常量 和 接口方法;
+	java8新增 默认方法 和 静态方法.
 	
 		public interface Testor {
 			public static final int TEST_INT = 5;
@@ -450,12 +435,12 @@
 			}
 		}
 		
-	(1)."类优先"原则
+	1.类优先原则
 		//当 父类Tester 和 父接口Testor 都实现了 sayHello() 方法,子类调用 父类Tester 实现.
 		public class Test extends Tester implements Testor {}
 		new Test().sayHi();//hi Tester
 		
-	(2).多实现,接口冲突
+	2.多实现—接口冲突
 		//当实现多个接口,且每个接口中都有同名default实现方法,就会报错. 
 		//必须手动选择一个接口的default方法作为实现.
 		public class Test /* extends Tester */ implements Testor, Testor2 {
@@ -464,9 +449,11 @@
 				return Testor.super.sayHi(); //选择 Testor
 			}
 		}
+//}
 		
-#Optional 
-	///Optional<T> 是一个容器类,代表一个值存在或不存在.
+//{--------------<<<Optional>>>-----------------------------------------------------
+#Optional
+	//Optional<T> 是一个容器类,代表一个值存在或不存在.
 	//原来用 null 表示一个值不存在,现在 Optional 可以更好的表达这个概念.并且可以避免空指针异常.
 		
 		Optional<Person> optional0 = Optional.of(p);// 实例化
@@ -483,17 +470,16 @@
 
 		// 如果有值对其处理,并返回处理后的Optional. 否则返回 Optional.empty()
 		Optional<Double> map = optional0.map((x) -> x.height);	
+//}	
 		
-		
-		
-///--------------<<<<<jdk7>>>>>---------------------------------------------------------	
+//{--------------<<<jdk7>>>---------------------------------------------------------
 #Switch()中可以使用字串	
 
 #泛型实例化的类型自动推断
 		List<String> list = new ArrayList<>();
 		
 #try-with-resources释放资源
-	///资源对象在程序结束之后必须关闭. twr语句确保了在语句的最后每个资源都会被关闭.
+	//资源对象在程序结束之后必须关闭. twr语句确保了在语句的最后每个资源都会被关闭.
 	
 		try(){ }catch(){ }finally{ }
 	
@@ -533,6 +519,7 @@
 		//但"关闭异常"并没有丢失, 而是存在"处理异常"的被抑制的异常列表中. 
 		//通过异常的getSuppressed()方法, 可以提取出被抑制的异常.
 	
+//}	
 	
 	
 	
@@ -553,13 +540,12 @@
 	
 	
 	
-	
-#HashMap
+//{--------------<<<HashMap>>>---------------------------------------------------------
 
 #策略设计模式
-	//(1).过滤出list中长度>5的
-	//(2).过滤出list中包含a的
-	//(3)....N多情况...
+	//1.过滤出list中长度>5的
+	//2.过滤出list中包含a的
+	//3....N多情况...
 	List<String> list = Arrays.asList("java", "scala", "python");
 
 	public interface Filterable<T> {//策略接口
@@ -590,8 +576,7 @@
 	List<String> res = filterList(list, t -> t.length() > 3);
 	res.forEach(System.out::println);
 
-
-
+//}
 
 
 

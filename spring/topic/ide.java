@@ -6,6 +6,7 @@
 	F3 | F3+Shift		//跳到下(上)一个选择项
 	F7+Alt | F7+Ctrl	//在全局(当前类)查找方法调用,可配合F3使用
 	Ctrl+H				//查看类的继承关系
+	Alt+7				//查看类结构
 	Ctrl+Shift+Alt+N	//当前工作空间查找java文件
 	
 	Ctrl+G				//定位行
@@ -47,15 +48,11 @@
 
 	//显示行号等
 	Editor - General - Appearance //勾选以下
-		Show line number: 行号.
-		Show right margin: 右边线.
-		Show method separators: 方法分割线.
+		(√)Show line number(行号) + (√)Show right margin(右边线) + (√)Show method sep...(方法分割线)
 
 	//自动导包
 	Editor - General - Auto Import 
-		Insert imports...(All)
-		(√)Add unambiguous...
-		(√)Optimize imports...
+		Insert imports...(All) + (√)Add unambiguous... + (√)Optimize imports...
 		
 	//设置文件和代码的模板
 	Editor - File and Code Templates - Includes - 自行添加
@@ -75,17 +72,7 @@
 	
 	
 	
-	
-///-------<<<plugins>>>--------------------------------------------------------------------
-#安装方法: 将zip包拷贝至目录"G:\ideaIU-2018.1.5.win\plugins",重启即可!!!
 
-#Alibaba语法检测
-	Blocker -> Critical -> Major.(由高到低)
-	
-#MavenRunHelper
-	查找和排除jar包的依赖关系
-	
-#
 	
 	
 	
@@ -219,7 +206,7 @@ Ctrl+F9，生成项目
 Alt+1，项目
 Alt+2，收藏
 Alt+6，TODO
-Alt+7，结构
+// Alt+7，结构
 Ctrl+Shift+C，复制路径
 Ctrl+Alt+Shift+C，复制引用，必须选择类名
 Ctrl+Alt+Y，同步

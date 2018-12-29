@@ -6,9 +6,9 @@
 	提供一系列的Starter,将各种功能性模块进行了划分与封装,
 	让我们可以更容易的引入和使用，有效的避免了用户在构建传统Spring应用时维护大量依赖关系而引发的JAR冲突等问题。
 
-#自动化配置：Spring Boot为每一个Starter都提供了自动化的Java配置类，用来替代我们传统Spring应用在XML中繁琐且并不太变化的Bean配置；同时借助一系列的条件注解修饰，使得我们也能轻松的替换这些自动化配置的Bean来进行扩展。
-#嵌入式容器：除了代码组织上的优化之外，Spring Boot中支持的嵌入式容器也是一个极大的亮点（此处仿佛又听到了Josh Long的那句：“Deploy as a Jar, not a War”），借助这个特性使得Spring Boot应用的打包运行变得非常的轻量级。
-#生产级的监控端点：spring-boot-starter-actuator的推出可以说是Spring Boot在Spring基础上的另一个重要创新，为Spring应用的工程化变得更加完美。该模块并不能帮助我们实现任何业务功能，但是却在架构运维层面给予我们更多的支持，通过该模块暴露的HTTP接口，我们可以轻松的了解和控制Spring Boot应用的运行情况。
+#自动化配置: 为每一个Starter都提供了自动化的Java配置类
+#嵌入式容器: 使得应用的打包运行变得非常的轻量级
+#监控端点: 通过Actuator模块暴露的http接口,可以轻松的了解和控制 Boot 应用的运行情况
 	
 ///-----------------------<<<注意点>>>----------------------------------
 
@@ -140,7 +140,6 @@
 			public void addInterceptors(InterceptorRegistry registry) {
 				WebMvcConfigurer.super.addInterceptors(registry);
 
-				// 静态资源: *.css; *.js --> SpringBoot已做好了静态资源映射
 				registry.addInterceptor(new MyHandlerInterceptor())
 						// 需要拦截 (/**表所有)
 						.addPathPatterns("/**")
@@ -159,6 +158,13 @@
 			对于'拦截'的页面或接口,直接url访问,Session为空,则转发至"/index.html",后续逻辑(0).
 		(3).注册拦截器: 
 			对于'不拦截',都是直接访问,不经拦截器逻辑. /*其中,登陆接口不能拦截*/
+			
+			
+	4.boot约定
+		动态模板: 放在 templates 目录.
+		静态资源: 放在 static 目录, 包括html静态页面,静态资源(图片,CSS等). 
+		
+		\static\filter\list.html --> http://192.168.8.7:8090/demo/filter/list.html (直接访问,无需映射)
 
 #登陆逻辑
 	0.前台页面
@@ -645,10 +651,10 @@
 		
 	3.通过IO读取
 		// 默认从此类所在包下读取,path需要添加前缀"/"
-		InputStream in = getClass().getResourceAsStream("/my.properties");
+		// InputStream in = getClass().getResourceAsStream("/my.properties");
 		
 		// 默认从ClassPath下读取,path不需要添加前缀
-		// InputStream in = getClass().getClassLoader().getResourceAsStream("my.properties");
+		InputStream in = getClass().getClassLoader().getResourceAsStream("my.properties");
 		Properties properties = new Properties();
 		properties.load(new InputStreamReader(in, "UTF-8")); //U8方式读取
 		properties.forEach((key, value) -> log.info(key + " - " + value));
