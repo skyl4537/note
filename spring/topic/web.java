@@ -153,6 +153,21 @@
 
 //}
 
+//{--------<<<路径>>>-----------------------------------------------------------------
+#路径前缀/
+	若 / 由服务器解析, 则代表的就是 web 应用的根目录. 
+	若 / 由浏览器解析, ........... web 站点的根目录.
+	
+	1.web应用的根目录 -> http:127.0.0.1:8090/demo/
+		Serlvet映射的访问路径 //@RequestMapping("/hello")
+		请求转发时 //req.getRequestDispatcher("/hello").forward(req, res);
+	
+	2.web站点的根目录 -> http:127.0.0.1:8090/
+		超链接 //<a href="/hello.html">测试</a>
+		表单中的action //<form method="post" action="/hello">
+		请求重定向 //req.sendRedirect("/hello");
+//}
+
 //{--------<<<Servlet>>>-----------------------------------------------------------------
 #Tomcat的work目录存放: 
 	(1).jsp先翻译成Servlet,再编译的class文件.
@@ -543,6 +558,9 @@ https://blog.csdn.net/u013210620/article/details/52318884
 #URL重写
 	客户端保存'JSESSIONID',默认采用 Cookie 实现.
 	当浏览器禁用 Cookie 时,可通过URL重写实现: //URL;jsessionid=xxx (将JSESSIONID拼接URL后面)
+	
+		String encodeURL = response.encodeURL(url); //url重写
+		response.sendRedirect(encodeURL);
 	   
 #Session持久化
 	/**持久化Session --> 持久化Cookie --> 设置Cookie过期时间*/
@@ -552,7 +570,7 @@ https://blog.csdn.net/u013210620/article/details/52318884
 	默认保存: C:\Users\BlueCard\AppData\Local\Temp\9121B10A811596BD85A3431BFBE71078B2880509\servlet-sessions
 
 //}	
-	
+
 //{--------<<<filter>>>---------------------------------------------------------
 #过滤器(vs拦截器) --> 对发送到 Servlet 的请求进行拦截,并对响应也进行拦截.
 	0.相关属性
