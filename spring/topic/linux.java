@@ -503,6 +503,25 @@ else
 	nohup jdk1.8.0_191/bin/java -jar demo.jar >/dev/null 2>&1 &
 	echo "start OK!~!"
 fi
+
+
+//{--------<<<常用指令>>>-----------------------------------------------------------------
+# netstat -n | awk '/^tcp/ {++y[$NF]} END {for(w in y) print w, y[w]}'
+	TIME_WAIT 251
+	CLOSE_WAIT 16
+	FIN_WAIT1 7
+	FIN_WAIT2 125
+	ESTABLISHED 2412
+	LAST_ACK 4
+
+
+//查看每个ip跟服务器建立的连接数
+# netstat -nat|awk '{print$5}'|awk -F : '{print$1}'|sort|uniq -c|sort -rn
+	31 45.116.147.178
+	20 45.116.147.186
+	12 23.234.45.34
+	11 103.56.195.17
+//}
 	
 ///------------------------<<<系统级别>>>-------------------------------------------------------------
 #目录结构	

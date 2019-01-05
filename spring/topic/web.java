@@ -1,168 +1,40 @@
 
 ///JavaWeb的技术体系图--->附件
 
-//{--------<<<o000o>>>-------------------------------------------------------------------
+//{--------<<<html&js>>>-----------------------------------------------------------------
 #HTML标签
 	radio: 单选框,只有加上'name'才具有互斥效果. 表单提交的是'value'值.
-		//男 <input type="radio" name="gender" value="1" />
+		   //男 <input type="radio" name="gender" value="1" />
+		   //女 <input type="radio" name="gender" value="0" />
 	
-#js
-	//事件驱动
+#js(事件驱动)
 	用户事件: 用户操作; 如单击,鼠标移入,鼠标移出等
 	系统事件: 由系统触发的事件; 如文档加载完成
 
-		document.getElementById("id"); //根据id值查询.(具体的元素节点)
-		document.getElementsByTagName("tag"); //根据标签名查询.(元素节点数组)
-		document.getElementsByName("name值"); //根据name属性值查询.(元素节点数组)
+		document.getElementById("id"); //根据id值查询.(返回具体的元素节点)
+		document.getElementsByTagName("tag"); //根据标签名查询.(返回元素节点数组)
+		document.getElementsByName("name"); //根据name属性值查询.(返回元素节点数组)
 	
 #jQuery(js函数库)
 	通过选取html元素,并对选取的元素执行某些操作.
 
 		$(this).hide()		//隐藏当前元素
 		$("p").hide()		//隐藏所有 <p> 元素.(tag)
-		$("p.test").hide()	//隐藏所有 class="test" 的 <p> 元素.(.class)
+		$("p.test").hide()	//隐藏所有 class="test" 的 <p> 元素.
 		$("#test").hide()	//隐藏所有 id="test" 的元素.(#id)
 	
 		$("p:first")		//选取第一个 <p> 元素
-		$("[href]")			//选取带有 href 属性的元素
-	
-#ajax
-	0.load——通常用来从Web服务器上获取静态的数据文件
-		///load(url [,data][,callback])
-		
-		//(0).无参数传递,默认是GET方式
-		$('#resText').load('test.php',function(){
-			//...
-		});
-		
-		//(1).有参数传递,自动转换为POST
-		$('#resText').load('test.php',{name:'rain',age:'22'}，function(){
-			//...
-		});
-		
-		//(2).可选的 callback 参数: 
-		//	responseTxt - 包含调用成功时的结果内容
-		//	statusTXT - 请求状态: success,error
-		//	xhr - 包含 XMLHttpRequest 对象
-		$(function(){
-			$("button").click(function(){
-				$("#div1").load("/try/ajax/test.txt",function(responseTxt,statusTxt,xhr){
-					if(statusTxt=="success")
-						alert("外部内容加载成功!");
-					if(statusTxt=="error")
-						alert("Error: "+xhr.status+": "+xhr.statusText);
-				});
-			});
-		});
-		
-	2.get ///$.get(url[,data][,callback][,type])
-	
-		//(0).服务器返回String
-		$(function(){
-		   $("#send").click(function(){
-				$.get("get1.php", {
-						username : $("#username").val(), 
-						content : $("#content").val()  
-					}, function(data, textStatus){
-						$("#resText").html(data); //把返回的数据添加到页面上
-					}
-				);
-		   })
-		})
-	
-		//(1).服务端返回xml数据.
-		header("Content-Type:text/xml; charset=utf-8"); //服务端设置xml
-	
-		//直接使用attr(), find(), filter()等方法
-		$(function(){
-			$("#send").click(function(){
-				$.get("get2.php", {
-				  username : $("#username").val() , 
-				  content : $("#content").val()  
-				}, function(data, textStatus){
-					var username = $(data).find("comment").attr("username");
-					var content = $(data).find("comment content").text();
-					var txtHtml = "<div class='comment'><h6>"+username+":</h6><p class='para'>"+content+"</p></div>";
-					
-					$("#resText").html(txtHtml); //把返回的数据添加到页面上
-				},'XML'); //期待服务器返回的数据格式
-			});
-		})
-		
-		//(2).服务端返回json数据.
-		$(function(){
-			$("#send").click(function(){
-				$.get("get3.php", {
-					username :  $("#username").val() , 
-					content :  $("#content").val()  
-				}, function(data, textStatus){
-					var username = data.username;
-					var content = data.content;
-					var txtHtml = "<div class='comment'><h6>"+username+":</h6><p class='para'>"+content+"</p></div>";
-					
-					$("#resText").html(txtHtml); //把返回的数据添加到页面上
-				},"json"); //期待服务器返回的数据格式
-			});
-		})
-	
-	3.post	///语法同get
-		$(function(){
-			$("#send").click(function(){
-				$.post("post1.php", {
-					username : $("#username").val() , 
-					content : $("#content").val()  
-				}, function (data, textStatus){
-					$("#resText").html(data); // 把返回的数据添加到页面上
-				});
-			})
-		})
-		
-	4.ajsx返回JSON数据
-		<head>
-			<meta charset="UTF-8">
-			<title>员工列表</title>
-			//h5中,可以省略 type="text/javascript"
-			<script type="text/javascript" src="scripts/jquery-1.7.2.min.js"></script>
-			<script type="text/javascript">
-				$(function(){
-					$("#showTable").click(function(){
-						//异步请求员工数据(json格式)
-						$.ajax({
-							url:"GetEmps",
-							type:"post",
-							dataType:"json",
-							success:function(data){ //框架已转换成json对象.
-								var str = "<tr><th>ID</th><th>LastName</th><th>Email</th><th>Gender</th><th>DeptName</th></tr>";
-								for(var i = 0 ;i <data.length;i++){
-									var emp = data[i];
-									str+="<tr align='center'><td>"+emp.id+"</td><td>"+emp.lastName+"</td><td>"+emp.email+"</td><td>"+emp.gender+"</td><td>"+emp.dept.deptName+"</td></tr>";
-								}
-								
-								$("#empTable").html(str);
-							}
-						});	
-					});
-				});
-			</script>
-		</head>
-		<body>
-			<input id="showTable" type="button" value="显示员工信息列表" />
-			<h1 align="center">员工信息列表</h1>
-			<table id="empTable" align="center" border="1px" width="70%" cellspacing="0px"></table>
-		</body>		
+		$("[href]")			//选取带有 href 属性的元素	
 
 //}
 
-//{--------<<<路径>>>-----------------------------------------------------------------
-#路径前缀/
-	若 / 由服务器解析, 则代表的就是 web 应用的根目录. 
-	若 / 由浏览器解析, ........... web 站点的根目录.
-	
-	1.web应用的根目录 -> http:127.0.0.1:8090/demo/
+//{--------<<<路径>>>--------------------------------------------------------------------
+#路径前缀 /
+	1.由服务器解析 -> web应用的根目录 -> http:127.0.0.1:8090/demo/
 		Serlvet映射的访问路径 //@RequestMapping("/hello")
 		请求转发时 //req.getRequestDispatcher("/hello").forward(req, res);
 	
-	2.web站点的根目录 -> http:127.0.0.1:8090/
+	2.由浏览器解析 -> web站点的根目录 -> http:127.0.0.1:8090/
 		超链接 //<a href="/hello.html">测试</a>
 		表单中的action //<form method="post" action="/hello">
 		请求重定向 //req.sendRedirect("/hello");
@@ -334,11 +206,11 @@
 		ServletContext application;
 		PageContext pageContext; //当前页面的上下文.(可从中获取到其余 8 个隐含对象)
 	
-		Throwable exception //<%@ page isErrorPage="true" %>,才可以使用
+		Throwable exception //<%@ page isErrorPage="true" %>,才可以使用(X)
 		
 		HttpServletResponse response; //几乎不用(X)
 		ServletConfig config; //Servlet.ServletConfig.(X) 
-		Object page = this; //对应当前jsp对象,实际上就是this.(X)
+		Object page = this; //jsp对象本身,或编译后的Servlet对象; 实际上就是this.(X)
 		
 		//pageContext < request < session < application (作用域:从小到大)
 		
@@ -369,12 +241,12 @@
 		  
 		<error-page>
 			<exception-type>java.lang.ArithmeticException</exception-type>
-			<location>/WEB-INF/error.jsp</location> //异常x 响应的页面
+			<location>/WEB-INF/error.jsp</location> //具体某一个异常 对应的错误页面
 		</error-page>
 		
 	2.include指令 
 		通知jsp引擎在翻译当前页面时,将指定文件中的内容 合并进当前页面转换成的 Servlet 源文件中.
-		这种在源文件级别进行引入的方式称之为静态引入. <%@ include file="b.jsp" %>
+		这种在源文件级别进行引入的方式称之为静态引入. //<%@ include file="b.jsp" %>
 				  
 #el表达式 -> ${标识符}	
 	用于替换jsp中的脚本表达式(<%= %>),此处从'四大域对象'中检索java对象,获取数据等.
@@ -422,15 +294,14 @@
 		<c:if test="${empty  emps}">
 			<h2 align="center">没有任何员工信息。</h2>
 		</c:if>
-	
 
 //}
 
-//{--------<<<转发和重定向>>>-------------------------------------------------------------------
+//{--------<<<转发&重定向>>>-------------------------------------------------------------
 https://blog.csdn.net/zhouysh/article/details/380364
 #转发
 	Servlet接收到浏览器请求后,进行一定的处理,先不进行响应,
-	而是在服务器端内部 0转发0 给其他Servlet程序继续处理.
+	而是在服务端内部 0转发0 给其他Servlet继续处理.
 	浏览器只发出 1次请求,'浏览器url不会改变',用户也感知不到请求被转发.
 
 #重定向
@@ -442,8 +313,8 @@ https://blog.csdn.net/zhouysh/article/details/380364
 	否; 是	//浏览器地址是否改变
 	是; 否	//是否共享对象 request
 	是; 否	//是否传递request中数据	
-	
 	是; 否	//目标资源是否可以是WEB-INF下资源
+	
 	转发 -> 只能是当前web应用的资源; 重定向 -> 任意资源,甚至网络资源.
 	
 	转发 -> '/'代表当前'web应用'的根目录; //http://localhost:8090/demo/
@@ -454,9 +325,93 @@ https://blog.csdn.net/zhouysh/article/details/380364
 	req.getRequestDispatcher("转发地址").forward(req, resp);
 
 	resp.sendRedirect("重定向地址"); //重定向
+	
+#防止表单重复提交
+	0.表单重复提交3种场景
+		(1).网络延迟,用户多次点击submit按钮
+		(2).表单提交后,转发到目标页面,用户点击'刷新'按钮
+		(3).提交表单后,点击浏览器的'后退'按钮,回退到表单页面,再次进行'提交'
+		
+		(0).点击'返回','刷新'原表单页面,再'提交' ---> 不属于表单重复提交
+	
+	1.用js控制表单只能提交一次 --> 针对场景(1)
+		<script>
+			//(1).只能提交一次
+			var isCommitted = false;//表单是否已提交,默认false
+			function doSubmit() {
+				if (false === isCommitted) {
+					isCommitted = true;
+					return true;//返回true,让表单正常提交
+				} else {
+					return false;//返回false,则表单将不提交
+				}
+			}
+			
+			//(2).提交后,提交按钮置为不可用
+			function doSubmit() {
+				var btnSubmit = document.getElementById("submit"); //获取表单提交按钮
+				btnSubmit.disabled = true; //置为不可用
+				return true;
+			}
+		</script>
+		<form id="form-login" method="post" onsubmit="doSubmit()" th:action="@{/user/login}"></form>
+	
+	2.表单提交后直接重定向到目标页面 --> 针对场景(2)
+		//转发到目标页面,点击[刷新]会一直请求之前的表单.
+		resp.sendRedirect("重定向地址"); //重定向
+	
+	3.利用Session的token机制 --> 针对场景(2)(3)
+		//(1).生成token; 并转发token.html页面
+		@GetMapping("/token")
+		public String token(HttpSession session) {
+			session.setAttribute("token", UUID.randomUUID().toString()); //token存Session中
+			return "/mvc/token";
+		}
+		
+		//(2).前台页面使用hidden存储token
+		<form id="form-login" method="post" th:action="@{/mvc/login}">
+			<input type="hidden" name="token" th:value="${session.token}"/>
+			//...
+			<button class="btn btn-primary" type="submit">登录</button>
+		</form>
+	
+		//(3).后台处理表单提交
+		@PostMapping("/login")
+		public String login(HttpServletRequest request, HttpServletResponse response) {
+			if (isRepeatSubmit(request)) {
+				return "表单重复提交";
+			}
+
+			request.getSession().removeAttribute("token"); //非重复提交,则移除Session中的token
+			return "登陆成功";
+		}
+		
+		//(4).表单重复提交判断
+		private boolean isRepeatSubmit(HttpServletRequest request) {
+			String clientToken = request.getParameter("token");
+			if (clientToken == null) { //<1>.request中没有token,则为重复提交
+				return true;
+			}
+
+			String serverToken = (String) request.getSession().getAttribute("token");
+			if (null == serverToken) { //<2>.当前用户的Session中不存在Token,则为重复提交
+				return true;
+			}
+
+			if (!clientToken.equals(serverToken)) { //<3>.Session中Token与表单提交的Token不同,则为重复提交
+				return true;
+			}
+			return false;
+		}
+
+	4.Token机制的另一种实现 --> 结合拦截器Interceptor,缓存Cache等
+	
+		https://blog.battcn.com/2018/06/12/springboot/v2-cache-locallock/
+		https://www.jianshu.com/p/09c6b05b670a
+	
 //}
 
-//{--------<<<Cookie-Session>>>----------------------------------------------------------
+//{--------<<<Cookie&Session>>>----------------------------------------------------------
 https://blog.csdn.net/u013210620/article/details/52318884
 
 #Cookie
@@ -473,7 +428,7 @@ https://blog.csdn.net/u013210620/article/details/52318884
 		用户可以清除 Cookie; 客户端还可以禁用 Cookie.
 	
 	2.自动删除
-		//持久化Cookie: 设置了过期时间,浏览器就会把Cookie持久化到磁盘,再次打开浏览器,依然有效,直到失效!!!
+		//持久化Cookie: 设置了过期时间,浏览器就会把Cookie持久化到磁盘,再次打开浏览器,依然有效,直到过期!!!
 		
 		会话Cookie ---> 是在会话结束时(浏览器关闭)会被删除
 		持久Cookie ---> 在到达失效日期时会被删除
@@ -506,7 +461,18 @@ https://blog.csdn.net/u013210620/article/details/52318884
                 resp.sendRedirect("/login"); //重定向登录界面
             }
         }
-		
+
+#Session概念
+	当程序需要为某客户端的请求创建一个session时,
+	服务器首先检查这个客户端的请求里是否已包含了一个session标识(SessionId)???
+	
+	如果已包含, 则说明之前已为此客户端创建过session, 
+	服务器就按照 SessionId 把这个session检索出来使用(检索不到,新建一个);
+	
+	如果客户端请求不包含, 则为此客户端新建一个Session, 并将与此session相关联的 SessionId 返回给客户端保存.
+	
+	保存 SsessionId 的方式可以采用Cookie, 这样在交互过程中浏览器可以自动的按照规则把这个标识发挥给服务器.
+	
 #Session对比
 	//Cookie 保存在客户端;
 	用户可删除或禁用 Cookie;
@@ -564,21 +530,22 @@ https://blog.csdn.net/u013210620/article/details/52318884
 	   
 #Session持久化
 	/**持久化Session --> 持久化Cookie --> 设置Cookie过期时间*/
-	cookie.setMaxAge(60); //持久化该Cookie对象
+	Cookie cookie = new Cookie("JSESSIONID",session.getId());
+	cookie.setMaxAge(90); //持久化该Cookie对象
 	response.addCookie(cookie); //将Cookie对象发送给浏览器
 
 	默认保存: C:\Users\BlueCard\AppData\Local\Temp\9121B10A811596BD85A3431BFBE71078B2880509\servlet-sessions
 
 //}	
 
-//{--------<<<filter>>>---------------------------------------------------------
+//{--------<<<filter>>>------------------------------------------------------------------
 #过滤器(vs拦截器) --> 对发送到 Servlet 的请求进行拦截,并对响应也进行拦截.
 	0.相关属性
 		优先级: 多个filter,先配置,优先级高. --> @Order(n) n越小,优先级越高
 		
 		dispatcher: 指定过滤器所拦截的资源被 Servlet 容器调用的方式. 同一个filter可设置多个.
 			REQUEST -> (默认) 'GET/POST直接'访问目标资源时,才会被被filter拦截. 
-			FORWARD -> 通过 RequestDispatcher.forward() '转发访问'..,...
+			FORWARD -> 通过 RequestDispatcher.forward() '转发'..,...
 			INCLUDE -> 通过 RequestDispatcher.include() 访问时...
 			ERROR   -> 通过声明式异常处理机制调用时...
 
@@ -627,7 +594,7 @@ https://blog.csdn.net/u013210620/article/details/52318884
 		
 //}
 	
-//{--------<<<listener>>>---------------------------------------------------------
+//{--------<<<listener>>>----------------------------------------------------------------
 #基础概念
 	1.监听器
 		用于对其他对象身上发生的事件或状态改变进行监听和相应处理的对象,当被监视的对象发生情况时,立即采取相应的行动.
@@ -653,17 +620,18 @@ https://blog.csdn.net/u013210620/article/details/52318884
 		@WebListener + @ServletComponentScan //注解配置
 	
 	2.代码实现	
-		@WebListener //注册servlet监听,配合使用 @ServletComponentScan
+		@WebListener
 		public class MyServletListener implements ServletContextListener, HttpSessionListener, ServletRequestListener {
 
 			//SC对象创建时调用(web程序在服务器上部署时).
-			//    作用: 创建数据库连接池; 创建Spring的IOC容器; 读取当前WEB应用的初始化参数
+			//    用途: 创建数据库连接池; 创建Spring的IOC容器; 读取当前WEB应用的初始化参数
 			@Override
-			public void contextInitialized(ServletContextEvent sce) { //web应用启动(关闭)时,会通知事件:ServletContextEvent
-				//SC对象为整个web程序的共享内存,任何请求都可以访问其中的内容. SC对象在整个web程序的生命周期中最早被创建,最晚被销毁.
+			public void contextInitialized(ServletContextEvent sce) {
+				//SC对象为整个web程序的共享内存,任何请求都可以访问其中的内容. 
+				//SC对象在整个web程序的生命周期中最早被创建,最晚被销毁.
 				ServletContext sc = sce.getServletContext();
 
-				sc.setAttribute("start", System.currentTimeMillis());// 设置自定义属性 --> 启动时的时间戳
+				sc.setAttribute("start", System.currentTimeMillis()); //设置属性 -> 启动时的时间戳
 				log.info("Servlet START AT: " + LocalDateTime.now());
 			}
 
@@ -671,20 +639,18 @@ https://blog.csdn.net/u013210620/article/details/52318884
 			//    SpringBoot项目 --> 只有'Run_As->Boot_App'这种方式启动,关闭时才会回调此方法
 			@Override
 			public void contextDestroyed(ServletContextEvent sce) {
-				long start = (long) sce.getServletContext().getAttribute("start");// 读取自定义属性 => 应用总的运行时间(ms)
+				long start = (long) sce.getServletContext().getAttribute("start");// 读取属性 -> 应用总的运行时间(ms)
 				log.info("Servlet END AT: " + LocalDateTime.now() + ", TIME(ms): " + (System.currentTimeMillis() - start));
 			}
 
 			@Override
 			public void requestInitialized(ServletRequestEvent sre) {
 				System.out.println("Request被创建之后调用 -> 客户端发送请求时");
-
 			}
 
 			@Override
 			public void requestDestroyed(ServletRequestEvent sre) {
 				System.out.println("Request销毁之前调用 -> 请求结束时");
-
 			}
 
 			@Override
@@ -694,19 +660,20 @@ https://blog.csdn.net/u013210620/article/details/52318884
 
 			@Override
 			public void sessionDestroyed(HttpSessionEvent se) {
-				System.out.println("Session对象销毁时调用");
+				System.out.println("Session对象销毁时调用 -> 具体详见<Session销毁>");
 			}
 		}
 	
 	
 #三大域对象属性变更的事件监听器
 	1.代码实现
-		@WebListener //配合使用 @ServletComponentScan
+		@WebListener
 		public class MyAttributeListener implements ServletContextAttributeListener, HttpSessionAttributeListener,
-				ServletRequestAttributeListener { //三大域对象,各有3个属性的事件监听器,只以Request为例
+				ServletRequestAttributeListener {
 			@Override
 			public void attributeAdded(ServletRequestAttributeEvent srae) {
-				System.out.println("Request -> 添加..." + srae.getName() + " - " + srae.getValue()); //属性name,value
+				//三大域对象,各有3个属性变更的事件监听器,只以Request为例
+				System.out.println("Request -> 添加..." + srae.getName() + " - " + srae.getValue());
 			}
 
 			@Override
@@ -718,21 +685,19 @@ https://blog.csdn.net/u013210620/article/details/52318884
 			public void attributeRemoved(ServletRequestAttributeEvent srae) {
 				System.out.println("Request -> 删除..." + srae.getName() + " - " + srae.getValue());
 			}
-
-			// Request -> 添加...attr - 123
-			// Request -> 替换...attr - 123
-			// Request -> 删除...attr - 456
 		}
 		
 	2.测试接口
 		@GetMapping("/attribute")
 		public void attribute(HttpServletRequest request) {
-			request.setAttribute("attr", "123");
-			request.setAttribute("attr", "456");
-			request.removeAttribute("attr");
+			request.setAttribute("attr", "123"); // Request -> 添加...attr - 123
+			request.setAttribute("attr", "456"); // Request -> 替换...attr - 123
+			request.removeAttribute("attr");     // Request -> 删除...attr - 456
 		}
 	
 #感知Session绑定的事件监听器
+	///监听实现该接口的 Java 类对象被绑定到 Session 或从 Session 中解除绑定的事件.
+	
 	1.代码实现
 		//不需要添加注解 @WebListener
 		public class MySessionBindingListener implements HttpSessionBindingListener, HttpSessionActivationListener, Serializable {
@@ -767,8 +732,8 @@ https://blog.csdn.net/u013210620/article/details/52318884
 	2.测试接口(绑定/解绑)
 		@GetMapping("/bind")
 		public void bind(HttpSession session) {
-			MySessionBindingListener bindingListener = new MySessionBindingListener(); //实例化
-			session.setAttribute("bind", bindingListener); //绑定
+			MySessionBindingListener listener = new MySessionBindingListener(); //实例化
+			session.setAttribute("bind", listener); //绑定
 			session.setMaxInactiveInterval(5); //5s后Session自动过期
 		}
 	
@@ -796,7 +761,134 @@ https://blog.csdn.net/u013210620/article/details/52318884
 
 //}
 
+//{--------<<<ajax>>>--------------------------------------------------------------------
+#load -> 从服务器上获取静态的数据文件
+	///load(url [,data][,callback])
+	
+	1.无参且GET(默认)
+		$('#resText').load('test.php', function(){ ... });
+		
+	2.有参并POST		
+		$('#resText').load('test.php', {name:'rain',age:'22'}, function(){ ... });
+		
+	3.有回调函数的DEMO		
+		$(function () {  //简写前: $(document).ready(function () {
+			$('#loadBtn').click(function () {
+				var msgUrl = $(this).attr('href');
 
+				//callback: [0]请求成功时的结果; [1]请求状态(success,error); [2]包含 XMLHttpRequest 对象
+				$('#showMsg').load(msgUrl, function (responseTxt, statusTxt, xhr) {
+					alert(responseTxt + " - " + statusTxt + " - " + xhr); //2019-01-04 11:26:15.559 - success - [object Object]
+					if ("success" == statusTxt) {
+						$('#showMsg').val(responseTxt); //简写前: $('#showMsg').attr('value', responseTxt);
+					}
+				});
+			});
+		});
+		
+		<div>
+			<input id="showMsg" type="text">
+			<button id="loadBtn" th:href="@{/mvc/getMsg}">load</button>
+		</div>
+		
+#get -> 通过GET请求从服务器请求数据
+	///$.get(url[,data][,callback][,type])
+	
+	//[url] 请求url(默认当前页面); [data] 请求参数; callback [请求成功时回调函数]; [type] 预期的服务器响应的数据类型.
+	
+	1.服务端返回json		
+		$('#getJSONBtn').click(function () {
+			$.get($(this).attr('href'), //url
+				{username: $('#username').val(), password: $('#password').val()}, //data
+				function (data, textStatus) { //callback
+					alert(JSON.stringify(data) + " - " + textStatus); //{"uName":"admin","uPwd":"11"} - success
+					$('#showMsg').val(data.uName + " - " + data.uPwd); //admin - 11
+				}, 'json'); //期待服务端返回json
+		});
+		
+		//上述可简写为: getJSON()
+		$('#getJSONBtn').click(function () {
+			$.getJSON($(this).attr('href'),
+				{username: $('#username').val(), password: $('#password').val()},
+				function (data) {
+					$('#showMsg').val(data.uName + " - " + data.uPwd);
+				});
+		});
+		
+		<div>
+			<input id="showMsg" type="text">
+			<button id="getJSONBtn" th:href="@{/mvc/getJSON}">getJSON</button>
+		</div>
+		
+	2.服务端返回String
+		$('#getBtn').click(function () {
+			$.get($(this).attr('href'), //var msgUrl = $(this).attr('href');
+				function (data, textStatus) {
+					alert(data + " - " + textStatus); //2019-01-04 16:25:48.520 - success
+					$('#showMsg').val(data);
+				});
+		});
+		
+		<div>
+			<input id="showMsg" type="text">
+			<button id="getBtn" th:href="@{/mvc/getMsg}">get</button>
+		</div>
+		
+	3.服务端返回xml
+		header("Content-Type:text/xml; charset=utf-8"); //服务端设置xml
+	
+		//直接使用attr(), find(), filter()等方法
+		$("#send").click(function(){
+			$.get("get2.php", {
+			  username : $("#username").val(), 
+			  content : $("#content").val()  
+			}, function(data, textStatus){
+				var username = $(data).find("comment").attr("username");
+				var content = $(data).find("comment content").text();
+				var txtHtml = "<div class='comment'><h6>"+username+":</h6><p class='para'>"+content+"</p></div>";
+				
+				$("#resText").html(txtHtml);
+			},'XML'); //期待服务端返回xml
+		});
+		
+#post
+	1.返回json
+		$('#postJSONBtn').click(function () {
+			$.post($(this).attr('href'),
+				{username: $('#username').val(), password: $('#password').val()},
+				function (data) {
+					$('#showMsg').val(data.uName + " - " + data.uPwd);
+				}, 'json');
+		});
+		
+		<div>
+			<input id="showMsg" type="text">
+			<button id="postJSONBtn" th:href="@{/mvc/postJSON}">postJSON</button>
+		</div>
+		
+#ajax -> 封装方法; get/post是其具体实现
+	1.返回json
+		$("#showTable").click(function(){
+			$.ajax({
+				url:"GetEmps",
+				type:"post",
+				dataType:"json",
+				success:function(data){ //框架已转换成json对象.
+					var str = "<tr><th>ID</th><th>LastName</th><th>Email</th><th>Gender</th><th>DeptName</th></tr>";
+					for(var i = 0 ;i <data.length;i++){
+						var emp = data[i];
+						str+="<tr align='center'><td>"+emp.id+"</td><td>"+emp.lastName+"</td><td>"+emp.email+"</td><td>"+emp.gender+"</td><td>"+emp.dept.deptName+"</td></tr>";
+					}					
+					$("#empTable").html(str);
+				}
+			});	
+		});
+		
+		<input id="showTable" type="button" value="显示员工信息列表" />
+		<h1 align="center">员工信息列表</h1>
+		<table id="empTable" align="center" border="1px" width="70%" cellspacing="0px"></table>	
+
+//}
 
 
 
