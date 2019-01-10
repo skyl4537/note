@@ -1,33 +1,6 @@
 
 ///JavaWeb的技术体系图--->附件
 
-//{--------<<<html&js>>>-----------------------------------------------------------------
-#HTML标签
-	radio: 单选框,只有加上'name'才具有互斥效果. 表单提交的是'value'值.
-		   //男 <input type="radio" name="gender" value="1" />
-		   //女 <input type="radio" name="gender" value="0" />
-	
-#js(事件驱动)
-	用户事件: 用户操作; 如单击,鼠标移入,鼠标移出等
-	系统事件: 由系统触发的事件; 如文档加载完成
-
-		document.getElementById("id"); //根据id值查询.(返回具体的元素节点)
-		document.getElementsByTagName("tag"); //根据标签名查询.(返回元素节点数组)
-		document.getElementsByName("name"); //根据name属性值查询.(返回元素节点数组)
-	
-#jQuery(js函数库)
-	通过选取html元素,并对选取的元素执行某些操作.
-
-		$(this).hide()		//隐藏当前元素
-		$("p").hide()		//隐藏所有 <p> 元素.(tag)
-		$("p.test").hide()	//隐藏所有 class="test" 的 <p> 元素.
-		$("#test").hide()	//隐藏所有 id="test" 的元素.(#id)
-	
-		$("p:first")		//选取第一个 <p> 元素
-		$("[href]")			//选取带有 href 属性的元素	
-
-//}
-
 //{--------<<<路径>>>--------------------------------------------------------------------
 #路径前缀 /
 	1.由服务器解析 -> web应用的根目录 -> http:127.0.0.1:8090/demo/
@@ -71,7 +44,7 @@
 		
 		<servlet-mapping>
 			<servlet-name>helloServlet</servlet-name>
-			<url-pattern>/hello</url-pattern> //访问路径. 其中,'/'代表当前应用的根目录
+			<url-pattern>/hello</url-pattern> //访问路径. 其中,'/'代表当前web应用的根目录
 			<load-on-startup>1</load-on-startup> //指定 Servlet 被创建的时机
 		</servlet-mapping>
 
@@ -247,7 +220,7 @@
 	2.include指令 
 		通知jsp引擎在翻译当前页面时,将指定文件中的内容 合并进当前页面转换成的 Servlet 源文件中.
 		这种在源文件级别进行引入的方式称之为静态引入. //<%@ include file="b.jsp" %>
-				  
+
 #el表达式 -> ${标识符}	
 	用于替换jsp中的脚本表达式(<%= %>),此处从'四大域对象'中检索java对象,获取数据等.
 	如果有则输出数据,如果为null则什么也不输出.
@@ -762,7 +735,50 @@ https://blog.csdn.net/u013210620/article/details/52318884
 //}
 
 //{--------<<<ajax>>>--------------------------------------------------------------------
-#load -> 从服务器上获取静态的数据文件
+#html
+	<radio>: 单选框,只有加上'name'才具有互斥效果. 表单提交的是'value'值.
+		   //男 <input type="radio" name="gender" value="1" />
+		   //女 <input type="radio" name="gender" value="0" />
+	
+#js(事件驱动)
+	用户事件: 用户操作; 如单击,鼠标移入,鼠标移出等
+	系统事件: 由系统触发的事件; 如文档加载完成
+
+		document.getElementsByTagName("tag");	--->	$('tag') //根据 tag 查询.(元素数组)
+		document.getElementById("id");			--->	$('#id') //根据 id 查询.(单个元素)
+		document.getElementsByClassName("class"); ->	$('.class') //根据 class 查询.(元素数组)
+		
+		document.getElementsByName("name");		//返回带有指定 name 的对象集合
+	
+#jQuery(js函数库)
+	通过选取html元素,并对选取的元素执行某些操作.
+
+		$(this).hide()		//隐藏当前元素
+		$("p").hide()		//隐藏所有 <p> 元素.(tag)
+		$("p.test").hide()	//隐藏所有 class="test" 的 <p> 元素.
+		$("#test").hide()	//隐藏所有 id="test" 的元素.(#id)
+	
+		$("p:first")		//选取第一个 <p> 元素
+		$("[href]")			//选取带有 href 属性的元素	
+
+#click
+	1.动态绑定事件
+		<button id="btn0">动态绑定事件</button>
+		
+        $(function () { //简写前: $(document).ready(function () {
+            $("#btn0").click(function () {
+                alert("点我上王者..." + $(this).attr('id'));
+            });
+        });
+	
+	2.静态指定方法
+		<button id="btn1" onclick="clickBtn1(this)">静态指定方法</button>
+		
+        function clickBtn1(e) {
+            alert("点我上王者..." + $(e).attr('id')); //两种获取对象属性的方法 --> $(e).attr('id')
+        }
+
+#ajax.load -> 从服务器上获取静态的数据文件
 	///load(url [,data][,callback])
 	
 	1.无参且GET(默认)
@@ -791,58 +807,74 @@ https://blog.csdn.net/u013210620/article/details/52318884
 			<button id="loadBtn" th:href="@{/mvc/getMsg}">load</button>
 		</div>
 		
-#get -> 通过GET请求从服务器请求数据
+#ajax.get -> 通过GET请求从服务器请求数据
 	///$.get(url[,data][,callback][,type])
 	
-	//[url] 请求url(默认当前页面); [data] 请求参数; callback [请求成功时回调函数]; [type] 预期的服务器响应的数据类型.
+	//[url] 请求url(默认当前页面);   [data] 请求参数; 
+	//[callback] 请求成功时回调函数; [type] 预期的服务器响应的数据类型.
 	
-	1.服务端返回json		
-		$('#getJSONBtn').click(function () {
-			$.get($(this).attr('href'), //url
-				{username: $('#username').val(), password: $('#password').val()}, //data
-				function (data, textStatus) { //callback
-					alert(JSON.stringify(data) + " - " + textStatus); //{"uName":"admin","uPwd":"11"} - success
-					$('#showMsg').val(data.uName + " - " + data.uPwd); //admin - 11
-				}, 'json'); //期待服务端返回json
-		});
+	1.服务端返回json
+		<button id="getJSON" onclick="getJsonFun(this)" th:url="@{/mvc/getJSON}">getJSON</button> //thyeleaf自定义属性 th:url
+	
+		//(1-0).静态指定方法
+        function getJsonFun(e) {
+            $.get($(e).attr('url'),
+                {username: $('#username').val(), password: $('#password').val()},
+                function (data, status) { //参数顺序不能调换
+                    if ('success' === status) {
+						alert(JSON.stringify(data) + " - " + textStatus); //{"uName":"admin","uPwd":"11"} - success
+                        alert(data.uName + " - " + data.uPwd); //admin - 11
+                    }
+                }, 'json');
+        }
 		
-		//上述可简写为: getJSON()
-		$('#getJSONBtn').click(function () {
-			$.getJSON($(this).attr('href'),
-				{username: $('#username').val(), password: $('#password').val()},
-				function (data) {
-					$('#showMsg').val(data.uName + " - " + data.uPwd);
-				});
-		});
+		//(1-1).对于服务器返回json的可直接使用 $.getJSON(); 替换 $.get();
+        function getJsonFun(e) {
+            $.getJSON($(e).attr('url'),
+                {username: $('#username').val(), password: $('#password').val()},
+                function (data) {
+                    alert(data.uName + " - " + data.uPwd);
+                });
+        }
 		
-		<div>
-			<input id="showMsg" type="text">
-			<button id="getJSONBtn" th:href="@{/mvc/getJSON}">getJSON</button>
-		</div>
+		//(2-0).动态绑定方法
+		<button id="btnGetJSON" th:attr="url=@{/mvc/getJSON}">getJSON</button>
+		
+		$(function () { //简写前: $(document).ready(function () {
+            $('#btnGetJSON').click(function () {
+                $.getJSON($(this).attr('url'),
+                    {username: $('#username').val(), password: $('#password').val()},
+                    function (data) {
+                        alert(data.uName + " - " + data.uPwd);
+                    });
+            });
+        });
+		
+		//(3-0).后台代码
+		@GetMapping("/getJSON")
+		public JSONObject getJSON(@RequestParam("username") String uName, @RequestParam("password") String uPwd) {
+			//... ...
+			return json;
+		}
 		
 	2.服务端返回String
-		$('#getBtn').click(function () {
-			$.get($(this).attr('href'), //var msgUrl = $(this).attr('href');
-				function (data, textStatus) {
-					alert(data + " - " + textStatus); //2019-01-04 16:25:48.520 - success
-					$('#showMsg').val(data);
-				});
-		});
+		<button id="getStr" onclick="getStrFun(this)" th:attr="url=@{/mvc/getMsg}">getStr</button>
 		
-		<div>
-			<input id="showMsg" type="text">
-			<button id="getBtn" th:href="@{/mvc/getMsg}">get</button>
-		</div>
+        function getStrFun(e) {
+            $.get($(e).attr('url'),
+                function (data) {
+                    alert(data);
+                });
+        }
 		
 	3.服务端返回xml
 		header("Content-Type:text/xml; charset=utf-8"); //服务端设置xml
-	
-		//直接使用attr(), find(), filter()等方法
+		
 		$("#send").click(function(){
 			$.get("get2.php", {
 			  username : $("#username").val(), 
 			  content : $("#content").val()  
-			}, function(data, textStatus){
+			}, function(data, status){ //直接使用attr(), find(), filter()等方法
 				var username = $(data).find("comment").attr("username");
 				var content = $(data).find("comment content").text();
 				var txtHtml = "<div class='comment'><h6>"+username+":</h6><p class='para'>"+content+"</p></div>";
@@ -851,42 +883,72 @@ https://blog.csdn.net/u013210620/article/details/52318884
 			},'XML'); //期待服务端返回xml
 		});
 		
-#post
-	1.返回json
-		$('#postJSONBtn').click(function () {
-			$.post($(this).attr('href'),
-				{username: $('#username').val(), password: $('#password').val()},
-				function (data) {
-					$('#showMsg').val(data.uName + " - " + data.uPwd);
-				}, 'json');
-		});
+#ajax.post
+	1.服务端返回json
+		<button id="postJSON" onclick="postJSONFun(this)" th:attr="url=@{/mvc/postJSON}">postJSON</button>
 		
-		<div>
-			<input id="showMsg" type="text">
-			<button id="postJSONBtn" th:href="@{/mvc/postJSON}">postJSON</button>
-		</div>
+        function postJSONFun(e) {
+            $.post($(e).attr('url'),
+                {username: $('#username').val(), password: $('#password').val()},
+                function (data) {
+                    alert(data.uName + " - " + data.uPwd);
+                }, 'json');
+        }
 		
-#ajax -> 封装方法; get/post是其具体实现
-	1.返回json
-		$("#showTable").click(function(){
+#ajax.delete
+	1.restful风格
+		$('#deleteBtn').click(function () {
 			$.ajax({
-				url:"GetEmps",
-				type:"post",
-				dataType:"json",
-				success:function(data){ //框架已转换成json对象.
-					var str = "<tr><th>ID</th><th>LastName</th><th>Email</th><th>Gender</th><th>DeptName</th></tr>";
-					for(var i = 0 ;i <data.length;i++){
-						var emp = data[i];
-						str+="<tr align='center'><td>"+emp.id+"</td><td>"+emp.lastName+"</td><td>"+emp.email+"</td><td>"+emp.gender+"</td><td>"+emp.dept.deptName+"</td></tr>";
-					}					
-					$("#empTable").html(str);
+				type: 'DELETE', //仅部分浏览器支持
+				url: $(this).attr('href'),
+				dataType: 'text',
+				success: function (data) {
+					$('#showMsg').val(data);
 				}
-			});	
+			});
 		});
 		
-		<input id="showTable" type="button" value="显示员工信息列表" />
-		<h1 align="center">员工信息列表</h1>
-		<table id="empTable" align="center" border="1px" width="70%" cellspacing="0px"></table>	
+		<button id="deleteBtn" th:href="@{/mvc/deleteMsg/5}">deleteMsg</button>
+		
+		@DeleteMapping("/deleteMsg/{id}")
+		public String deleteMsg(@PathVariable String id) {}
+		
+	2.传统风格
+		$('#deleteBtn0').click(function () {
+			$.ajax({
+				type: 'DELETE',
+				url: $(this).attr('href'),
+				data: {'id': 5, 'name': 'wang'},
+				dataType: 'text',
+				success: function (data) {
+					$('#showMsg').val(data);
+				}
+			});
+		});
+		
+		<button id="deleteBtn" th:href="@{/mvc/deleteMsg}">deleteMsg</button>
+		
+		@DeleteMapping("/deleteMsg")
+		public String delete(@RequestParam String id, @RequestParam String name) { }
+		
+#ajax.ajax -> 封装方法; get/post是其具体实现, 如果需要在出错时执行函数,请使用 $.ajax
+	1.返回json
+		<button id="ajaxBtn" onclick="clickAjax(this)" th:attr="url=@{/mvc/getJSON}">ajax</button>
+		
+        function clickAjax(e) {
+            $.ajax({
+                url: $(e).attr('url'), //url
+                type: 'GET', //GET/POST/DELETE/PUT
+                data: {username: $('#username').val(), password: $('#password').val()}, //args; 后台接收 @RequestParam
+                dataType: 'json', //返回json
+                success: function (data, status) { //成功时,回调
+                    alert(JSON.stringify(data) + " - " + status);
+                },
+                error: function (data, status) { //失败时,回调
+                    alert(JSON.stringify(data) + " - " + status);
+                }
+            });
+        }
 
 //}
 

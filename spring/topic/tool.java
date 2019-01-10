@@ -79,7 +79,7 @@
 	
 	#${...}	---> 变量值
 		(1).获取对象的属性,调用方法; //${person.name}
-		(2).使用内置的基本对象; //${! #strings.isEmpty(msg)}
+		(2).使用内置的基本对象; //${! #strings.isEmpty(msg)} https://www.cnblogs.com/xiaohu1218/p/9634126.html
 		(3).内置的一些工具对象; //
 		
 	##{...}	---> 用于获取 properties 文件内容,常用于'国际化'场景
