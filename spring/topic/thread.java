@@ -617,58 +617,6 @@
 		ThreadLocal的目的是为了解决多线程访问资源时的共享问题
 
 
-#多线程与final
-	final+基本变量	->	//通常用作常量; 像圆周率
-	final+引用变量	->	//保证不会再指向别的引用,"但引用里的值可能变动"
-	final+类		->	//该类不能作为父类被继承
-	final+方法		->	//该方法不能被重写
-	
-		public static void main(String[] args) {
-			final int i1 = 99;
-			final String s1 = "s";
-			final Info info = new Info();
-			info.data = "info";
-
-			//2018-12-10 20:09:14.840 -> 1 - main ==> 99 s data --> 为什么还是s; age却变成28???
-			dosth(i1, s1, info);
-			System.out.println(SystemUtils.getAll() + i1 + " " + s1 + " " + info.data);
-
-			ExecutorService executor = Executors.newSingleThreadExecutor();
-			executor.execute(() -> {
-				// i1 = 105; //报错
-				// s1 = "SS"; //报错
-				// p1 = new Person(); //报错--> 引用不可变,但数据可变
-
-				try {
-					TimeUnit.SECONDS.sleep(1);
-
-					//2018-12-10 20:09:15.953 -> 11 - pool-1-thread-1 ==> 99 s data
-					dosth(i1, s1, info);
-					System.out.println(SystemUtils.getAll() + i1 + " " + s1 + " " + info.data);
-				} catch (InterruptedException e) {
-					e.printStackTrace();
-				} finally {
-					executor.shutdown(); //关闭
-				}
-			});
-
-			// i1 = 100; //报错
-			// s1 = "ss"; //报错
-			info.data = "info data";
-		}
-
-		// 只是传入了一份"拷贝", 不会改变原有的值
-		private static void dosth(int i, String s, Info info) {
-			i = i++; // i1拷贝变成了100
-			s = s + i; // s1拷贝指向了"s100"
-			info.data = "data"; // p1拷贝还是指向p1所对应的对象,然后改变其age属性
-		}
-	
-	//0.为什么内部线程中引用外部对象要加final修饰符呢???
-	因为,被内部线程引用的外部对象受到外部线程作用域的制约,有其特定的生命周期.
-	'当外部对象在外部线程中生命周期已经结束,而内部线程中还在持续使用,怎样解决问题???'
-	内部线程变量要访问一个已不存在的外部变量??? 这个时候就需要在外部变量前添加final修饰符, 
-	其实内部线程使用的这个变量就是外部变量的一个'复制品', 即使外部变量生命周期已经结束,内部复制品依然可用.
 
 #Timer和ScheduledExecutorService
 	'Timer: 单线程,串行执行; 单任务异常,整体任务停止'
@@ -704,48 +652,69 @@
 		future.cancel(true); //单个
 		pool.shutdown();//整体
 
+//{--------<<<多线程与final>>>--------------------------------------------------------------------
+	final + 类			//该类不能作为父类被继承; String
+	final + 方法		//该方法不能被重写
+	final + 基本变量	//通常用作常量; 圆周率 PI
+	final + 引用变量	//保证不会再指向别的引用,"但引用里的值可能变动"
+		
+	1.方法传参の传的是拷贝の不影响原有值
+		public static void main(String[] args) {
+			final int num = 99;
+			final String str = "ss";
+			final Info info = new Info();
+			info.data = "info";
 
+			//99 ss info100  =====> 影响的只有 info.data
+			dosth(num, str, info);
+			System.out.println(num + " " + str + " " + info.data);
+		}
+		
+		// 只是传入了一份"拷贝", 不会改变原有的值
+		private static void dosth(int num, String str, Info info) {
+			num++;
+			str += num;
+			info.data += num; //不改变info拷贝的指向 ---> 影响
 
+			info = new Info(); //改变............... ---> 不影响
+			info.data = "new";
+		}
+	
+	2.线程传参の传的是对象の所以不能改变参数的指向
+		public static void main(String[] args) {
+			final int num = 99;
+			final String str = "ss";
+			final Info info = new Info();
+			info.data = "info";
 
+			new Thread(() -> {
+				// num = 88; str = "aa"; info = new Info(); //都报错,final引用的指向不能更改
+				info.data = "thread"; //不报错,可以改变final对象的属性,但不能更改final引用
 
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
+				dosth(num, str, info); //99 ss thread100
+				System.out.println(num + " " + str + " " + info.data);
+			}).start();
+		}
+			
+	3.为什么内部线程中引用外部对象要加final修饰符呢
+		上述代码中传入内部线程的 info, 其实际上是对象 new Info(),而不是引用 info.
+		所以, info引用必须加关键字 final, 即不能再随意的指向其他对象,不然会导致内外部指向不一致,产生错乱.
+		
+		假如传的是引用info, 则每时每刻线程内外 info 的指向都一致,则不会产生错乱.
+	
+		(/待证/)另外,被内部线程引用的外部对象受到外部线程作用域的制约,有其特定的生命周期.
+		//当外部对象在外部线程中生命周期已经结束,而内部线程中还在持续使用,怎样解决问题???'		
+		//内部线程变量要访问一个已不存在的外部变量??? 
+		在外部变量前添加final修饰符, 其实内部线程使用的这个变量就是外部变量的一个'复制品', 
+		即使外部变量生命周期已经结束,内部复制品依然可用.
+		
+	4.final变量
+		如果是'基本数据类型',则其数值一旦在初始化之后便不能更改;
+		如果是'引用类型....',则在对其初始化之后便不能再让其指向另一个对象.
+		
+		方法传参 ---> 传的是引用的一份'拷贝',不会改变原有的值. 但可以改变原有的属性.
+		
+		
+//}
 
 

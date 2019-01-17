@@ -1,41 +1,72 @@
-1. Lambda
-2. 函数式接口
-3. 方法引用/构造器引用
-
-4. Stream API
-5. 新时间日期 API
-6. 接口中的默认方法与静态方法
-7. 其他新特性
-
-///--------------<<<jdk8>>>---------------------------------------------------------
 
 //{--------------<<<lambda>>>-------------------------------------------------------
 #lambda
-	//更新前
+	0.更新前
 		List<String> list = Arrays.asList("java", "scala", "python");//数组转list
 		list.forEach(new Consumer<String>() {
 
 			@Override
-			public void accept(String t) {
-				System.out.println(t);
+			public void accept(String x) {
+				System.out.println(x);
 			}
 		});
 	(1).可省-参数类型; //可由编译器推断得出,称为"类型推断"
 	(2).可省-参数括号; //当只有一个参数时
 	(3).可省-方法体的大括号 和 return; //当lambda体只有一条语句
 	
-	//更新后
+	1.更新后
 		list.forEach(x -> System.out.println(x));
 		list.forEach(System.out::println);//进一步更新(待讲)
 
-	//"语法糖",底层还是使用的匿名内部类.
+	2.语法糖—底层还是匿名内部类
 		匿名内部类使用同级别的成员变量,需要将变量定义为 final,lambda也是如此.
 		只不过jdk-1.7 之前必须显示指定 final,1.8 以后则可省 final,由底层自动添加.
-
-#函数式接口
-	定义: 只包含一个抽象方法的接口.
 	
-	可以在任意接口上使用 @FunctionalInterface 注解,来检查是否是函数式接口.
+#方法引用
+	定义: 当要传递给lambda体的操作,已经有方法实现了,可以直接使用方法引用!
+	//使用操作符"::"将方法名和对象或类的名字分隔开来.
+	//引用方法的参数列表 和 返回值,与函数式接口的一致,就可以方法引用
+	
+	1.类の静态方法
+		Comparator<Integer> com0 = (x, y) -> Integer.compare(x, y);
+		Comparator<Integer> com1 = Integer::compare;
+
+	2.对象の非静态方法
+		x -> System.out.println(x);
+		System.out::println; //PrintStream ps = System.out;//对象
+	
+	3.类の实例方法
+		//当lambda参数 arg0 是引用方法的调用者,arg1 是引用方法的参数(或无参数),可用 ClassName::methodName
+		Comparator<Integer> com2 = (x, y) -> x.compareTo(y);
+		Comparator<Integer> com3 = Integer::compareTo;
+	
+#构造器引用 ClassName::new
+	与函数式接口相结合,自动与函数式接口中方法兼容.
+	可以把构造器引用赋值给定义的方法,与构造器参数列表要与接口中抽象方法的参数列表一致.
+	//需要调用的构造器参数列表,与函数式接口的参数列表保持一致
+	
+	1.无参构造器
+		Supplier<Flower> supplier = () -> new Flower();
+	
+		Supplier<Flower> supplier = Flower::new;
+		Flower flower = supplier.get();
+
+	2.两个参数的构造器
+		BiFunction<Integer, String, Flower> biFunction = (x, y) -> new Flower(x, y);
+		
+		BiFunction<Integer, String, Flower> biFunction = Flower::new;
+		Flower flower = biFunction.apply(5, "55");
+	
+#数组引用 type[]::new
+		//返回长度x的String数组
+		Function<Integer, String[]> function = (x) -> new String[x];
+		
+		Function<Integer, String[]> function = String[]::new;
+		String[] res = function.apply(10);
+		
+
+#函数式接口 -> 只包含一个抽象方法的接口	
+	可以在任意接口上使用注解 @FunctionalInterface, 来检查是否是函数式接口.
 	同时 javadoc 也会包含一条声明,说明这个接口是一个函数式接口.
 	
 #四大函数式接口
@@ -48,120 +79,75 @@
 	3.函数型接口
 		Function<T, R> { R apply(T t); } //入参T类型,返回R类型
 		
-		IntFunction<R> { R apply(int value); } //扩展实现
-		LongFunction<R> { R apply(long value); }
-		DoubleFunction<R> { R apply(double value); }
-		
-		ToIntFunction<T> { int applyAsInt(T value); }
-		ToLongFunction<T> { long applyAsLong(T value); }
-		ToDoubleFunction<T> { double applyAsDouble(T value); }
-	
 	4.断定型接口
 		Predicate<T> { boolean test(T t); } //入参T类型,返回boolean类型
-	
-#方法引用
-	定义: 当要传递给lambda体的操作,已经有方法实现了,可以直接使用方法引用!
-	//使用操作符"::"将方法名和对象或类的名字分隔开来.
-	//引用方法的参数列表 和 返回值,与函数式接口的一致,就可以方法引用
-
-	(1).对象::实例方法
-		x -> System.out.println(x);
-		System.out::println; //PrintStream ps = System.out;//对象
-	
-	(2).类::静态方法
-		Comparator<Integer> com0 = (x, y) -> Integer.compare(x, y);
-		Comparator<Integer> com1 = Integer::compare;
-	
-	(3).类::实例方法
-		Comparator<Integer> com2 = (x, y) -> x.compareTo(y);
-		//当lambda参数 arg0 是引用方法的调用者,arg1 是引用方法的参数(或无参数),可用 ClassName::methodName
-		Comparator<Integer> com3 = Integer::compareTo;
-	
-#构造器引用 ClassName::new
-	与函数式接口相结合,自动与函数式接口中方法兼容.
-	可以把构造器引用赋值给定义的方法,与构造器参数列表要与接口中抽象方法的参数列表一致.
-	//需要调用的构造器参数列表,与函数式接口的参数列表保持一致
-	
-		//(1).无参构造器
-		Supplier<Flower> supplier = () -> new Flower();
-	
-		Supplier<Flower> supplier = Flower::new;
-		Flower flower = supplier.get();
-	
-		//(2).两个参数的构造器
-		BiFunction<Integer, String, Flower> biFunction = (x, y) -> new Flower(x, y);
-		
-		BiFunction<Integer, String, Flower> biFunction = Flower::new;
-		Flower flower = biFunction.apply(5, "55");
-	
-#数组引用 type[]::new
-		//返回长度x的String数组
-		Function<Integer, String[]> function = (x) -> new String[x];
-		
-		Function<Integer, String[]> function = String[]::new;
-		String[] res = function.apply(10);
 
 //}		
 
 //{--------------<<<Stream>>>-------------------------------------------------------
-	Stream是数据渠道, 是用于操作数据源(集合,数组等)所生成的元素序列.
+#Stream是数据渠道, 是用于操作数据源(集合,数组等)所生成的元素序列.
 	//集合讲的是数据,Stream讲的是计算.
-		(1).Stream 不会存储元素.
-		(2).Stream 不会改变源对象. 相反,它会返回一个持有结果集的新Stream.
-		(3).Stream 操作是延迟执行的. 意味着它会等到需要结果时才执行. //(详见Demo)
+	1.Stream不会存储元素.
+	2.Stream不会改变源对象. 相反,它会返回一个持有结果集的新Stream.
+	3.Stream操作是延迟执行的. 意味着它会等到需要结果时才执行. //(详见Demo)
 	
-	创建流(转化数据源) -> 中间操作(定义中间操作链,但不会立即执行) -> 终止操作(执行中间操作链,并产生结果)
+	///创建流(转化数据源) --> 中间操作(定义中间操作链,但不会立即执行) --> 终止操作(执行中间操作链,并产生结果)
 	
-	1.创建流
-		Person p1 = new Person(1, "zhao", 17, 197.5, Gender.MAN);
-		Person p2 = new Person(2, "qian", 18, 187.5, Gender.MAN);
-		Person p3 = new Person(3, "sui", 19, 177.5, Gender.MAN);
-		Person p4 = new Person(4, "li", 20, 167.5, Gender.WOMEN);
-		Person p5 = new Person(5, "wang", 21, 157.5, Gender.WOMEN);
-		List<Person> list = Arrays.asList(p1, p2, p3, p4, p5);
+#创建流
+	Person p1 = new Person(1, "zhao", 17, 197.5, Gender.MAN);
+	Person p2 = new Person(2, "qian", 18, 187.5, Gender.MAN);
+	Person p3 = new Person(3, "sui", 19, 177.5, Gender.MAN);
+	Person p4 = new Person(4, "li", 20, 167.5, Gender.WOMEN);
+	Person p5 = new Person(5, "wang", 21, 157.5, Gender.WOMEN);
+	List<Person> list = Arrays.asList(p1, p2, p3, p4, p5);
+
+	//Collection.stream() 或 parallelStream()
+	Stream<Person> stream = list.stream();
+	Stream<Person> parallelStream = list.parallelStream(); //并行流
+
+	//Arrays.stream()
+	Stream<Person> stream = Arrays.stream(array);
+
+	//Stream.of()
+	Stream<Person> stream = Stream.of(p1, p2, p3); //可变参数,也可传数组
 	
-		//通过 Collection 系列集合提供的 stream() 或 parallelStream()
-		Stream<Person> stream = list.stream();
-		Stream<Person> parallelStream = list.parallelStream(); //并行流
-	
-		//通过 Arrays 中的静态方法 stream()
-		Stream<Person> stream = Arrays.stream(array);
-	
-		//通过 Stream 类的静态方法 of()
-		Stream<Person> stream = Stream.of(p1, p2, p3); //可变参数,也可传数组
+	//创建无限流(迭代+生成)
+	Stream<Integer> stream0 = Stream.iterate(1, x -> x + 3).limit(10); //迭代(必须限制大小)
+	Stream<Double> stream1 = Stream.generate(Math::random).limit(10); //生成
+
+#中间
+	1.筛选与切片
+		惰性求值: 中间操作不会立即执行; 只有执行了终止操作(如forEach()),中间操作才会执行
+		内部迭代: 迭代操作 forEach 是由Stream API自动完成
+		短路操作: 以下 age=21 不打印,体现了短路操作.
 		
-		//创建无限流(迭代+生成)
-		Stream<Integer> stream = Stream.iterate(1, (x) -> x + 3); //迭代
-		Stream<Double> stream = Stream.generate(Math::random); //生成
+		list.stream()
+				.filter(x -> {
+					System.out.println("比较");
+					return x.age > 17; //过滤条件
+				})
+				.limit(3) //结果集大小
+				.skip(1) //跳过结果集中的前n个元素; 当n大于元素总数,返回空流.
+				.distinct() //通过 hashCode() 和 equals() 去重
+				.forEach(System.out::println);//终止操作 -> 最终结果集为 3-1 个
+				
+		// 比较 (17 -> 不满足)
+		// 比较 (18 -> 满足,但跳过)
+		// 比较 (19 -> 满足,打印输出)
+		// 比较 (20 -> 满足,打印输出)
+		// 		(21 -> 短路操作,不比较) 
 		
-	2.中间の筛选与切片
-		//惰性求值: 中间操作不会立即执行; 只有执行了终止操作(forEach()),中间操作才会执行
-		//内部迭代: 迭代操作 forEach 是由Stream API自动完成
-		//短路操作: 以下 age=21 不打印,体现了短路操作.
-        list.stream()
-                .filter(x -> {
-                    System.out.println("比较");
-                    return x.age > 17; //过滤条件
-                })
-                .limit(3) //结果集大小
-                .skip(1) //跳过结果集中的前n个元素; 当n大于元素总数,返回空流.
-                .distinct() //通过 hashCode() 和 equals() 去重
-                .forEach(System.out::println);//终止操作 -> 最终结果集为 3-1 个
-        // 比较 (17 -> 不满足)
-        // 比较 (18 -> 满足,但跳过)
-        // 比较 (19 -> 满足,打印输出) Person(id=3, name=sui, age=19, height=177.5, gender=MAN, flag=false)
-        // 比较 (20 -> 满足,打印输出) Person(id=4, name=li, age=20, height=167.5, gender=WOMEN, flag=false)
-        // 		(21 -> 短路操作,不比较) 
-	
-	3.中间の映射
-        list.stream()
-                .peek(x -> x.age += 5) //区别 peek() 和 map()
-                // .map(x -> {
-                //     x.age += 5; //传入lambda,转换流中所有元素,产生新的元素
-                //     return x;
-                // })
-                //.flatmap() //和map类似,但元素转换后得到新流, 结果是将子流中的元素压缩到父流中!!
-                .forEach(System.out::println);
+	2.映射
+		list.stream()
+				.peek(x -> x.age += 5) //区别 map() 和 peek()
+				
+				// .map(x -> {
+				//     x.age += 5; //传入lambda,转换流中所有元素,产生新的元素
+				//     return x;
+				// })
+				
+				//.flatmap() //和map类似,但元素转换后得到新流, 结果是将子流中的元素压缩到父流中!!
+				.forEach(System.out::println);
 				
 		(1).map()和peek()
 			//map()入参: <R> Stream<R> map(Function<? super T, ? extends R> mapper);
@@ -169,8 +155,8 @@
 			
 			//peek()入参: Stream<T> peek(Consumer<? super T> action);
 			Consumer<Integer> c =  i -> System.out.println("hello" + i);
-					
-			//Function 比 Consumer 多了一个 return.
+			
+			/所以,Function 比 Consumer 多了一个 return.
 		
 		(2).map()和flatmap() //类比list的add()和addAll()
 			List<String> list0 = Arrays.asList("a", "b");
@@ -184,53 +170,70 @@
 			list1.addAll(list0); //list0中的元素融入list1中
 			System.out.println(list1); //[aa, a, b]
 		
-	4.中间の排序
-        list.stream()
-                //.sorted() //自然排序(调用compare()方法); 非自然排序(自定义排序方法)
-                //.sorted((x, y) -> (x.name).compareTo(y.name)) //按名字排序
-                //.sorted((x, y) -> Double.compare(x.height, y.height)) //按身高排序
-                .sorted((x, y) -> { //先按年龄排序,再按性别排序
-                    if (x.age == y.age) {
-                        return x.gender.compareTo(y.gender);
-                    } else {
-                        return Integer.compare(x.age, y.age);
-                    }
-                }).forEach(System.out::println);
+	3.排序
+		list.stream()
+				//.sorted() //自然排序(调用compare()方法); 非自然排序(自定义排序方法)
+				
+				//.sorted((x, y) -> (x.name).compareTo(y.name)) //按名字排序
+				
+				//.sorted((x, y) -> Double.compare(x.height, y.height)) //按身高排序
+				
+				.sorted((x, y) -> { //先按年龄排序,再按性别排序
+					if (x.age == y.age) {
+						return x.gender.compareTo(y.gender);
+					} else {
+						return Integer.compare(x.age, y.age);
+					}
+				}).forEach(System.out::println);
+
+#终止 -> 从流的流水线生成结果,结果可以是不是流的任何值. 如:List,Integer,甚至void
+	(1).短路操作 -> forEach(); forEachOrdered(); / collect(); toArray(); reduce(); / min(); max(); count();
+	(2).非...... -> findFirst(); findAny(); / allMatch(); anyMatch(); noneMatch();
 	
-	5.终止の查找和匹配 -> //从流的流水线生成结果,结果可以是不是流的任何值. 如:List,Integer,甚至void
-	
+	1.forEach和forEachOrdered
+        String str = "my name is 007";
+		
+        //并行流: 输出的顺序不一定(效率更高)
+        str.chars().parallel().forEach(x -> System.out.print((char) x)); //is 070 anemy m
+        //并行流: 输出的顺序与元素的顺序严格一致
+        str.chars().parallel().forEachOrdered(x -> System.out.print((char) x)); //my name is 007
+
+        //非并行流: forEach() == forEachOrdered() == parallel.forEachOrdered()
+        str.chars().forEach(x -> System.out.print((char) x)); //my name is 007
+		
+	2.查找和匹配
 		// allMatch / anyMatch / noneMatch(): 是否都满足 / 有一个满足 / 都不满足.
 		boolean allMatch = list.stream().allMatch((x) -> x.age > 30);
-	
+
 		// findFirst(): 返回第一个元素. (Optional表示结果可能为空)
-		// findAny(): 返回任意一个. (多用于并行流 parallelStream())
+		// findAny(): 返回任意一个. (多用于并行流)
 		Optional<Person> findFirst = list.stream().findFirst();
-	
+
 		// count(): 返回流中元素总个数
 		long count = list.stream().count();
-	
+
 		// max(): 返回流中最大值. min(): 最小值
 		Optional<Person> max = list.stream() //获取最高身高者的所有属性
 				.max((x, y) -> Double.compare(x.height, y.height));
-	
+
 		Optional<Double> min = list.stream() //只获取最低身高的值
 				.map(x -> x.height)
 				.min(Double::compare);
-	
-	6.终止の归约和收集
-		///归约 reduce(): 将流中元素反复结合,最终生成一个值
+
+	6.归约
+		//reduce(): 将流中元素反复结合,最终生成一个值		
 		Optional<Double> reduce = list.stream().map(x -> x.height).reduce((x, y) -> x + y);
 		
 		//有初始值,所以肯定不为空,即不用Optional<T>
 		//参数列表 -> arg0: 初始值; arg1: 求和操作
 		Double reduce2 = list.stream().map(Person::getHeight).reduce(1.0, Double::sum);
-	
-		///收集 collect(): 将流中元素转化为
-		<R, A> R collect(Collector<? super T, A, R> collector);
+
+	6.收集
+		//collect(): 将流中元素转化为 -> <R, A> R collect(Collector<? super T, A, R> collector);
 		
-			//(1).Collector 接口定义了如何对流执行收集操作(如收集到List,Set,Map等).
-			//(2).但 Collectors 实用类提供了系统实现的收集器实例. 
-			//(3).类似: Executor,Executors; Collection<E>,Collections;
+		(1).Collector 接口定义了如何对流执行收集操作(如收集到List,Set,Map等).
+		(2).但 Collectors 实用类提供了系统实现的收集器实例. 
+		(3).类似: Executor,Executors; Collection<E>,Collections;
 		
 		// toList(); toSet(); toCollection(); 
 		List<String> collect = list.stream().map(Person::getName).collect(Collectors.toList());//转化list
@@ -249,11 +252,11 @@
 		//joining(): 连接流中每个字符串
 		//参数列表 -> delimiter: 连接符; prefix: 结果的前缀; suffix: 结果的后缀.
 		String collect5 = list.stream().map(Person::getName).collect(Collectors.joining("-", "(", ")"));//(zhao-qian-sui)
-	
+
 		//maxBy(); minBy();
 		Optional<Person> collect6 = list.stream()//根据比较器选择最大值
 				.collect(Collectors.maxBy((x, y) -> Double.compare(x.getHeight(), y.getHeight())));
-	
+
 		//reducing();
 		Optional<Double> collect7 = list.stream().map(Person::getHeight).collect(Collectors.reducing(Double::sum));
 		//参数列表 -> arg0: 初始值; arg1: 哪个属性; arg2: 求和操作.
@@ -261,10 +264,10 @@
 		
 		//collectingAndThen(); 包裹另一个收集器,对其结果转换函数
 		Integer collect9 = list.stream().collect(Collectors.collectingAndThen(Collectors.toList(), List::size));
-	
+
 		//groupingBy();
 		Map<Gender, List<Person>> collect10 = list.stream().collect(Collectors.groupingBy(Person::getGender));//分组: 性别
-	
+
 		Map<Gender, Map<Integer, List<Person>>> collect12 = list.stream() //多级分组: 先性别,再年龄
 				.collect(Collectors.groupingBy(Person::getGender, Collectors.groupingBy(Person::getAge)));
 		
@@ -278,11 +281,15 @@
 						return "中年";
 					}
 				})));
-	
+		collect13.forEach((x, y) -> {
+			System.out.println(x); //x -> MAN | WOMAN
+			y.forEach((m, n) -> System.out.println(m + " - " + n)); // m -> 少年,青年，中年
+		});
+
 		//partitioningBy(); 根据条件进行分区
-		//\{false:[{"age":17...},{"age":18...}],true:[{"age":21...}]}
+		//false:[{"age":17...},{"age":18...}],true:[{"age":21...}]}
 		Map<Boolean, List<Person>> collect12 = list.stream().collect(Collectors.partitioningBy(x -> x.age > 20));
-		
+			
 #parallelStream
 	//并行流: 就是把一个数据集分成多个数据块,并用不同的线程分别处理每个数据块的流
 	
@@ -297,10 +304,34 @@
 		在一般的线程池中,如果一个线程正在执行的任务由于某些原因无法继续运行,那么该线程会处于等待状态.
 		而在fork/join框架实现中,如果某个子问题由于等待另外一个子问题的完成而无法继续运行.
 		那么处理该子问题的线程会主动寻找其他尚未运行的子问题来执行.这种方式减少了线程的等待时间,提高了性能.
+		
+#Stream结论
+	(1).所有操作是链式操作,一个元素迭代一次.
+	(2).每一个中间操作返回一个新的流, 流里面有一个属性 sourceStage 指向同一个地方,即链表的头 Head.
+	(3).Head -> peek -> filter -> ... -> null
+	
+	(4).有状态操作会把无状态操作 截断,单独处理. 先peek+filter; 再sorted; 最后peek
+	(5).有状态操作的入参为2个, 无状态为1个
+	
+	(6).并行环境下,有状态的中间操作不一定能并行操作
+	
+	long count = Stream.generate(() -> new Random().nextInt())
+			.limit(50)
+			.peek(x -> System.out.println("peek: " + x)) //无状态操作
+			.filter(x -> {
+				System.out.println("filter: " + x); //无状态
+				return x > 1000;
+			}).sorted((x, y) -> {
+				System.out.println("sorted: " + x); //有状态
+				return x.compareTo(y);
+			}).peek(x -> System.out.println("peek: " + x)) //无状态
+			.count();
+	
+	
 	
 //}	
 	
-//{--------------<<<时间日期API>>>--------------------------------------------------
+//{--------------<<<时间API>>>--------------------------------------------------
 #java8之前 java.util.Date 和 Calendar 的弊端
 	首先, 所有属性都是可变的,且线程不安全. 【**最重要**】
 	其次, 星期和月份从 0 开始计数.
@@ -418,35 +449,37 @@
 	
 //{--------------<<<接口变动>>>-----------------------------------------------------
 #接口
-	以前接口中只允许存在: 全局常量 和 接口方法;
-	java8新增 默认方法 和 静态方法.
-	
-		public interface Testor {
-			public static final int TEST_INT = 5;
+	以前接口中只允许存在: 全局常量 和 抽象方法;
+	java8新增 默认方法 和 静态方法(jdk7???).
+		
+		@FunctionalInterface
+		public interface ITest {
+			public static final String NAME = "D";
 
-			String sayHello();
+			void sayHi();
 
-			default String sayHi() { // 新增
-				return "hi Testor";
+			default void sayHello() { //jdk8新增默认方法
+				System.out.println("hello ITest");
 			}
 
-			public static String sayHaa() {// 新增
-				return "haha Testor";
+			static void sayHah() { //
+				System.out.println("hah ITest");
 			}
 		}
 		
 	1.类优先原则
-		//当 父类Tester 和 父接口Testor 都实现了 sayHello() 方法,子类调用 父类Tester 实现.
-		public class Test extends Tester implements Testor {}
+		//当 父类Tester 和 父接口ITestor 都实现了 sayHello() 方法,子类调用 父类Tester 实现.		
+		public class Test extends Tester implements ITest {}
 		new Test().sayHi();//hi Tester
 		
-	2.多实现—接口冲突
+	2.接口冲突
 		//当实现多个接口,且每个接口中都有同名default实现方法,就会报错. 
 		//必须手动选择一个接口的default方法作为实现.
-		public class Test /* extends Tester */ implements Testor, Testor2 {
+		
+		public class Test /* extends Tester */ implements ITest0, ITest1 {
 			@Override
 			public String sayHi() {
-				return Testor.super.sayHi(); //选择 Testor
+				return ITest0.super.sayHi(); //选择ITest0
 			}
 		}
 //}
@@ -521,25 +554,7 @@
 	
 //}	
 	
-	
-	
-	
-	
-	
-	
-	
-	
-	
-	
-	
-	
-	
-	
-	
-	
-	
-	
-	
+
 //{--------------<<<HashMap>>>---------------------------------------------------------
 
 #策略设计模式
@@ -577,149 +592,4 @@
 	res.forEach(System.out::println);
 
 //}
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
 

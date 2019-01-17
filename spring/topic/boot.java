@@ -1,17 +1,16 @@
 	http://start.spring.io/
 	
-///-----------------------<<<boot>>>----------------------------------	
-#简化依赖管理
-	将各种功能模块进行划分,封装成一个个 Starter, 更容易的引入和使用,
-	提供一系列的Starter,将各种功能性模块进行了划分与封装,
-	让我们可以更容易的引入和使用，有效的避免了用户在构建传统Spring应用时维护大量依赖关系而引发的JAR冲突等问题。
+#boot优势
+	简化依赖管理
+		将各种功能模块进行划分,封装成一个个 Starter, 更容易的引入和使用,
+		提供一系列的Starter,将各种功能性模块进行了划分与封装,
+		让我们可以更容易的引入和使用，有效的避免了用户在构建传统Spring应用时维护大量依赖关系而引发的JAR冲突等问题。
 
-#自动化配置: 为每一个Starter都提供了自动化的Java配置类
-#嵌入式容器: 使得应用的打包运行变得非常的轻量级
-#监控端点: 通过Actuator模块暴露的http接口,可以轻松的了解和控制 Boot 应用的运行情况
+	自动化配置: 为每一个Starter都提供了自动化的Java配置类
+	嵌入式容器: 使得应用的打包运行变得非常的轻量级
+	监控の端点: 通过Actuator模块暴露的http接口,可以轻松的了解和控制 Boot 应用的运行情况
 	
-///-----------------------<<<注意点>>>----------------------------------
-
+//{--------<<<注意点>>>--------------------------------------------------------------------
 #匹配带后缀url访问
 	@Configuration
 	public class MyWebMvcConfigurer implements WebMvcConfigurer {
@@ -39,9 +38,9 @@
 
 		return "person/list";//响应页面,不能加前缀'/'
 	}
+//}
 	
-	
-///-----------------------<<<项目启动>>>----------------------------------
+//{--------<<<启动>>>----------------------------------------------------------------------
 	0.脚本启动
 		#!/bin/bash
 		PID=$(lsof -t -i:8090)
@@ -57,36 +56,38 @@
 		cd /var/tmp
 		chmod 777 demo.jar
 		nohup jdk1.8.0_191/bin/java -jar demo.jar >/dev/null 2>&1 &
-			echo "start OK!~!"
+		echo "start OK!~!"
 
 	1.服务启动
 		//将jar包部署到linux, 并赋予可执行权限
-			chmod +x /var/tmp/blue/demo.jar
+		chmod +x /var/tmp/blue/demo.jar
 		
 		//将jar包软连接到 /etc/init.d 目录. 其中, /etc/init.d/demo 结尾 demo 为该服务的别名
-			ln -s /var/tmp/blue/demo.jar /etc/init.d/demo
+		ln -s /var/tmp/blue/demo.jar /etc/init.d/demo
 		
 		//通过linux服务命令形式 启动/关闭/重启/查询 该服务
-			service demo start|stop|restart|status
+		service demo start|stop|restart|status
 			
 		//该服务日志默认的存储路径: /var/log/demo.log
 		//使用自定义 *.conf 更改默认配置, jar包同路径下新建配置文件 demo.conf
-			JAVA_HOME=/usr/jdk1.7.0_79/bin
-			JAVA_OPTS=-Xmx1024M
-			LOG_FOLDER=/var/tmp/blue/logs/		#该目录必须存在
+		JAVA_HOME=/usr/jdk1.7.0_79/bin
+		JAVA_OPTS=-Xmx1024M
+		LOG_FOLDER=/var/tmp/blue/logs/		#该目录必须存在
 
+//}
 
-
-
-
-///----------------------<<<静态资源>>>------------------------------------------------------
-#静态资源	http://www.webjars.org/
-	///webjars -> 将web前端资源(js,css等)打成jar包,然后借助Maven进行统一管理
+//{--------<<<login>>>---------------------------------------------------------------------
+#static --> 放在此目录下的资源,可通过浏览器直接访问,而不需配置映射.
+	<body> 
+		This is page AAA! //页面位置: /static/a.html --> 访问路径: http://127.0.0.1:8090/demo/a.html
+		<a href="b.html">BBB</a>
+		<img src="img/sql.png" title="sql"> //图片位置: /static/img/sql.pmg (也是相对路径)
+	</body>
 	
-	0.mvn引用
+#webjars -> 将前端资源(js,css等)打成jar包,使用Maven统一管理. http://www.webjars.org/
         <dependency>
             <groupId>org.webjars</groupId>
-            <artifactId>webjars-locator</artifactId> 
+            <artifactId>webjars-locator</artifactId> //页面引用时,可省略版本号.(如 3.3.1)
             <version>0.32</version>
         </dependency>
         <dependency>
@@ -99,332 +100,275 @@
             <artifactId>jquery</artifactId>
             <version>3.3.1</version>
         </dependency>
+	
+#前台表单
+	<!DOCTYPE html>
+	<html lang="en" xmlns:th="http://www.thymeleaf.org"> //声明 thymeleaf
+	<head>
+		<meta charset="UTF-8">
+		<title>login</title>
+		<link rel="shortcut icon" th:href="@{/favicon.ico}"/> //小叶子,存放目录 /static
 		
-	1.页面引用
-		//webjars-locator: 作用是可以省略 webjars 的版本.(比如省略下面 3.3.1)
-		//<script th:src="@{/webjars/jquery/3.3.1/jquery.min.js}"></script>
-		
+		//webjars-locator: 页面引用时,可省略版本号.(如 3.3.1)
+		//省略前: <script th:src="@{/webjars/jquery/3.3.1/jquery.min.js}"></script>
+		//....后: <script th:src="@{/webjars/jquery/jquery.min.js}"></script>
+
 		<script th:src="@{/webjars/jquery/jquery.min.js}"></script>
 		<script th:src="@{/webjars/bootstrap/js/bootstrap.min.js}"></script>
 		<link rel="stylesheet" th:href="@{/webjars/bootstrap/css/bootstrap.min.css}"/>
-
-	2.代码配置
-		@Configuration
-		public class MyWebMvcConfigurer implements WebMvcConfigurer {
-
-			// 静态资源映射: url访问路径 --> 资源存放的真实路径(可变长度,可配置多个).
-			@Override
-			public void addResourceHandlers(ResourceHandlerRegistry registry) {
-				// x/imgs/b.jpg --> 类路径/resources/image/b.jpg (或) war包目录/imgs/b.jpg
-				registry.addResourceHandler("/imgs/**")
-						.addResourceLocations("classpath:/image/", "file:imgs/");
-
-				// x/logs/demo.log --> war包目录/logs/demo.log
-				registry.addResourceHandler("/logs/**")
-						.addResourceLocations("file:logs/");
-			}
-
-			// 视图映射
-			@Override
-			public void addViewControllers(ViewControllerRegistry registry) {
-				// url访问 / 或 /index.html, 都会响应页面 /login.html
-				registry.addViewController("/").setViewName("login");
-				registry.addViewController("/index.html").setViewName("login");
-
-				// http://ip:port/blue/main.html --> /templates/dashboard.html
-				registry.addViewController("/main.html").setViewName("dashboard");
-			}
-
-			// 注册拦截器
-			@Override
-			public void addInterceptors(InterceptorRegistry registry) {
-				WebMvcConfigurer.super.addInterceptors(registry);
-
-				registry.addInterceptor(new MyHandlerInterceptor())
-						// 需要拦截 (/**表所有)
-						.addPathPatterns("/**")
-						// 不拦截
-						.excludePathPatterns("/asserts/**", "/webjars/**", "/imgs/**", "/logs/**", "/", "/index.html",
-								"/user/login", "/error");
-			}
-		}
-		
-	3.配置解释
-		(0).静态资源映射:
-			将请求url为 'addResourceHandler' 映射到 'addResourceLocations'.
-		(1).视图映射: 
-			对于url访问'/'或'/index.html',服务器都会响应页面'/templates/login.html'.
-		(2).声明拦截器: 
-			对于'拦截'的页面或接口,直接url访问,Session为空,则转发至"/index.html",后续逻辑(0).
-		(3).注册拦截器: 
-			对于'不拦截',都是直接访问,不经拦截器逻辑. /*其中,登陆接口不能拦截*/
-			
-			
-	4.boot约定
-		动态模板: 放在 templates 目录.
-		静态资源: 放在 static 目录, 包括html静态页面,静态资源(图片,CSS等). 
-		
-		\static\filter\list.html --> http://192.168.8.7:8090/demo/filter/list.html (直接访问,无需映射)
-
-#登陆逻辑
-	0.前台页面
-		//<p>是否显示: msg不为空则显示
-		<form method="post" th:action="@{/user/login}">
-			<td align="center" colspan="2"><input type="submit" value="登录">
-				<p th:if="${! #strings.isEmpty(msg)}" th:text="${msg}"></p>
-			</td>
+	</head>	
+	<body>
+		<form method="post" th:action="@{/login}"> //表单提交: post + action
+			<table align="center">
+				<tr><td>账户: <input type="text" th:name="name" th:value="${name}"></td></tr> //${name} -> 无值则显示""
+				<tr><td>密码: <input type="password" th:name="pwd"></td></tr>
+				<tr>
+					<td align="center">
+						<button class="btn btn-primary" type="submit">登录</button>
+						<p th:if="${! #strings.isEmpty(msg)}" th:text="${msg}"></p> //th:if -> msg为空则不显示
+					</td>
+				</tr>
+			</table>
 		</form>
+	</body>
 	
-	1.后台逻辑		
-		@PostMapping("/user/login") //post请求
-		public String userlogin(@RequestParam("username") String userName, @RequestParam("userpwd") String userPwd, Model
-				model, HttpSession session) {
-			if (StringUtils.isEmpty(userPwd)) {
-				model.addAttribute("msg", "用户名密码不正确!!");
-				return "login"; //响应页面login.html (其中,必须去掉前缀'/')
+#后台逻辑
+	@PostMapping("/login")
+	public String login(@RequestParam String name, @RequestParam String pwd, HttpSession session, Model model) {
+		if (!StringUtils.isEmpty(pwd)) {
+			session.setAttribute("user", name); //保存Session,用于登陆验证
+			return "redirect:/emp/emps"; //重定向到接口 --> 防止表单重复提交! ---> 中间不能有空格!!
+
+		} else {
+			model.addAttribute("name", name); //表单回显
+			model.addAttribute("msg", "用户名或密码不正确!");
+			return "/login"; //转发到页面: /templates/login.html
+		}
+	}
+
+#登陆拦截
+	public class LoginInterceptor implements HandlerInterceptor {
+
+		@Override //在目标方法之前被调用 ---> 适用于权限,日志,事务等.
+		public boolean preHandle(HttpServletRequest request, HttpServletResponse response, Object handler) throws Exception {
+			if (null != request.getSession().getAttribute("user")) {
+				return true; //有Session,则继续调用后续的拦截器和目标方法; 没有,则转发到登录页
 			} else {
-				session.setAttribute("user", userName); //保存Session,用于拦截验证
-				return "redirect:/main.html"; //重定向: 不会造成表单重复提交.(forward会)
+				request.getRequestDispatcher("/").forward(request, response);
+				return false;
 			}
 		}
+	}
+	
+#注册拦截器
+	@Configuration
+	public class MyWebMvcConfigurer implements WebMvcConfigurer {
 
-	2.拦截未登录用户
-		//声明拦截器 (注册拦截器见上面)
-		public class MyHandlerInterceptor implements HandlerInterceptor {
-
-			// 在目标方法之前被调用 ---> 适用于权限,日志,事务等.
-			@Override
-			public boolean preHandle(HttpServletRequest request, HttpServletResponse response, Object handler) throws
-					ServletException, IOException {
-				log.info(System.getProperty("line.separator"));//系统级别的换行符
-
-				String url = request.getRequestURL().toString();
-				log.info("url - " + url + "; method - " + request.getMethod());//请求url
-
-				StringBuilder sb = new StringBuilder();
-				Map<String, String[]> map = request.getParameterMap();
-				map.forEach((x, y) -> sb.append(x).append(":").append(Arrays.toString(map.get(x))).append("; "));
-				log.info("params - {{}}", sb);//请求params
-
-				if (null == request.getSession().getAttribute("user")) {//未登录
-					request.setAttribute("msg", "没有权限,请先登录!");
-					request.getRequestDispatcher("/index.html").forward(request, response);//转发
-
-					return false;//不会再调用后续的拦截器和目标方法
-				} else {
-					return true;//继续调用后续的拦截器和目标方法
-				}
-			}
+		@Override //静态资源映射
+		public void addResourceHandlers(ResourceHandlerRegistry registry) {
+			//url访问: x/logs/demo.log --> 类路径/resources/log/demo.log (或) war包所在目录/logs/demo.log
+			registry.addResourceHandler("/logs/**")
+					.addResourceLocations("classpath:/log/", "file:logs/");
 		}
 
-///---------------------<<<CRUD>>>---------------------------------------------------------------
-#CRUD
-	| 列表页面        | emp/list  | GET      |
-	| 跳转页面(新增)  | emp       | GET      |
-	| 新增接口        | emp       | POST     |
+		@Override //视图映射
+		public void addViewControllers(ViewControllerRegistry registry) {
+			//url访问: ip:port/demo/ --> 对应资源: /templates/login.html
+			registry.addViewController("/").setViewName("/login");
+		}
+
+		@Override //注册拦截器
+		public void addInterceptors(InterceptorRegistry registry) {
+			registry.addInterceptor(new LoginInterceptor())
+					.addPathPatterns("/**")
+					.excludePathPatterns("/webjars/**", "/*.html", "/img/**", "/logs/**") //非拦截: 静态资源
+					.excludePathPatterns("/", "/login"); //非拦截: 登陆接口
+		}
+	}
+
+//}
+
+//{--------<<<CRUD>>>----------------------------------------------------------------------
+
+	| 列表页面        | emp/emps  | GET      |
+	| 跳转页面(新增)  | emp/emp   | GET      |
+	| 新增接口        | emp/emp   | POST     |
 	| 跳转页面(修改)  | emp/{id}  | GET      |
-	| 修改接口        | emp       | PUT      |
+	| 修改接口        | emp/emp   | PUT      |
 	| 删除接口        | emp/{id}  | DELETE   |
 	
-	//将请求 POST 转化为 PUT,DELETE
-	// (1).配置 HiddenHttpMethodFilter. (boot已自动配置)
+#POST转化为PUT,DELETE
+	1.配置HiddenHttpMethodFilter. (boot已自动配置)
 		<filter>
 			<filter-name>HiddenHttpMethodFilter</filter-name>  
 			<filter-class>org.springframework.web.filter.HiddenHttpMethodFilter</filter-class>  
 		</filter>
-	// (2).页面创建一个post表单
-	// (3).新建<input/>隐藏标签,name="_method"，value="put/delete"
-	
+		
+	2.页面创建(POST表单 + 隐藏标签)
 		<form method="post" th:action="@{/person/}+${person.id}">
-			<input type="hidden" name="_method" value="delete">
-			<input type="submit" value="删除">
+			<input type="hidden" name="_method" value="delete"> //隐藏标签 name + value
+			
+			<a href="#" onclick="delEmp(this)" th:attr="url=@{/emp/}+${emp.id}">删除</a>
 		</form>
 	
-#员工列表
-	0.列表页面 
-		<a th:href="@{/person/list}">列表页面</a>
+#列表
+	0.跳转列表页面
+		<a th:href="@{/person/list}">列表页面</a> //超链接对应请求 GET
 		
-	1.初始化列表页面		/// ---> /persons - GET
-		@GetMapping("/list")
-		public String listAll(Model model) {
-			List<Person> personList = personMapper.listAll();
-			model.addAttribute("personList", personList);
-
-			return "person/list";//响应页面: person/list.html
+	1.跳转逻辑
+		@RequestMapping("/emps")
+		public String list(Model model) {
+			model.addAttribute("emplist", EmpUtils.listAll());
+			return "/emp/emps";
 		}
 		
-	2.列表页面
-		<body>
-		<table border="1" cellpadding="20" cellspacing="0" align="center">
+	2.响应页面
+		<table border="1" cellpadding="5" cellspacing="0" align="center">
 			<tr>
-				<th>姓名</th> <th>性别</th> <th>住址</th> <th>操作</th>
+				<th>姓名</th>
+				<th>年龄</th>
+				<th>城市</th>
+				<th>操作</th>
 			</tr>
-			<tr th:if="${0==personList.size()}">
-				<td colspan="4" th:text="当前列表为空"></td>
+			<tr th:if="${null==emplist || 0==emplist.size()}">
+				<td colspan="4" th:text="列表为空"></td>
 			</tr>
-			<tr th:each="person : ${personList}" th:object="${person}"> //配合使用 th:object 和 *{...}
+			<tr th:each="emp:${emplist}" th:object="${emp}"> //配合使用 th:object 和 *{...}
 				<td th:text="*{name}"></td>
-				<td th:text="*{gender}?'男':'女'"></td>
+				<td th:text="*{gender?'男':'女'}"></td>
 				<td th:text="*{city.name}"></td>
 				<td colspan="2">
-					<a class="modify" th:href="@{/person/}+*{id}">修改</a>
-					&nbsp;&nbsp;
-					<a class="deletePerson" href="#" th:attr="del_uri=@{/person/}+*{id}">删除</a>
+					<a th:href="@{/emp/}+*{id}">修改</a>
+					<a href="#" onclick="delEmp(this)" th:attr="url=@{/emp/}+${emp.id}">删除</a>
 				</td>
 			</tr>
 		</table>
-		<div style="text-align: center;">
-			<a th:href="@{/person}">新增员工</a>
-		</div>
-		
-		<form method="post" id="deletePersonForm">
-			<input type="hidden" name="_method" value="delete">
-		</form>
-		<script> //动态js
-			$('.deletePerson').click(function () {
-				var del_uri = $(this).attr("del_uri");//获取当前按钮的'del_uri'属性
-				$("#deletePersonForm").attr("action", del_uri).submit();//动态设置<form>的action属性,并提交
-				return false;//取消按钮的默认行为
-			});
-		</script>
-		</body>	
 	
-#新增员工
+#新增
 	0.跳转新增页面
-		<a th:href="@{/person}">新增员工</a>
+		<a th:href="@{/emp/emp}">新增</a>
 		
-	1.初始化新增页面		/// ---> /person - GET
-		@GetMapping("")
-		public String toPersonPage(Model model) {
-			List<City> cityList = flowerMapper.getCityList();
-			model.addAttribute("cityList", cityList);//初始化city列表
-
-			return "person/person";//响应页面: person/person.html
+	1.跳转逻辑
+		@RequestMapping("/emp")
+		public String add(Model model) {
+			model.addAttribute("cityList", EmpUtils.listCity()); //初始化列表 City
+			return "/emp/emp";
 		}
 		
 	2.新增页面(同修改)
 		
-	3.新增接口				/// ---> /person - POST
-		@PostMapping("")
-		public String savePerson(Person person) {
-			personMapper.savePerson(person);
-
-			return "redirect:/person/list"; //重定向接口: person/list
+	3.新增接口
+		@PostMapping("/emp")
+		public String add(Emp emp) {
+			EmpUtils.empList.add(emp);
+			return "redirect:/emp/emps";
 		}
 		
-#修改员工
+#修改
 	0.跳转修改页面
-		<a th:href="@{/person/}+${person.id}">修改</a> //路径拼接
+		<a th:href="@{/emp/}+${emp.id}">修改</a> //路径拼接
 		
-	1.初始化修改页面		/// ---> /person/{id} - GET
+	1.跳转逻辑
 		@GetMapping("/{id}")
-		public String toPersonPage(@PathVariable Integer id, Model model) {
-			Person person = personMapper.getById(id);
-			model.addAttribute("person", person);
-			model.addAttribute("cityList", flowerMapper.getCityList());
-
-			return "person/person";//响应页面: person/person.html
+		public String add(@PathVariable Integer id, Model model) {
+			model.addAttribute("emp", EmpUtils.getById(id));
+			model.addAttribute("cityList", EmpUtils.listCity());
+			return "emp/emp";
 		}
 		
 	2.回显数据修改页面
-		//增加和修改使用同一页面,区分方式: person对象是否为空 ${null!=person}
-		<form method="post" th:action="@{/person}">
-			//修改: 发送 PUT 请求
-			<input type="hidden" name="_method" value="put" th:if="${null!=person}">
-			//修改: 需要提交id
-			<input type="hidden" name="id" th:value="${person.id}" th:if="${null!=person}">
+		//增加和修改使用同一页面,区分方式: 回显 emp 是否为空 --> ${null!=person}
+		<form method="post" th:action="@{/emp/emp}">
+			//修改: PUT请求 + emp.id
+			<input type="hidden" name="_method" value="put" th:if="${null!=emp}">
+			<input type="hidden" name="id" th:if="${null!=emp}" th:value="${emp.id}">
 
 			<table>
 				<tr>
 					<td>姓名:</td>
-					<td><input type="text" name="name" th:value="${null!=person}?${person.name}"></td>
+					<td><input type="text" name="name" th:value="${null!=emp}?${emp.name}"></td>
 				</tr>
 				<tr>
-					<td>性别:</td> //th:checked -> radio标签是否选中.
-					<td><input type="radio" name="gender" value="1" th:checked="${null!=person}?${person.gender}">男
-						<input type="radio" name="gender" value="0" th:checked="${null!=person}?${!person.gender}">女
+					<td>性别:</td> //th:checked --> radio标签是否选中.
+					<td><input type="radio" name="gender" value="1" th:checked="${null!=emp}?${emp.gender}">男
+						<input type="radio" name="gender" value="0" th:checked="${null!=emp}?${!emp.gender}">女
 					</td>
 				</tr>
 				<tr>
 					<td>住址:</td>
-					<td><select name="city.id"> //th:selected -> 回显对象person.city.id和遍历city.id相同,则选中
-						<option th:each="city : ${cityList}" th:value="${city.id}" th:text="${city.name}"
-								th:selected="${null!=person}?${person.city.id==city.id}"></option>
+					<td><select name="city.id"> //th:selected --> 回显emp.city.id == 遍历city.id,则选中
+						<option th:each="city:${cityList}" th:object="${city}" th:value="*{id}" th:text="*{name}"
+								th:selected="${null!=emp}?${emp.city.id}==*{id}"></option>
 					</select></td>
 				</tr>
-				<tr> //回显对象person是否为空,不同显示'修改','新增'
-					<td colspan="2"><input type="submit" th:value="${null!=person}?'修改':'新增'"></td>
+				<tr> //回显 emp 为空,则显示'新增'; 否则,显示'修改'.
+					<td colspan="2"><input type="submit" th:value="${null!=emp}?'修改':'新增'"></td>
 				</tr>
 			</table>
 		</form>
 	
-	3.修改接口			/// ---> /person - PUT
-		@PutMapping("")
-		public String updateById(Person person) {
-			personMapper.updatePersonById(person);
-
-			return "redirect:/person/list"; //重定向接口: person/list
+	3.修改接口
+		@PutMapping("/emp")
+		public String updateById(Emp emp) {
+			EmpUtils.empList.update(emp);
+			return "redirect:/emp/emps";
 		}
 	
-#删除员工
-	0.点击删除
-		//delete请求必须<form>,且有一个隐藏标签<input>
-        <td colspan="2">
-            <a th:href="@{/person/}+${person.id}">修改</a>
-            &nbsp;&nbsp;
-            <form method="post" th:action="@{/person/}+${person.id}">
-                <input type="hidden" name="_method" value="delete">
-                <input type="submit" value="删除">
-            </form>
-        </td>
+#删除
+	0.点击删除//(DELETE请求需要: <form/> + 隐藏标签)
+		<a href="#" onclick="delEmp(this)" th:attr="url=@{/emp/}+${emp.id}">删除</a>
 
-	1.删除接口			/// ---> /person/{id} - DELETE
-		@DeleteMapping("/{id}")
-		public String deleteById(@PathVariable Integer id) {
-			personMapper.deleteById(id);
-
-			return "redirect:/person/list"; //重定向接口: person/list
-		}
-
-	2.机制改进 -> //以上方式,页面有多少条数据,就会产生多少个 form 表单. 待优化!!!
-		<table border="1" cellpadding="20" cellspacing="0" align="center">
-			<tr>
-				<td colspan="2">
-					<a class="modify" th:href="@{/person/}+${person.id}">修改</a>
-					&nbsp;&nbsp;
-					<a class="deletePerson" href="#" th:attr="del_uri=@{/person/}+${person.id}">删除</a>
-				</td>
-			</tr>
-		</table>
-		
-		//将<form>从<table>提出,单独处理
-		<form method="post" id="deletePersonForm">
-			<input type="hidden" name="_method" value="delete">
+		<form id="delForm" method="post" action="#"> //独立于列表Table的<form/>
+			<input type="hidden" name="_method" value="DELETE">
 		</form>
-	
-		//动态添加'删除'的点击事件
+		
 		<script>
-			$('.deletePerson').click(function () {
-				var del_uri = $(this).attr("del_uri");//获取当前按钮的'del_uri'属性
-				$("#deletePersonForm").attr("action", del_uri).submit();//动态设置<form>的action属性,并提交
-				return false;//取消按钮的默认行为
-			});
+			function delEmp(e) {
+				alert($(e).attr('url')); //当前按钮的'url'属性
+				$('#delForm').attr('action', $(e).attr('url')).submit(); //动态设置<form>的action属性,并提交
+				return false; //取消按钮的默认行为
+			}
 		</script>
 
+	1.删除逻辑
+		@DeleteMapping("/{id}")
+		public String delete(@PathVariable Integer id) {
+			EmpUtils.empList.deleteById(id);
+			return "redirect:/emp/emps";
+		}
+		
+	3.升级版 //不使用<form/>发送DELETE,使用ajax异步删除
+		<a href="#" onclick="delEmp(this)" th:attr="url=@{/emp/}+*{id}">删除</a>
+		
+		<script>
+			function delEmp(e) {
+				$.ajax({
+					type: 'DELETE', //仅部分浏览器支持
+					url: $(e).attr('url'),
+					dataType: 'text',
+					success: function (data) { //请求成功,回调函数
+						$(e).parent().parent().remove(); //--->动态删除<a/>所在的行
+					},
+					error: function (data) { //发生错误时调用
+						var res = JSON.parse(data.responseText); //转化json
+						alert(res.status + " + " + res.error + " + " + res.message);
+					}
+				});
+				return false;
+			}
+		</script>
+		
+	4.ajax后台逻辑
+		@DeleteMapping("/{id}")
+		@ResponseBody
+		public String delete(@PathVariable Integer id) {
+			EmpUtils.empList.deleteById(id);
+			return "success";
+		}
+		
+//}
 
-
-
-
-
-
-
-
-
-
-
-
-
-///---------------------<<<邮件>>>--------------------------------------------------------
+//{--------<<<emil>>>----------------------------------------------------------------------
 #邮件相关
 	0.依赖配置
 		<dependency>
@@ -501,9 +445,11 @@
 				mailSender.send(mimeMessage);
 			}
 		}
+		
+//}
 
-///---------------------<<<配置>>>------------------------------------------------------------------
-#文件格式yaml
+//{--------<<<config>>>--------------------------------------------------------------------
+#YAML文件
 	k:(空格)v //表示一对键值对(空格必须有),其中属性和值大小写敏感
 	
 	字符串默认不用加上单引号或双引号
@@ -643,8 +589,7 @@
 		
 		
 #@Value("#{}")与@Value("${}")的区别
-	//(1).@Value("#{}") -> 通过SpEl表达式获取: 常量; bean属性值; 调用bean的某个方法
-	
+	//(1).@Value("#{}") -> 通过SpEl表达式获取: 常量; bean属性值; 调用bean的某个方法	
 		@Value("#{1}")
 		private int number; // 获取数字1
 
@@ -654,8 +599,7 @@
 		@Value("#{info.remoteAddress}") // 获取bean的属性
 		InetAddress address;
 	
-	//(2).@Value("${}") -> 获取属性文件中定义的属性值
-	
+	//(2).@Value("${}") -> 获取属性文件中定义的属性值	
 		@Value("${info.enabled:}")
 		public String enabled; //获取配置属性,默认空字符串
 	
@@ -667,8 +611,6 @@
 #@PostConstruct
 	//...
 
-
-///---------------------<<<多环境切换>>>------------------------------------------
 #多环境切换 - profile特性 - 不同环境加载不同配置. 
 	//以下文件 与 默认application.yml 存放在同级目录下.
 	//其中,前者配置特殊信息, 后者配置公用信息. 二者相互补充
@@ -694,8 +636,63 @@
 			</root>
 		</springProfile>
 
+//}
 
-///---------------------<<<ORM>>>------------------------------------------
+//{--------<<<ORM>>>-----------------------------------------------------------------------
+#整合Druid数据源 //sp1.x默认数据源为: org.apache.tomcat.jdbc.pool.DataSource
+        <dependency>
+            <groupId>com.alibaba</groupId>
+            <artifactId>druid-spring-boot-starter</artifactId>
+            <version>1.1.10</version>
+        </dependency>
+	
+	0.配置文件
+		spring.datasource.type=com.alibaba.druid.pool.DruidDataSource
+		
+		spring.datasource.url=jdbc:mysql://127.0.0.1:3306/test0329?useSSL=false
+		spring.datasource.driver-class-name=com.mysql.jdbc.Driver
+		spring.datasource.username=***
+		spring.datasource.password=***
+
+	1.监控druid	//http://localhost:8080/blue/druid/login.html
+		@Configuration
+		public class DruidConfig {
+
+			@ConfigurationProperties(prefix = "spring.datasource")
+
+			@Bean
+			public DataSource druid() {
+				return new DruidDataSource();
+			}
+
+			// 1.配置一个管理后台的Servlet
+			@Bean
+			public ServletRegistrationBean statViewServlet() {
+				ServletRegistrationBean bean = new ServletRegistrationBean(new StatViewServlet(), "/druid/*");
+
+				Map<String, String> initParams = new HashMap<>();
+				initParams.put("loginUsername", "admin");
+				initParams.put("loginPassword", "123456");
+				initParams.put("allow", ""); //允许所有访问
+				initParams.put("deny", "192.168.15.21"); //黑名单阻止访问 (存在共同时,deny优先于allow)
+				bean.setInitParameters(initParams);
+				return bean;
+			}
+
+			// 2.配置一个web监控的filter
+			@Bean
+			public FilterRegistrationBean webStatFilter() {
+				FilterRegistrationBean bean = new FilterRegistrationBean();
+
+				bean.setFilter(new WebStatFilter());
+				Map<String, String> initParams = new HashMap<>();
+				initParams.put("exclusions", "*.js,*.css,/druid/*");
+				bean.setInitParameters(initParams); //添加需要忽略的格式信息
+				bean.setUrlPatterns(Collections.singletonList("/*")); //添加过滤规则
+				return bean;
+			}
+		}
+		
 #整合JdbcTemplate
 		<dependency>
 			<groupId>mysql</groupId>
@@ -772,62 +769,9 @@
 			return personRepository.findOne(id);
 		}
 
-///---------------------<<<Druid>>>------------------------------------------
-#整合Druid数据源 //sp1.x默认数据源为: org.apache.tomcat.jdbc.pool.DataSource
-        <dependency>
-            <groupId>com.alibaba</groupId>
-            <artifactId>druid-spring-boot-starter</artifactId>
-            <version>1.1.10</version>
-        </dependency>
-	
-	0.配置文件
-		spring.datasource.type=com.alibaba.druid.pool.DruidDataSource
-		
-		spring.datasource.url=jdbc:mysql://127.0.0.1:3306/test0329?useSSL=false
-		spring.datasource.driver-class-name=com.mysql.jdbc.Driver
-		spring.datasource.username=***
-		spring.datasource.password=***
+//}
 
-	1.监控druid	//http://localhost:8080/blue/druid/login.html
-		@Configuration
-		public class DruidConfig {
-
-			@ConfigurationProperties(prefix = "spring.datasource")
-
-			@Bean
-			public DataSource druid() {
-				return new DruidDataSource();
-			}
-
-			// 1.配置一个管理后台的Servlet
-			@Bean
-			public ServletRegistrationBean statViewServlet() {
-				ServletRegistrationBean bean = new ServletRegistrationBean(new StatViewServlet(), "/druid/*");
-
-				Map<String, String> initParams = new HashMap<>();
-				initParams.put("loginUsername", "admin");
-				initParams.put("loginPassword", "123456");
-				initParams.put("allow", ""); //允许所有访问
-				initParams.put("deny", "192.168.15.21"); //黑名单阻止访问 (存在共同时,deny优先于allow)
-				bean.setInitParameters(initParams);
-				return bean;
-			}
-
-			// 2.配置一个web监控的filter
-			@Bean
-			public FilterRegistrationBean webStatFilter() {
-				FilterRegistrationBean bean = new FilterRegistrationBean();
-
-				bean.setFilter(new WebStatFilter());
-				Map<String, String> initParams = new HashMap<>();
-				initParams.put("exclusions", "*.js,*.css,/druid/*");
-				bean.setInitParameters(initParams); //添加需要忽略的格式信息
-				bean.setUrlPatterns(Collections.singletonList("/*")); //添加过滤规则
-				return bean;
-			}
-		}
-
-///---------------------<<<fastjson>>>------------------------------------------
+//{--------<<<fastjson>>>------------------------------------------------------------------
 #fastjson解析json数据
 	//sp2.x默认使用jacksonJson解析json数据现在转换为fastjson
         <dependency>
@@ -869,9 +813,9 @@
 			private Date date;
 		}
 
+//}
 
-
-///---------------------<<<错误处理机制>>>------------------------------------------
+//{--------<<<exception>>>-----------------------------------------------------------------
 #参照 ErrorMvcAutoConfiguration -> 错误处理的自动配置.
 	//一但系统出现 4xx 或者 5xx 之类的错误, 'ErrorPageCustomizer' 就会生效, 它会发送/error请求;
 		@Value("${error.path:/error}")    
@@ -963,9 +907,9 @@
 			}
 		}
 
+//}
 
-
-///---------------------<<<Actuator>>>------------------------------------------
+//{--------<<<Actuator>>>------------------------------------------------------------------
 #配置监控Actuator
         <dependency>
             <groupId>org.springframework.boot</groupId>
@@ -1056,3 +1000,4 @@
 			},
 		}
 
+//}

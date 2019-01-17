@@ -944,7 +944,7 @@ https://blog.csdn.net/u013210620/article/details/52318884
                 success: function (data, status) { //成功时,回调
                     alert(JSON.stringify(data) + " - " + status);
                 },
-                error: function (data, status) { //失败时,回调
+                error: function (data, status) { 
                     alert(JSON.stringify(data) + " - " + status);
                 }
             });

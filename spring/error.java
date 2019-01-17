@@ -1,3 +1,65 @@
+
+//{--------<<<error>>>--------------------------------------------------------------------
+#list.add() -> java.lang.UnsupportedOperationException
+	List<Integer> list = Arrays.asList(1, 3, 5);
+	list.add(7); //ex
+	
+	Arrays.asList() -> 返回的 ArrayList 是 java.util.Arrays$ArrayList; 而非 java.util.ArrayList.
+	它俩都 extends AbstractList(抽象类), AbstractList.add() 和 remove() 默认 throw UnsupportedOperationException().
+	ArrayList override 这些method来对list进行操作; 但是 Arrays$ArrayList 并没有,所以 throw UnsupportedOperationException()。
+
+	List<Integer> list = new ArrayList<>(Arrays.asList(1, 3, 5));
+	list.add(7);
+
+#Parameter Maps collection does not contain value for java.lang.Integer	
+	检查mybatis的xml配置, 肯定在某处配错 "parameterType/resultType" --> "parameterMap/resultMap"
+
+#No constructor found in com.example.x.Person matching [java.lang.Integer, java.lang.Integer, java.lang.String]] with root cause
+	javabean中加上默认的无参构造函数
+
+
+
+//}
+
+//{--------<<<idea>>>---------------------------------------------------------------------
+#Eclipse卡在"Initializing Java Tools 1%...."
+	删除当前工作目录下的 WORKSPACE/.metadata/.plugins/org.eclipse.core.resources/.project, 然后重启
+	
+#Failed to execute goal org.apache.maven.plugins:maven-surefire-plugin:2.12.4:test (default-test) on
+	项目打包时,出现这个问题: 可能是测试类和 maven-surefire-plugin:2.12.4:test (default-test) 出现了冲突
+	
+		@Ignore //测试方法增加此注解; 这个注解的意思是忽略掉当前的测试类
+		@Test
+		public void testCreeper() throws Exception {
+			ImoocPageProcessor imoocPageProcessor = new ImoocPageProcessor();
+			imoocPageProcessor.creeper();
+		}
+		
+#Invalid bound statement (not found): com.example.blue.mapper.PersonMapper.getOneById
+	打包时,没有将 mapper.xml 文件打进war包.
+
+        <resources> //pom.xml 的<build/>节点新增内容
+            <resource>
+                <directory>src/main/java</directory>
+            </resource>
+            <resource>
+                <directory>src/main/resources</directory>
+            </resource>
+        </resources>
+	
+//}
+
+
+
+
+
+
+
+
+
+
+
+
 1.jar war ear	
 	jar: 包含class、properties文件，是文件封装的最小单元。包含Java类的普通库、资源(resources)、辅助文件(auxiliary files)等
 	war: Servlet、JSP页面、JSP标记库、JAR库文件、HTML/XML文档和其他公用资源文件，如图片、音频文件等
@@ -27,72 +89,7 @@
 	//Consider defining a bean of type "com.x.x.service.PersonService" in your configuration
 	(1)类 PersonServiceImpl 是否添加 @Service 注解; 
 	(2)sp项目启动类是否添加 @MapperScan(value = "com.x.x.mapper")
-	
-	
-	
-	
-	
-	
-	
-	
-	
-	
-	
-	
-	
-	
-	
-	
-	
-	
-	
-	
-	
-	
-	
-	
-	
-#Eclipse卡在"Initializing Java Tools 1%...."
-	删除当前工作目录下的WORKSPACE/.metadata/.plugins/org.eclipse.core.resources/.project, 然后重新启动Eclipse
-	
-#Failed to execute goal org.apache.maven.plugins:maven-surefire-plugin:2.12.4:test (default-test) on
-	//项目打包时,出现这个问题: 可能是测试类和maven-surefire-plugin:2.12.4:test (default-test)出现了冲突
-	
-		@Ignore //测试方法增加此注解; 这个注解的意思是忽略掉当前的测试类
-		@Test
-		public void testCreeper() throws Exception {
-			ImoocPageProcessor imoocPageProcessor = new ImoocPageProcessor();
-			imoocPageProcessor.creeper();
-		}	
-	
-#Invalid bound statement (not found): com.example.blue.mapper.PersonMapper.getOneById
-	原因: 新版 IntelliJ IDEA 不再编译source folder下的xml文件.
-	解决: 在maven的pom.xml中build标签下插入以下片段, 手工将src下所有xml文件引入编译!
-	
-			<resources>
-			  <resource>
-				<directory>src/main/java</directory>
-				<includes>
-				  <include>**/ *.xml</include> //去掉空格
-				</includes>
-			  </resource>
-			</resources>
 
-#Parameter Maps collection does not contain value for java.lang.Integer	
-	检查mybatis的xml配置, 肯定在某处配错 "parameterType / resultType" --> "parameterMap / resultMap"
-	
-#No constructor found in com.example.demo.entity.Person matching [java.lang.Integer, java.lang.Integer, java.lang.String]] with root cause
-	javabean中加上默认的无参构造函数
-	
-	
-	
-	
-	
-	
-	
-	
-	
-	
 	
 	
 	
