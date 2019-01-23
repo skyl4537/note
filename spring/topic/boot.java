@@ -41,7 +41,7 @@
 //}
 	
 //{--------<<<启动>>>----------------------------------------------------------------------
-	0.脚本启动
+#脚本启动
 		#!/bin/bash
 		PID=$(lsof -t -i:8090)
 		
@@ -58,7 +58,7 @@
 		nohup jdk1.8.0_191/bin/java -jar demo.jar >/dev/null 2>&1 &
 		echo "start OK!~!"
 
-	1.服务启动
+#linux服务启动
 		//将jar包部署到linux, 并赋予可执行权限
 		chmod +x /var/tmp/blue/demo.jar
 		
@@ -77,13 +77,6 @@
 //}
 
 //{--------<<<login>>>---------------------------------------------------------------------
-#static --> 放在此目录下的资源,可通过浏览器直接访问,而不需配置映射.
-	<body> 
-		This is page AAA! //页面位置: /static/a.html --> 访问路径: http://127.0.0.1:8090/demo/a.html
-		<a href="b.html">BBB</a>
-		<img src="img/sql.png" title="sql"> //图片位置: /static/img/sql.pmg (也是相对路径)
-	</body>
-	
 #webjars -> 将前端资源(js,css等)打成jar包,使用Maven统一管理. http://www.webjars.org/
         <dependency>
             <groupId>org.webjars</groupId>
@@ -185,6 +178,36 @@
 					.excludePathPatterns("/", "/login"); //非拦截: 登陆接口
 		}
 	}
+	
+#静态资源映射
+		classpath:/public/
+		classpath:/resources/
+		classpath:/static/
+		classpath:/META-INFO/resouces/
+		
+	0.默认存放在以上目录的资源都可以直接访问
+		classpath:/static/a.html		---> http://127.0.0.1:8090/demo/a.html
+		classpath:/static/abc/c.html	---> http://127.0.0.1:8090/demo/abc/c.html
+		classpath:/static/img/sql.png	---> http://127.0.0.1:8090/demo/img/sql.png
+		
+	1.自定义静态资源目录//代码版
+		classpath:/log/demo.log			---> http://127.0.0.1:8090/demo/logs/demo.log
+		jar包同级目录/logs/test.log		---> http://127.0.0.1:8090/demo/logs/test.log
+		
+		@Configuration
+		public class MyWebMvcConfigurer implements WebMvcConfigurer {
+			@Override
+			public void addResourceHandlers(ResourceHandlerRegistry registry) {
+				//url访问: x/logs/demo.log --> 类路径/resources/log/demo.log (或) war包所在目录/logs/demo.log
+				registry.addResourceHandler("/logs/**")
+						.addResourceLocations("classpath:/log/", "file:logs/");
+			}
+		}
+		
+	3.自定义静态资源目录//配置文件版
+		spring.mvc.static-path-pattern=/logs/**
+		spring.resources.static-locations=classpath:/log/,file:logs/
+		//此配置会覆盖boot默认配置,即导致不能再访问 /static; /public/, /resources/等目录资源
 
 //}
 
@@ -449,6 +472,18 @@
 //}
 
 //{--------<<<config>>>--------------------------------------------------------------------
+#properties默认
+	server.port=8090
+	server.servlet.context-path=/demo
+
+	spring.datasource.driverClassName=com.mysql.cj.jdbc.Driver
+	spring.datasource.type=com.alibaba.druid.pool.DruidDataSource
+	spring.datasource.url=jdbc:mysql://192.168.8.7:33306/test0329?useSSL=false&allowMultiQueries=true&serverTimezone=GMT%2B8
+	spring.datasource.username=bluecardsoft
+	spring.datasource.password=#$%_BC13439677375
+
+	//动态web修改 context-path -> 项目右键 -> properties -> 搜索web -> 修改 Web Project Settings
+
 #YAML文件
 	k:(空格)v //表示一对键值对(空格必须有),其中属性和值大小写敏感
 	

@@ -520,104 +520,6 @@
 		而是处于就绪(可运行)状态,一旦得到cpu时间片,将自动执行run方法内的线程体. 
 		new出来的线程在run方法结束,run抛出异常,jvm退出时会自动销毁.
 
-#ThreadLocal
-	(0).用于存储'线程局部变量'; 本质可看作一个Map,/其中key为 Thread.currentThread()
-	(1).'一个tl对象只能存放一个线程局部变量'; 所以对于多个局部变量,需实例化多个tl对象
-	(2).ThreadLocal 中的数据不会随着线程结束而回收,必须手动 remove(),防止内存泄露.
-	
-    // 操作系统中,线程和进程数量是有上限的, 确定线程和进程唯一性的唯一条件就是线程或进程id.
-    // 操作系统在回收线程或进程的时候,并不一定杀死; 系统繁忙时,只会清空其栈内数据,然后重复使用.
-    // 所以,对于存储在 ThreadLocal 中的数据,如若不 remove(),则有可能在线程 t2 获取到 t1 的数据.
-	
-	1.代码demo
-		//通常定义为常量,用于关联线程上下文
-		private static final ThreadLocal<String> local1 = new ThreadLocal<>();
-		
-		public static void local() {
-			new Thread(() -> {
-				local1.set("t1");
-				System.out.println("00 - thread-1 - " + local1.get()); //00 - thread-1 - t1
-				local1.remove();
-			}).start();
-			System.out.println("00 - main - " + local1.get()); //00 - main - null
-
-			local1.set("m1");
-			new Thread(() -> System.out.println("01 - thread-2 - " + local1.get())).start(); //01 - thread-2 - null
-			System.out.println("01 - main - " + local1.get()); //01 - main - m1
-		}
-	
-	2.hibernate中的典型应用
-		private static final ThreadLocal threadSession = new ThreadLocal();
-		 
-		public static Session getSession() throws InfrastructureException {
-			Session s = (Session) threadSession.get();
-			try {
-				if (s == null) {
-					s = getSessionFactory().openSession();
-					threadSession.set(s);
-				}
-			} catch (HibernateException ex) {
-				throw new InfrastructureException(ex);
-			}
-			return s;
-		}
-	
-	3.三者关系: Thread, ThreadLocal, ThreadLocalMap
-		// Thread 中有个 ThreadLocal.ThreadLocalMap 类型的成员变量 threadLocals
-		public class Thread implements Runnable {
-			ThreadLocal.ThreadLocalMap threadLocals = null;
-		}
-		
-		// ThreadLocalMap 是 ThreadLocal 的内部类. 它是一个Map, 它的Key是ThreadLocal类型对象!!
-		public class ThreadLocal<T> {
-			public void set(T value) {
-				Thread t = Thread.currentThread();
-				ThreadLocalMap map = t.threadLocals; // 获取当前线程的 threadLocals 变量
-				if (map != null) {
-					map.set(this, value); // key -> ThreadLocal对象自身; value -> 局部变量
-				} else {
-					t.threadLocals = new ThreadLocalMap(this, value);
-				}
-			}
-			
-			public T get() {
-				Thread t = Thread.currentThread();
-				ThreadLocalMap map = t.threadLocals; //获取当前线程的 threadLocals 变量
-				if (map != null) {
-					ThreadLocalMap.Entry e = map.getEntry(this);
-					if (e != null) {
-						@SuppressWarnings("unchecked")
-						T result = (T)e.value;
-						return result;
-					}
-				}
-				return null;
-			}
-			
-			static class ThreadLocalMap /* <ThreadLocal<?>, Object> //自己加的,便于理解 */ { 
-				//...
-			}
-		}
-		
-	4.总结:	
-		//ThreadLocal不是用来解决: 共享对象的多线程访问问题 && 协调线程同步问题
-		每个线程内部都有一个 ThreadLocal.ThreadLocalMap 类型的成员变量 threadLocals, 可以将本线程的局部变量保存到其中,多线程之间互不干扰.
-		其他线程访问不到本线程的, 每个线程只能访问到自己的.
-		
-		ThreadLocal 本身并不存储线程局部变量, 只是提供一个在当前线程中找到局部变量的索引key.
-		为每一个线程隔离一个类的实例,该实例的作用范围仅限于线程内部.
-
-		'每个ThreadLocal对象只能放一个线程局部变量' 
-		局部变量存储在 ThreadLocal.ThreadLocalMap 中, 是以 ThreadLocal对象 为key.
-		所以, 一个线程欲存放多个局部变量，则需实例化多个 ThreadLocal 对象
-		ThreadLocal 变量通常被 private static 修饰, 用于关联线程上下文.
-		
-	5.不正确的理解
-		ThreadLocal为解决多线程并发访问提供了一种新的思路
-		ThreadLocal的目的是为了解决多线程访问资源时的共享问题
-
-
-
 #Timer和ScheduledExecutorService
 	'Timer: 单线程,串行执行; 单任务异常,整体任务停止'
 	'Executors: 并行执行,互不影响; 单任务异常,自身停止,其他任务不影响' 
@@ -717,4 +619,93 @@
 		
 //}
 
+//{--------<<<ThreadLocal>>>--------------------------------------------------------------------
+#用于存储 线程局部变量; 本质可看作一个Map,其中key为 Thread.currentThread(), Value为 当前线程的局部变量.
+#一个 ThreadLocal 对象只能存放当前线程的一个局部变量; 所以对于多个局部变量,需实例化多个 tl 对象.
+#ThreadLocal 中的数据不会随着线程结束而回收,必须手动 remove(),防止内存泄露.
+	
+    // 操作系统中,线程和进程数量是有上限的, 确定线程和进程的唯一条件就是线程或进程id.
+    // 操作系统在回收线程或进程的时候,并不一定杀死; 系统繁忙时,只会清空其栈内数据,然后重复使用.
+    // 所以,对于存储在 ThreadLocal 中的数据,如若不 remove(),则有可能在线程 t2 获取到 t1 的数据.
+	
+#代码demo
+	//通常定义为常量,用于关联线程上下文
+	private static final ThreadLocal<String> local1 = new ThreadLocal<>();
+	
+	public void test() {
+		local1.set("m1");
+		new Thread(() -> local1.set("t1")).start();
+		System.out.println("main -> " + local1.get()); //main -> m1
+	}
+	
+#hibernate 中的典型应用
+	private static final ThreadLocal threadSession = new ThreadLocal();
+	 
+	public static Session getSession() throws InfrastructureException {
+		Session s = (Session) threadSession.get();
+		try {
+			if (s == null) {
+				s = getSessionFactory().openSession();
+				threadSession.set(s);
+			}
+		} catch (HibernateException ex) {
+			throw new InfrastructureException(ex);
+		}
+		return s;
+	}
+	
+#三者关系: Thread, ThreadLocal, ThreadLocalMap
+	// Thread 中有个 ThreadLocal.ThreadLocalMap 类型的成员变量 threadLocals
+	public class Thread implements Runnable {
+		ThreadLocal.ThreadLocalMap threadLocals = null;
+	}
+	
+	// ThreadLocalMap 是 ThreadLocal 的内部类. 它是一个Map, 它的Key是ThreadLocal类型对象!!
+	public class ThreadLocal<T> {
+		public void set(T value) {
+			Thread t = Thread.currentThread();
+			ThreadLocalMap map = t.threadLocals; // 获取当前线程的 threadLocals 变量
+			if (map != null) {
+				map.set(this, value); // key -> ThreadLocal对象自身; value -> 局部变量
+			} else {
+				t.threadLocals = new ThreadLocalMap(this, value);
+			}
+		}
+		
+		public T get() {
+			Thread t = Thread.currentThread();
+			ThreadLocalMap map = t.threadLocals; //获取当前线程的 threadLocals 变量
+			if (map != null) {
+				ThreadLocalMap.Entry e = map.getEntry(this);
+				if (e != null) {
+					@SuppressWarnings("unchecked")
+					T result = (T)e.value;
+					return result;
+				}
+			}
+			return null;
+		}
+		
+		static class ThreadLocalMap /* <ThreadLocal<?>, Object> //自己加的,便于理解 */ { 
+			//...
+		}
+	}
+		
+#总结:	
+	//ThreadLocal不是用来解决: 共享对象的多线程访问问题 && 协调线程同步问题
+	每个线程内部都有一个 ThreadLocal.ThreadLocalMap 类型的成员变量 threadLocals, 可以将本线程的局部变量保存到其中,多线程之间互不干扰.
+	其他线程访问不到本线程的, 每个线程只能访问到自己的.
+	
+	ThreadLocal 本身并不存储线程局部变量, 只是提供一个在当前线程中找到局部变量的索引key.
+	为每一个线程隔离一个类的实例,该实例的作用范围仅限于线程内部.
 
+	'每个ThreadLocal对象只能放一个线程局部变量' 
+	局部变量存储在 ThreadLocal.ThreadLocalMap 中, 是以 ThreadLocal对象 为key.
+	所以, 一个线程欲存放多个局部变量，则需实例化多个 ThreadLocal 对象
+	ThreadLocal 变量通常被 private static 修饰, 用于关联线程上下文.
+	
+#不正确的理解
+	ThreadLocal为解决多线程并发访问提供了一种新的思路
+	ThreadLocal的目的是为了解决多线程访问资源时的共享问题
+		
+//}

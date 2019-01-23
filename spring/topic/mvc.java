@@ -399,8 +399,8 @@
 //{--------<<<上传下载>>>-----------------------------------------------------------------
 #文件上传
 	0.流程步骤
-		(1).<form>表单: POST提交 + enctype="multipart/form-data"
-		(2).文件上传域(<file>标签)必须要有name属性: <input type='file' name="file">
+		(1).<form>表单: POST + enctype="multipart/form-data"
+		(2).文件上传域(<file>)必须要有name属性: <input type='file' name="file">
 		(2).后台使用 MultipartFile 接收文件资源
 	
 	1.单文件上传
@@ -430,8 +430,8 @@
 	2.多文件上传
 		@PostMapping("/uploads")
 		public void batchUplocad(@RequestParam("file") List<MultipartFile> files,
-								   @RequestParam("desc") List<String> descs) {
-			files.forEach(x->x.transferTo(getUploadDir(),x.getOriginalFilename())); //文件另存 
+								 @RequestParam("desc") List<String> descs) {
+			files.forEach(x -> x.transferTo(getUploadDir(), x.getOriginalFilename())); //文件另存 
 			descs.forEach(log::info); //文件描述
 		}
 		
