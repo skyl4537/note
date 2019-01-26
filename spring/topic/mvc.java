@@ -30,10 +30,11 @@
 	
 //{--------<<<@Request*>>>----------------------------------------------------------------
 #RequestMapping ///可标注在(类/方法)上
-	#value: 请求地址; 默认属性. //@RequestMapping(value = "/hello") == @RequestMapping("/hello")
-	#method: 请求方式. //RequestMethod.GET; .POST; .PUT; .DELETE; ...
-	#params: 请求参数必须满足条件,才能进行处理.
-	#headers: 同上,不常用.
+	#value		-> 请求地址,默认属性. //@RequestMapping(value = "/hello") == @RequestMapping("/hello")
+	#name		-> 给这个mapping分配一个名称,类似于注释
+	#method		-> 请求方式. //RequestMethod.GET; .POST; .PUT; .DELETE; ...
+	#params		-> 请求参数必须满足条件,才能进行处理.
+	#headers	-> 同上,不常用.
 	
 		//参数必须包含'name'; 如有'age',则不能等于10
 		@GetMapping(value = "/hello", params = { "name", "age!=10" })

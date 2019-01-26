@@ -648,8 +648,35 @@
 //}
 
 //{--------<<<文件下载>>>-----------------------------------------------------------------
-#在 servlet 中的文件下载是通过流来实现的.
-#
+#servlet 中文件下载是通过流来实现的; struts2也是如此.
+	1.前台jsp
+		<body>
+			<a href="download.action?fileName=Struts2.chm">struts2的文档</a>
+			<a href="download.action?fileName=Struts1.3.chm">struts1的文档</a>
+		</body>
+
+	2.后台Action
+		public class DownloadAction {
+			private String fileName;
+
+			public String execute() {
+				return Action.SUCCESS;
+			}
+
+			public InputStream getInputStream() {
+				HttpServletRequest req = ServletActionContext.getRequest();
+				String path = req.getRealPath("/download"); //获取路径
+				return new FileInputStream(new File(path, fileName));
+			}
+		}
+		
+	3.struts.xml
+		<action name="download" class="cn.x.action.DownloadAction">
+			<result type="stream">
+				<param name="inputName">inputStream</param>
+				<param name="contentDisposition">attachment;filename=${fileName}</param>
+			</result>
+		</action>
 
 //}
 
@@ -781,7 +808,7 @@
 
 //}
 
-//{--------<<<x>>>-------------------------------------------------------------------------
+//{--------<<<x>>>------------------------------------------------------------------------
 
 //}
 

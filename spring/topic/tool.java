@@ -145,14 +145,15 @@
 	//(3).在写 th:each="obj,objStat:${objList}",可不写 objStat,自动添加,默认命名 objStat (如itemStat)
 	
 #th:text
-	<div th:text="${hello}">将被替换</div> //一般写法
+	<div th:text="${emp.name}">将被替换</div> //一般写法
+	<div>[[${emp.name}]]</div> //行内写法
 	
-	//行内写法(两种)
-	<p>The message is "[(${msg})]"</p> //[(...)]不会转义 <==> th:utext
-	<p>The message is "This is <b>great!</b>"</p>
-
-	<p>The message is "[[${msg}]]"</p> //[[...]]会转义 <==> th:text
+	//[[...]] & [(...)]
+	<p>The message is "[[${msg}]]"</p> //会转义 <==> th:text
 	<p>The message is "This is &lt;b&gt;great!&lt;/b&gt;"</p>
+
+	<p>The message is "[(${msg})]"</p> //不会转义 <==> th:utext
+	<p>The message is "This is <b>great!</b>"</p>
 
 	//禁用行内写法(禁用内联)
 	<p th:inline="none">A double array looks like this: [[1, 2, 3], [4, 5]]!</p> 

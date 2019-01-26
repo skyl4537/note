@@ -2,10 +2,15 @@
 ///JavaWeb的技术体系图--->附件
 
 //{--------<<<框架>>>--------------------------------------------------------------------
-#封装-代码重用
-	框架: 可重用的半成品.
+#框架-可重用的半成品
+	基础语法 --> 方法 --> 类 --> jar --> 框架 //每一层递进,都是代码重用的结果
 	
-	基础语法 --> 方法 --> 类 --> jar --> 框架 //每一层的递进,都是代码重用的结果
+#jq
+	var jsonStr = JSON.stringify(jsonObj); //json -> String
+	
+	var jsonObj = JSON.parse(jsonStr); //String -> json
+	alert(jsonObj.name + " - " + jsonObj.age);
+	
 
 //}
 

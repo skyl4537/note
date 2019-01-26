@@ -310,44 +310,7 @@
 	who|cut -b 3-	//.....................到行尾
 
 //}
-	
-//{--------<<<组合指令>>>-----------------------------------------------------------------
-//查看不同状态的连接数数量
-# netstat -n | awk '/^tcp/ {++y[$NF]} END {for(w in y) print w, y[w]}'
-	TIME_WAIT 251 
-	CLOSE_WAIT 16
-	FIN_WAIT1 7
-	FIN_WAIT2 125
-	ESTABLISHED 2412
-	LAST_ACK 4
 
-//查看每个ip跟服务器建立的连接数
-# netstat -nat|awk '{print$5}'|awk -F : '{print$1}'|sort|uniq -c|sort -rn
-	31 45.116.147.178 
-	20 45.116.147.186
-	12 23.234.45.34
-	11 103.56.195.17
-	
-	显示第5列; [-F :]以:分割; [sort]排序; [uniq -c]统计排序过程中的重复行; [sort -rn]按纯数字进行逆序排序
-	
-//查看每个ip建立的(ESTABLISHED/TIME_OUT)状态的连接数
-# netstat -nat|grep ESTABLISHED|awk '{print$5}'|awk -F : '{print$1}'|sort|uniq -c|sort -rn
-     94 127.0.0.1
-     22 192.168.8.93
-     20 192.168.8.66
-     12 192.168.8.127
-
-//获取eth0网卡的IP地址和MAC地址
-#ifconfig eth0 |grep "inet addr:" |awk '{print $2}' |cut -c 6- //etho的ip
-#ifconfig eth0 |grep "HWaddr" |awk '{print $5}' //mac地址
-	(1).获取eth0网卡的信息
-	(2).过滤出IP地址的行或MAC地址的行
-	(3).使用awk输出指定字段
-	(4).对于MAC地址,第5个字段就是MAC; 而对于IP地址,还需要对第2个字段截取第6个字符之后的内容
-
-
-//}	
-	
 //{--------<<<常用指令>>>-----------------------------------------------------------------
 '常用命令': http://www.runoob.com/w3cnote/linux-useful-command.html
 
@@ -430,7 +393,7 @@
 		Swap:         7.9G       148M       7.7G
 
 //}
-	
+
 //{--------<<<vi>>>-----------------------------------------------------------------------
 #vi使用
 	vi hello.sh		//使用Vi编辑器,新建并打开hello.sh文件
@@ -507,54 +470,60 @@
 	
 //}
 
-//{--------<<<shell脚本>>>----------------------------------------------------------------
-	//-gt: 大于; -lt: 小于; -eq: 等于; -a: 且; -o: 或; !: 非
-		if(a>0 && (b>0 || c>0))
-		if [ $b -gt 0 -o $c -gt 0 -a $a -gt 0 ]; then //等同于
-		if [ $b -gt 0 ] || [ $c -gt 0 ] && [ $a -gt 0 ]; then //等同于
-	
-	//if elseif else实现
-		if 条件0 then 
-			命令0
-		elif 条件1 then 
-			命令1
-		else 
-			命令2
-		fi  
-	//只有 if
+//{--------<<<shell>>>--------------------------------------------------------------------
+#算术运算符
+	#原生bash不支持简单的数学运算,可通过其他命令来实现. 如: expr.
+		a=10; b=20;
+		
+		val=`expr $a + $b` 
+		val=`expr $a \* $b`	//转义符'\'
+		if [ $a == $b ]		//运算符 == 前后都有空格; 且 [ 之后也有空格.
+
+#关系运算符
+	#关系运算符只支持数字,不支持字符串; 除非字符串的值是数字,如ASCII表.
+	#常用: gt(>); lt(<); eq(==); ne(!=); ge(>=); le(<=); o(||); a(&&)
+		a=10; b=20;
+		
+		if(a>0 && (b>0 || c>0))  
+		<-->  if [ $b -gt 0 || $c -gt 0 -a && -gt 0 ]; then //等同
+		<-->  if [ $b -gt 0 -o $c -gt 0 -a $a -gt 0 ]; then //等同
+
+#字符串运算符
+		a="abc"; b="efg";
+	 
+		if [ $a = $b ]	//两个字符串是否相等
+		if [ -z $a ]	//长度是否为0
+		if [ -n "$a" ]	//长度是否不为0
+		if [ $a ]		//检测是否不为空
+
+#文件测试运算符
+	#用于检测 Unix 文件的各种属性
+		file="/var/lib/webpark/logs/sm/task/file/aaa"
+		
+		if [ -e $file ] //文件存在
+		if [ -r $file ] //可读
+		if [ -w $file ] //可写
+		if [ -x $file ] //可执行
+		
+		if [ -d $file ] //是否为目录
+		if [ -s $file ] //不为空
+		if [ -f $file ] //是否为普通文件(既不是目录,也不是设备文件)
+
+#条件判断
+	1.只有if
 		if 条件 then
 			命令
 		fi
 		
-	//字符串判断
-		str1 = str2		//当两个串有相同 内容+长度 时为真 
-		str1 != str2	//当串str1和str2不等时为真 
-		-n str1			//当串的长度大于0时为真(串非空) 
-		-z str1			//当串的长度为0时为真(空串) 
-		str1			//当串str1为非空时为真
+	2.if—elseif—else
+		if 条件0 then 
+			命令0
+		elif 条件1 then
+			命令1
+		else
+			命令2
+		fi
 
-	//数字判断
-		int1 -eq int2	// == 真 
-		int1 -ne int2	// != 真 
-		int1 -gt int2	// > 真 
-		int1 -ge int2	// >= 真 
-		int1 -lt int2	// < 真 
-		int1 -le int2	// <= 真
-		
-	//文件的判断
-		-r file			//用户可读为真 
-		-w file			//用户可写为真 
-		-x file			//用户可执行为真 
-		-d file			//文件为目录为真 
-		-s file			//文件大小非0时为真
-		
-		if [ ! -d "/data/" ];then
-		echo "文件夹不存在"
-		fi
-		
-		if [ ! -f "/data/filename" ];then
-		echo "文件不存在"
-		fi
 
 #!/bin/bash
 PID=$(lsof -t -i:8090)
@@ -570,7 +539,7 @@ fi
 cd /var/tmp
 chmod 777 demo.jar
 
-if [ ! -f "jdk1.8.0_191/bin/java" -o ! -f demo.jar ];then //-f: 文件是否存在
+if [ ! -e "jdk1.8.0_191/bin/java" -o ! -f demo.jar ];then //-e: 文件是否存在
     echo "jdk路径或jar包不存在"
 else
 	nohup jdk1.8.0_191/bin/java -jar demo.jar >/dev/null 2>&1 &
@@ -646,4 +615,41 @@ awk是一种处理文本文件的语言,是一个强大的文本分析工具.
 	
 	
 	
+//}
+
+//{--------<<<组合指令>>>-----------------------------------------------------------------
+//查看不同状态的连接数数量
+# netstat -n | awk '/^tcp/ {++y[$NF]} END {for(w in y) print w, y[w]}'
+	TIME_WAIT 251 
+	CLOSE_WAIT 16
+	FIN_WAIT1 7
+	FIN_WAIT2 125
+	ESTABLISHED 2412
+	LAST_ACK 4
+
+//查看每个ip跟服务器建立的连接数
+# netstat -nat|awk '{print$5}'|awk -F : '{print$1}'|sort|uniq -c|sort -rn
+	31 45.116.147.178 
+	20 45.116.147.186
+	12 23.234.45.34
+	11 103.56.195.17
+	
+	显示第5列; [-F :]以:分割; [sort]排序; [uniq -c]统计排序过程中的重复行; [sort -rn]按纯数字进行逆序排序
+	
+//查看每个ip建立的(ESTABLISHED/TIME_OUT)状态的连接数
+# netstat -nat|grep ESTABLISHED|awk '{print$5}'|awk -F : '{print$1}'|sort|uniq -c|sort -rn
+     94 127.0.0.1
+     22 192.168.8.93
+     20 192.168.8.66
+     12 192.168.8.127
+
+//获取eth0网卡的IP地址和MAC地址
+#ifconfig eth0 |grep "inet addr:" |awk '?print $2}' |cut -c 6- //etho的ip
+#ifconfig eth0 |grep "HWaddr" |awk '{print $5}' //mac地址
+	(1).获取eth0网卡的信息
+	(2).过滤出IP地址的行或MAC地址的行
+	(3).使用awk输出指定字段
+	(4).对于MAC地址,第5个字段就是MAC; 而对于IP地址,还需要对第2个字段截取第6个字符之后的内容
+
+
 //}
