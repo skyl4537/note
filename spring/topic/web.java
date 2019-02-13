@@ -42,25 +42,28 @@
 	
 #Servlet作用
 	将url映射到一个java类的处理方法上.
-	接收请求的数据, 并与其他服务器资源进行通信(如数据库,基于java的应用程序).
+	接收请求的数据, 并与服务器其他资源进行通信(如数据库).
 	如何将处理结果展示到页面.
 	如何进行页面跳转.
 
 	编译存储在目录"web应用/WEB-INF/classes/*".
 	
 #Servlet容器
+	负责处理客户请求. 当客户请求到来时,调用某个Servlet,并把Servlet的执行结果返回给客户.
+	典型的Servlet应用是监听器,过滤器的实现.
+	
 	Servlet本质是一个java接口类,部署运行在Servlet容器中.
 	Servlet容器管理Servlet的整个生命周期, 并负责调用Servlet方法响应客户端请求.
-	Servlet和客户端的通信采用"请求/响应"模式.
+	Servlet和客户端的通信采用"请求/响应"模式, 基于请求.
 	
-#Servlet生命周期方法(由容器调用) ---> 非线程安全!!
+#Servlet生命周期方法(由容器调用) ---> 非线程安全(所有请求公用同一个Servlet)!!
 	构造器: //只在第一次请求时调用,创建<单实例>的Servlet对象.
 	init(): //只被调用一次(调用构造器方法后立即被调用). 用于初始化当前Servlet
 	service(): //每次请求都会调用. 用于响应客户端请求.
 	destory(): //只被调用一次. 应用被卸载前调用. 用于释放Servlet所占用的资源(如数据库连接).
 
-#实现Servlet接口
-	1.web.xml中配置和映射实现类
+#自定义Servlet
+	1.web.xml
 		<servlet>
 			<servlet-name>helloServlet</servlet-name> //类别名
 			<servlet-class>com.x.javaweb.HelloServlet</servlet-class>
@@ -68,130 +71,139 @@
 		
 		<servlet-mapping>
 			<servlet-name>helloServlet</servlet-name>
-			<url-pattern>/hello</url-pattern> //访问路径. 其中,'/'代表当前web应用的根目录
+			<url-pattern>/hello</url-pattern> //访问路径. 其中'/'代表当前web应用的根目录
 			<load-on-startup>1</load-on-startup> //指定 Servlet 被创建的时机
 		</servlet-mapping>
 
-	2.参数说明
-		load-on-startup: 负数 --> 在第一次请求时被创建; 
-						 正数或0 --> 在当前应用被Serlvet容器加载时创建实例, 且数值越小越早被创建.
+	2.说明
+		负数 	--> 在第一次请求时被创建 //<load-on-startup>
+		正数或0	--> 在当前应用被Serlvet容器加载时创建实例, 且数值越小越早被创建.
 
+		//@RequestMapping(value={"/hello, /helloWorld"})
 		同一个Servlet可以被映射到多个URL上. 即一个<Servlet>可以对应多个<servlet-mapping>.
 
 		Servlet映射URL中可以使用通配符"*",但只能两种固定格式: '/*' 或 '*.html(do,action等)'
 		其他,如 '/*.html' 都是不合法的.
 
 #init()方法
-	0.ServletConfig --> /**封装了 Serlvet 的配置信息,并且可以获取 ServletContext 对象*/	
-		//配置Serlvet的初始化参数
-		<servlet>
-			<servlet-name>helloServlet</servlet-name>
-			<servlet-class>com.x.javaweb.HelloServlet</servlet-class>
-			<init-param> //配置 Serlvet 的初始化参数. 且节点必须在<load-on-startup>之前
-				<param-name>user</param-name>
-				<param-value>123</param-value>
-			</init-param>
-			<load-on-startup>-1</load-on-startup>
-		</servlet>
+	#ServletConfig --> 封装了 Serlvet 的配置信息,可获取对象 ServletContext
+		1.配置Serlvet的初始化参数
+			<servlet>
+				<servlet-name>helloServlet</servlet-name>
+				<servlet-class>com.x.javaweb.HelloServlet</servlet-class>
+				
+				<init-param> //初始化参数. 此节点必须在<load-on-startup>之前
+					<param-name>user</param-name>
+					<param-value>123</param-value>
+				</init-param>
+				<load-on-startup>-1</load-on-startup>
+			</servlet>
 
-		//获取Servlet的初始化参数
-		public void init(ServletConfig config) throws ServletException {
-			String user = config.getInitParameter("user"); //获取单个
-			System.out.println("user: " + user);
+		2.获取Servlet的初始化参数
+			public void init(ServletConfig config) throws ServletException {
+				String user = config.getInitParameter("user"); //获取单个
 
-			Enumeration<String> names = config.getInitParameterNames(); //获取所有
-			while (names.hasMoreElements()) {
-				String name = names.nextElement();
-				String value = config.getInitParameter(name);
-				System.out.println("获取Servlet的初始化参数 -> " + name + ":" + value);
+				Enumeration<String> names = config.getInitParameterNames(); //获取所有
+				while (names.hasMoreElements()) {
+					String name = names.nextElement();
+					String value = config.getInitParameter(name);
+				}
 			}
-		}
 		
-	1.ServletContext --> /**代表当前WEB应用,可以从中获取到应用的各个方面信息*/	
-		//配置web应用的初始化参数
-		<context-param>
-			<param-name>driver</param-name>
-			<param-value>com.mysql.jdbc.Driver</param-value>
-		</context-param>
+		3.常用方法
+			config.getServletName(); //不常用
+			config.getInitParameterNames(); //所有
+			config.getInitParameter("uName"); //单个
+			config.getServletContext(); //常用
 		
-		//获取web应用的初始化参数
-		public void init(ServletConfig config) throws ServletException {
-			ServletContext context = config.getServletContext(); //由 ServletConfig 获取
-			String driver = context.getInitParameter("driver"); //获取单个
-			System.out.println("driver: " + driver);
+	#ServletContext --> 代表当前WEB应用,可以从中获取到应用的各个方面信息
+		1.配置web应用的初始化参数
+			<context-param> //与节点<servlet/>同级
+				<param-name>driver</param-name>
+				<param-value>com.mysql.jdbc.Driver</param-value>
+			</context-param>
+		
+		2.获取web应用的初始化参数
+			public void init(ServletConfig config) throws ServletException {
+				ServletContext context = config.getServletContext();
+				String driver = context.getInitParameter("driver"); //获取单个
 
-			Enumeration<String> names = context.getInitParameterNames(); //获取所有
-			while (names.hasMoreElements()) {
-				String name = names.nextElement();
-				String value = context.getInitParameter(name);
-				System.out.println("获取web应用的初始化参数 -> " + name + ":" + value);
+				Enumeration<String> names = context.getInitParameterNames(); //获取所有
+				while (names.hasMoreElements()) {
+					String name = names.nextElement();
+					String value = context.getInitParameter(name);
+				}
 			}
-		}
 		
-	2.ServletContext常用方法
-        context.getRealPath("abc.log"); //获取某个文件在服务器上的绝对路径,而非部署前路径
-        context.getContextPath(); //获取当前应用的名称 server.servlet.context-path=/demo
-		
-        InputStream in = context.getResourceAsStream("my.properties"); //获取某个文件对应的输入流
-		//InputStream in = getClass().getClassLoader().getResourceAsStream("my.properties"); //效果同上
-        Properties properties = new Properties();
-        properties.load(in);
-        String url = properties.getProperty("url");
-		
-		//属性相关的三个方法
-        context.setAttribute("user", "123"); //设置
-        String user = (String) context.getAttribute("user"); //获取
-        context.removeAttribute("user"); //移除
+		3.ServletContext常用方法
+			context.getContextPath(); //获取应用名称 server.servlet.context-path=/demo
+			
+			//文件在服务器上的绝对路径,而非部署前路径
+			context.getRealPath("abc.log"); //F:\sp_project\webpark\src\main\webapp\demo.log
+			
+			InputStream in = context.getResourceAsStream("my.properties");
+			//InputStream in = getClass().getClassLoader().getResourceAsStream("my.properties"); //同上
+			Properties properties = new Properties();
+			properties.load(in);
+			String url = properties.getProperty("url");
+			
+			//属性相关的三个方法(设置,获取,移除)
+			context.setAttribute("user", "123");
+			String user = (String) context.getAttribute("user");
+			context.removeAttribute("user");
 		
 #service()方法
-	0.http连接
+	#http请求
 		建立连接 -> 发送请求信息 -> 回送响应信息 -> 关闭连接.
-		每次访问一个页面,浏览器和服务器都要单独建立一次连接.
-		每次连接只处理一个请求和响应. 每次请求都会调用一次方法 service().
+		每一次请求,都要重新建立一次连接.
+		每次连接只处理一个请求和响应. 
+		每次请求都会调用一次方法 service().
 		
-	1.ServletRequest --> /**封装了请求信息.可以从中获取到任何的请求信息*/
+	#ServletRequest(请求信息)
 		public void service(ServletRequest req, ServletResponse res) {
 			Enumeration<String> names = req.getParameterNames();
 			while (names.hasMoreElements()) {
 				String name = names.nextElement(); //请求参数key
 
-				String value = req.getParameter(name); //若请求参数有多个值(如 checkbox),该方法只能获取到第一个value.
-				String[] values = req.getParameterValues(name); //这个方法可以获取到请求参数的所有values.
+				req.getParameter(name); //若请求参数有多个值(如 checkbox),该方法只能获取到第一个value.
+				req.getParameterValues(name); //这个方法可以获取到请求参数的所有values.
 			}
 
 			Map<String, String[]> map = req.getParameterMap(); //请求参数的key-value
 			map.forEach((name, values) -> System.out.println(name + ":" + Arrays.toString(values)));
 
 			//强转(撕破伪装) -> http*封装更详细的请求信息
-			HttpServletRequest request = (HttpServletRequest) req; 
-			String method = request.getMethod(); //获取请求方式: GET或POST...等
-			String queryString = request.getQueryString(); //GET请求 ?后面内容
-			String uri = request.getRequestURI(); //URI -> /demo/hello/listener
-			StringBuffer url = request.getRequestURL(); //URL -> http://127.0.0.1:8090/demo/hello/listener
+			HttpServletRequest request = (HttpServletRequest) req;
+			request.getMethod(); //GET,POST...
+			request.getQueryString(); //GET请求 ?后面内容
+			request.getRequestURI(); //URI -> /demo/hello/listener
+			request.getRequestURL(); //URL -> http://127.0.0.1:8090/demo/hello/listener
 		}
 	
-	3.ServletResponse --> /**封装了响应信息,如果想给用户什么响应,具体可以使用该接口的方法实现*/
+	#ServletResponse(响应信息)
 		public void service(ServletRequest req, ServletResponse res) throws IOException {
 			PrintWriter writer = res.getWriter();
 			writer.print("HELLO WORLD!"); //响应内容打印到浏览器
+			
 			res.setContentType("application/msword"); //设置响应的内容类型: word文档
 
 			HttpServletResponse resp = (HttpServletResponse) res; //强转
 			resp.sendRedirect("/list"); //请求重定向
 		}
 		
-#HttpServlet
-	能够处理HTTP请求的Servlet. 添加了一些与HTTP协议相关方法, 
-	HttpServlet覆写 service() 方法时,根据请求方式不同,将请求分别分发到 doGet() doPost() doPut() doDelete().
-	//所以,实际开发中继承 HttpServlet, 并覆写相应的方法 doXXX().
+#HttpServlet --> 能够处理HTTP请求的Servlet. 添加了一些与HTTP协议相关方法, 
+	#HttpServlet 覆写 service() 方法时,根据请求方式不同,将请求分别分发到 doGet() doPost() doPut() doDelete().
+	#所以,实际开发中继承 HttpServlet, 并覆写相应的方法 doXXX().
 	
 	HttpServlet extends GenericServlet implements Servlet, ServletConfig, Serializable //与Servlet的继承关系
 
 //}
 
 //{--------<<<jsp>>>---------------------------------------------------------------------
-#jsp页面(Java_Server_Pages)
-	本质就是一个Servlet; jsp善于处理页面显示; Servlet善于处理业务逻辑, 二者结合使用.
+#jsp页面(Java Server Pages)
+	本质就是一个Servlet; 
+	jsp善于处理页面显示; Servlet善于处理业务逻辑, 二者结合使用.
+	
 	执行时,先转化为java文件,再编译成class文件.
 	转化过程: java代码照搬; html+css+表达式等通过流输出 out.write() 
 		
@@ -209,7 +221,7 @@
 		ServletConfig config; //Servlet.ServletConfig.(X) 
 		Object page = this; //jsp对象本身,或编译后的Servlet对象; 实际上就是this.(X)
 		
-		//pageContext < request < session < application (作用域:从小到大)
+		///pageContext < request < session < application (作用域:从小到大)
 		
 	1.jsp中的java
 		<% 
@@ -253,7 +265,7 @@
 		//1.bean属性    2.list(index)       3.map<key>  4.map<特殊key>  5.session取特殊key
 		${person.age}	${list[1].name}		${map.c}	${map["c.d"]}	${sessionScope["c.d"].name}
 
-#jstl(JSP标准标签库) //JSP标签集合,封装了JSP应用的通用核心功能.	
+#jstl(jsp标准标签库) //jsp标签集合,封装了jsp应用的通用核心功能.	
 	1.导入标签库jar包
 		<dependency>
 			<groupId>jstl</groupId>
@@ -264,7 +276,9 @@
 	2.在jsp页面引入标签库
 		<%@taglib prefix="c" uri="http://java.sun.com/jsp/jstl/core"%> //声明
 
-		//test: 判断条件; var: 用于存储条件结果的变量; scope: var属性的作用域;
+		//test	-> 判断条件
+		//var	-> 用于存储条件结果的变量
+		//scope	-> var属性的作用域
 		<c:if test="${salary > 20000}" var="flag" scope="session">
 		   <p>我的工资为: <c:out value="${salary}"/><p>
 		</c:if>
@@ -296,6 +310,7 @@
 
 //{--------<<<转发&重定向>>>-------------------------------------------------------------
 https://blog.csdn.net/zhouysh/article/details/380364
+
 #转发
 	Servlet接收到浏览器请求后,进行一定的处理,先不进行响应,
 	而是在服务端内部 0转发0 给其他Servlet继续处理.
@@ -306,16 +321,17 @@ https://blog.csdn.net/zhouysh/article/details/380364
 	状态码302要求浏览器去请求新地址,整个过程浏览器发出 2次请求.
 	
 #二者区别
-	1; 2	//发送请求次数(request个数)
+	1 ; 2	//发送请求次数(request个数)
 	否; 是	//浏览器地址是否改变
 	是; 否	//是否共享对象 request
 	是; 否	//是否传递request中数据	
 	是; 否	//目标资源是否可以是WEB-INF下资源
 	
-	转发 -> 只能是当前web应用的资源; 重定向 -> 任意资源,甚至网络资源.
+	转发	-> 只能是当前web应用的资源
+	重定向	-> 任意资源,甚至网络资源
 	
-	转发 -> '/'代表当前'web应用'的根目录; //http://localhost:8090/demo/
-	重定向 -> '/'代表当前'web站点'的根目录. //http://localhost:8090/
+	转发	-> '/'代表当前'web应用'的根目录; //http://localhost:8090/demo/
+	重定向	-> '/'代表当前'web站点'的根目录. //http://localhost:8090/
 	
 #代码实现
 	req.setAttribute(key, value); //转发前绑定数据,在目标资源取出数据
@@ -323,56 +339,57 @@ https://blog.csdn.net/zhouysh/article/details/380364
 
 	resp.sendRedirect("重定向地址"); //重定向
 	
-#防止表单重复提交
-	0.表单重复提交3种场景
-		(1).网络延迟,用户多次点击submit按钮
-		(2).表单提交后,转发到目标页面,用户点击'刷新'按钮
-		(3).提交表单后,点击浏览器的'后退'按钮,回退到表单页面,再次进行'提交'
+//}
+
+//{--------<<<表单重复提交>>>------------------------------------------------------------
+#3种场景
+	(1).网络延迟,用户多次点击'submit'按钮
+	(2).表单提交后,转发到目标页面,用户点击'刷新'按钮
+	(3).提交表单后,点击浏览器的'后退'按钮,回退到表单页面,再次进行'提交'
+	
+	(0).点击'返回','刷新'原表单页面,再'提交' ---> 不属于表单重复提交
+
+#场景(1) --> 用js控制表单只能提交一次(两种方案,推荐1)
+	1.只能提交一次
+		var isCommitted = false;//表单是否已提交,默认false
+		function doSubmit() {
+			if (false === isCommitted) {
+				isCommitted = true;
+				return true;//返回true,让表单正常提交
+			} else {
+				return false;//返回false,则表单将不提交
+			}
+		}
 		
-		(0).点击'返回','刷新'原表单页面,再'提交' ---> 不属于表单重复提交
-	
-	1.用js控制表单只能提交一次 --> 针对场景(1)
-		<script>
-			//(1).只能提交一次
-			var isCommitted = false;//表单是否已提交,默认false
-			function doSubmit() {
-				if (false === isCommitted) {
-					isCommitted = true;
-					return true;//返回true,让表单正常提交
-				} else {
-					return false;//返回false,则表单将不提交
-				}
-			}
-			
-			//(2).提交后,提交按钮置为不可用
-			function doSubmit() {
-				var btnSubmit = document.getElementById("submit"); //获取表单提交按钮
-				btnSubmit.disabled = true; //置为不可用
-				return true;
-			}
-		</script>
-		<form id="form-login" method="post" onsubmit="doSubmit()" th:action="@{/user/login}"></form>
-	
-	2.表单提交后直接重定向到目标页面 --> 针对场景(2)
+	2.提交后按钮置为不可用
+		function doSubmit() {
+			var btnSubmit = document.getElementById("submit"); //获取表单提交按钮
+			btnSubmit.disabled = true; //置为不可用
+			return true;
+		}
+
+		<form method="post" onsubmit="doSubmit()" th:action="@{/user/login}"></form>
+
+#场景(2) --> 表单提交后直接重定向到目标页面
 		//转发到目标页面,点击[刷新]会一直请求之前的表单.
-		resp.sendRedirect("重定向地址"); //重定向
-	
-	3.利用Session的token机制 --> 针对场景(2)(3)
-		//(1).生成token; 并转发token.html页面
+		resp.sendRedirect("重定向地址"); 
+
+#场景(123) --> 利用Session的token机制
+	1.生成token，存Session，并转发前台页面
 		@GetMapping("/token")
 		public String token(HttpSession session) {
 			session.setAttribute("token", UUID.randomUUID().toString()); //token存Session中
 			return "/mvc/token";
 		}
-		
-		//(2).前台页面使用hidden存储token
+	
+	2.前台页面使用hidden存储token，表单并提交携带
 		<form id="form-login" method="post" th:action="@{/mvc/login}">
 			<input type="hidden" name="token" th:value="${session.token}"/>
 			//...
 			<button class="btn btn-primary" type="submit">登录</button>
 		</form>
-	
-		//(3).后台处理表单提交
+
+	3.后台处理表单提交
 		@PostMapping("/login")
 		public String login(HttpServletRequest request, HttpServletResponse response) {
 			if (isRepeatSubmit(request)) {
@@ -382,8 +399,8 @@ https://blog.csdn.net/zhouysh/article/details/380364
 			request.getSession().removeAttribute("token"); //非重复提交,则移除Session中的token
 			return "登陆成功";
 		}
-		
-		//(4).表单重复提交判断
+	
+	4.表单重复提交判断
 		private boolean isRepeatSubmit(HttpServletRequest request) {
 			String clientToken = request.getParameter("token");
 			if (clientToken == null) { //<1>.request中没有token,则为重复提交
@@ -401,10 +418,10 @@ https://blog.csdn.net/zhouysh/article/details/380364
 			return false;
 		}
 
-	4.Token机制的另一种实现 --> 结合拦截器Interceptor,缓存Cache等
-	
-		https://blog.battcn.com/2018/06/12/springboot/v2-cache-locallock/
-		https://www.jianshu.com/p/09c6b05b670a
+#Token机制的另一种实现 --> 结合拦截器Interceptor,缓存Cache等
+
+	https://blog.battcn.com/2018/06/12/springboot/v2-cache-locallock/
+	https://www.jianshu.com/p/09c6b05b670a
 	
 //}
 
@@ -417,15 +434,15 @@ https://blog.csdn.net/u013210620/article/details/52318884
 		也就是说服务器不能区分两次请求是否由同一个客户端发出.
 		
 		Cookie 实际上就是服务器保存在浏览器上的一段信息,完成会话跟踪的一种机制.
-		第一次访问,没有Cookie,服务器返回,浏览器保存.
+		第一次访问,没有Cookie, 服务器返回,浏览器保存.
 		一旦浏览器有了 Cookie,以后每次请求都会带上,服务器收到请求后,就可以根据该信息处理请求。
 		
         储存空间比较小 4KB
 		数量限制,每一个域名下最多建 20个.
 		用户可以清除 Cookie; 客户端还可以禁用 Cookie.
 	
-	2.自动删除
-		//持久化Cookie: 设置了过期时间,浏览器就会把Cookie持久化到磁盘,再次打开浏览器,依然有效,直到过期!!!
+	2.持久化Cookie
+		//设置过期时间,浏览器就会把Cookie持久化到磁盘,再次打开浏览器,依然有效,直到过期!!!
 		
 		会话Cookie ---> 是在会话结束时(浏览器关闭)会被删除
 		持久Cookie ---> 在到达失效日期时会被删除
@@ -461,12 +478,12 @@ https://blog.csdn.net/u013210620/article/details/52318884
 
 #Session概念
 	当程序需要为某客户端的请求创建一个session时,
-	服务器首先检查这个客户端的请求里是否已包含了一个session标识(SessionId)???
+	服务器首先检查这个客户端的请求里是否已包含了一个session标识(SessionId).
 	
 	如果已包含, 则说明之前已为此客户端创建过session, 
 	服务器就按照 SessionId 把这个session检索出来使用(检索不到,新建一个);
 	
-	如果客户端请求不包含, 则为此客户端新建一个Session, 并将与此session相关联的 SessionId 返回给客户端保存.
+	如果不包含, 则为此客户端新建一个Session, 并将与此session相关联的 SessionId 返回给客户端保存.
 	
 	保存 SsessionId 的方式可以采用Cookie, 这样在交互过程中浏览器可以自动的按照规则把这个标识发挥给服务器.
 	
@@ -487,11 +504,11 @@ https://blog.csdn.net/u013210620/article/details/52318884
 	以后浏览器在发送就会携带这个特殊的 Cookie 对象.
 	服务器通过'JSESSIONID'查找与之对应的Session对象,以区分不同的用户.
 	
-	(1).显示指定(需要)创建Session对象	
+	1.显示指定需要创建Session对象	
 		request.getSession(true); //若存在则返回,否则新建一个Session.(默认为true)
 		request.getSession(false); //若存在则返回,否则返回null
 	
-	(2).jsp显示指定(不需要)创建Session对象
+	2.jsp.....不需要创建Session对象
 		<%@ page language="java" ... session="false" %> //默认是true
 		
 		//若当前jsp是客户端访问的第一个资源, 由于页面指定, 则服务端不会创建Session对象.
@@ -525,13 +542,12 @@ https://blog.csdn.net/u013210620/article/details/52318884
 		String encodeURL = response.encodeURL(url); //url重写
 		response.sendRedirect(encodeURL);
 	   
-#Session持久化
-	/**持久化Session --> 持久化Cookie --> 设置Cookie过期时间*/
-	Cookie cookie = new Cookie("JSESSIONID",session.getId());
-	cookie.setMaxAge(90); //持久化该Cookie对象
-	response.addCookie(cookie); //将Cookie对象发送给浏览器
+#持久化Session --> 持久化Cookie --> 设置Cookie过期时间
+		Cookie cookie = new Cookie("JSESSIONID",session.getId());
+		cookie.setMaxAge(90); //持久化Cookie
+		response.addCookie(cookie); //将Cookie发送浏览器
 
-	默认保存: C:\Users\BlueCard\AppData\Local\Temp\9121B10A811596BD85A3431BFBE71078B2880509\servlet-sessions
+		默认保存: C:\Users\BlueCard\AppData\Local\Temp\9121B10A811596BD85A3431BFBE71078B2880509\servlet-sessions
 
 //}	
 
@@ -540,7 +556,7 @@ https://blog.csdn.net/u013210620/article/details/52318884
 	0.相关属性
 		优先级: 多个filter,先配置,优先级高. --> @Order(n) n越小,优先级越高
 		
-		dispatcher: 指定过滤器所拦截的资源被 Servlet 容器调用的方式. 同一个filter可设置多个.
+		dispatcher(可选值): 指定过滤器所拦截的资源被 Servlet 容器调用的方式. 同一个filter可设置多个.
 			REQUEST -> (默认) 'GET/POST直接'访问目标资源时,才会被被filter拦截. 
 			FORWARD -> 通过 RequestDispatcher.forward() '转发'..,...
 			INCLUDE -> 通过 RequestDispatcher.include() 访问时...
@@ -554,12 +570,15 @@ https://blog.csdn.net/u013210620/article/details/52318884
 		<filter-mapping>
 			<filter-name>testFilter</filter-name>
 			<url-pattern>/_*</url-pattern>
-			<dispatcher>REQUEST</dispatcher>
+			<dispatcher>REQUEST</dispatcher> //可选值
 		</filter-mapping>
 		
-	2.boot配置
-		@Order(1) //boot配置 + 全局配置: @ServletComponentScan
-		@WebFilter(filterName = "testFilter", urlPatterns = "/abc", dispatcherTypes = DispatcherType.REQUEST)
+	2.生命周期
+		生命周期与 Servlet 一样: //init(调用一次) --> filter(每次调研) --> destory(调用一次)
+		
+	3.boot配置
+		@Order(1) // + 全局配置: @ServletComponentScan
+		@WebFilter(filterName = "testFilter", urlPatterns = "/abc")
 		public class TestFilter implements Filter {
 
 			@Override //Servlet容器Tomcat启动时,加载filter初始化方法,且只调用一次. 单例
@@ -573,7 +592,7 @@ https://blog.csdn.net/u013210620/article/details/52318884
 			public void destroy() { }
 		}
 	
-	3.登陆检测过滤器
+	4.登陆检测过滤器
 		@Order(1)
 		@WebFilter(filterName = "loginFilter", urlPatterns = "/filter/*")
 		public class LoginFilter extends HttpFilter {
@@ -600,15 +619,16 @@ https://blog.csdn.net/u013210620/article/details/52318884
 		//四大域对象: ServletContext; HttpSession; ServletRequest; PageContext
 		用于监听web程序'三大域对象(PageContext 除外)'的创建与销毁事件, 及属性发生变化事件.
 		其中,PageContext 生命周期为当前页面,所以不用监听.
+		
 		注册和调用过程都是由web容器自动完成的; 当监听的事件被触发时,自动调用自定义的处理方法.
 		一个web程序只会为每个事件监听器创建一个对象,所以在自定义事件监听器时,应考虑多线程安全问题.
 		
 	3.Servlet监听器分类
 		三大域对象'创建和销毁'的事件监听器.
 		三大域对象'属性变更'的事件监听器. //较少使用
-		感知Session绑定的事件监听器. //较少使用
+		'感知Session绑定'的事件监听器. //较少使用
 		
-#三大域对象创建和销毁的事件监听器
+#创建和销毁
 	1.配置方式
 		<listener> //xml配置
 			<listener-class>com.example.config.MyServletListener</listener-class>
@@ -662,7 +682,7 @@ https://blog.csdn.net/u013210620/article/details/52318884
 		}
 	
 	
-#三大域对象属性变更的事件监听器
+#属性变更(add,replace,remove)
 	1.代码实现
 		@WebListener
 		public class MyAttributeListener implements ServletContextAttributeListener, HttpSessionAttributeListener,
@@ -692,8 +712,8 @@ https://blog.csdn.net/u013210620/article/details/52318884
 			request.removeAttribute("attr");     // Request -> 删除...attr - 456
 		}
 	
-#感知Session绑定的事件监听器
-	///监听实现该接口的 Java 类对象被绑定到 Session 或从 Session 中解除绑定的事件.
+#感知Session绑定
+	//监听实现该接口的 Java 类对象被绑定到 Session 或从 Session 中解除绑定的事件.
 	
 	1.代码实现
 		//不需要添加注解 @WebListener

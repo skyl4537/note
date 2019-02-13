@@ -139,6 +139,7 @@
 	
 	zip -d sm.zip a.log			//从压缩文件中删除文件a.log	
 	
+	unzip sm.zip				//解压到当前目录
 	unzip -l sm.zip				//查看压缩包中的文件信息(不解压)	
 	
 #tar: 打包文件(可指定压缩), 用于备份文件!!!(相比zip更优)

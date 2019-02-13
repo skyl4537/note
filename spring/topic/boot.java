@@ -1,5 +1,6 @@
 	http://start.spring.io/
 	
+//{--------<<<基础概念>>>------------------------------------------------------------------
 #boot优势
 	简化依赖管理
 		将各种功能模块进行划分,封装成一个个 Starter, 更容易的引入和使用,
@@ -9,6 +10,7 @@
 	自动化配置: 为每一个Starter都提供了自动化的Java配置类
 	嵌入式容器: 使得应用的打包运行变得非常的轻量级
 	监控の端点: 通过Actuator模块暴露的http接口,可以轻松的了解和控制 Boot 应用的运行情况
+//}
 	
 //{--------<<<注意点>>>--------------------------------------------------------------------
 #匹配带后缀url访问
@@ -29,19 +31,11 @@
 		return bean;
 	}
 
-
-#控制器返回页面
-	@GetMapping("/list")
-	public String listAll(Model model) {
-		List<Person> personList = personMapper.listAll();
-		model.addAttribute("personList", personList);
-
-		return "person/list";//响应页面,不能加前缀'/'
-	}
 //}
 	
 //{--------<<<启动>>>----------------------------------------------------------------------
-#脚本启动
+#两种启动
+	1.脚本启动
 		#!/bin/bash
 		PID=$(lsof -t -i:8090)
 		
@@ -58,7 +52,16 @@
 		nohup jdk1.8.0_191/bin/java -jar demo.jar >/dev/null 2>&1 &
 		echo "start OK!~!"
 
-#linux服务启动
+	2.linux服务启动
+		//pom.xml设置
+		<plugin>
+			<groupId>org.springframework.boot</groupId>
+			<artifactId>spring-boot-maven-plugin</artifactId>
+			<configuration>
+				<executable>true</executable> //可执行,必不可少
+			</configuration>
+		</plugin>
+	
 		//将jar包部署到linux, 并赋予可执行权限
 		chmod +x /var/tmp/blue/demo.jar
 		
@@ -72,7 +75,7 @@
 		//使用自定义 *.conf 更改默认配置, jar包同路径下新建配置文件 demo.conf
 		JAVA_HOME=/usr/jdk1.7.0_79/bin
 		JAVA_OPTS=-Xmx1024M
-		LOG_FOLDER=/var/tmp/blue/logs/		#该目录必须存在
+		LOG_FOLDER=/var/tmp/blue/logs/		//该目录必须存在
 
 //}
 
@@ -1034,5 +1037,356 @@
 				matched: [ ]
 			},
 		}
+
+//}
+
+//{--------<<<定时任务>>>------------------------------------------------------------------
+#任务调度可以用'Quartz'; 但对于简单的定时任务可以使用内置的'Scheduled'. linux系统级别定时任务使用'crontab'.
+
+#Scheduled
+	#initialDelay	//项目启动后,延迟多少毫秒执行任务
+	#fixedRate		//每隔多少毫秒执行一次 (当 任务耗时>频率 时,下次开始时间=上次结束时间);
+	#fixedDelay		//每次执行完毕,延迟多少毫秒再次执行
+	#cron(******)	//详细配置方法执行频率
+
+	// cron表达式: [秒] [分] [时] [日] [月] [周] [年(可省)]
+	// 秒(0~59); 分(0~59); 时(0~23); 日(1~31,和月份有关); 月(1~12); 星期(1~7,1为周日); 年(1970~2099)
+	
+	 #* 所有字段; 表示对应时间域的每一个时刻; 如分钟字段,表示"每分钟"
+	 #- ........; 表示一个范围; 如小时字段'10-12',表示从10到12点, 即 10,11,12
+	 #, ........; 表示一个列表值; 如星期字段"MON,WED,FRI", 表示星期一,星期三和星期五
+	 #/ ........; 表示一个等步长序列; x/y: x 为起始值,y 为增量步长值.
+		//如分钟字段: 0/15表示 0,15,30,45; 5/15表示 5,20,35,50,
+		//也可以使用 */y,等同于 0/y,即 y秒触发一次.
+		
+	 #? '日期'和'星期'; 通常指定为"无意义的值",相当于占位符. --> 因为日和星期是有冲突的.
+	 #L ..............; 代表"Last"的意思,但它在两个字段中意思不同.
+		//在日期中,表示这个月的最后一天; 如一月的 31 号,非闰年二月的 28 号.
+		//在星期中,则表示星期六,等同于 7.
+		//如果 L 出现在星期字段里,而且在前面有一个数值 X,则表示"这个月的最后星期 (X-1)"; 如 6L 表示该月的最后星期五
+	 
+		@Slf4j
+		@Component //不可省
+		public class ScheduledTask {
+			@Scheduled(cron = "*/5 * * * * ?") ///配合使用-全局注解 @EnableScheduling
+			public void task() {
+				log.info("ScheduledTask---{}", SystemUtils.getNow());
+			}
+		}	
+
+#Scheduled-DEMO
+	// 0 0 10,14,16 * * ?	每天上午10点，下午2点，4点
+	// 0 0/30 9-17 * * ?	朝九晚五工作时间内每半小时
+	// 0 0 12 ? * WED		每个星期三中午12点
+	// 0 0 12 * * ?			每天12点触发
+	// 0 15 10 ? * *		每天10点15分触发
+	// 0 15 10 * * ?		每天10点15分触发
+	// 0 15 10 * * ? *		每天10点15分触发
+	// 0 15 10 * * ? 2005	2005年每天10点15分触发
+	// 0 * 14 * * ?			每天下午的 2点到2点59分 每分触发一次
+	// 0 0/5 14 * * ?		每天下午的 2点到2点59分(整点开始，每隔5分触发)
+	// 0 0/5 14,18 * * ?	每天下午的 2点到2点59分、18点到18点59分(整点开始，每隔5分触发)
+	// 0 0-5 14 * * ?		每天下午的 2点到2点05分每分触发
+	// 0 10,44 14 ? 3 WED	3月每周三下午的 2点10分和2点44分触发
+	// 0 15 10 ? * MON-FRI	从周一到周五每天上午的10点15分触发
+	// 0 15 10 15 * ?		每月15号上午10点15分触发
+	// 0 15 10 L * ?		每月最后一天的10点15分触发
+	// 0 15 10 ? * 6L		每月最后一周的星期五的10点15分触发
+	// 0 15 10 ? * 6L 2002-2005	从2002年到2005年每月最后一周的星期五的10点15分触发
+	// 0 15 10 ? * 6#3		每月的第三周的星期五开始触发
+	// 0 0 12 1/5 * ?		每月的第一个中午开始每隔5天触发一次
+	// 0 11 11 11 11 ?		每年的11月11号 11点11分触发(光棍节)
+
+#Quartz
+	任务调度(job scheduling)的开源框架.	可以与J2EE与J2SE结合,也可以单独使用.
+	可用来创建简单或运行十个,百个,甚至于好几万个 jobs 复杂的程序.
+	
+	#job		- 任务		- 你要做什么事?
+	#Trigger	- 触发器	- 你什么时候去做?
+	#Scheduler	- 任务调度	- 你什么时候需要去做什么事?
+	
+	1.简单DEMO
+		private static void task01() throws SchedulerException {
+			JobDetail job = JobBuilder.newJob(JobDemo.class).build();
+
+			//(1).通过 Quartz 内置方法来完成简单的重复调用,每秒执行一次
+			// Trigger trigger = TriggerBuilder.newTrigger()
+			//         .withSchedule(SimpleScheduleBuilder.repeatSecondlyForever()).build();
+
+			//(2).自定义 Cron 表达式来给定触发的时间
+			Trigger trigger = TriggerBuilder.newTrigger()
+					.withSchedule(CronScheduleBuilder.cronSchedule("0/2 * * * * ?")).build();
+
+			Scheduler scheduler = StdSchedulerFactory.getDefaultScheduler();
+			scheduler.scheduleJob(job, trigger);
+
+			scheduler.start();
+		}
+#Quartz&Boot(2种方式)
+	#(1).创建普通job类,直接调用.(灵活,非侵入)
+	#(2).job类继承 QuartzJobBean,实现方法 executeInternal(),此方法就是被调度的任务体
+	
+        <dependency>
+            <groupId>org.quartz-scheduler</groupId>
+            <artifactId>quartz</artifactId>
+        </dependency>
+        <dependency>
+            <groupId>org.springframework</groupId> //作用详见<<常用包>>
+            <artifactId>spring-context-support</artifactId>
+        </dependency>
+	
+#MethodInvokingJobDetailFactoryBean
+	1.普通job类
+		@Component
+		public class JobDemo01 {
+			@Autowired
+			HelloService helloService; //service 层
+
+			public void job() {
+				helloService.hello();
+				System.out.println("job01: " + SystemUtils.getNow());
+				System.out.println("----------------------------");
+			}
+		}
+		
+	2.调度配置	
+		@Configuration
+		public class QuartzConfig01 {
+			@Bean("job01")
+			public MethodInvokingJobDetailFactoryBean job01(JobDemo01 jobDemo01) {
+				MethodInvokingJobDetailFactoryBean job = new MethodInvokingJobDetailFactoryBean();
+				job.setName("my-job01"); // 任务的名字
+				job.setGroup("my"); // 任务的分组
+
+				job.setConcurrent(false); // 是否并发
+				job.setTargetObject(jobDemo01); // 被执行的对象
+				job.setTargetMethod("job"); // 被执行的方法
+				return job;
+			}
+
+			@Bean(name = "tigger01")
+			public CronTriggerFactoryBean tigger01(@Qualifier("job01") MethodInvokingJobDetailFactoryBean job01) {
+				CronTriggerFactoryBean tigger = new CronTriggerFactoryBean();
+				tigger.setName("my-tigger01");
+				tigger.setJobDetail(Objects.requireNonNull(job01.getObject()));
+				tigger.setCronExpression("0/5 * * * * ?"); //cron
+				return tigger;
+			}
+
+			@Bean(name = "scheduler01")
+			public SchedulerFactoryBean scheduler01(@Qualifier("tigger01") Trigger tigger01) {
+				SchedulerFactoryBean scheduler = new SchedulerFactoryBean();
+				scheduler.setStartupDelay(5); // 延时启动定时任务，避免系统未完全启动却开始执行定时任务的情况
+				scheduler.setOverwriteExistingJobs(true); // 覆盖已存在的任务
+				scheduler.setTriggers(tigger01); // 注册触发器
+				return scheduler;
+			}
+		}
+		
+#JobDetailFactoryBean
+	1.指定job类
+		@Component
+		public class JobDemo02 extends QuartzJobBean {
+			@Override
+			protected void executeInternal(JobExecutionContext jobExecutionContext) {
+				HelloService helloService = (HelloService) jobExecutionContext.getMergedJobDataMap().get("helloService"); //取参 - service
+				helloService.hello();
+				System.out.println("job02: " + SystemUtils.getNow());
+				System.out.println("----------------------------");
+			}
+		}
+	
+	2.调度配置
+		@Configuration
+		public class QuartzConfig02 {
+			@Autowired
+			HelloService helloService;
+
+			@Bean("job02")
+			public JobDetailFactoryBean job02() {
+				JobDetailFactoryBean job = new JobDetailFactoryBean();
+				job.setJobClass(JobDemo02.class);
+
+				Map<String, Object> map = new HashMap<>();
+				map.put("helloService", helloService);
+				job.setJobDataAsMap(map); //传参 -> helloService
+				return job;
+			}
+
+			@Bean(name = "tigger02")
+			public CronTriggerFactoryBean cronTriggerFactoryBean(JobDetailFactoryBean job02) {
+				CronTriggerFactoryBean factory = new CronTriggerFactoryBean();
+				factory.setJobDetail(Objects.requireNonNull(job02.getObject()));
+				factory.setCronExpression("0/5 * * * * ?"); //cron
+				return factory;
+			}
+
+			@Bean(name = "scheduler02")
+			public SchedulerFactoryBean schedulerFactoryBean(CronTriggerFactoryBean tigger02) {
+				SchedulerFactoryBean factory = new SchedulerFactoryBean();
+				factory.setTriggers(tigger02.getObject());
+				return factory;
+			}
+		}
+
+//}
+
+//{--------<<<常用包>>>--------------------------------------------------------------------
+#org.apache.commons
+        // <!-- 该版本完全支持 Java5 的特性,如泛型和可变参数. 该版本无法兼容以前的版本,简化很多平时经常要用到的写法,如判断字符串是否为空等等 -->
+        <dependency>
+            <groupId>org.apache.commons</groupId>
+            <artifactId>commons-lang3</artifactId>
+            <version>3.8.1</version>
+        </dependency>
+
+        // <!-- 对象池的实现,显著的提升了性能和可伸缩性,特别是在高并发加载的情况下 -->
+        <dependency>
+            <groupId>org.apache.commons</groupId>
+            <artifactId>commons-pool2</artifactId>
+            <version>2.4.2</version>
+        </dependency>
+
+        // <!-- email -->
+        <dependency>
+            <groupId>org.apache.commons</groupId>
+            <artifactId>commons-email</artifactId>
+            <version>1.4</version>
+        </dependency>
+        // <!-- spring-boot email -->
+        <dependency>
+            <groupId>org.springframework.boot</groupId>
+            <artifactId>spring-boot-starter-mail</artifactId>
+        </dependency>
+
+        // <!-- IO工具类,文件操作及字符串比较功能 -->
+        <dependency>
+            <groupId>org.apache.commons</groupId>
+            <artifactId>commons-io</artifactId>
+            <version>1.3.2</version>
+        </dependency>
+
+#spring
+        // <!-- 为Spring核心提供了大量扩展.可以找到使用 Spring ApplicationContext 特性时所需的全部类,JDNI所需的全部类,
+        //		UI模板引擎(Templating),如 Velocity、FreeMarker、JasperReports, 以及校验 Validation 方面的相关类 -->
+        <dependency>
+            <groupId>org.springframework</groupId>
+            <artifactId>spring-context</artifactId>
+            <version>4.3.3.RELEASE</version>
+        </dependency>
+
+        // <!-- 含支持UI模版(Velocity,FreeMarker,JasperReports),邮件服务,脚本服务(JRuby),缓存Cache(EHCache),
+        // 		任务计划Scheduling(uartz)方面的类. 外部依赖spring-context, (spring-jdbc, Velocity, FreeMarker,
+        // 		JasperReports, BSH, Groovy, JRuby, Quartz, EHCache) -->
+        <dependency>
+            <groupId>org.springframework</groupId>
+            <artifactId>spring-context-support</artifactId>
+            <version>4.3.3.RELEASE</version>
+        </dependency>
+
+        // <!-- spring测试框架,需要配合 junit 进行使用创建单元测试. spring测试所需包: sring的相关组件,spring-test,junit -->
+        <dependency>
+            <groupId>org.springframework</groupId>
+            <artifactId>spring-test</artifactId>
+            <version>4.3.3.RELEASE</version>
+        </dependency>
+
+        // <!-- 包含Spring 框架基本的核心工具类. Spring 其它组件要都要使用到这个包里的类，是其它组件的基本核心.
+        //		也可以在自己的应用系统中使用这些工具类.外部依赖Commons-logging,Log4J -->
+        <dependency>
+            <groupId>org.springframework</groupId>
+            <artifactId>spring-core</artifactId>
+            <version>4.3.3.RELEASE</version>
+        </dependency>
+
+        // <!-- 所有应用都要用到的,它包含访问配置文件,创建和管理bean 以及 进行(IoC/DI)操作相关的所有类.
+		//		如果应用只需基本的IoC/DI 支持，引入spring-core.jar 及spring-beans.jar 文件就可以了. 外部依赖spring-core，(CGLIB)。 -->
+        <dependency>
+            <groupId>org.springframework</groupId>
+            <artifactId>spring-beans</artifactId>
+            <version>4.3.3.RELEASE</version>
+        </dependency>
+
+        // <!-- https://mvnrepository.com/artifact/org.springframework/spring-web
+            // 包含Web 应用开发时，用到Spring 框架时所需的核心类，包括自动载入Web Application Context
+            // 特性的类、Struts  与JSF 集成类、文件上传的支持类、Filter 类和大量工具辅助类。
+            // 外部依赖spring-context, Servlet API, (JSP API, JSTL, Commons FileUpload, COS)。 -->
+        <dependency>
+            <groupId>org.springframework</groupId>
+            <artifactId>spring-web</artifactId>
+            <version>4.3.3.RELEASE</version>
+        </dependency>
+
+        // <!-- https://mvnrepository.com/artifact/org.springframework/spring-webmvc
+            // 包含Spring MVC 框架相关的所有类。包括框架的Servlets，Web MVC框架，控制器和视图支持。
+            // 当然，如果你的应用使用了独立的MVC
+            // 框架，则无需这个JAR 文件里的任何类。
+            // 外部依赖spring-web, (spring-support，Tiles，iText，POI)。 -->
+        <dependency>
+            <groupId>org.springframework</groupId>
+            <artifactId>spring-webmvc</artifactId>
+            <version>4.3.3.RELEASE</version>
+        </dependency>
+
+        // <!-- https://mvnrepository.com/artifact/org.springframework/spring-jdbc
+            // 包含对Spring 对JDBC 数据访问进行封装的所有类。 外部依赖spring-beans，spring-dao。 -->
+        <dependency>
+            <groupId>org.springframework</groupId>
+            <artifactId>spring-jdbc</artifactId>
+            <version>4.3.3.RELEASE</version>
+        </dependency>
+
+        // <!-- https://mvnrepository.com/artifact/org.springframework/spring-aop
+            // AOP（Aspect Oriented Programming），即面向切面编程（也叫面向方面编程，面向方法编程）。
+            // 其主要作用是，在不修改源代码的情况下给某个或者一组操作添加额外的功能。像日志记录，事务处理，
+            // 权限控制等功能，都可以用AOP来“优雅”地实现，使这些额外功能和真正的业务逻辑分离开来，
+            // 软件的结构将更加清晰。AOP是OOP的一个强有力的补充。 -->
+        <dependency>
+            <groupId>org.springframework</groupId>
+            <artifactId>spring-aop</artifactId>
+            <version>4.3.3.RELEASE</version>
+        </dependency>
+
+        // <!-- https://mvnrepository.com/artifact/org.springframework/spring-tx 事物控制 -->
+        <dependency>
+            <groupId>org.springframework</groupId>
+            <artifactId>spring-tx</artifactId>
+            <version>4.3.3.RELEASE</version>
+        </dependency>
+
+        // <!-- https://mvnrepository.com/artifact/org.springframework/spring-orm
+            // 包含Spring对DAO特性集进行了扩展，使其支持 iBATIS、JDO、OJB、TopLink， 因为Hibernate已经独立成包了，现在不包含在这个包里了。这个jar文件里大部分的类都要
+            // 依赖spring-dao.jar里的类，用这个包时你需要同时包含spring-dao.jar包。 -->
+        <dependency>
+            <groupId>org.springframework</groupId>
+            <artifactId>spring-orm</artifactId>
+            <version>4.3.3.RELEASE</version>
+        </dependency>
+        <dependency>
+            <groupId>org.springframework</groupId>
+            <artifactId>spring-aspects</artifactId>
+            <version>4.3.3.RELEASE</version>
+        </dependency>
+
+        //<!-- https://mvnrepository.com/artifact/org.springframework/spring-expression
+        //    SPEL表达式支持:
+        //    一、基本表达式：字面量表达式、关系，逻辑与算数运算表达式、字符串连接及截取表达式、
+        //        三目运算及Elivis表达式、正则表达式、括号优先级表达式；
+        //    二、类相关表达式：类类型表达式、类实例化、instanceof表达式、变量定义及引用、赋值表达式、
+        //        自定义函数、对象属性存取及安全导航表达式、对象方法调用、Bean引用；
+        //    三、集合相关表达式：内联List、内联数组、集合，字典访问、列表，字典，数组修改、集合投影、
+        //        集合选择；不支持多维内联数组初始化；不支持内联字典定义；
+        //    四、其他表达式：模板表达式。
+        //    注：SpEL表达式中的关键字是不区分大小写的。-->
+        <dependency>
+            <groupId>org.springframework</groupId>
+            <artifactId>spring-expression</artifactId>
+            <version>4.3.3.RELEASE</version>
+        </dependency>
+	
+
+//}
+
+//{--------<<<x>>>-------------------------------------------------------------------------
 
 //}

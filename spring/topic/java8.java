@@ -371,6 +371,8 @@
 	LocalDateTime ldt0 = LocalDateTime.now(); //2018-10-19T20:36:26.216
 	LocalDateTime ldt1 = LocalDateTime.parse("2018-01-02T20:58:30.123");//必须有T
 	LocalDateTime ldt2 = LocalDateTime.of(2016, 10, 26, 12, 10, 55, 255 * 1000 * 1000); //最后参数为纳秒
+	
+	LocalDateTime.now().format(DateTimeFormatter.ofPattern("yyyy-MM-dd HH:mm:ss.SSS")); //2019-01-31 15:49:00.001
 
 	//增减操作: 分别使用 plus 和 minus 关键字
 	//plusDays(n); plusWeeks(n);... plus(Period.ofDays(n)); plus(Period.ofWeeks(n));...

@@ -1,6 +1,9 @@
 
 
-#快捷键-idea
+
+//{--------<<<idea-快捷键>>>----------------------------------------------------------------------------
+	psvm, sout, fori	///main(),syso,for(i)
+
 	Ctrl+Alt+V | M		//抽取变量(方法)
 	
 	F3 | F3+Shift		//跳到下(上)一个选择项
@@ -17,9 +20,9 @@
 	Ctrl+D				//整行复制
 	Ctrl+X				//整行删除
 	Ctrl+Shift+U		//大小写转化
-	
-	
-#idea设置
+//}
+
+//{--------<<<idea-设置>>>----------------------------------------------------------------------------
 	//黑色主题
 	Appearance & Behavior - Appearance - Theme(选为Darcula) 
 	勾选 Override default fonts by(......) - Name(Mircrosoft Yahei UI) - Size(12) //更改设置界面的字体大小，非代码字体
@@ -66,40 +69,8 @@
 	//Gradle配置
 	Build,Exe... - Build Tools - Gradle - Offline work
 	
-	
-	
-	
-	
-	
-	
+//}	
 
-	
-	
-	
-	
-	
-	
-	
-	
-	
-	
-	
-	
-	
-	
-	
-	
-	
-	
-	
-	
-	
-	
-	
-	
-	
-	
-	
 	
 	
 	Ctrl+Shift + Enter，语句完成

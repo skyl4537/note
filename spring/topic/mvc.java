@@ -495,17 +495,18 @@
 //}
 
 //{--------<<<父子容器>>>-----------------------------------------------------------------
-	(1).Spring是父容器,SpringMVC是其中的一个子容器.	父容器不能访问子容器对象,但反之可以.
-	(2).SSM框架中, @controller 注解的类对象扫描到 SpringMVC 容器中, 
-		而 @service, @component, @Repository 注解扫描到 Spring 容器中.
-
+#父容器Spring & 子容器SpringMVC
+	(1).Spring		-> @service, @component, @Repository, @mapper
+	(2).SpringMVC	-> @controller
+	
+	(0).父容器不能访问子容器对象,但反之可以.
 	(3).通常情况下, Service, Dao, 数据源, 事务, 整合其他框架都是放在 Spring 的配置文件中.
 	
-		//将加载properties文件的配置 <context:property-placeholder location="classpath:*.properties"/>
-		//写在 Spring 的 'applicationContext-*.xml' 中,可以正常加载到属性; 
-		//但写在 'springmvc.xml' 中却加载不到.
-		<context />写在子容器,而service配置在父容器,父无法访问子中对象,所以加载不到properties文件中的属性.
-		另外, controller要配置在springmvc.xml(子容器)中,否则客户端请求时会找不到对应的controller而出错
+	//加载properties文件的配置 <context:property-placeholder location="classpath:*.properties"/>
+	//写在 Spring 的 'applicationContext-*.xml' 中,可以正常加载到属性; 
+	//但写在 'springmvc.xml' 中却加载不到.
+	<context />写在子容器,而service配置在父容器,父无法访问子中对象,所以加载不到properties文件中的属性.
+	另外, controller要配置在springmvc.xml(子容器)中,否则客户端请求时会找不到对应的controller而出错
 
 //}
 		
