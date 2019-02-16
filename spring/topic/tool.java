@@ -61,21 +61,41 @@
 	3).在thymeleaf的html页面引入命名空间: 
 		<html lang="en" xmlns:th="http://www.thymeleaf.org">
 		
+#templates
+	//thymeleaf 模板文件存放位置: src/main/resources/templates
+	templates 目录是安全的. 意味着该目录下的内容不允许外界直接访问,必须经过服务器的渲染.
+	
+#低版本异常
+	#org.xml.sax.SAXParseException: 元素类型 "meta" 必须由匹配的结束标记 "</meta>" 终止
+	#这是由于低版本对于html语法解析比较严格,必须有头有尾.
+	
+	(1).html标记按照严谨的语法去编写
+		<meta charset="UTF-8" />
+		
+	(2).升级为高版本
+		//Thymeleaf.jar: 更新为 3.0 以上的版本
+		//thymeleaf-layout-dialect.jar: 更新为 2.0 以上的版本
+		<properties>
+			<java.version>1.8</java.version>
+			<thymeleaf.version>3.0.2.RELEASE</thymeleaf.version>
+			<thymeleaf-layout-dialect.version>2.0.4</thymeleaf-layout-dialect.version>
+		</properties>
+		
 #常用符号
 	#~{...}	---> 片段引用表达式
 	
 	#@{...}	---> 定义URL
 		//http://ip:8080/order/details/3
-		<a href="emp" th:href="@{/details/}+${emp.id}">员工修改</a>
+		<a href="emp" th:href="@{/details/}+${emp.id}">相对路径-传参-restful</a>
 	
 		//http://ip:8080/order/details?orderId=3
-		<a th:href="@{http://ip:8080/order/details(orderId=${o.id})}">details</a>
+		<a th:href="@{http://ip:8080/order/details(orderId=${o.id})}">绝对路径-传参</a>
 
-		//http://ip:8080/order/details?orderId=3 ---> 自动添加项目context-path,即order
-		<a th:href="@{/details(orderId=${o.id})}">view</a>
+		//http://ip:8080/order/details?orderId=3
+		<a th:href="@{/details(orderId=${o.id})}">相对路径-传参</a>
 
 		//http://ip:8080/order/3/details?orderId=3 ---> 同上
-		<a th:href="@{/{orderId}/details(orderId=${o.id})}">view</a>
+		<a th:href="@{/{orderId}/details(orderId=${o.id}, orderName=${o.name})}">相对路径-传参-restful</a>
 	
 	#${...}	---> 变量值
 		(1).获取对象的属性,调用方法; //${person.name}
@@ -118,6 +138,9 @@
 	
 #th:href
 	<a th:href="@{/emp}">用户添加</a> //发送get请求到 '/项目名/emp'
+	
+#th:src -> 图片类地址引入
+	<img alt="App-Logo" th:src="@{/img/logo.png}" />
 
 #th:id
 	<div th:id = "stu+(${rowStat.index}+1)" class="student"></div> //动态指定id属性
@@ -132,21 +155,23 @@
 	</tr>
 	
 	//(1).itemStat 称作状态变量,属性有:
-		index: 当前迭代对象的index. (从0开始计算)
-		count: 当前迭代对象的index. (从1开始计算)
-		size: 迭代集合的大小
-		current: 当前迭代变量
-		even/odd: 布尔值,当前循环是否是偶数/奇数. (从0开始计算)
-		first: 布尔值,当前循环是否是第一个
-		last: 布尔值,当前循环是否是最后一个
+		index		-> 当前迭代对象的索引. (从0开始)
+		count		-> 当前迭代对象的计数. (从1开始)
+		size		-> 迭代集合的长度
+		current		-> 当前迭代变量
+		even/odd	-> 布尔值,当前循环是否是偶数/奇数. (从0开始)
+		first/last	-> 布尔值,当前循环是否是第一个/最后一个
 
 	//(2).用法: ${itemStat.index}; ${itemStat.odd}; ${itemStat.current.name}... ...
 	
 	//(3).在写 th:each="obj,objStat:${objList}",可不写 objStat,自动添加,默认命名 objStat (如itemStat)
 	
+#th:value
+	//可以将一个值放入到 input 标签的 value 中
+	
 #th:text
 	<div th:text="${emp.name}">将被替换</div> //一般写法
-	<div>[[${emp.name}]]</div> //行内写法
+	<div>[[${emp.name}]]</div> //行内写法行内写法
 	
 	//[[...]] & [(...)]
 	<p>The message is "[[${msg}]]"</p> //会转义 <==> th:text
@@ -192,19 +217,19 @@
 				th:selected="${null!=person}?${person.city.id}==*{id}"></option>
 	</select></td>
 	
-#th:if -> 判断条件
+#th:if -> 条件判断
 	<p th:if="${! #strings.isEmpty(msg)}" th:text="${msg}"></p> //msg不为空,则显示<p>
 	
-	//th:if="${xx}" 表达式为 true 的各种情况:
+	///th:if="${xx}" 表达式为 true 的各种情况:
 		boolean xx =true; int xx !=0; character xx !=0; 
 		String xx !="false","off","no";
 		If xx is not a boolean, a number, a character or a String
 	
 #th:switch -> 多路选择,配合使用 th:case 
 	<div th:switch="${user.role}">
-		<p th:case="'admin'">User is an administrator</p>
-		<p th:case="#{roles.manager}">User is a manager</p>
-		<p th:case="*">User is some other thing</p> //默认值
+		<p th:case="'admin'">管理员</p>
+		<p th:case="#{roles.manager}">管理者</p>
+		<p th:case="*">其他</p> //默认值
 	</div>
 	
 #th:with -> 变量赋值运算 
@@ -212,18 +237,56 @@
 		<p>	The name of the first person is <span th:text="${first.name}">Julius Caesar</span>.</p>
 	</div>
 	
-#th:src -> 图片类地址引入
-	<img class="img-responsive" alt="App Logo" th:src="@{/img/logo.png}" />
-	
 #th:attr -> 设置标签属性,多个属性用逗号分隔
 	th:attr="src=@{/image/aa.jpg},title=#{logo}" //一般用于自定义标签
 	
 #th:remove -> 删除某个属性
-	<tr th:remove="all"> //all:删除包含标签和所有的孩子。
+	<tr th:remove="all"> //all:删除包含标签和所有的孩子
+	
+#th:errors
+	数据校验相关; 用于显示数据校验的错误信息.
 
 #日期格式化
-	<input type="text" name="birth" placeholder="zhangsan"
+	<input type="text" name="birth" placeholder="birth day"
 		th:value="${#dates.format(emp.birth, 'yyyy-MM-dd HH:mm:ss')}">
+		
+		// 格式化日期,默认以浏览器默认语言为格式化标准
+		${#dates.format(key)}
+		${#dates.format(key,'yyy/MM/dd')}
+		
+		// 按照自定义的格式做日期转换.(取值年月日)
+		${#dates.year(key)}
+		${#dates.month(key)}
+		${#dates.day(key)}
+		
+#字符串相关
+	1.调用内置对象一定要用#
+	2.大部分的内置对象都以s结尾: strings, numbers, dates
+		// 判断字符串是否为空,如果为空返回 true,否则返回 false
+		${#strings.isEmpty(key)}
+		
+		// 判断字符串是否包含指定的子串,如果包含返回 true,否则返回 false
+		${#strings.contains(msg, 'T')}
+		
+		// 判断当前字符串是否以子串开头,如果是返回 true,否则返回 false
+		${#strings.startsWith(msg, 'a')}
+		
+		// 判断当前字符串是否以子串结尾,如果是返回 true,否则返回 false
+		${#strings.endsWith(msg, 'a')}
+		
+		// 返回字符串的长度
+		${#strings.length(msg)}
+		
+		// 查找子串的位置,并返回该子串的下标,如果没找到则返回-1
+		${#strings.indexOf(msg, 'h')}
+		
+		// 截取子串,用法与 jdk String 类下 SubString 方法相同
+		${#strings.substring(msg, 13)}
+		${#strings.substring(msg, 13, 15)}
+		
+		// 字符串转大小写
+		${#strings.toUpperCase(msg)}
+		${#strings.toLowerCase(msg)}
 	
 #页面公共元素抽取
 	1.抽取公共片段
@@ -278,7 +341,20 @@
 	
 		<a th:href="@{/logDir}" //activeUri为 'logDir' 时,高亮
 			th:class="${activeUri=='logDir'?'nav-link active':'nav-link'}">>
-
+			
+#域对象操作
+	0.HttpServletRequest
+		// request.setAttribute("req", "hello");
+		Request: <span th:text="${#httpServletRequest.getAttribute('req')}"></span><br/>
+		
+	1.HttpSession
+		// request.getSession().setAttribute("sess", "world");
+		Session: <span th:text="${session.sess}"></span><br/>
+		
+	2.ServletContext
+		// request.getServletContext().setAttribute("app", "java");
+		Application: <span th:text="${application.app}"></span>
+	
 //}
 
 //{-----------<<<<Maven>>>------------------------------------------------------------------

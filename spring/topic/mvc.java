@@ -275,35 +275,51 @@
 	
 //}
 
-//{--------<<<数据格式化及校验>>>---------------------------------------------------------
+//{--------<<<数据校验>>>-----------------------------------------------------------------
 #JSR303 是Java为Bean数据合法性校验提供的标准框架,它已经包含在 JavaEE 6.0 中.
+#Bean-Validation(即JSR303) 内置的 constraint
+    /** 
+     * @Null				必须为 null
+     * @NotNull				必须不为 null
+     * @AssertTrue			必须为 true
+     * @AssertFalse			必须为 false
+	 *
+     * @Min(value)			必须是数字,其值必须 >= 指定的最小值
+     * @Max(value)			必须是数字,其值必须 <= 指定的最大值
+     * @DecimalMin(value)	必须是数字,其值必须 >= 指定的最小值
+     * @DecimalMax(value)	必须是数字,其值必须 <= 指定的最大值
+     * @Size(max=, min=)	大小必须在指定的范围内
+	 *
+     * @Digits(integer, fraction)	必须是数字,其值必须在可接受的范围内.
+	 *								(integer->指定整数部分的数字位数; fraction->指定小数部分的数字位数)
+	 *
+     * @Past					必须是一个过去的日期
+     * @Future					必须是一个将来的日期
+	 *
+     * @Pattern(regex=,flag=)	必须符合指定的正则表达式
+	 * 							regex->正则表达式; flag->指定 Pattern.Flag 的数组,表示正则表达式的相关选项
+	 */
 
-	@Null / @NotNull				//必须为null(不为null)
-	@AssertTrue / @AssertFalse		//必须为true(false)
-	@Min(value) / @Max(value)		//必须是一个整数值,其值必须>=value
-	@DecimalMin(value) / @DecimalMax(value)		//必须是一个小数值(精度问题),其值必须>=value
-	@Size(max=, min=)				//元素size必须在指定的范围内.(适用类型: String,Collection,Map,数组)
-	@Digits(integer,fraction)		//integer->指定整数部分的数字位数; fraction->指定小数部分的数字位数
+#Hibernate-Validator 附加的 constraint
+	/**
+     * @NotBlank(message=)	字符串非null,非空. (去掉首尾空格)
+     * @NotEmpty			字符串必须非空. (不会去掉...)
+     * @Length(min=,max=)	字符串长度必须在指定的范围内
+     * @Range(min=,max=,message=)	数值必须在合适的范围内 
+	 *
+     * @Email				必须是电子邮箱地址
+	 * @URL(protocol=,host=,port=,regexp=,flags=)	合法的url
+     */
 	
-	@Past / @Future					//被注释的元素必须是一个过去的日期(将来)    
-	@Pattern(regex=,flag=)			//被注释的元素必须符合指定的正则表达式
-		//regexp->正则表达式; flags->指定 Pattern.Flag 的数组,表示正则表达式的相关选项
-
-	///hiberate validation 注解
-	@NotEmpty   				//被注释的字符串的必须非空    
-	@Email						//被注释的元素必须是电子邮箱地址    
-	@Length(min=,max=)			//被注释的字符串的大小必须在指定的范围内    
-	@Range(min=,max=,message=)	//被注释的元素必须在合适的范围内
-	@URL(protocol=,host=,port=,regexp=,flags=)		//合法的url
-
-	0.在bean属性上添加相应注解
+#校验DEMO
+	0.在实体类中添加校验规则
 		public class Car {
-			@NotBlank(message = "用户名不能为空")
-			@Length(min = 5, max = 20, message = "用户名长度必须在5-20之间")
-			@Pattern(regexp = "^[a-zA-Z_]\\w{4,19}$", message = "用户名必须以字母下划线开头")
+			@NotBlank(message = "车标不能为空")
+			@Length(min = 3, max = 10, message = "车标长度必须在3-10之间")
+			@Pattern(regexp = "^[a-zA-Z_]\\w{2,9}$", message = "车标必须以字母下划线开头")
 			public String brand;
 
-			@Range(max = 1000000, min = 10000, message = "金额必须在0-1000000之间")
+			@Range(max = 1000000, min = 0, message = "价格必须在0-1000000之间")
 			@NumberFormat(pattern = "####.##")
 			public Double price;
 
@@ -311,24 +327,71 @@
 			@DateTimeFormat(pattern = "yyyy-MM-dd HH:mm:ss")
 			public Date birth;
 		}
+		
+	1.也可将校验信息抽取到配置文件
+		//在'resources'目录下新建配置文件 ValidationMessages.properties
+		car.brand.notBlank=车标不能为空
 
-	1.后台控制器方法
-		///注意: @Valid 和 BindingResult 两个入参必须紧挨着,中间不能插入其他入参
-		@PostMapping("/car")
-		public String car(@Valid Car args0, BindingResult result) {//必须有注解 @Valid 
-			log.info(MessageFormat.format("{0} {1}", HELLO, args0));
-
-			if (result.hasErrors()) { //校验有错
-				result.getAllErrors().stream().forEach(x -> log.info(x.getDefaultMessage()));//错误信息
-			}
-			return HELLO;
-		}
-
-	2.将校验错误信息抽取到配置文件'ValidationMessages.properties'
-		car.brand.notBlank=名字不能为空
-	
 		@NotBlank(message = "{car.brand.notBlank}") //对应属性的注解设置
 		public String brand;
+
+	2.控制器中开启校验
+		///注意: @Valid 和 BindingResult 两个入参必须紧挨着,中间不能插入其他入参
+		@PostMapping("/car")
+		@ResponseBody //@Valid: 开启校验; BindingResult: 封装了校验的结果
+		public String car(@Valid @RequestParam Car car, BindingResult result) {
+			log.info(MessageFormat.format("{0} {1}", "hello", car));
+
+			if (result.hasErrors()) { //校验有错
+				result.getAllErrors().forEach(x -> log.info(x.getDefaultMessage()));//错误信息
+				return "car";
+			}
+			return "success";
+		}
+		
+	3.前台页面回显校验错误 
+		//使用 thymeleaf 的内置标签 th:errors
+		//第一次跳转该页面时,没有局部变量 car,所以应该判断: th:if="${null!=car}"		
+		<form th:action="@{/save}" method="post">
+			车标：<input type="text" name="brand"/> 
+				  <font color="red" th:if="${null!=car}" th:errors="${car.name}"></font><br/>
+			<input type="submit" value="添加"/>
+		</form>
+		
+#常见异常
+	#java.lang.IllegalStateException: Neither BindingResult nor plain target object for bean name 'car' available as request attribute
+	#这是因为第一次跳转'新增'页面时,没有局部变量 car,导致解析异常. 两种解决方案:
+	
+	1.判断是否存在局部变量
+		车标：<input type="text" name="brand"/> 
+			  <font color="red" th:if="${null!=car}" th:errors="${car.name}"></font><br/>
+		
+	2.跳转页面的方法中注入一个对象 //默认名称: 类名第一个字母小写
+		车标：<input type="text" name="brand"/> 
+			  <font color="red" th:errors="${car.name}"></font><br/>
+		
+		@RequestMapping("/addUser")
+		public String showPage(Users users){
+			return "add";
+		}
+		
+	2-1.如何更改默认名称???
+		车标：<input type="text" name="brand"/> 
+			  <font color="red" th:errors="${aaa.name}"></font><br/>
+		
+		//如果想为传递的对象更改名称,可使用 @ModelAttribute("aaa"), 表示当前传递的对象的key为 aaa
+		@RequestMapping("/addUser")
+		public String showPage(@ModelAttribute("aaa") Users users){
+			return "add";
+		}
+		
+		@RequestMapping("/save")
+		public String saveUser(@ModelAttribute("aaa") @Valid Users users,BindingResult result){
+			if(result.hasErrors()){
+				return "add";
+			}
+			return "ok";
+		}
 		
 //}
 
@@ -413,7 +476,7 @@
 		</form>
 		
 		@ResponseBody
-		@RequestMapping("/upload")
+		@PostMapping("/upload")
 		public String upload(@RequestParam("file") MultipartFile file, @RequestParam("desc") String desc) {
             //<form>表单中文件name, 文件名字, 文件大小
             System.out.println(file.getName() + " - " + file.getOriginalFilename() + " - " + file.getSize());
@@ -437,8 +500,8 @@
 		}
 		
 	3.配置上传文件的大小
-		spring.servlet.multipart.max-file-size=10MB //单个文件
-		spring.servlet.multipart.max-request-size=20MB //一次请求多个文件
+		spring.servlet.multipart.max-file-size=10MB //单个上传文件的大小
+		spring.servlet.multipart.max-request-size=20MB //一次请求上传文件的总容量
 		
 		@Bean //或者,代码配置
 		MultipartConfigElement multipartConfigElement() {
@@ -480,8 +543,7 @@
 			 * 		HttpEntity<?>或ResponseEntity<?>; 以及void
 			 */
 			@ExceptionHandler(Exception.class) //ex对应发生的异常对象
-			public ModelAndView handlerException(HttpServletRequest request, Exception ex) {
-				
+			public ModelAndView handlerException(HttpServletRequest request, Exception ex) {				
 				//区分: URL & URI
 				//http://ip:port/demo/hello/hello - /demo/hello/hello - /by zero
 				log.info("{} - {} - {}", request.getRequestURL(), request.getRequestURI(), ex.getMessage());
@@ -500,17 +562,15 @@
 	(2).SpringMVC	-> @controller
 	
 	(0).父容器不能访问子容器对象,但反之可以.
-	(3).通常情况下, Service, Dao, 数据源, 事务, 整合其他框架都是放在 Spring 的配置文件中.
 	
-	//加载properties文件的配置 <context:property-placeholder location="classpath:*.properties"/>
-	//写在 Spring 的 'applicationContext-*.xml' 中,可以正常加载到属性; 
-	//但写在 'springmvc.xml' 中却加载不到.
-	<context />写在子容器,而service配置在父容器,父无法访问子中对象,所以加载不到properties文件中的属性.
-	另外, controller要配置在springmvc.xml(子容器)中,否则客户端请求时会找不到对应的controller而出错
+	(3).Controller 要配置在子容器(springmvc.xml)中,否则客户端请求时会找不到对应的 Controller 而出错	
+	(4).通常, 整合其他框架(Service,Dao,事务等)的配置都放在父容器中,即 applicationContext.xml
+		//加载其他框架的配置文件
+		<context:property-placeholder location="classpath:*.properties"/>
 
 //}
 		
-//{--------<<<国际化>>>-----------------------------------------------------------------
+//{--------<<<国际化>>>-------------------------------------------------------------------
 #两种方式
 	(1).页面根据'浏览器的语言设置'对文本(不是内容),时间,数值进行本地化处理
 	(2).页面可以通过'超链接'切换, 而不再依赖于浏览器的语言设置
@@ -586,6 +646,36 @@
 
 	ResourceBundle resourceBundle = ResourceBundle.getBundle("i18n.login", LOCALE);
 	resourceBundle.getString("login.user"); //获取指定国际化资源文件的参数值
+
+//}
+
+//{--------<<<标签>>>---------------------------------------------------------------------
+#mvc:view-controller -> 页面跳转没有任何业务逻辑,只是单纯的路由过程(点击按钮跳转到一个页面)
+	1.配置Controller
+		@RequestMapping("/toView")
+		public String view(){
+			return "view";
+		}
+		
+	2.实现接口
+		@Configuration
+		public class MyWebMvcConfigurer implements WebMvcConfigurer {
+
+			@Override
+			public void addViewControllers(ViewControllerRegistry registry) {
+				//url访问: ip:port/demo/toView ---> 对应资源: /templates/view.html
+				registry.addViewController("/toView").setViewName("view");
+			}
+		}
+		
+	3.配置xml
+		//(1).使用此标签后必须配置 <mvc:annotation-driven />,否则会造成所有的@Controller注解无法解析,导致404错误
+		//(2).如果请求存在处理器,则这个标签对应的请求处理将不起作用. 因为请求是先去找处理器处理,如果找不到才会去找这个标签配置
+		<mvc:view-controller path="/toView" view-name="view"/>
+		<mvc:annotation-driven />
+		
+	4.boot项目
+		存放在 /resources/static/ 目录下的资源,可直接通过浏览器访问,勿需映射.
 
 //}
 

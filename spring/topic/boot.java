@@ -1,18 +1,42 @@
 	http://start.spring.io/
 	
 //{--------<<<基础概念>>>------------------------------------------------------------------
+#Spring Boot并不是对 Spring 功能上的增强,而是提供了一种快速使用 Spring 的方式.
+
 #boot优势
 	简化依赖管理
-		将各种功能模块进行划分,封装成一个个 Starter, 更容易的引入和使用,
-		提供一系列的Starter,将各种功能性模块进行了划分与封装,
-		让我们可以更容易的引入和使用，有效的避免了用户在构建传统Spring应用时维护大量依赖关系而引发的JAR冲突等问题。
+		将各种功能模块进行划分,封装成一个个启动器(Starter), 更容易的引入和使用
+		提供一系列的Starter,将各种功能性模块进行了划分与封装
+		更容易的引入和使用,有效避免了用户在构建传统Spring应用时维护大量依赖关系而引发的jar冲突等问题
 
-	自动化配置: 为每一个Starter都提供了自动化的Java配置类
-	嵌入式容器: 使得应用的打包运行变得非常的轻量级
-	监控の端点: 通过Actuator模块暴露的http接口,可以轻松的了解和控制 Boot 应用的运行情况
+	自动化配置 //为每一个Starter都提供了自动化的java配置类
+	嵌入式容器 //嵌入式tomcat,无需部署war文件
+	监控の端点 //通过Actuator模块暴露的http接口,可以轻松的了解和控制 Boot 应用的运行情况
+	
+#Boot启动器(jar包集合,一共44个)
+	spring-boot-starter-web		//支持全栈式的 web 开发,包括 tomcat 和 SpringMVC 等jar包
+	spring-boot-starter-jdbc	//支持 Spring 以 jdbc 方式操作数据库的jar包的集合
+	spring-boot-starter-redis	//支持 redis 键值存储的数据库操作
+	
 //}
 	
-//{--------<<<注意点>>>--------------------------------------------------------------------
+//{--------<<<2.x注意点>>>-----------------------------------------------------------------
+#不重新打包的前提下,修改配置文件
+	1.打包直接执行
+		<plugin>
+			<groupId>org.springframework.boot</groupId>
+			<artifactId>spring-boot-maven-plugin</artifactId>
+			
+			//此配置将使得 jar/war 包在linux环境下可直接执行
+			//勿需命令 jar -jar *.jar, 直接 ./*.jar 即可执行
+			<configuration> 
+				<executable>true</executable>
+			</configuration>
+		</plugin>
+		
+	2.可执行jar包存在的弊端
+		以上设置,虽可在linux下直接执行, 但在不重新打包前提下修改配置文件,则做不到.		
+
 #匹配带后缀url访问
 	@Configuration
 	public class MyWebMvcConfigurer implements WebMvcConfigurer {
@@ -32,7 +56,7 @@
 	}
 
 //}
-	
+
 //{--------<<<启动>>>----------------------------------------------------------------------
 #两种启动
 	1.脚本启动
@@ -58,7 +82,7 @@
 			<groupId>org.springframework.boot</groupId>
 			<artifactId>spring-boot-maven-plugin</artifactId>
 			<configuration>
-				<executable>true</executable> //可执行,必不可少
+				<executable>true</executable> //可执行,必不可少. 将导致jar包不可修改
 			</configuration>
 		</plugin>
 	
@@ -394,7 +418,7 @@
 		
 //}
 
-//{--------<<<emil>>>----------------------------------------------------------------------
+//{--------<<<email>>>----------------------------------------------------------------------
 #邮件相关
 	0.依赖配置
 		<dependency>
@@ -809,6 +833,79 @@
 
 //}
 
+//{--------<<<junit>>>---------------------------------------------------------------------
+#单元测试 junit
+	1.pom文件
+		// <!-- 添加 junit 环境的 jar 包 -->
+        <dependency>
+            <groupId>org.springframework.boot</groupId>
+            <artifactId>spring-boot-starter-test</artifactId>
+            <scope>test</scope>
+        </dependency>
+		
+	2.测试DEMO		
+		@RunWith(SpringRunner.class) //junit 与 spring 进行整合; 也可用 SpringJUnit4ClassRunner.class
+		@SpringBootTest//(classes = {SpringMain.class}) //加载项目启动类,可省
+		public class HelloServiceTest {
+
+			@Autowired
+			private HelloService helloService;
+
+			@Test
+			public void test() {
+				helloService.hello();
+			}
+		}
+
+//}
+
+//{--------<<<热部署>>>--------------------------------------------------------------------
+#插件 SpringLoader(两种方式)
+	//缺点: 只对 java 代码生效, 对页面更改无能为力.
+	
+	1-0.以maven插件方式使用SpringLoader
+		// <!-- springloader 插件 -->
+		<build>
+			<plugins>
+				<plugin>
+					<groupId>org.springframework.boot</groupId>
+					<artifactId>spring-boot-maven-plugin</artifactId>
+					<dependencies>
+						<dependency>
+							<groupId>org.springframework</groupId>
+							<artifactId>springloaded</artifactId>
+							<version>1.2.5.RELEASE</version>
+						</dependency>
+					</dependencies>
+				</plugin>
+			</plugins>
+		</build>
+		
+	1-1.使用maven命令启动项目
+		//其中, maven插件起作用,必须使用maven命令进行启动
+		//缺点: mvn插件形式的热部署程序是在系统后台以进程的形式来运行. 需要手动关闭该进程(java.exe *32)
+		Run As... --> mvn build... ---> Main --> Goals填写: spring-boot:run
+
+	2-0.项目中直接使用jar包
+		目录'/lib'添加 springloader-1.2.5.RELEASE.jar 
+		
+	2-1.启动命令
+		Run Configuration... --> Arguments --> VM argumments填写: -javaagent:.\lib\springloaded-1.2.5.RELEASE.jar -noverify
+
+#工具 DevTools
+	0.部署项目时使用的方式
+		SpringLoader --> 热部署; DevTools --> 重新部署.
+
+	1.pom文件
+        // <!-- DevTools -->
+        <dependency>
+            <groupId>org.springframework.boot</groupId>
+            <artifactId>spring-boot-devtools</artifactId>
+            <optional>true</optional> //<!-- 依赖只在当前项目生效,不会传递到子项目中 -->
+        </dependency>
+
+//}
+
 //{--------<<<fastjson>>>------------------------------------------------------------------
 #fastjson解析json数据
 	//sp2.x默认使用jacksonJson解析json数据现在转换为fastjson
@@ -854,12 +951,108 @@
 //}
 
 //{--------<<<exception>>>-----------------------------------------------------------------
-#参照 ErrorMvcAutoConfiguration -> 错误处理的自动配置.
-	//一但系统出现 4xx 或者 5xx 之类的错误, 'ErrorPageCustomizer' 就会生效, 它会发送/error请求;
+#SpringBoot 中对于异常处理提供了五种处理方式
+	
+	1.自定义错误页面(默认的异常处理机制)
+		一旦程序出现异常, SpringBoot 会向url '/error' 发送请求.
+		通过默认的 BasicExceptionController 来处理请求 '/error',然后跳转到默认异常页面,显示异常信息.
+		
+		所以, 如果需要将所有异常统一跳转到自定义错误页面,需新建页面 /templates/error.html //必须叫 error.html
+		缺点: 不符合实际需求; 应该对于不同错误跳转不同页面.
+		
+	2.注解处理异常@ExceptionHandler
+	3.注解处理异常@ExceptionHandler + @ControllerAdvice	
+		//处理顺序: 本类 --> @ControllerAdvice 标识类
+		当执行过程中出现异常,首先在本类中查找 @ExceptionHandler 标识的方法
+		找不到, 再去查找 @ControllerAdvice 标识类中的 @ExceptionHandler 标识方法来处理异常.
+		
+		//处理优先级: 异常的最近继承关系
+		例如发生异常 NullPointerException; 但是声明的异常有 RuntimeException 和 Exception
+		此时,根据异常的最近继承关系,找到继承深度最浅的那个, 即 RuntimeException 的声明方法
+		
+		@ControllerAdvice //异常处理类
+		public class GlobalException {
+			/**
+			 * 参数(可选):
+			 * 		异常参数(包括自定义异常);
+			 * 		请求或响应对象(HttpServletRequest; ServletRequest; PortleRequest/ActionRequest/RenderRequest) 
+			 * 		Session对象(HttpSession; PortletSession) 
+			 * 		WebRequest; NativeWebRequest; Locale; 
+			 * 		InputStream/Reader; OutputStream/Writer; Model
+			 * 
+			 * 返回值(可选):
+			 * 		ModelAndView; Model; Map; View; String; @ResponseBody;
+			 * 		HttpEntity<?>或ResponseEntity<?>; 以及void
+			 */
+			@ExceptionHandler(ArithmeticException.class) //ex对应发生的异常对象
+			public ModelAndView arithmeticException(HttpServletRequest request, ArithmeticException ex) {
+				
+				//区分 URL & URI: http://ip:port/demo/hello/hello & /demo/hello/hello
+				log.info("{} & {}", request.getRequestURL(), request.getRequestURI());
+
+				ModelAndView mv = new ModelAndView("error1");
+				mv.addObject("errMsg", ex.getLocalizedMessage());
+				return mv; //跳转异常页-并携带异常信息
+			}
+			
+			@ExceptionHandler(RuntimeException.class)
+			public ModelAndView runtimeException(HttpServletRequest request, RuntimeException ex) {				
+				ModelAndView mv = new ModelAndView("error2");
+				mv.addObject("errMsg", ex.getLocalizedMessage());
+				return mv;
+			}
+		}
+		
+	4.配置 SimpleMappingExceptionResolver(3的简化)
+		//优点: 在全局异常类的一个方法中完成所有异常的统一处理
+		//缺点: 只能进行异常与视图的映射, 不能传递异常信息.
+		
+		@Configuration //(1).此处的注解不同
+		public class GlobalException {
+			
+			@Bean //(2).方法必须有返回值.返回值类型必须是: SimpleMappingExceptionResolver
+			public SimpleMappingExceptionResolver getSimpleMappingExceptionResolver() {
+				SimpleMappingExceptionResolver resolver = new SimpleMappingExceptionResolver();
+				Properties mappings = new Properties();
+
+				//arg0: 异常的类型,注意必须是异常类型的全名; arg1: 视图名称
+				mappings.put("java.lang.ArithmeticException", "error1");
+				mappings.put("java.lang.RuntimeException", "error2");
+
+				//(3).设置异常与视图的映射,但不能传递异常信息
+				resolver.setExceptionMappings(mappings);
+				return resolver;
+			}
+		}
+	
+	5.自定义类处理异常 HandlerExceptionResolver
+		@Configuration
+		public class GlobalException implements HandlerExceptionResolver {
+			
+			@Override
+			public ModelAndView resolveException(
+					HttpServletRequest request, HttpServletResponse response, @Nullable Object handler, Exception ex) {
+				ModelAndView mv = new ModelAndView();
+
+				//不同异常类型,不同视图跳转
+				if (ex instanceof ArithmeticException) {
+					mv.setViewName("error1");
+				}
+				if (ex instanceof NullPointerException) {
+					mv.setViewName("error2");
+				}
+				//并传递异常信息
+				mv.addObject("errMsg", ex.toString());
+				return mv;
+			}
+		}
+
+#参照 ErrorMvcAutoConfiguration ---> 错误处理的自动配置.
+	#一旦系统出现 4xx 或 5xx 之类的错误, 'ErrorPageCustomizer' 就会生效, 它会发送'/error'请求;
 		@Value("${error.path:/error}")    
 		private String path = "/error";
 	
-	//'/error'请求会被 'BasicErrorController' 处理, 它有两种处理机制:
+	#'/error'请求会被 'BasicErrorController' 处理, 它有两种处理机制:
 		@Controller
 		@RequestMapping("${server.error.path:${error.path:/error}}")
 		public class BasicErrorController extends AbstractErrorController {
@@ -873,15 +1066,15 @@
 			public ResponseEntity<Map<String, Object>> error(HttpServletRequest request) { }
 		}
 		
-	//其中, html类型数据由 'DefaultErrorViewResolver' 解析产生, 规则为:
+	#其中, html类型数据由 'DefaultErrorViewResolver' 解析产生, 规则为:
 		1).有模板引擎的情况下: error/状态码
 		2).没有模板引擎 (模板引擎找不到这个错误页面), 静态资源文件夹下找
 		3).以上都没有错误页面, 就使用SpringBoot默认的错误提示页面
 	
-	//错误页面的数据信息由 'DefaultErrorAttributes'提供, 其中包括:
-		timestamp: 时间戳; status: 状态码; 
-		error: 错误提示; exception: 异常对象
-		message: 异常消息; errors: JSR303数据校验的错误都在这里
+	#json类型数据由 'DefaultErrorAttributes'提供, 其中包括:
+		timestamp: 时间戳;	status: 状态码; 
+		error: 错误提示;	exception: 异常对象
+		message: 异常消息;	errors: JSR303数据校验的错误都在这里
 			
 	1.定制错误页面
 		将错误页面命名为 '错误状态码.html', 存放路径: 'templates/error/ *.html', 发生错误就会来到 对应状态码的页面.
@@ -1145,7 +1338,6 @@
 			public void job() {
 				helloService.hello();
 				System.out.println("job01: " + SystemUtils.getNow());
-				System.out.println("----------------------------");
 			}
 		}
 		
@@ -1176,7 +1368,7 @@
 			@Bean(name = "scheduler01")
 			public SchedulerFactoryBean scheduler01(@Qualifier("tigger01") Trigger tigger01) {
 				SchedulerFactoryBean scheduler = new SchedulerFactoryBean();
-				scheduler.setStartupDelay(5); // 延时启动定时任务，避免系统未完全启动却开始执行定时任务的情况
+				scheduler.setStartupDelay(5); // 延时启动定时任务,避免系统未完全启动却开始执行定时任务的情况
 				scheduler.setOverwriteExistingJobs(true); // 覆盖已存在的任务
 				scheduler.setTriggers(tigger01); // 注册触发器
 				return scheduler;
@@ -1185,14 +1377,13 @@
 		
 #JobDetailFactoryBean
 	1.指定job类
-		@Component
+		///@Component -> 无需此注解,区别于方式1
 		public class JobDemo02 extends QuartzJobBean {
 			@Override
-			protected void executeInternal(JobExecutionContext jobExecutionContext) {
-				HelloService helloService = (HelloService) jobExecutionContext.getMergedJobDataMap().get("helloService"); //取参 - service
+			protected void executeInternal(JobExecutionContext context) {
+				HelloService helloService = (HelloService) context.getMergedJobDataMap().get("helloService"); //取参 - service
 				helloService.hello();
 				System.out.println("job02: " + SystemUtils.getNow());
-				System.out.println("----------------------------");
 			}
 		}
 	
@@ -1215,17 +1406,17 @@
 
 			@Bean(name = "tigger02")
 			public CronTriggerFactoryBean cronTriggerFactoryBean(JobDetailFactoryBean job02) {
-				CronTriggerFactoryBean factory = new CronTriggerFactoryBean();
-				factory.setJobDetail(Objects.requireNonNull(job02.getObject()));
-				factory.setCronExpression("0/5 * * * * ?"); //cron
-				return factory;
+				CronTriggerFactoryBean tigger = new CronTriggerFactoryBean();
+				tigger.setJobDetail(Objects.requireNonNull(job02.getObject()));
+				tigger.setCronExpression("0/5 * * * * ?"); //cron
+				return tigger;
 			}
 
 			@Bean(name = "scheduler02")
 			public SchedulerFactoryBean schedulerFactoryBean(CronTriggerFactoryBean tigger02) {
-				SchedulerFactoryBean factory = new SchedulerFactoryBean();
-				factory.setTriggers(tigger02.getObject());
-				return factory;
+				SchedulerFactoryBean scheduler = new SchedulerFactoryBean();
+				scheduler.setTriggers(tigger02.getObject());
+				return scheduler;
 			}
 		}
 

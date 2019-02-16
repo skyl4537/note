@@ -195,7 +195,7 @@
 
 #使用外部属性文件
 	1.导入属性文件
-		<context:property-placeholder location="classpath:db.properties" />
+		<context:property-placeholder location="classpath:db.properties" /> //读取配置文件 db.properties
 		
 	2.使用外部属性文件的配置
 		<bean id="dataSource" class="com.alibaba.druid.pool.DruidDataSource">
@@ -256,15 +256,8 @@
 	(1).若 CarService 不被Spring所管理,将抛异常. 
 		//解决方案: 设置 @Autowired(required = false)
 		
-	(2).当存在多个 CarService 类时,自动装配也无法完成. 
+	(2).当存在多个 CarService 实现类时,自动装配也无法完成. 
 		//解决方案: @Service("carService01") + @Qualifier("carService01")
-	
-	@component //标记为Spring所管理
-	class PeopleController{
-		
-		@autowire //自动装配属性
-		CarService carService; 
-	}
 	
 #@Autowired @Resource @Qualifier	
 	@Autowired	-> 类型 //如想按名称来转配注入,则需要结合 @Qualifier 一起使用
@@ -278,18 +271,20 @@
 		@Autowired //从spring配置文件中查找类型为 InfoService 的bean
 		private InfoService infoService;
 	
-	#当 InfoService 有两个实现类时,则不能简单的使用 @AutoWired 进行注入,两种解决方案:
-		@Service("up")
+#当有两个实现类时,则不能简单的使用 @AutoWired 进行注入,两种解决方案:
+		@Service("up") //显示Bean-Name,默认为类型名小写 -> upInfoServiceImpl
 		public class UpInfoServiceImpl implements InfoService { }
 		
 		@Service("down")
 		public class DownInfoServiceImpl implements InfoService { }
 		
+	1.配合使用Autowired＋Qualifier
 		@Autowired
-		@Qualifier("up") //(1).配合 @Qualifier(name) 使用
+		@Qualifier("up") 
 		InfoService upInfoService;
-		
-		@Resource(name="up") //(2).直接使用 @Resource 
+	
+	2.直接使用Resource
+		@Resource(name="up")  
 		InfoService upInfoService;
 //}
 
@@ -488,171 +483,171 @@
 //}	
 		
 
-//{--------<<<SSM>>>------------------------------------------------------------------------
+//{--------<<<SSM>>>----------------------------------------------------------------------
 #搭建环境
 	创建一个动态的WEB工程
 	导入SSM需要使用的jar包
 	导入整合适配包 (mybatis-spring-1.3.0.jar)
 	导入其他技术的一些支持包 (数据库驱动,连接池,日志)
 	
-#web.xml
+#{web.xml
 	{//web.xml
-		<?xml version="1.0" encoding="UTF-8"?>
-		<web-app xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
-			xmlns="http://java.sun.com/xml/ns/javaee"
-			xsi:schemaLocation="http://java.sun.com/xml/ns/javaee http://java.sun.com/xml/ns/javaee/web-app_2_5.xsd"
-			id="WebApp_ID"
-			version="2.5">
-			// <!-- 字符编码过滤器 -->
-			<filter>
-				<filter-name>CharacterEncodingFilter</filter-name>
-				<filter-class>org.springframework.web.filter.CharacterEncodingFilter</filter-class>
-				<init-param>
-					<param-name>encoding</param-name>
-					<param-value>UTF-8</param-value>
-				</init-param>
-			</filter>
-			<filter-mapping>
-				<filter-name>CharacterEncodingFilter</filter-name>
-				<url-pattern>/_*</url-pattern>
-			</filter-mapping>
+	<?xml version="1.0" encoding="UTF-8"?>
+	<web-app xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+		xmlns="http://java.sun.com/xml/ns/javaee"
+		xsi:schemaLocation="http://java.sun.com/xml/ns/javaee http://java.sun.com/xml/ns/javaee/web-app_2_5.xsd"
+		id="WebApp_ID" version="2.5">
+		
+		// <!-- 字符编码过滤器 -->
+		<filter>
+			<filter-name>CharacterEncodingFilter</filter-name>
+			<filter-class>org.springframework.web.filter.CharacterEncodingFilter</filter-class>
+			<init-param>
+				<param-name>encoding</param-name>
+				<param-value>UTF-8</param-value>
+			</init-param>
+		</filter>
+		<filter-mapping>
+			<filter-name>CharacterEncodingFilter</filter-name>
+			<url-pattern>/_*</url-pattern>
+		</filter-mapping>
 
-			// <!-- REST 过滤器 -->
-			<filter>
-				<filter-name>HiddenHttpMethodFilter</filter-name>
-				<filter-class>org.springframework.web.filter.HiddenHttpMethodFilter</filter-class>
-			</filter>
-			<filter-mapping>
-				<filter-name>HiddenHttpMethodFilter</filter-name>
-				<url-pattern>/_*</url-pattern>
-			</filter-mapping>
+		// <!-- REST 过滤器 -->
+		<filter>
+			<filter-name>HiddenHttpMethodFilter</filter-name>
+			<filter-class>org.springframework.web.filter.HiddenHttpMethodFilter</filter-class>
+		</filter>
+		<filter-mapping>
+			<filter-name>HiddenHttpMethodFilter</filter-name>
+			<url-pattern>/_*</url-pattern>
+		</filter-mapping>
 
-			// <!-- 初始化 Spring IOC容器的监听器 -->
-			<context-param>
+		// <!-- 初始化 Spring IOC容器的监听器 -->
+		<context-param>
+			<param-name>contextConfigLocation</param-name>
+			<param-value>classpath:applicationContext.xml</param-value>
+		</context-param>
+
+		<listener>
+			<listener-class>org.springframework.web.context.ContextLoaderListener</listener-class>
+		</listener>
+
+		// <!-- Springmvc 的前端控制器 -->
+		<servlet>
+			<servlet-name>springDispatcherServlet</servlet-name>
+			<servlet-class>org.springframework.web.servlet.DispatcherServlet</servlet-class>
+			<init-param>
 				<param-name>contextConfigLocation</param-name>
-				<param-value>classpath:applicationContext.xml</param-value>
-			</context-param>
-
-			<listener>
-				<listener-class>org.springframework.web.context.ContextLoaderListener</listener-class>
-			</listener>
-
-			// <!-- Springmvc 的前端控制器 -->
-			<servlet>
-				<servlet-name>springDispatcherServlet</servlet-name>
-				<servlet-class>org.springframework.web.servlet.DispatcherServlet</servlet-class>
-				<init-param>
-					<param-name>contextConfigLocation</param-name>
-					<param-value>classpath:springmvc.xml</param-value>
-				</init-param>
-				<load-on-startup>1</load-on-startup>
-			</servlet>
-			<servlet-mapping>
-				<servlet-name>springDispatcherServlet</servlet-name>
-				<url-pattern>/</url-pattern>
-			</servlet-mapping>
-		</web-app>
+				<param-value>classpath:springmvc.xml</param-value>
+			</init-param>
+			<load-on-startup>1</load-on-startup>
+		</servlet>
+		<servlet-mapping>
+			<servlet-name>springDispatcherServlet</servlet-name>
+			<url-pattern>/</url-pattern>
+		</servlet-mapping>
+		
+		<welcome-file-list>
+			<welcome-file>/index.html</welcome-file>
+		</welcome-file-list>
+	</web-app>
 	//}
 
 #Spring
 	{//applicationContext.xml
-		<?xml version="1.0" encoding="UTF-8"?>
-		<beans xmlns="http://www.springframework.org/schema/beans" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
-			xmlns:context="http://www.springframework.org/schema/context" xmlns:tx="http://www.springframework.org/schema/tx"
-			xmlns:mybatis-spring="http://mybatis.org/schema/mybatis-spring" xsi:schemaLocation="http://mybatis.org/schema/mybatis-spring http://mybatis.org/schema/mybatis-spring-1.2.xsd
-				http://www.springframework.org/schema/beans http://www.springframework.org/schema/beans/spring-beans.xsd
-				http://www.springframework.org/schema/context http://www.springframework.org/schema/context/spring-context-4.0.xsd
-				http://www.springframework.org/schema/tx http://www.springframework.org/schema/tx/spring-tx-4.0.xsd">
+	<?xml version="1.0" encoding="UTF-8"?>
+	<beans xmlns="http://www.springframework.org/schema/beans" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+		xmlns:context="http://www.springframework.org/schema/context" xmlns:tx="http://www.springframework.org/schema/tx"
+		xmlns:mybatis-spring="http://mybatis.org/schema/mybatis-spring" xsi:schemaLocation="http://mybatis.org/schema/mybatis-spring http://mybatis.org/schema/mybatis-spring-1.2.xsd
+			http://www.springframework.org/schema/beans http://www.springframework.org/schema/beans/spring-beans.xsd
+			http://www.springframework.org/schema/context http://www.springframework.org/schema/context/spring-context-4.0.xsd
+			http://www.springframework.org/schema/tx http://www.springframework.org/schema/tx/spring-tx-4.0.xsd">
 
-			// <!-- 组件扫描 -->
-			<context:component-scan base-package="com.example.spring"> //<!-- 排除controller -->
-				<context:exclude-filter type="annotation" expression="org.springframework.stereotype.Controller" />
-			</context:component-scan>
+		// <!-- 组件扫描 -->
+		<context:component-scan base-package="com.example.spring"> //<!-- 排除controller -->
+			<context:exclude-filter type="annotation" expression="org.springframework.stereotype.Controller" />
+		</context:component-scan>
 
-			// <!-- 数据源 -->
-			<context:property-placeholder location="classpath:db.properties" />
-			<bean id="dataSource" class="com.alibaba.druid.pool.DruidDataSource">
-				<property name="driverClass" value="${jdbc.driver}" />
-				<property name="jdbcUrl" value="${jdbc.url}" />
-				<property name="user" value="${jdbc.username}" />
-				<property name="password" value="${jdbc.password}" />
-			</bean>
+		// <!-- 数据源 -->
+		<context:property-placeholder location="classpath:db.properties" />
+		<bean id="dataSource" class="com.alibaba.druid.pool.DruidDataSource">
+			<property name="driverClass" value="${jdbc.driver}" />
+			<property name="jdbcUrl" value="${jdbc.url}" />
+			<property name="user" value="${jdbc.username}" />
+			<property name="password" value="${jdbc.password}" />
+		</bean>
 
-			// <!-- 事务 -->
-			<bean id="dataSourceTransactionManager" class="org.springframework.jdbc.datasource.DataSourceTransactionManager">
-				<property name="dataSource" ref="dataSource" />
-			</bean>
+		// <!-- 事务 -->
+		<bean id="dataSourceTransactionManager" class="org.springframework.jdbc.datasource.DataSourceTransactionManager">
+			<property name="dataSource" ref="dataSource" />
+		</bean>
+		// <!--基于注解使用事务 -->
+		<tx:annotation-driven transaction-manager="dataSourceTransactionManager" />
 
-			// <!--基于注解使用事务 -->
-			<tx:annotation-driven transaction-manager="dataSourceTransactionManager" />
+		// <!-- Spring 整合 Mybatis -->
+		// <!-- 1.SqlSession 对象的创建,管理等  -->
+		<bean class="org.mybatis.spring.SqlSessionFactoryBean">
+			<property name="dataSource" ref="dataSource" /> //<!-- 数据源 -->
+			<property name="configLocation" value="classpath:mybatis-config.xml" /> //<!-- Mybatis的全局配置文件 -->
+			<property name="mapperLocations" value="classpath:mybatis/mapper/*.xml" /> //<!-- mapper文件 -->
 
-			// <!-- Spring 整合 Mybatis -->
-			// <!-- 1.SqlSession 对象的创建,管理等  -->
-			<bean class="org.mybatis.spring.SqlSessionFactoryBean">
-				<property name="dataSource" ref="dataSource" /> //<!-- 数据源 -->
-				<property name="configLocation" value="classpath:mybatis-config.xml" /> //<!-- Mybatis的全局配置文件 -->
-				<property name="mapperLocations" value="classpath:mybatis/mapper/*.xml" /> //<!-- Mybatis的SQL映射文件 -->
+			<property name="typeAliasesPackage" value="com.example.spring.beans" /> //<!-- 别名处理 -->
+		</bean>
 
-				<property name="typeAliasesPackage" value="com.example.spring.beans" /> //<!-- 别名处理 -->
-			</bean>
+		// <!-- 2.Mapper接口[代理实现类]对象的创建,管理等
+		// 		MapperScannerConfigurer 会为指定包下的Mapper接口生成代理实现类对象并管理到IOC容器中.
+		// 		EmployeeMapper ==> 代理实现类对象 ===> 在IOC容器中的id: employeeMapper -->
+		<bean class="org.mybatis.spring.mapper.MapperScannerConfigurer">
+			<property name="basePackage" value="com.example.spring.**.mapper" />
+		</bean>
 
-			// <!-- 2.Mapper接口[代理实现类]对象的创建,管理等
-			// 		MapperScannerConfigurer 会为指定包下的Mapper接口生成代理实现类对象并管理到IOC容器中.
-			// 		EmployeeMapper ==> 代理实现类对象 ===> 在IOC容器中的id: employeeMapper -->
-			<bean class="org.mybatis.spring.mapper.MapperScannerConfigurer">
-				<property name="basePackage" value="com.example.spring.mapper" />
-			</bean>
-
-			// <!-- 2.另一种实现方案(mybatis-spring-1.3.0.jar 整合包提供的实现方案) -->
-			// <!-- <mybatis-spring:scan base-package="com.example.spring.mapper" /> -->
-		</beans>
+		// <!-- 2.另一种实现方案(mybatis-spring-1.3.0.jar 整合包提供的实现方案) -->
+		// <!-- <mybatis-spring:scan base-package="com.example.spring.mapper" /> -->
+	</beans>
 	}
 
 #Springmvc	
 	{//springmvc.xml
-		<?xml version="1.0" encoding="UTF-8"?>
-		<beans xmlns="http://www.springframework.org/schema/beans" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
-			xmlns:context="http://www.springframework.org/schema/context" xmlns:mvc="http://www.springframework.org/schema/mvc"
-			xsi:schemaLocation="http://www.springframework.org/schema/mvc http://www.springframework.org/schema/mvc/spring-mvc-4.0.xsd
-				http://www.springframework.org/schema/beans http://www.springframework.org/schema/beans/spring-beans.xsd
-				http://www.springframework.org/schema/context http://www.springframework.org/schema/context/spring-context-4.0.xsd">
+	<?xml version="1.0" encoding="UTF-8"?>
+	<beans xmlns="http://www.springframework.org/schema/beans" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+		xmlns:context="http://www.springframework.org/schema/context" xmlns:mvc="http://www.springframework.org/schema/mvc"
+		xsi:schemaLocation="http://www.springframework.org/schema/mvc http://www.springframework.org/schema/mvc/spring-mvc-4.0.xsd
+			http://www.springframework.org/schema/beans http://www.springframework.org/schema/beans/spring-beans.xsd
+			http://www.springframework.org/schema/context http://www.springframework.org/schema/context/spring-context-4.0.xsd">
 
-			// <!-- 组件扫描 -->
-			<context:component-scan base-package="com.example.spring" use-default-filters="false"> //<!-- 指定扫描,即设置false -->
-				<context:include-filter type="annotation" expression="org.springframework.stereotype.Controller" />
-			</context:component-scan>
+		// <!-- 组件扫描 -->
+		<context:component-scan base-package="com.example.spring" use-default-filters="false"> //<!-- 指定扫描,即设置false -->
+			<context:include-filter type="annotation" expression="org.springframework.stereotype.Controller" />
+		</context:component-scan>
 
-			// <!-- 视图解析器 -->
-			<bean class="org.springframework.web.servlet.view.InternalResourceViewResolver">
-				<property name="prefix" value="/WEB-INF/views/" />
-				<property name="suffix" value=".jsp" />
-			</bean>
+		// <!-- 视图解析器 -->
+		<bean class="org.springframework.web.servlet.view.InternalResourceViewResolver">
+			<property name="prefix" value="/WEB-INF/views/" />
+			<property name="suffix" value=".jsp" />
+		</bean>
 
-			// <!-- mvc -->
-			<mvc:default-servlet-handler />
-			<mvc:annotation-driven />
-		</beans>	
+		// <!-- mvc -->
+		<mvc:default-servlet-handler />
+		<mvc:annotation-driven />
+	</beans>
 	}
 
 #mybatis
 	{//mybatis-config.xml
-		<?xml version="1.0" encoding="UTF-8" ?>
-		<!DOCTYPE configuration
-		PUBLIC "-//mybatis.org//DTD Config 3.0//EN"
-		"http://mybatis.org/dtd/mybatis-3-config.dtd">
-		// <!-- Spring 整合 MyBatis 后, MyBatis中配置数据源,事务等一些配置都可以迁移到Spring的整合配置中.
-		//		MyBatis配置文件中只需要配置与MyBatis相关的即可 -->
-		<configuration>
-			// <!-- 2. settings: 包含了很多重要的设置项 -->
-			<settings>
-				// <!-- 映射下划线到驼峰命名 -->
-				<setting name="mapUnderscoreToCamelCase" value="true"/>
-				// <!-- 开启延迟加载 -->
-				<setting name="lazyLoadingEnabled" value="true"/>
-				// <!-- 配置按需加载-->
-				<setting name="aggressiveLazyLoading" value="false"/>
-			</settings>
-		</configuration>
+	<?xml version="1.0" encoding="UTF-8" ?>
+	<!DOCTYPE configuration
+	PUBLIC "-//mybatis.org//DTD Config 3.0//EN"
+	"http://mybatis.org/dtd/mybatis-3-config.dtd">
+	
+	// <!-- Spring 整合 MyBatis 后, MyBatis中配置数据源,事务等一些配置都可以迁移到Spring的整合配置中.
+	//		MyBatis配置文件中只需要配置与MyBatis相关的即可 -->
+	<configuration>
+		<settings>// <!-- settings: 包含了很多重要的设置项 -->
+			<setting name="mapUnderscoreToCamelCase" value="true"/>// <!-- 映射下划线到驼峰命名 -->
+			<setting name="lazyLoadingEnabled" value="true"/>// <!-- 开启延迟加载 -->
+			<setting name="aggressiveLazyLoading" value="false"/>// <!-- 配置按需加载-->
+		</settings>
+	</configuration>
 	}
 	
 //}

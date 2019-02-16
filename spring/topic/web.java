@@ -26,7 +26,7 @@
 		请求重定向 //req.sendRedirect("/hello");
 //}
 
-//{--------<<<Servlet>>>-----------------------------------------------------------------
+//{--------<<<servlet>>>-----------------------------------------------------------------
 #Tomcat的work目录存放
 	(1).jsp先翻译成Servlet,再编译的class文件.
 	(2).Session被持久化的 SESSIONS.ser 文件.
@@ -63,6 +63,17 @@
 	destory(): //只被调用一次. 应用被卸载前调用. 用于释放Servlet所占用的资源(如数据库连接).
 
 #自定义Servlet
+	0.boot配置		
+		@WebServlet(name = "TestServlet", urlPatterns = "/test")
+		@ServletComponentScan //全局注解; 启动时自动扫描 @WebServlet,并将该类实例化
+		public class TestServlet extends HttpServlet {
+			@Override
+			protected void doGet(HttpServletRequest req, HttpServletResponse resp) throws ServletException, IOException {
+				super.doGet(req, resp);
+				System.out.println("TestServlet: " + getServletContext().getAttribute("attr"));
+			}
+		}
+
 	1.web.xml
 		<servlet>
 			<servlet-name>helloServlet</servlet-name> //类别名
@@ -84,7 +95,7 @@
 
 		Servlet映射URL中可以使用通配符"*",但只能两种固定格式: '/*' 或 '*.html(do,action等)'
 		其他,如 '/*.html' 都是不合法的.
-
+		
 #init()方法
 	#ServletConfig --> 封装了 Serlvet 的配置信息,可获取对象 ServletContext
 		1.配置Serlvet的初始化参数
@@ -199,15 +210,47 @@
 
 //}
 
+//{--------<<<servlet-单例多线程>>>------------------------------------------------------
+https://blog.csdn.net/shixhzjy/article/details/8945810
+	
+#测试
+    @GetMapping("/test") //http://127.0.0.1:8090/demo/test
+    public String test() throws InterruptedException {
+        System.out.println("start: " + SystemUtils.getAll());
+        Thread.sleep(5 * 1000);
+        System.out.println("end..: " + SystemUtils.getAll());
+        return "test";
+    }
+	
+	(1).google浏览器的两个窗口同时访问 ///顺序执行
+		start: 2019-02-13 19:42:59.527 - 59 - http-nio-8090-exec-3
+		end..: 2019-02-13 19:43:04.527 - 59 - http-nio-8090-exec-3
+		start: 2019-02-13 19:43:04.541 - 60 - http-nio-8090-exec-4 (不同线程)
+		end..: 2019-02-13 19:43:09.541 - 60 - http-nio-8090-exec-4
+		
+	(2).google浏览器+ie浏览器同时访问 ///并行执行
+		start: 2019-02-13 19:45:27.485 - 63 - http-nio-8090-exec-7
+		start: 2019-02-13 19:45:28.995 - 64 - http-nio-8090-exec-8
+		end..: 2019-02-13 19:45:32.486 - 63 - http-nio-8090-exec-7
+		end..: 2019-02-13 19:45:33.996 - 64 - http-nio-8090-exec-8
+		
+	(3).不同ip的pc同时访问 ///并行执行
+		start: 2019-02-13 19:50:46.207 - 58 - http-nio-8090-exec-2
+		start: 2019-02-13 19:50:48.835 - 59 - http-nio-8090-exec-3
+		end..: 2019-02-13 19:50:51.208 - 58 - http-nio-8090-exec-2
+		end..: 2019-02-13 19:50:53.836 - 59 - http-nio-8090-exec-3
+
+//}
+
 //{--------<<<jsp>>>---------------------------------------------------------------------
 #jsp页面(Java Server Pages)
 	本质就是一个Servlet; 
 	jsp善于处理页面显示; Servlet善于处理业务逻辑, 二者结合使用.
 	
 	执行时,先转化为java文件,再编译成class文件.
-	转化过程: java代码照搬; html+css+表达式等通过流输出 out.write() 
+	转化过程: java代码照搬; html+css+表达式等通过流输出 out.write()
 		
-	0.9大内置对象
+	1.9大内置对象
 		HttpServletRequest request; //同一个请求
 		JspWriter out = response.getWriter(); //用于页面显示信息, out.println();
 		
@@ -223,13 +266,31 @@
 		
 		///pageContext < request < session < application (作用域:从小到大)
 		
-	1.jsp中的java
+	2.jsp中的java
 		<% 
 			Date date = new Date(); //嵌入jsp的Java代码段
 			out.print(date);
 		%>
 
 		<%= date %> //脚本表达式.(上述的简化版)
+		
+#boot配置
+	0.pom.xml
+		// <!-- jstl -->
+		<dependency>
+			<groupId>javax.servlet</groupId>
+			<artifactId>jstl</artifactId>
+		</dependency>
+		// <!-- jasper -->
+		<dependency>
+			<groupId>org.apache.tomcat.embed</groupId>
+			<artifactId>tomcat-embed-jasper</artifactId>
+			<scope>provided</scope>
+		</dependency>
+		
+	1.配置文件
+		spring.mvc.view.prefix=/WEB-INF/jsp/	//对应路径: \src\main\webapp\WEB-INF\jsp
+		spring.mvc.view.suffix=.jsp
 		
 #jsp指令
 	并不直接产生任何可见输出,而只是告诉jsp引擎如何解析jsp页面的其余部分.
@@ -286,6 +347,9 @@
 		   <p>我的工钱为: <c:out value="${salary}"/><p>
 		</c:if>
 
+		<c:if test="${empty emps}">
+			<h2 align="center">没有任何员工信息.</h2>
+		</c:if>
 		<c:if test="${!empty emps}">
 			<table border="1px" width="70%" align="center" cellspacing="0px">
 				//items: 要迭代的集合; var: 当前迭代出的元素
@@ -301,9 +365,6 @@
 					</tr>
 				</c:forEach>
 			</table>
-		</c:if>
-		<c:if test="${empty  emps}">
-			<h2 align="center">没有任何员工信息。</h2>
 		</c:if>
 
 //}
@@ -561,9 +622,23 @@ https://blog.csdn.net/u013210620/article/details/52318884
 			FORWARD -> 通过 RequestDispatcher.forward() '转发'..,...
 			INCLUDE -> 通过 RequestDispatcher.include() 访问时...
 			ERROR   -> 通过声明式异常处理机制调用时...
+		
+	1.boot配置
+		@Order(1) //@ServletComponentScan 全局注解
+		@WebFilter(filterName = "TestFilter", urlPatterns = "/test")
+		public class TestFilter extends HttpFilter {
+			@Override
+			protected void doFilter(HttpServletRequest request, HttpServletResponse response, FilterChain chain) throws
+					IOException, ServletException {
+				//...过滤器核心逻辑,每次请求过滤都会调用一次
+				System.out.println("进入 --> filter");
+				chain.doFilter(request, response);
+				System.out.println("离开 --> filter");
+			}
+		}
 
-	1.xml配置
-		<filter> //xml配置
+	2.xml配置
+		<filter>
 			<filter-name>testFilter</filter-name>
 			<filter-class>com.atguigu.login.filter.TestFilter</filter-class>
 		</filter>
@@ -573,24 +648,8 @@ https://blog.csdn.net/u013210620/article/details/52318884
 			<dispatcher>REQUEST</dispatcher> //可选值
 		</filter-mapping>
 		
-	2.生命周期
-		生命周期与 Servlet 一样: //init(调用一次) --> filter(每次调研) --> destory(调用一次)
-		
-	3.boot配置
-		@Order(1) // + 全局配置: @ServletComponentScan
-		@WebFilter(filterName = "testFilter", urlPatterns = "/abc")
-		public class TestFilter implements Filter {
-
-			@Override //Servlet容器Tomcat启动时,加载filter初始化方法,且只调用一次. 单例
-			public void init(FilterConfig filterConfig) throws ServletException { }
-
-			@Override //过滤器核心逻辑,每次请求过滤都会调用一次
-			public void doFilter(ServletRequest request, ServletResponse response, FilterChain chain)
-					throws IOException, ServletException { }
-
-			@Override //销毁方法,释放资源,只被调用一次
-			public void destroy() { }
-		}
+	3.生命周期
+		init(仅调用一次,单例) --> filter(每次调用) --> destory(仅调用一次) //生命周期与 Servlet 一样
 	
 	4.登陆检测过滤器
 		@Order(1)
@@ -629,15 +688,13 @@ https://blog.csdn.net/u013210620/article/details/52318884
 		'感知Session绑定'的事件监听器. //较少使用
 		
 #创建和销毁
-	1.配置方式
-		<listener> //xml配置
+	1.xml配置
+		<listener>
 			<listener-class>com.example.config.MyServletListener</listener-class>
 		</listener>
 		
-		@WebListener + @ServletComponentScan //注解配置
-	
-	2.代码实现	
-		@WebListener
+	0.boot配置
+		@WebListener //@ServletComponentScan 全局注解
 		public class MyServletListener implements ServletContextListener, HttpSessionListener, ServletRequestListener {
 
 			//SC对象创建时调用(web程序在服务器上部署时).

@@ -6,35 +6,55 @@
 
 //{--------<<<xml>>>--------------------------------------------------------------------------
 #xml文件代码提示
-	下载dtd文件: "mybatis-3-mapper.dtd"和"mybatis-3-config.dtd"
-	打开 eclipse-windows-preferences-xml-xmlcatalog-add, 依次填写:	
-		//mapper.xml文件的代码提示
+	#下载dtd文件: "mybatis-3-mapper.dtd"和"mybatis-3-config.dtd"
+	#打开 eclipse -> windows -> preferences -> xml -> xmlcatalog -> add,依次填写:
+		//mapper.xml 的代码提示
 		location	-> 选择file_system,找到"mybatis-3-mapper.dtd"存放的本地路径
 		key_type	-> URI0
 		key			-> http://mybatis.org/dtd/mybatis-3-mapper.dtd
 		
-		//mybatis-config.xml文件的代码提示
+		//mybatis-config.xml 的代码提示
 		location	-> 选择file_system,找到"mybatis-3-config.dtd"存放的本地路径
 		key_type	-> URI0
 		key			-> http://mybatis.org/dtd/mybatis-3-config.dtd
+		
+#boot整合
+	0.pom文件
+        // <!-- Mybatis 启动器 -->
+        <dependency>
+            <groupId>org.mybatis.spring.boot</groupId>
+            <artifactId>mybatis-spring-boot-starter</artifactId>
+			<version>1.3.2</version>
+        </dependency>
+        // <!-- mysql 数据库驱动 -->
+        <dependency>
+            <groupId>mysql</groupId>
+            <artifactId>mysql-connector-java</artifactId>
+        </dependency>
+        // <!-- druid 数据库连接池 -->
+        <dependency>
+            <groupId>com.alibaba</groupId>
+            <artifactId>druid</artifactId>
+        </dependency>
 	
-#Spring整合
-	mybatis.mapper-locations=classpath*:com/example/demo/mapper/sqlxml/ *.xml //xml路径
-	//mybatis.config-location=mybatis.xml //相关xml配置 <-> 与上不能同时使用
+	1.必要设置
+		mybatis.mapper-locations=classpath*:com/example/demo/mapper/sqlxml/ *.xml //xml路径
+		//mybatis.config-location=mybatis.xml //相关xml配置 <-> 与上不能同时使用
 	
-	mybatis.configuration.mapUnderscoreToCamelCase=true //驼峰命名
-	mybatis.configuration.callSettersOnNulls=true //数据库返回为null也调用映射对象的setter方法
-	
-	mybatis.configuration.lazyLoadingEnabled=true//全局设置: 是否启用延迟加载.
-	mybatis.configuration.aggressiveLazyLoading=true//局部设置: 是否不启用延迟加载.
-	
-	//全局注解; 可省去每个Mapper文件上的 @Mapper
-	@MapperScan(value = "com.example.blue.mapper") 
-	
-	//(不推荐).注解版xml; 直接在java文件写sql,省去对应的xml文件
-	@Select("SELECT sname FROM student WHERE sid=#{id}")
-	String getNameById(int id);
+		//全局注解; 可省去每个Mapper文件上的 @Mapper
+		@MapperScan(value = "com.example.blue.mapper") 
+		
+		//(不推荐).注解版xml; 直接在java文件写sql,省去对应的xml文件
+		@Select("SELECT sname FROM student WHERE sid=#{id}")
+		String getNameById(int id);
 
+	2.非必要
+		mybatis.configuration.mapUnderscoreToCamelCase=true //驼峰命名
+		mybatis.configuration.callSettersOnNulls=true //数据库返回为null也调用映射对象的setter方法
+		
+		mybatis.configuration.lazyLoadingEnabled=true//全局设置: 是否启用延迟加载.
+		mybatis.configuration.aggressiveLazyLoading=true//局部设置: 是否不启用延迟加载.
+		
 //}
 
 //{--------<<<参数>>>-------------------------------------------------------------------------
@@ -60,7 +80,7 @@
 			</if>
 		</select>
 		
-#特殊标签sql & include
+#特殊标签 sql&include
 		<sql id="ref">
 			id,name,age,address,companyId //sql用于抽取可重用的sql片段
 		</sql>

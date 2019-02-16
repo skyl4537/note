@@ -1,6 +1,265 @@
 
 
-///------------------<<<基础概念>>>---------------------------------------------------------------------
+//{--------<<<x>>>-------------------------------------------------------------------------
+
+//}
+
+//{--------<<<abc>>>-----------------------------------------------------------------------
+
+#@Cacheable -> 开启缓存,标注在(类/方法)上; 适用于查询
+	1.value/cacheNames
+		用来指定缓存的名称; 必须指定
+		数组形式,表示可以缓存到多个Cache中; (value = {"people","emp"})		
+	2.key
+		用来指定存储缓存时使用的key,默认使用方法参数对应的值
+		不指定则使用默认策略生成key; 支持SpringEL表达式 //详见附表
+		
+	0.工作流程
+		(0).目标方法调用之前,先检查缓存,有则返回; 无则查库,并将结果放入缓存
+		(1).检查缓存时, 先根据 Value 找到对应的Cache对象
+		(2).再根据 key 从Cache对象(ConcurrentMapCache<K,V>)中取出对应的缓存值
+		
+		@Override
+		@Cacheable(value = "people", key = "#person.id") //自定义key: person.id
+		public Person getOneById(Person person) {
+			return personMapper.getOneById(person.id);
+		}
+
+#@CacheEvict -> 清空缓存; 适用于添加,删除
+	1.value
+		缓存名称,同上
+	2.allEntries
+		是否清空对应 value 中的所有缓存; 默认 false
+	3.beforeInvocation
+		清空动作是否在方法调用之前; 默认 false,即方法调用出错,则缓存不会清空
+
+		@Override
+		@CacheEvict(value = "people"/*, allEntries = true*/) //默认key为方法参数值
+		public int deleteOneById(int id) {
+			return personMapper.deleteOneById(id);
+		}
+
+//}
+
+//{--------<<<ehcache>>>-------------------------------------------------------------------
+#ehcache - 纯java的进程内缓存框架! 快速,精干
+	0.pom文件
+		<dependency>
+			<groupId>org.springframework.boot</groupId>
+			<artifactId>spring-boot-starter-cache</artifactId>
+		</dependency>
+		<dependency>
+			<groupId>net.sf.ehcache</groupId>
+			<artifactId>ehcache</artifactId>
+		</dependency>
+		
+	1.properties
+		spring.cache.type=ehcache //缓存类型, 如用redis改为redis
+		spring.cache.ehcache.config=classpath:ehcache.xml //存放'/resources'目录下
+	
+	2.ehcahe.xml
+		<ehcache xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+			xsi:noNamespaceSchemaLocation="ehcache.xsd"
+			updateCheck="true" monitoring="autodetect" dynamicConfig="true">
+
+			<diskStore path="java.io.tmpdir/ehcache" />
+			
+			// <!-- 的默认缓存策略 -->
+			<defaultCache
+				eternal="false" //是否永不过期?? 默认false. true则属性 timeTo* 将不起作用. 
+				timeToIdleSeconds="120" //缓存最大闲置时间. 0无限.
+				timeToLiveSeconds="120" //........存活............
+				
+				maxEntriesLocalHeap="100" //内存缓存最大个数. 0无限. 过时属性 maxElementsInMemory
+				maxEntriesLocalDisk="100" //磁盘.......................... maxElementsOnDisk
+				
+				//磁盘缓存相关
+				overflowToDisk="true" //内存中缓存过量是否输出到磁盘?? 默认true
+				diskSpoolBufferSizeMB="30" //写入磁盘时IO缓冲区大小. 默认30MB. 每个Cache一个缓冲区
+				diskExpiryThreadIntervalSeconds="120" //磁盘缓存清理线程的运行间隔. 默认120s.
+				diskPersistent="false" //磁盘缓存在jvm重启后是否保持. 默认为false
+				
+				memoryStoreEvictionPolicy="LRU"> //内存中缓存过量后的移除策略. 默认 LRU(最近最少使用)
+				
+				<persistence strategy="localTempSwap" />
+			</defaultCache>
+			
+			// <!-- 自定义缓存策略 -->
+			<cache
+				name="system_set"
+				eternal="false"
+				timeToLiveSeconds="300"
+				maxEntriesLocalHeap="2"
+				overflowToDisk="true"
+				maxEntriesLocalDisk="5">
+			</cache>
+		</ehcache>
+	
+	3.配置说明
+		diskStore: 过量缓存输出到磁盘的存储路径.
+			//默认 path="java.io.tmpdir".
+			//windows-> "C:\Users\当前用户\AppData\Local\Temp\"; linux-> "/tmp"
+			//缓存文件名为缓存name, 后缀为data. 如: C:\Users\当前用户\AppData\Local\Temp\system_set.data
+		
+		当 maxEntriesLocalHeap 过量时,两种情况: 
+			//overflowToDisk=true  --> 过量缓存输出磁盘. 
+			//overflowToDisk=false --> 则按照 memoryStoreEvictionPolicy 从内存中移除缓存
+			
+		clearOnFlush: 调用 flush() 方法时,是否清空内存缓存??? 默认true.
+			//设为true, 则系统在初始化时会在磁盘中查找 CacheName.index 缓存文件, 如 system_set.index. 找到后将其加载到内存.
+			//注意: 在使用 net.sf.ehcache.Cache 的 void put (Element element) 方法后要使用 void flush() 方法
+		
+#测试DEMO
+	0.bean
+		@Data
+		public class Student implements Serializable { //对于磁盘缓存,必须'序列化'
+			private  int id;
+			private String name;
+		}
+	
+	1.Service
+		@Service
+		public class HelloServiceImpl implements HelloService {
+			
+			@Override
+			@Cacheable(value = "student") //开启缓存, 全局注解 @EnableCaching
+			public Student selStudentById(int id) {
+				return helloMapper.selStudentById(id);
+			}
+		}
+	2.单元测试
+		@RunWith(SpringRunner.class)
+		@SpringBootTest
+		public class ApplicationTests {
+			@Autowired
+			HelloService helloService;
+
+			@Test
+			public void test() {
+				System.out.println(helloService.selStudentById(3));
+				System.out.println(helloService.selStudentById(3)); //从日志看出,第二次不再查库
+			}
+		}
+		
+//}
+
+//{--------<<<redis>>>---------------------------------------------------------------------
+#安装
+	0.ubuntu安装
+		sudo apt-get install redis-server //安装完成后,redis服务会自动启动
+		
+		ps -aux|grep redis		//检查Redis服务器系统进程
+		netstat -nlt|grep 6379	//通过启动命令检查Redis服务器状态
+		sudo /etc/init.d/redis-server status //同上
+
+	1.其他方式
+		yum install gcc-c++				//安装gcc
+		tar -zxvf redis-3.0.0.tar.gz	//解压
+		cd redis-3.0.0					//进入解压后的目录
+		make							//进行编译
+		make PREFIX=/usr/local/redis install	//将redis安装到指定目录
+		./redis-server					//启动redis
+		
+#配置 -> 使用命令'whereis redis', 查找redis的安装路径,编辑文件 redis.conf
+	1.Redis的访问账号
+		//默认,访问Redis服务器是不需要密码的. 现配置密码为: redis
+		requirepass redis //取消 requirepass 这一行的注释,或者新增一行
+
+	2.配置Redis服务器可以远程访问
+		//默认,Redis服务器不允许远程访问,只允许本机访问
+		#bind 127.0.0.1 //注释此行
+		sudo /etc/init.d/redis-server restart //重启redis
+
+	3.redis客户端可视化工具推荐 -> RedisDesktopManager
+
+#整合测试
+	0.pom文件
+        <dependency>
+            <groupId>org.springframework.boot</groupId>
+            <artifactId>spring-boot-starter-data-redis</artifactId>
+        </dependency>
+		
+	1.properties
+		spring.cache.type=redis
+		spring.redis.host=192.168.5.25
+		spring.redis.password=redis
+		
+	2.以json序列化
+		@Configuration
+		public class RedisConfig {
+			//对于显示操作生效
+			@Bean
+			public RedisTemplate<Object, Object> redisTemplate(RedisConnectionFactory factory) {
+				RedisTemplate<Object, Object> template = new RedisTemplate<>();
+				template.setConnectionFactory(factory);
+
+				StringRedisSerializer stringRedisSerializer = new StringRedisSerializer();
+				template.setKeySerializer(stringRedisSerializer); //key
+
+				GenericJackson2JsonRedisSerializer jsonRedisSerializer = new GenericJackson2JsonRedisSerializer();
+				template.setValueSerializer(jsonRedisSerializer); //value
+				template.setHashValueSerializer(jsonRedisSerializer);
+				return template;
+			}
+
+			//对于注解生效,如 @Cacheable
+			@Bean
+			public RedisCacheConfiguration redisCacheConfiguration() {
+				// Jackson2JsonRedisSerializer<Object> redisSerializer = new Jackson2JsonRedisSerializer<>(Object.class);
+				// ObjectMapper om = new ObjectMapper();
+				// om.setVisibility(PropertyAccessor.ALL, JsonAutoDetect.Visibility.ANY);
+				// om.enableDefaultTyping(ObjectMapper.DefaultTyping.NON_FINAL);
+				// redisSerializer.setObjectMapper(om);
+
+				GenericJackson2JsonRedisSerializer redisSerializer = new GenericJackson2JsonRedisSerializer();
+				RedisCacheConfiguration redisCacheConfiguration = RedisCacheConfiguration.defaultCacheConfig();
+				redisCacheConfiguration = redisCacheConfiguration.serializeValuesWith(
+						RedisSerializationContext.SerializationPair.fromSerializer(redisSerializer)
+				).entryTtl(Duration.ofMinutes(30));
+				return redisCacheConfiguration;
+			}
+		}
+	3.显示操作DEMO
+		@Test
+		public void test00() {
+			Student student = new Student(1, "009");
+			redisTemplate.opsForValue().set("student", student, 5, TimeUnit.SECONDS); //有效期5s,写入
+
+			Student student = (Student) redisTemplate.opsForValue().get("student");
+			System.out.println("student: " + student.getName()); //读取
+		}
+	
+	4.注解DEMO
+		@Override
+		@Cacheable(value = "student", key = "'id-' + #p0")
+		public Student selStudentById(int id) {
+			return helloMapper.selStudentById(id);
+		}
+		
+		@Test
+		public void test() {
+			System.out.println(helloService.selStudentById(2)); //Person implements Serializable
+			System.out.println(helloService.selStudentById(2)); //第二次不读库
+		}
+	
+	5.GenericJackson2JsonRedisSerializer VS Jackson2JsonRedisSerializer
+		(1).G* 比 J* 效率低,占用内存高
+		
+		(2).使用 G* 序列化时,会保存序列化对象的全类名, 即'@class'
+			反序列化时以此标识就可以反序列化成指定的对象. 如下所示
+	
+			{ //redis中数据
+			  "@class": "com.example.spring.bean.Student",
+			  "id": 6,
+			  "name": "张四",
+			  "teacher": null
+			}
+		
+		
+
+//}
+
+//{------------------<<<基础概念>>>---------------------------------------------------------------------
 0.应用场景
 	#高频热点数据 -> 频繁访问数据库,数据库压力过大
 	#临时性的数据 -> 手机号发送的验证码,三分钟有效,过期删掉
@@ -190,142 +449,14 @@
 	@CacheConfig(cacheNames = "people")
 	public class PersonServiceImpl { }
 	
-	
-	
-	
-			
-///-------------------<<<缓存框架>>>--------------------------------------------------------------------
-
-#ehcache - 纯java的进程内缓存框架! 快速,精干
-	1.引用配置
-		spring.cache.type=ehcache //设置缓存类型ehcache, 用redis改为redis
-		spring.cache.ehcache.config=classpath:ehcahe.xml //ehcache配置文件所在路径
-		
-		<dependency>
-			<groupId>org.springframework.boot</groupId>
-			<artifactId>spring-boot-starter-cache</artifactId>
-		</dependency>
-		<dependency>
-			<groupId>net.sf.ehcache</groupId>
-			<artifactId>ehcache</artifactId>
-		</dependency>
-	
-	2.配置文件
-		<ehcache xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
-			xsi:noNamespaceSchemaLocation="ehcache.xsd" updateCheck="true"
-			monitoring="autodetect" dynamicConfig="true">
-
-			<diskStore path="java.io.tmpdir/ehcache" />
-
-			<cache name="all_passage" eternal="false" maxEntriesLocalHeap="0"
-				timeToLiveSeconds="300"></cache>
-
-			<cache name="system_set" eternal="false" maxEntriesLocalHeap="2"
-				timeToLiveSeconds="300" overflowToDisk="true" maxEntriesLocalDisk="5"></cache>
-		</ehcache>
-	
-	3.配置说明
-		diskStore: 过量缓存输出到磁盘的输出路径. 
-			//默认 path="java.io.tmpdir".
-			//windows-> "C:\Users\当前用户\AppData\Local\Temp\"; linux-> "/tmp"
-			//缓存文件名为缓存name, 后缀为data. 如: C:\Users\当前用户\AppData\Local\Temp\system_set.data
-	
-	4.必选属性
-		eternal: 是否永不过期??? 默认false. //设为 true 则以下 timeTo* 属性将不起作用. 
-		maxEntriesLocalHeap: 内存缓存最大个数. 0没有限制. //maxElementsInMemory -> 过时
-		maxEntriesLocalDisk: 硬盘缓存最大个数.0没有限制. //maxElementsOnDisk -> 过时
-		overflowToDisk: 内存中缓存过量是否输出到磁盘???
-	
-	5.可选属性
-		timeToIdleSeconds: 缓存的最大可闲置时间. 0闲置时间无穷大.
-		timeToLiveSeconds: ............存活..... 0存活...........
-		diskSpoolBufferSizeMB: 写入磁盘缓存的IO缓存区大小. 默认30MB. //每个Cache都应该有自己的一个缓冲区
-		diskExpiryThreadIntervalSeconds: 清理磁盘缓存线程的运行间隔.默认120s.
-		diskPersistent: 磁盘缓存在JVM重启后是否保持. 默认为false
-		
-		memoryStoreEvictionPolicy: 内存中缓存过量后的移除策略. 默认LRU(最近最少使用). 可替换策略:LFU(最少使用); FIFO(先进先出)
-			//当 maxEntriesLocalHeap 过量时,两种情况: 
-			//(1).overflowToDisk=true,过量缓存输出磁盘. 
-			//(2).overflowToDisk=false,则按照 memoryStoreEvictionPolicy 从内存中移除缓存
-			
-		clearOnFlush: 调用 flush() 方法时,是否清空内存缓存??? 默认true.
-			//设为true, 则系统在初始化时会在磁盘中查找 CacheName.index 缓存文件, 如 system_set.index. 找到后将其加载到内存.
-			//注意: 在使用 net.sf.ehcache.Cache 的 void put (Element element) 方法后要使用 void flush() 方法
-			
-#Redis
-	1.配置文件
-		spring.redis.host=192.168.5.25	//默认端口6379
-	
-	2.测试Test
-		@Autowired
-		RedisTemplate redisTemplate;//操作所有类型
-
-		@Autowired
-		StringRedisTemplate stringRedisTemplate;//操作String
-		
-		public void stringRedisTest() {
-			ValueOperations<String, String> ops = stringRedisTemplate.opsForValue();
-			ops.set("msg", "world", 5, TimeUnit.SECONDS);//有效期5s
-			String res = ops.get("msg");
-			System.out.println("msg---res: " + res);
-		}
-
-		public void redisTest() {
-			Person person = new Person(1, 18, "wang", 9);
-			ValueOperations ops = redisTemplate.opsForValue();
-			ops.set("person01", person); //Person必须实现序列化接口 implements Serializable
-			Object res = ops.get("person01");
-			System.out.println("msg---res: " + res); //默认是以jdk序列化方式存储,存储二进制字节码
-		}
-	
-	3.以json形式存储------------->未完全符合要求????????????????????????????????????
-		//(1).存储时将Person对象转化成json,再进行存储!
-		ops.set("person01", JSON.toJSONString(person));
-		
-		//(2).配置序列化规则,覆盖默认的jdk序列化
-		@Configuration
-		public class RedisConfig {
-			@Bean
-			public RedisTemplate<Object, Object> redisTemplate(RedisConnectionFactory factory) {
-
-				RedisTemplate<Object, Object> template = new RedisTemplate<>();
-				template.setConnectionFactory(factory);
-				Jackson2JsonRedisSerializer<Object> serializer = new Jackson2JsonRedisSerializer<Object>
-						(Object.class);
-				template.setDefaultSerializer(serializer);//配置JSON序列化规则
-				return template;
-			}
-		}
-	
-		public void mRedisTest() {
-			Person person = new Person(1, 18, "wang", 9);
-			ValueOperations ops = redisTemplate.opsForValue();
-			ops.set("person01", person);
-			Object res = ops.get("person01"); //redis存储的<key,value>皆为json
-			System.out.println("msg---res: " + res);
-		}
-	
-		
-	
-	
-	
-	
-	
-	
-	
-	
-	
-	
-	
-	
-	
+//}
 	
 	
 	
 ///-------------------<<<附录>>>--------------------------------------------------------------------
 #淘汰算法LRU和LFU
-	1.LRU(Least_recently_used) - ///最近最少使用
-		'将最近使用的条目存放到靠近缓存顶部的位置'. 当缓存达到极限时,较早访问的条目将从缓存底部开始被移除.
+	1.LRU(least_recently_used) - ///最近最少使用
+		//将最近使用的条目存放到缓存的顶部位置; 达到缓存极限时,从底部开始移除.		
 		这里会使用到昂贵的算法,而且它需要记录"年龄位"来精确显示条目是何时被访问的.
 		此外,当一个LRU缓存算法删除某个条目后,"年龄位"将随其他条目发生改变.
 	
