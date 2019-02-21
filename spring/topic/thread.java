@@ -1,168 +1,441 @@
 
 
-#线程池
-	0.优点
-		(0).降低资源消耗: 通过重复利用已创建的线程,降低线程创建和销毁造成的消耗
-		(1).提高响应速度: 当任务到达时,任务可以不需要等待线程的创建就能立即执行
-		(2).提高线程的可管理性: 线程是稀缺资源,如果无限制的创建,不仅会消耗系统资源,还会降低系统的稳定性,
-			使用线程池可以进行统一的分配,调优和监控.
-			
-	1.生命周期
-		线程池是一个进程级的重量级资源. 默认生命周期和 JVM 一致. 即从开启线程池开始,到 JVM 关闭为止.
-		如果手工调用 shutdown() 方法,那么线程池执行所有的任务后,自动关闭.
-		
-		
-#jdk线程池
-	0.单例线程池
-		/**
-		 * ---> 有且仅有一个线程处于活动状态,适用于有序(FIFO,LIFO,优先级)执行任务.
-		 *  
-		 * 区别于 newFixedThreadPool(1) --> 如果线程因任务错误而中止, fixed是无法使用'替代线程'(创建一个新的线程替换它执行后续任务),后续任务也将终止.
-		 *  
-		 * 2018-12-05 16:59:14.427 -> 11 - pool-1-thread-1 ---> 0
-		 * 2018-12-05 16:59:16.429 -> 11 - pool-1-thread-1 ---> 1
-		 * 2018-12-05 16:59:16.429 -> 11 - pool-1-thread-1 ---> 2 -> Exception:/ by zero //2执行异常! 但不影响3执行
-		 * 2018-12-05 16:59:18.429 -> 11 - pool-1-thread-1 ---> 3 //3使用'替代线程'
-		 */
-		private static void single() {
-			ExecutorService excutor = Executors.newSingleThreadExecutor();
-			for (int i = 0; i < 4; i++) {
-				int index = i;
-				excutor.execute(() -> {
-					try {
-						int j = (2 == index) ? 1 / 0 : 0;// 故意制造异常
-						TimeUnit.SECONDS.sleep(2);
-						System.out.println(SystemUtils.getAll() + " ---> " + index);
-					} catch (Exception e) {
-						System.out.println(SystemUtils.getAll() + " ---> " + index + " -> Exception:" + e.getMessage());
-					}
-				});
-			}
-			excutor.shutdown();
-		}
-		
-	1.固定线程池
-		/**
-		 * --->复用'固定数量'线程处理一个共享的无边界队列
-		 *
-		 * 任何时间,最多只有 n 个线程处于活动状态. 新提交任务一直在队列中等待,直到有线程可用.
-		 * 如果任何线程在执行过程中因为错误而中止,则会使用(新建线程/替代线程) 执行后续任务.
-		 * 所有线程都会一直存于线程池中,直到显式的调用 shutdown() 关闭.
-		 *
-		 * 线程池大小最好根据系统资源进行设置: Runtime.getRuntime().availableProcessors()+1
-		 * 对于CPU密集型应用,线程池大小应设置为 N+1. 对于IO密集型应用,线程池大小设置为 2N+1 (N为CPU总核数)
-		 *
-		 * 线程池大小为2,启动4个任务,每个任务先sleep2秒再打印, 所以先打印2个数字,再'复用线程'打印第3.4个数字
-		 *
-		 * 2018-12-05 16:58:02.117 -> 11 - pool-1-thread-1 ---> 0
-		 * 2018-12-05 16:58:02.119 -> 12 - pool-1-thread-2 ---> 1
-		 * 2018-12-05 16:58:04.118 -> 11 - pool-1-thread-1 ---> 2 -> Exception:/ by zero
-		 * 2018-12-05 16:58:04.118 -> 11 - pool-1-thread-1 ---> 3
-		 */
-		private static void fixed() {
-			// System.out.println(SystemUtils.getAll() + " -> start");
-			ExecutorService executor = Executors.newFixedThreadPool(2);
-			for (int i = 0; i < 4; i++) {
-				int index = i;
-				executor.execute(() -> {
-					try {
-						int j = (2 == index) ? 1 / 0 : 0;// 故意制造异常
-						System.out.println(SystemUtils.getAll() + " ---> " + index);
-						TimeUnit.SECONDS.sleep(index);
-					} catch (Exception e) {
-						System.out.println(SystemUtils.getAll() + " ---> " + index + " -> Exception:" + e.getMessage());
-					}
-				});
-			}
-			executor.shutdown();
-		}
+//{--------<<<hello>>>--------------------------------------------------------------------
 
-	2.缓存线程池
-		/**
-		 * ---> 适用于大量短生命周期的异步任务(many short-lived asynchronous task)
-		 *
-		 * 有闲置则使用; 无闲置则新建,并将其加入线程池中.
-		 * 当线程池大小超过了任务所需,则会自动回收部分闲置线程(60秒未被使用). 因此,该线程池在长时间空闲后不会消耗任何资源
-		 *
-		 * 分别在 0-0-1-3, 4个时间点执行4个任务
-		 * 首先,直接新建两个线程执行任务0和1. 当2和3任务执行时,0和1任务[已]完成,则会复用1任务的线程,而不用新建线程
-		 *
-		 * 2018-12-05 17:29:31.123 -> 11 - pool-1-thread-1 ---> 0
-		 * 2018-12-05 17:29:31.125 -> 12 - pool-1-thread-2 ---> 1
-		 * 2018-12-05 17:29:32.117 -> 12 - pool-1-thread-2 ---> 2
-		 * 2018-12-05 17:29:34.117 -> 12 - pool-1-thread-2 ---> 3
-		 */
-		private static void cached() throws InterruptedException {
-			ExecutorService executor = Executors.newCachedThreadPool();
-			for (int i = 0; i < 4; i++) {
-				int index = i;
-				executor.execute(() -> System.out.println(SystemUtils.getAll() + " ---> " + index));
-				TimeUnit.SECONDS.sleep(index);
-			}
-			executor.shutdown();
-		}
+//}
 
-	3.定时线程池
-		/**
-		 * ---> 比Timer更安全,功能更强大.
-		 *
-		 * //下次循环起始时间 = (任务消耗时间 > period) ? 上次循环[结束]时间 : (上次循环[起始]时间 + period)
-		 * //1s执行1次循环!!! 但1次任务需要2s,所以第1次循环完成,第2次循环立即开始
-		 * scheduleAtFixedRate(Runnable command, long initialDelay, long period, TimeUnit unit);
-		 *
-		 * //下次循环起始时间 = (上次循环[结束]时间 + period)
-		 * //1s执行1次循环!!! 第1次循环完成后,等待1s,然后再开始第2次循环
-		 * scheduleWithFixedDelay(Runnable command, long initialDelay, long delay, TimeUnit unit)
-		 *  
-		 * 如果有任务执行过程中抛出异常,则会跳出,不会影响下次循环.
-		 *  
-		 * 2018-12-05 17:53:03.826 -> 1 - main -> start
-		 * 2018-12-05 17:53:03.938 -> 12 - pool-1-thread-2 ---> 0
-		 * 2018-12-05 17:53:04.937 -> 11 - pool-1-thread-1 ---> 1
-		 * 2018-12-05 17:53:05.937 -> 11 - pool-1-thread-1 ---> 2 -> Exception:/ by zero
-		 * 2018-12-05 17:53:06.938 -> 12 - pool-1-thread-2 ---> 3
-		 */
-		private static void scheduled() {
-			System.out.println(SystemUtils.getAll() + " -> start");
-			ScheduledExecutorService executor = Executors.newScheduledThreadPool(2);
-			for (int i = 0; i < 4; i++) {
-				int index = i;
-				executor.schedule(() -> {
-					try {
-						int j = (2 == index) ? 1 / 0 : 0;// 故意制造异常
-						System.out.println(SystemUtils.getAll() + " ---> " + index);
-					} catch (Exception e) {
-						System.out.println(SystemUtils.getAll() + " ---> " + index + " -> Exception:" + e.getMessage());
-					}
-				}, index, TimeUnit.SECONDS);
-			}
-			executor.shutdown();
-		}
+//{--------<<<线程池-abc>>>-------------------------------------------------------------------
+#优点
+	(0).降低资源消耗: 通过重复利用已创建的线程,降低线程创建和销毁造成的消耗
+	(1).提高响应速度: 当任务到达时,任务可以不需要等待线程的创建就能立即执行
+	(2).提高线程的可管理性: 线程是稀缺资源,如果无限制的创建,不仅会消耗系统资源,还会降低系统的稳定性,
+		使用线程池可以进行统一的分配,调优和监控.
+		
+#生命周期
+	线程池是一个进程级的重量级资源. 默认生命周期和 jvm 一致. 即从开启线程池开始,到 jvm 关闭为止.
+	如果手工调用 shutdown() 方法,那么线程池执行所有的任务后,自动关闭.
 
-#Spring线程池
-	//jdk线程池的弊端(参考ali开发文档):
-		(0).固定&单例-线程池: queue为MAX, 容易因请求队列堆积,耗费大量内存,甚至OOM
-		(1).缓存&定时-线程池: max为MAX, 可能会创建非常多的线程,甚至OOM
-		
-		Single	(core:1, max:1, queue:LinkedBlockingQueue<Runnable>) //queue=MAX; 无界队列; core==max==1
-		Fixed	(core:n, max:n, queue:LinkedBlockingQueue<Runnable>) //queue=MAX; 无界队列; core==max
-		Cached	(core:0, max:MAX, queue:SynchronousQueue<Runnable>) //直接将任务提交给线程,而不保持它们
-		Schedule(core:n, max:MAX, queue:DelayedWorkQueue) //定时队列
 
-	//Queue
-		ConcurrentLinkedQueue ==> 基础链表同步队列.
-		LinkedBlockingQueue ==> 阻塞队列,队列容量为0时自动阻塞.
-		ArrayBlockingQueue ==> 底层数组实现的有界队列,容量不足自动阻塞.
-		
-		DelayQueue ==> 延时队列. 根据自定义比较机制,将队列中任务进行时间排序. 常用于定时任务.
-		//假如定义为升序队列,调用 take() 方法, 则可以从队列中依次取出距离当前时间间隔最短的任务.
-		
-		LinkedTransferQueue ==> 转移队列. 使用 transfer() 方法,实现数据的即时处理. 没有消费者,就阻塞.
-		
-		synchronousqueue ==> 同步队列. 容量为 0 的队列,特殊的 LinkedTransferQueue.
-		//必须现有消费线程等待,才能使用的队列.
+//}
+
+//{--------<<<线程池状态>>>---------------------------------------------------------------
+	public class ThreadPoolExecutor extends AbstractExecutorService {	
+		volatile int runState;
+		static final int RUNNING    = 0;
+		static final int SHUTDOWN   = 1;
+		static final int STOP       = 2;
+		static final int TERMINATED = 3;
+	}	
 	
-	0.Spring线程池
+#runState
+	当前线程池的状态,volatile 保证线程之间的可见性. //取值范围以下四种:
+
+#RUNNING
+	线程池创建后,初始处于 RUNNING 状态
+
+#SHUTDOWN
+	当调用了 shutdown(),则线程池处于 SHUTDOWN 状态
+	此时线程池不能够接受新的任务,它会等待所有任务执行完毕
+
+#STOP
+	当调用了 shutdownNow(),则线程池处于 STOP 状态
+	............................,并且会尝试终止正在执行的任务
+				
+#TERMINATED
+	当线程池处于状态 SHUTDOWN/STOP,并且所有工作线程已经销毁
+	任务缓存队列已经清空或执行结束后,线程池被设置为 TERMINATED 状态
+//}
+
+//{--------<<<核心参数>>>-----------------------------------------------------------------
+	public class ThreadPoolExecutor extends AbstractExecutorService {
+		
+		//前面三个构造器,底层都是调用的第四个构造器进行的初始化工作
+		public ThreadPoolExecutor(int corePoolSize, int maximumPoolSize, long keepAliveTime, TimeUnit unit,
+				BlockingQueue<Runnable> workQueue);
+	 
+		public ThreadPoolExecutor(int corePoolSize, int maximumPoolSize, long keepAliveTime, TimeUnit unit,
+				BlockingQueue<Runnable> workQueue, ThreadFactory threadFactory);
+	 
+		public ThreadPoolExecutor(int corePoolSize, int maximumPoolSize, long keepAliveTime, TimeUnit unit,
+				BlockingQueue<Runnable> workQueue, RejectedExecutionHandler handler);
+	 
+		public ThreadPoolExecutor(int corePoolSize, int maximumPoolSize, long keepAliveTime, TimeUnit unit,
+			BlockingQueue<Runnable> workQueue, ThreadFactory threadFactory, RejectedExecutionHandler handler);
+		//...
+	}
+	
+#poolSize //线程池中当前的线程数		
+
+#corePoolSize //核心池的大小
+	默认情况下,线程池创建后池中线程总数为 0.
+	当然,也可以预创建线程,/*详见<<线程池中的线程初始化>>*/.
+	
+	当有任务来之后,就会创建一个线程去执行任务,直到线程池中的线程数目达到 corePoolSize
+	当 poolSize > corePoolSize 时,新提交的任务会被放进任务缓存队列 queue
+	
+#maximumPoolSize //线程池最大线程数
+	表示在线程池中最多能创建多少个线程		
+	
+#keepAliveTime //线程空闲的时间达到多久会被终止
+	默认情况下,只有当线程池中的线程数 >corePoolSize 时,keepAliveTime 才会起作用
+	即当线程池中的线程数  > corePoolSize,如果一个线程空闲的时间达到 keepAliveTime, 则会终止
+	直到线程池中的线程数 <= corePoolSize
+	
+	但是,如果调用了 allowCoreThreadTimeOut(boolean),
+	在线程池中的线程数 <=corePoolSize 时,keepAliveTime 也会起作用,直到线程池中的线程数为 0
+	
+#unit //keepAliveTime 的时间单位,7种取值:
+	TimeUnit.DAYS; .HOURS; .MINUTES; .SECONDS; .MILLISECONDS(毫秒); .MICROSECONDS(微妙); .NANOSECONDS(纳秒)
+	
+#threadFactory //线程工厂,主要用来创建线程
+
+#workQueue //缓冲队列,用来存储等待执行的任务.(都是线程安全的)	
+	1.LinkedBlockingQueue //常用
+		基于链表的 FIFO 队列(先进先出); 创建时不指定大小,则使用默认值, Integer.MAX_VALUE
+	
+	2.ArrayBlockingQueue
+		基于数组的 FIFO 队列,此队列创建时必须指定大小
+		当队列为空,消费者线程被阻塞; 当队列装满,生产者线程被阻塞
+		
+	3.SynchronousQueue
+		不会缓存任务,而是直接新建一个线程来执行新来的任务
+	
+	4.PriorityBlockingQueue
+		按照'优先级'进行排序的/*无限队列*/,优先级最高的元素将始终排在队列的头部
+		存放在其中的元素必须 implements Comparable,这样才能通过实现 compareTo() 进行排序
+
+#handler //任务拒绝策略.以下两种情况,会触发:
+	(1).等待队列已满 && poolSize = maximumPoolSize
+	(2).调用 shutdown(),会等待线程池里的任务执行完毕,再真正 SHUTDOWN. 在等待间,会拒绝新任务
+
+	1.ThreadPoolExecutor.AbortPolicy(默认)
+		丢弃任务,并抛出异常 RejectedExecutionException
+
+	2.ThreadPoolExecutor.DiscardPolicy
+		丢弃任务,但不抛出异常. 会导致被丢弃的任务无法再次被执行
+
+	3.ThreadPoolExecutor.DiscardOldestPolicy
+		丢弃最旧的未处理请求,然后重新尝试执行任务(重复此过程)
+
+	4.ThreadPoolExecutor.CallerRunsPolicy
+		直接在 execute() 的调用线程(可能是主线程)中运行被拒绝的任务
+		执行完之后,尝试将下一个任务添加到线程池中,可有效降低向线程池内添加任务的速度
+
+	
+//}
+
+//{--------<<<核心方法>>>-----------------------------------------------------------------
+	public class ThreadPoolExecutor extends [AbstractExecutorService implements (ExecutorService extends Executor)] {
+
+		// 在 Executor 中声明的方法,在 ThreadPoolExecutor 进行了具体的实现
+		// 通过这个方法可以向线程池提交一个任务,交由线程池去执行
+		execute();
+		
+		// 在 ExecutorService 中声明的方法,在 AbstractExecutorService 就已经有了具体的实现
+		// 在 ThreadPoolExecutor 中并没有对其进行重写
+		// 也是用来向线程池提交任务的,但和 execute() 不同,它能够返回任务执行的结果
+		// 底层还是调用 execute(),只不过利用了 Future 来获取任务执行结果
+		submit();
+		
+		//都是用来关闭线程池的,但有差异. 详见<<线程池状态>>
+		shutdown();		
+		shutdownNow();
+
+	}
+//}
+
+//{--------<<<任务的执行>>>---------------------------------------------------------------
+#poolSize  < corePoolSize 
+	每来一个任务,就会创建一个线程去执行这个任务
+
+#poolSize >= corePoolSize
+	每来一个任务,会尝试将其添加到任务缓存队列当中.
+	若添加成功,则该任务会等待空闲线程将其取出去执行
+	若添加失败(一般来说是任务缓存队列已满),则会尝试创建新的线程去执行这个任务
+	
+#poolSize = maximumPoolSize
+	则会采取'任务拒绝策略'进行处理
+
+#poolSize > corePoolSize
+	如果某线程空闲时间超过 keepAliveTime,线程将被终止,直至 poolSize <= corePoolSize.
+	如果设置了 allowCoreThreadTimeOut(boolean),那么核心线程也会被终止,直至 poolSize=0.
+
+#举个栗子: corePoolSize = 10, maximumPoolSize = (10+4)
+	假如有一个工厂,工厂里面有10个工人,每个工人同时只能做一件任务
+	
+	因此只要当10个工人中有工人是空闲的,来了任务就分配给空闲的工人做
+	
+	当10个工人都有任务在做时,如果还来了任务,就把任务进行排队等待
+	
+	如果说新任务数目增长的速度远大于工人做任务的速度,那么此时工厂主管可能会想补救措施,比如重新招4个临时工人
+	然后就将任务也分配给这4个临时工人做
+	
+	如果说14个工人做任务的速度还是不够,此时工厂主管可能就要考虑不再接收新的任务或者抛弃前面的一些任务了
+	
+	当这14个工人当中有人空闲时,而新任务增长的速度又比较缓慢,工厂主管可能就考虑辞掉4个临时工了
+	只保持原来的10个工人,毕竟请额外的工人是要花钱的
+
+//}
+
+//{--------<<<线程池中的线程初始化>>>-----------------------------------------------------
+#默认情况,创建线程池之后,线程池中是没有线程的,需要提交任务之后才会创建线程
+
+#如果需要预创建线程,可通过以下两个方法实现. 创建完成后,等待任务队列中有任务
+	prestartCoreThread();	  //初始化  1   个核心线程
+	prestartAllCoreThreads(); //初始化 core 个核心线程
+
+//}
+
+//{--------<<<线程池的关闭>>>-------------------------------------------------------------
+#shutdown();
+	不会立即终止线程池,而是要等缓存队列中的所有任务都执行完后才终止,但再也不会接受新的任务
+		
+#shutdownNow();
+	立即终止线程池,并尝试打断正在执行的任务/*,并且清空任务缓存队列*/,返回尚未执行的任务列表
+
+//}
+
+//{--------<<<线程池容量的动态调整>>>-----------------------------------------------------
+#当下列参数从小变大时,ThreadPoolExecutor 进行线程赋值,还可能立即创建新的线程来执行任务
+
+#setCorePoolSize();
+	设置核心池大小
+	
+#setMaximumPoolSize();
+	设置线程池最大能创建的线程数目大小
+//}
+
+//{--------<<<如何合理配置线程池的大小>>>-------------------------------------------------
+	//获取cpu核心数
+	int cpuSize = Runtime.getRuntime().availableProcessors();
+	
+#对于CPU密集型应用, 最大线程数设为 N+1.
+#......IO........., .............. 2N+1 (N为CPU总核数)
+
+#对于每天执行一次的低频任务, 核心线程数设为 0.
+
+	/**
+	 * 假设系统每秒任务数为500~1000,每个任务耗时0.1秒,最大响应时间2s. tasks=500-1000; taskcost=0.1; resptime=1.
+	 *
+	 * core = tasks/(1/taskcost) = tasks*taskcost = (500~1000)*0.1 = 50~100, core应该大于50
+	 * 然后根据8020原则,即80%情况下,每秒任务数小于1000*20%=200,那么 core=20
+	 * 一般,处理请求数 = (10~18) * core;
+	 * 
+	 * queue = (core/taskcost)*resptime = 20/0.1*2 = 400
+	 * 切记不能使用默认值Integer.MAX_VALUE,这样队列会很大,线程数只会保持在corePoolSize大小. 当任务陡增时,不能新开线程来执行,响应时间会随之陡增.
+	 * 
+	 * max = (max(tasks) - queue)/(1/taskcost) = (1000-400)/10 = 60
+	 * 
+	 * 以上都是理想值,实际情况下要根据机器性能来决定. 如果在未达到最大线程数的情况机器cpu load已经满了,则需要通过升级硬件和优化代码,降低taskcost来处理.
+	 */
+
+//}
+
+//{--------<<<示例-DEMO>>>----------------------------------------------------------------
+#自定义类
+    static class MyTask implements Runnable {
+        private int taskNum;
+
+        MyTask(int num) {
+            this.taskNum = num;
+        }
+
+        @Override
+        public void run() {
+            System.out.println(SystemUtils.getAll() + " ---> tasking " + taskNum);
+            try {
+                Thread.sleep(2000);
+            } catch (InterruptedException e) {
+                e.printStackTrace();
+            }
+            System.out.println(SystemUtils.getAll() + " ---> task-over: " + taskNum);
+        }
+    }
+	
+#测试方法
+    @Test
+    public void test() throws InterruptedException {
+        ThreadPoolExecutor executor = new ThreadPoolExecutor(2, 4, //线程池最大容量 4+2
+                200, TimeUnit.MILLISECONDS, new ArrayBlockingQueue<>(2));
+
+        // executor.allowCoreThreadTimeOut(true);
+		
+        // int b = executor.prestartAllCoreThreads();
+        // boolean b = executor.prestartCoreThread();
+
+        print(executor); //开始执行任务前,线程池属性
+        for (int i = 1; i <= 7; i++) {
+            try {
+                executor.execute(new MyTask(i));
+            } catch (Exception e) {
+                e.printStackTrace(); //线程池属性 -> 添加任务后
+            }
+            print(executor);
+        }
+        // executor.shutdown();
+
+        Thread.sleep(6 * 1000); //线程池属性 -> 所有任务执行完毕后
+        print(executor);
+    }
+	
+    private static void print(ThreadPoolExecutor executor) {
+        System.out.println(SystemUtils.getAll() + " ---> poolSize: " + executor.getPoolSize()
+                + "; queueSize: " + executor.getQueue().size()
+                + "; completedTask: " + executor.getCompletedTaskCount());
+    }
+	
+#测试结果
+	2019-02-20 16:14:18.042 - 1 - main ---> poolSize: 0; queueSize: 0; completedTask: 0 //初始状态
+	
+	2019-02-20 16:14:18.057 - 1 - main ---> poolSize: 1; queueSize: 0; completedTask: 0 //Task-1
+	2019-02-20 16:14:18.057 - 1 - main ---> poolSize: 2; queueSize: 0; completedTask: 0 //Task-2.(poolSize = core)
+	
+	2019-02-20 16:14:18.057 - 1 - main ---> poolSize: 2; queueSize: 1; completedTask: 0 //Task-3
+	2019-02-20 16:14:18.057 - 1 - main ---> poolSize: 2; queueSize: 2; completedTask: 0 //Task-4.(queue 已满)
+	
+	2019-02-20 16:14:18.058 - 1 - main ---> poolSize: 3; queueSize: 2; completedTask: 0 //Task-5.(扩充 core -> max)
+	2019-02-20 16:14:18.058 - 1 - main ---> poolSize: 4; queueSize: 2; completedTask: 0 //Task-6.(core = max)
+	
+	java.util.concurrent.RejectedExecutionException:									//Task-7.(任务拒绝策略)
+		Task x rejected from y[Running, pool size = 4, active threads = 4, queued tasks = 2, completed tasks = 0]
+	
+	2019-02-20 16:14:18.059 - 11 - pool-1-thread-1 ---> tasking 1
+	2019-02-20 16:14:18.059 - 12 - pool-1-thread-2 ---> tasking 2
+	2019-02-20 16:14:18.059 - 14 - pool-1-thread-4 ---> tasking 6 //执行先于 Task-3,4 
+	2019-02-20 16:14:18.060 - 13 - pool-1-thread-3 ---> tasking 5
+	2019-02-20 16:14:20.059 - 11 - pool-1-thread-1 ---> task-over: 1
+	2019-02-20 16:14:20.059 - 12 - pool-1-thread-2 ---> task-over: 2
+	2019-02-20 16:14:20.059 - 11 - pool-1-thread-1 ---> tasking 3
+	2019-02-20 16:14:20.059 - 12 - pool-1-thread-2 ---> tasking 4
+	2019-02-20 16:14:20.060 - 13 - pool-1-thread-3 ---> task-over: 5
+	2019-02-20 16:14:20.060 - 14 - pool-1-thread-4 ---> task-over: 6
+	2019-02-20 16:14:22.059 - 12 - pool-1-thread-2 ---> task-over: 4
+	2019-02-20 16:14:22.059 - 11 - pool-1-thread-1 ---> task-over: 3
+	
+	2019-02-20 16:14:24.061 - 1 - main ---> poolSize: 2; queueSize: 0; completedTask: 6 //所有任务完毕后,停止 >core 的线程
+
+#有个问题
+	当 queue 已满,新来一个 task,恰好 core 有一个空闲,哪种情况正确:
+	(1).空闲 core 直接执行新来的 task
+	(2).空闲 core 取出 queue 头部的任务执行,而将新来的任务 task 放入队尾
+	
+	//解答: 有空闲 core 就使用,没有则加入队列(队列未满)或新建线程(队列已满). 所以选(1)
+	//		从以上 DEMO 中的 Task-5,6 执行先于 Task-3,4 可以验证
+
+
+//}
+
+//{--------<<<jdk-自带线程池>>>-----------------------------------------------------------
+#4种内置线程池
+	1.单例线程池
+		//有且仅有1个线程处于活动状态,适用于有序执行任务.
+		public static ExecutorService newSingleThreadExecutor() {
+			return new FinalizableDelegatedExecutorService
+				(new ThreadPoolExecutor(1, 1,
+										0L, TimeUnit.MILLISECONDS,
+										new LinkedBlockingQueue<Runnable>())); //queue Max
+		}
+
+	2.固定线程池
+		//复用'固定数量'线程处理一个无限队列
+		public static ExecutorService newFixedThreadPool(int nThreads) {
+			return new ThreadPoolExecutor(nThreads, nThreads,
+										  0L, TimeUnit.MILLISECONDS,
+										  new LinkedBlockingQueue<Runnable>()); //queue Max
+		}
+	
+	3.缓存线程池
+		//适用于大量短生命周期的异步任务(many short-lived asynchronous task)
+		public static ExecutorService newCachedThreadPool() {
+			return new ThreadPoolExecutor(0, Integer.MAX_VALUE,
+										  60L, TimeUnit.SECONDS,
+										  new SynchronousQueue<Runnable>());
+		}
+
+	4.定时线程池
+		//比Timer更安全,功能更强大. --> 如果有任务执行过程中抛出异常,则会跳出,不会影响下次循环.
+		public static ScheduledExecutorService newScheduledThreadPool(int corePoolSize) {
+			return new ScheduledThreadPoolExecutor(corePoolSize);
+		}
+	
+		public ScheduledThreadPoolExecutor(int corePoolSize) {
+			super(corePoolSize, Integer.MAX_VALUE, 0, NANOSECONDS,
+				  new DelayedWorkQueue());
+		}
+	
+#两个弊端 
+	//参考ali开发文档
+	线程池不允许使用 Executors 去创建,而是通过 ThreadPoolExecutor 的方式,
+	这样的处理方式让写的同学更加明确线程池的运行规则,规避资源耗尽的风险.
+	
+	(1).Fixed  & Single   --> queue: MAX, 容易因请求队列堆积,耗费大量内存,甚至OOM
+	(2).Cached & Schedule --> max: MAX, 可能会创建非常多的线程,甚至OOM
+	
+//}
+
+//{--------<<<推荐方案>>>-----------------------------------------------------------------
+#DEMO-1
+	//org.apache.commons.lang3.concurrent.BasicThreadFactory
+	ScheduledExecutorService executorService = new ScheduledThreadPoolExecutor(1,
+			new BasicThreadFactory.Builder().namingPattern("demo-schedule-pool-%d").daemon(true).build());
+		   
+#DEMO-2
+	//com.google.common.util.concurrent.ThreadFactoryBuilder
+	ThreadFactory namedThreadFactory = new ThreadFactoryBuilder().setNameFormat("demo-pool-%d").build();
+
+	//Common Thread Pool
+	ExecutorService pool = new ThreadPoolExecutor(5, 200,
+			0L, TimeUnit.MILLISECONDS,
+			new LinkedBlockingQueue<>(1024),
+			namedThreadFactory, 
+			new ThreadPoolExecutor.AbortPolicy());
+
+	pool.execute(() -> System.out.println(Thread.currentThread().getName()));
+	pool.shutdown();//gracefully shutdown
+		   
+#DEMO-3
+	<bean id="userThreadPool"
+		class="org.springframework.scheduling.concurrent.ThreadPoolTaskExecutor">
+		<property name="corePoolSize" value="10" />
+		<property name="maxPoolSize" value="100" />
+		<property name="queueCapacity" value="2000" />
+
+		<property name="threadFactory" value= threadFactory />
+		<property name="rejectedExecutionHandler">
+			<ref local="rejectedExecutionHandler" />
+		</property>
+	</bean>
+	
+	//in code
+	userThreadPool.execute(thread);
+		
+#DEMO-3-注解版
+	@Bean("demoThreadPool") //默认情况, @Bean 注解的参数名称和方法名相同,也可以显示定义
+	public Executor getAsyncExecutor() {
+		ThreadPoolTaskExecutor executor = new ThreadPoolTaskExecutor();
+		executor.setThreadNamePrefix("demo-pool-"); //线程名前缀
+
+		executor.setCorePoolSize(5); //核心线程数. 默认 1
+		executor.setMaxPoolSize(10); //最大线程数. 默认 Integer.MAX_VALUE
+		executor.setQueueCapacity(10); //缓冲队列大小. 默认 Integer.MAX_VALUE
+
+		executor.setAllowCoreThreadTimeOut(true); //核心线程也会超时关闭, 默认false
+		executor.setKeepAliveSeconds(KEEP_ALIVE_TIME); //空闲线程的最大存活时间,超过则被回收. 默认60s
+		executor.setRejectedExecutionHandler(new ThreadPoolExecutor.AbortPolicy()); //拒绝策略
+		//executor.setThreadFactory(r -> null);
+
+		executor.initialize();
+		return executor;
+	}
+
+//}
+
+
+//{--------<<<Spring-异步方法>>>--------------------------------------------------------------------
+https://www.cnblogs.com/yangfanexp/p/7747225.html
+http://www.cnblogs.com/yangfanexp/p/7594557.html
+	
+	0.
 		@Slf4j
 		@Configuration
 		public class MyAsyncConfigurer implements AsyncConfigurer {
@@ -233,9 +506,11 @@
 				return (throwable, method, obj) -> {
 					StringBuilder sb = new StringBuilder("Method:");
 					sb.append(method.getDeclaringClass().getName()).append(".").append(method.getName()).append(";");
+					
 					sb.append(" Params:");
 					Arrays.stream(obj).forEach(sb::append);
 					sb.append(";");
+					
 					sb.append(" Exception: ").append(throwable.getMessage());
 					log.info(sb.toString());
 				};
@@ -288,10 +563,10 @@
 		}
 
 		// 类名 - 时间 - 线程id - 线程名 - info信息
-		// AsyncTask - 2018-12-06 17:03:33.846 -> 86 - demo-1 ==> asyncSimple - 0
-		// AsyncTask - 2018-12-06 17:03:33.846 -> 87 - demo-2 ==> asyncFuture ---> 99 - 0
+		// AsyncTask - 2018-12-06 17:03:33.846 -> 86 - demo-1 --> asyncSimple - 0
+		// AsyncTask - 2018-12-06 17:03:33.846 -> 87 - demo-2 --> asyncFuture ---> 99 - 0
 		// MyAsyncConfigurer - Method:com.example.task.AsyncTask.asyncSimple; Params:; Exception: asyncSimple - / by zero
-		// HelloCtrl - 2018-12-06 17:03:35.847 -> 52 - http-nio-8090-exec-1 ==> java.lang.RuntimeException: asyncFuture - / by zero
+		// HelloCtrl - 2018-12-06 17:03:35.847 -> 52 - http-nio-8090-exec-1 --> java.lang.RuntimeException: asyncFuture - / by zero
 		
 	3.测试结论		
 		(0).使用全局注解开启异步模式 @EnableAsync
@@ -352,13 +627,13 @@
 			}
 		}
 		
-		// ScheduledTask - 2018-12-06 17:52:03.001 -> 91 - demoscheduling-1 ==> task2--------------------------
+		// ScheduledTask - 2018-12-06 17:52:03.001 -> 91 - demoscheduling-1 --> task2--------------------------
 		// ScheduledTask - 线程属性 -> 核心线程数: 2; 线程池最大数量: 6; 活动线程数: 1; 线程总数: 2; 任务总数: 75; 已完成任务数: 74; 线程处理队列长度: 0
-		// AsyncTask - 2018-12-06 17:52:03.128 -> 53 - demo-2 ==> asyncFuture ---> 6 - 1
-		// ScheduledTask - 2018-12-06 17:52:03.128 -> 95 - demoscheduling-2 ==> asyncFuture---Exception: java.lang.RuntimeException: asyncFuture - / by zero
-		// ScheduledTask - 2018-12-06 17:52:03.128 -> 95 - demoscheduling-2 ==> task1----------------------------
-		// AsyncTask - 2018-12-06 17:52:03.128 -> 52 - demo-1 ==> asyncSimple - 0
-		// ScheduledTask - 2018-12-06 17:52:04.001 -> 104 - demoscheduling-3 ==> task2--------------------------
+		// AsyncTask - 2018-12-06 17:52:03.128 -> 53 - demo-2 --> asyncFuture ---> 6 - 1
+		// ScheduledTask - 2018-12-06 17:52:03.128 -> 95 - demoscheduling-2 --> asyncFuture---Exception: java.lang.RuntimeException: asyncFuture - / by zero
+		// ScheduledTask - 2018-12-06 17:52:03.128 -> 95 - demoscheduling-2 --> task1----------------------------
+		// AsyncTask - 2018-12-06 17:52:03.128 -> 52 - demo-1 --> asyncSimple - 0
+		// ScheduledTask - 2018-12-06 17:52:04.001 -> 104 - demoscheduling-3 --> task2--------------------------
 		// ScheduledTask - 线程属性 -> 核心线程数: 2; 线程池最大数量: 6; 活动线程数: 2; 线程总数: 2; 任务总数: 78; 已完成任务数: 75; 线程处理队列长度: 1
 		
 	2.测试结论
@@ -366,127 +641,59 @@
 		(1).方法 asyncFuture() 是在调用 get() 方法时进行异常处理.
 		(2).通过 @Autowired Executor taskExecutor; 这种方式获取线程池对象; 并且检查线程池的运行状况.
 		
-#execute()&&submit()
-	0.两种任务
-		'java5之后,任务分两类': 一类实现Runnable接口; 另一类实现Callable接口.
-		(0).两者都可以被 ExecutorService 执行,但Runnable没有返回值,而Callable有返回值.
-		(1).Callable 只能通过 ExecutorService.submit(Callable task) 来执行,返回表示任务等待完成的Future.
-		
-	1.不同区别
-		(1).excute()木有返回值, 会抛出异常
-		(2).submit()返回Future<?>, 不会抛出异常,除非调用Future.get()
-		
-	2.submit三重载
-		// <T> Future<T> submit(Callable<T> task); ===> 获取结果: future.get()
-		private void submitCall() throws InterruptedException, ExecutionException {
-			ExecutorService executor = Executors.newSingleThreadExecutor();
-			Future<String> future = executor.submit(() -> "submitCall---success!!");
-			System.out.println(SystemUtils.getAll() + future.get());
-		}
+//}
 
-		// <T> Future<T> submit(Runnable task, T result); ===> 获取结果: future.get().res
-		private void submitRunRes() throws InterruptedException, ExecutionException {
-			ExecutorService executor = Executors.newSingleThreadExecutor();
-			Data data = new Data();
-			Future<Data> future = executor.submit(() -> data.res = "submitRunRes---success!!", data);
-			System.out.println(SystemUtils.getAll() + future.get().res);
-		}
-
-		// <T> Future<T> submit(Runnable task); ===> Runnable方法在成功完成时,将会返回 null
-		private void submitRun() throws InterruptedException, ExecutionException {
-			ExecutorService executor = Executors.newSingleThreadExecutor();
-			Future<?> future = executor.submit(() -> System.out.println(SystemUtils.getAll() + "submitRun---success!!"));
-			System.out.println("isSuccess: " + (null == future.get()));
-		}
-		
-		// 2018-12-07 20:19:40.342 -> 50 - http-nio-8090-exec-1 ==> submitCall---success!!
-		// 2018-12-07 20:19:40.342 -> 50 - http-nio-8090-exec-1 ==> submitRunRes---success!!
-		// 2018-12-07 20:19:40.343 -> 86 - pool-5-thread-1 ==> submitRun---success!!
-		// isSuccess: true
-		
-	3.代码demo
-		public void submit() {
-			ExecutorService executor = Executors.newCachedThreadPool();
-			List<Future<String>> resultList = new ArrayList<>();
-
-			for (int i = 0; i < 3; i++) {
-				int index = i;
-				Future<String> future = executor.submit(() -> {
-					System.out.println(SystemUtils.getAll() + "submit---args: " + index);
-					int j = (1 == index) ? 1 / 0 : index;// 制造异常
-					return "submit---res: " + index;
-				});
-				resultList.add(future);
-			}
-
-			for (Future<String> future : resultList) {
-				try {
-					System.out.println(SystemUtils.getAll() + future.get(500, TimeUnit.MICROSECONDS)); //最大等待500ms
-				} catch (InterruptedException | ExecutionException | TimeoutException e) {
-					System.out.println(SystemUtils.getAll() + "Exception---future.get(): " + e.getMessage());
-				} finally {
-					executor.shutdown();//顺序关闭 -> 执行提交前的任务,但不接受新的任务
-				}
-			}
-		}
-
-		// future.get(); ===> 可能造成两种异常: InterruptedException, ExecutionException
-		// future.get(long timeout, TimeUnit unit); ===> 加上获取结果的最大时间限制,可能造成异常: TimeoutException
-		2018-12-07 17:06:22.614 -> 12 - pool-1-thread-2 ==> submit---args: 1
-		2018-12-07 17:06:22.614 -> 11 - pool-1-thread-1 ==> submit---args: 0
-		2018-12-07 17:06:22.616 -> 1 - main ==> Exception---java.util.concurrent.TimeoutException //异常-获取结果超时
-		2018-12-07 17:06:22.614 -> 13 - pool-1-thread-3 ==> submit---args: 2
-		2018-12-07 17:06:22.617 -> 1 - main ==> Exception---java.util.concurrent.ExecutionException: java.lang.ArithmeticException: by zero //异常-执行过程错误
-		2018-12-07 17:06:22.617 -> 1 - main ==> submit---res: 2 //正常结果
+//{--------<<<join()>>>--------------------------------------------------------------------
+#三个线程顺序执行 --> 两种解决方案
+	1.使用'单例线程池'
 	
-
-	
-
-///------------------<<<附加>>>-----------------------------------------------------------------------
-#三个线程顺序执行
-	0.使用'单例线程池'
-	
-	1.使用join方法
-		private static void test00() {
+	2.使用join方法
+		public static void main(String[] args) {
 			final Thread t1 = new Thread(() -> {
 				try {
-					System.out.println(SystemUtils.getAll() + " -> start ");
+					System.out.println(SystemUtils.getAll());
 					TimeUnit.SECONDS.sleep(2);
-				} catch (InterruptedException ignored) {}
+				} catch (InterruptedException ignored) {
+				}
 			}, "Thread-T1");
 
 			final Thread t2 = new Thread(() -> {
 				try {
 					t1.join(1000); // 等待线程t1终止,最大等待时间1000ms
-					System.out.println(SystemUtils.getAll() + " -> start ");
+					System.out.println(SystemUtils.getAll());
 					TimeUnit.SECONDS.sleep(2);
-				} catch (InterruptedException ignored) {}
+				} catch (InterruptedException ignored) {
+				}
 			}, "Thread-T2");
 
 			final Thread t3 = new Thread(() -> {
 				try {
 					t2.join();
-					System.out.println(SystemUtils.getAll() + " -> start ");
-				} catch (InterruptedException ignored) {}
+					System.out.println(SystemUtils.getAll());
+				} catch (InterruptedException ignored) {
+				}
 			}, "Thread-T3");
 
-			// 2018-12-05 20:04:31.198 -> 11 - Thread-T1 -> start 
-			// 2018-12-05 20:04:32.200 -> 12 - Thread-T2 -> start //等待1000ms
-			// 2018-12-05 20:04:34.200 -> 13 - Thread-T3 -> start //等待2s
+			// 2018-12-05 20:04:31.198 -> 11 - Thread-T1
+			// 2018-12-05 20:04:32.200 -> 12 - Thread-T2 //等待1s.(只等待T1执行1s)
+			// 2018-12-05 20:04:34.200 -> 13 - Thread-T3 //等待2s.(等待T2执行完毕)
 			t2.start(); t3.start(); t1.start();
 		}
-
+		
 #join()
-	//(*-*)2.如果线程被生成了,但还未被起动,调用它的join()方法是没有作用的,将直接继续向下执行!!!!
-	//0.当我们调用某个线程的这个方法时,这个方法会挂起调用线程,直到被调用线程结束执行,调用线程才会继续执行.
-	//1.父线程调用子线程,join会让父线程等待子线程结束之后才能继续运行.
+	#0.当调用某个线程的 join() 方法时,这个方法会挂起调用线程,直到被调用线程结束执行,调用线程才会继续执行.
+	#  即 t2 调用 t1.join(),导致 t2 挂起,直至 t1 执行完毕才继续执行 t2
+	
+	#1.父线程调用子线程,join会让父线程等待子线程结束之后才能继续运行.
+	
+	#(*-*)2.如果线程被创建了,但还未被起动,调用它的 join() 是没有作用的,将直接继续向下执行!!!!
 	
 		private static void test01() {
 			ArrayList<Thread> threads = new ArrayList<>();
 			for (int i = 0; i < 2; i++) {
 				int index = i;
 				threads.add(new Thread(() -> {
-                    System.out.println(SystemUtils.getAll() + index + " - end");
+                    System.out.println(SystemUtils.getAll() + index + " - start");
                     TimeUnit.SECONDS.sleep(2);
                     System.out.println(SystemUtils.getAll() + index + " - end");
 				}));
@@ -498,20 +705,96 @@
 			System.out.println(SystemUtils.getAll() + "end!");
 		}
 
-		//x.join(100); ===> main等待n毫秒,然后继续执行.
-		2018-12-07 11:04:18.235 -> 11 - Thread-0 ==> 0 - start
-		2018-12-07 11:04:18.237 -> 12 - Thread-1 ==> 1 - start
-		2018-12-07 11:04:18.426 -> 1 - main ==> end!
-		2018-12-07 11:04:20.238 -> 12 - Thread-1 ==> 1 - end
-		2018-12-07 11:04:20.238 -> 11 - Thread-0 ==> 0 - end
+		//x.join(100); =--> main等待n毫秒,然后继续执行.
+		2018-12-07 11:04:18.235 -> 11 - Thread-0 --> 0 - start
+		2018-12-07 11:04:18.237 -> 12 - Thread-1 --> 1 - start
+		2018-12-07 11:04:18.426 -> 1 - main --> end!
+		2018-12-07 11:04:20.238 -> 12 - Thread-1 --> 1 - end
+		2018-12-07 11:04:20.238 -> 11 - Thread-0 --> 0 - end
 		
-		//x.join(); ===> 默认,main无限等待,直到t1执行完毕
-		2018-12-07 11:11:44.922 -> 11 - Thread-0 ==> 0 - start
-		2018-12-07 11:11:44.922 -> 12 - Thread-1 ==> 1 - start
-		2018-12-07 11:11:46.924 -> 11 - Thread-0 ==> 0 - end
-		2018-12-07 11:11:46.924 -> 12 - Thread-1 ==> 1 - end
-		2018-12-07 11:11:46.924 -> 1 - main ==> end!
+		//x.join(); =--> 默认,main无限等待,直到t1执行完毕
+		2018-12-07 11:11:44.922 -> 11 - Thread-0 --> 0 - start
+		2018-12-07 11:11:44.922 -> 12 - Thread-1 --> 1 - start
+		2018-12-07 11:11:46.924 -> 11 - Thread-0 --> 0 - end
+		2018-12-07 11:11:46.924 -> 12 - Thread-1 --> 1 - end
+		2018-12-07 11:11:46.924 -> 1 - main --> end!
+//}
 
+//{--------<<<execute()&&submit()>>>--------------------------------------------------------------------
+#两种任务
+	'java5之后,任务分两类': 一类 implements Runnable; 另一类 implements Callable.
+	(0).两者都可以被 ExecutorService 执行,但前者没有返回值,后者有.
+	(1).Callable 只能通过 submit(Callable task) 执行,返回表示任务等待完成的Future.
+		
+#不同区别
+	(1).excute()木有返回值, 会抛出异常
+	(2).submit()返回 Future<?>, 不会抛出异常,除非调用 Future.get()
+		
+#submit三重载
+	// <T> Future<T> submit(Callable<T> task); --> 获取结果: future.get()
+	private void submitCall() throws InterruptedException, ExecutionException {
+		ExecutorService executor = Executors.newSingleThreadExecutor();
+		Future<String> future = executor.submit(() -> "submitCall---success!!");
+		System.out.println(SystemUtils.getAll() + future.get());
+	}
+
+	// <T> Future<T> submit(Runnable task, T result); --> 获取结果: future.get().res
+	private void submitRunRes() throws InterruptedException, ExecutionException {
+		ExecutorService executor = Executors.newSingleThreadExecutor();
+		Data data = new Data();
+		Future<Data> future = executor.submit(() -> data.res = "submitRunRes---success!!", data);
+		System.out.println(SystemUtils.getAll() + future.get().res);
+	}
+
+	// <T> Future<T> submit(Runnable task); --> Runnable方法在成功完成时,将会返回 null
+	private void submitRun() throws InterruptedException, ExecutionException {
+		ExecutorService executor = Executors.newSingleThreadExecutor();
+		Future<?> future = executor.submit(() -> System.out.println(SystemUtils.getAll() + "submitRun---success!!"));
+		System.out.println("isSuccess: " + (null == future.get()));
+	}
+	
+	// 2018-12-07 20:19:40.342 -> 50 - http-nio-8090-exec-1 --> submitCall---success!!
+	// 2018-12-07 20:19:40.342 -> 50 - http-nio-8090-exec-1 --> submitRunRes---success!!
+	// 2018-12-07 20:19:40.343 -> 86 - pool-5-thread-1 --> submitRun---success!!
+	// isSuccess: true
+		
+#DEMO
+	public void submit() {
+		ExecutorService executor = Executors.newCachedThreadPool();
+		List<Future<String>> resultList = new ArrayList<>();
+
+		for (int i = 0; i < 3; i++) {
+			int index = i;
+			Future<String> future = executor.submit(() -> {
+				System.out.println(SystemUtils.getAll() + "submit---args: " + index);
+				int j = (1 == index) ? 1 / 0 : index;// 制造异常
+				return "submit---res: " + index;
+			});
+			resultList.add(future);
+		}
+
+		for (Future<String> future : resultList) {
+			try {
+				System.out.println(SystemUtils.getAll() + future.get(500, TimeUnit.MICROSECONDS)); //最大等待500ms
+			} catch (InterruptedException | ExecutionException | TimeoutException e) {
+				System.out.println(SystemUtils.getAll() + "Exception---future.get(): " + e.getMessage());
+			} finally {
+				executor.shutdown();//顺序关闭 -> 执行提交前的任务,但不接受新的任务
+			}
+		}
+	}
+
+	// future.get(); =--> 可能造成两种异常: InterruptedException, ExecutionException
+	// future.get(long timeout, TimeUnit unit); =--> 加上获取结果的最大时间限制,可能造成异常: TimeoutException
+	2018-12-07 17:06:22.614 -> 12 - pool-1-thread-2 --> submit---args: 1
+	2018-12-07 17:06:22.614 -> 11 - pool-1-thread-1 --> submit---args: 0
+	2018-12-07 17:06:22.616 -> 1 - main --> Exception---java.util.concurrent.TimeoutException //异常-获取结果超时
+	2018-12-07 17:06:22.614 -> 13 - pool-1-thread-3 --> submit---args: 2
+	2018-12-07 17:06:22.617 -> 1 - main --> Exception---java.util.concurrent.ExecutionException: java.lang.ArithmeticException: by zero //异常-执行过程错误
+	2018-12-07 17:06:22.617 -> 1 - main --> submit---res: 2 //正常结果
+//}
+
+//{--------<<<附加>>>--------------------------------------------------------------------
 #区别Thread.run()和start()
 	.run(): //不会新开线程;直接在调用线程中执行run()方法内容
 	
@@ -553,6 +836,9 @@
 		ScheduledFuture<?> future = scheduled.scheduleWithFixedDelay(task1, 1, 1, TimeUnit.SECONDS);
 		future.cancel(true); //单个
 		pool.shutdown();//整体
+//}
+
+
 
 //{--------<<<多线程与final>>>--------------------------------------------------------------------
 	final + 类			//该类不能作为父类被继承; String
@@ -567,7 +853,7 @@
 			final Info info = new Info();
 			info.data = "info";
 
-			//99 ss info100  =====> 影响的只有 info.data
+			//99 ss info100  ===--> 影响的只有 info.data
 			dosth(num, str, info);
 			System.out.println(num + " " + str + " " + info.data);
 		}
@@ -701,7 +987,7 @@
 
 	'每个ThreadLocal对象只能放一个线程局部变量' 
 	局部变量存储在 ThreadLocal.ThreadLocalMap 中, 是以 ThreadLocal对象 为key.
-	所以, 一个线程欲存放多个局部变量，则需实例化多个 ThreadLocal 对象
+	所以, 一个线程欲存放多个局部变量,则需实例化多个 ThreadLocal 对象
 	ThreadLocal 变量通常被 private static 修饰, 用于关联线程上下文.
 	
 #不正确的理解
@@ -709,3 +995,6 @@
 	ThreadLocal的目的是为了解决多线程访问资源时的共享问题
 		
 //}
+
+
+

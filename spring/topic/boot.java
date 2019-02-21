@@ -240,12 +240,12 @@
 
 //{--------<<<CRUD>>>----------------------------------------------------------------------
 
-	| 列表页面        | emp/emps  | GET      |
-	| 跳转页面(新增)  | emp/emp   | GET      |
-	| 新增接口        | emp/emp   | POST     |
-	| 跳转页面(修改)  | emp/{id}  | GET      |
-	| 修改接口        | emp/emp   | PUT      |
-	| 删除接口        | emp/{id}  | DELETE   |
+	| 列表页面        | /emp/list	| GET      |
+	| 跳转页面(新增)  | /emp		| GET      |
+	| 新增接口        | /emp		| POST     |
+	| 跳转页面(修改)  | /emp/{id}	| GET      |
+	| 修改接口        | /emp		| PUT      |
+	| 删除接口        | /emp/{id}	| DELETE   |
 	
 #POST转化为PUT,DELETE
 	1.配置HiddenHttpMethodFilter. (boot已自动配置)
@@ -255,7 +255,7 @@
 		</filter>
 		
 	2.页面创建(POST表单 + 隐藏标签)
-		<form method="post" th:action="@{/person/}+${person.id}">
+		<form method="post" th:action="@{/emp/}+${emp.id}">
 			<input type="hidden" name="_method" value="delete"> //隐藏标签 name + value
 			
 			<a href="#" onclick="delEmp(this)" th:attr="url=@{/emp/}+${emp.id}">删除</a>
@@ -263,13 +263,13 @@
 	
 #列表
 	0.跳转列表页面
-		<a th:href="@{/person/list}">列表页面</a> //超链接对应请求 GET
+		<a th:href="@{/emp/list}">列表页面</a> //超链接对应请求 GET
 		
 	1.跳转逻辑
-		@RequestMapping("/emps")
+		@RequestMapping("/emp/list")
 		public String list(Model model) {
 			model.addAttribute("emplist", EmpUtils.listAll());
-			return "/emp/emps";
+			return "/emp/list";
 		}
 		
 	2.响应页面
@@ -296,13 +296,13 @@
 	
 #新增
 	0.跳转新增页面
-		<a th:href="@{/emp/emp}">新增</a>
+		<a th:href="@{/emp}">新增</a>
 		
 	1.跳转逻辑
 		@RequestMapping("/emp")
 		public String add(Model model) {
 			model.addAttribute("cityList", EmpUtils.listCity()); //初始化列表 City
-			return "/emp/emp";
+			return "/emp";
 		}
 		
 	2.新增页面(同修改)
@@ -311,7 +311,7 @@
 		@PostMapping("/emp")
 		public String add(Emp emp) {
 			EmpUtils.empList.add(emp);
-			return "redirect:/emp/emps";
+			return "redirect:/emp/list";
 		}
 		
 #修改
@@ -319,16 +319,16 @@
 		<a th:href="@{/emp/}+${emp.id}">修改</a> //路径拼接
 		
 	1.跳转逻辑
-		@GetMapping("/{id}")
+		@GetMapping("/emp/{id}")
 		public String add(@PathVariable Integer id, Model model) {
 			model.addAttribute("emp", EmpUtils.getById(id));
 			model.addAttribute("cityList", EmpUtils.listCity());
-			return "emp/emp";
+			return "/emp";
 		}
 		
 	2.回显数据修改页面
 		//增加和修改使用同一页面,区分方式: 回显 emp 是否为空 --> ${null!=person}
-		<form method="post" th:action="@{/emp/emp}">
+		<form method="post" th:action="@{/emp}">
 			//修改: PUT请求 + emp.id
 			<input type="hidden" name="_method" value="put" th:if="${null!=emp}">
 			<input type="hidden" name="id" th:if="${null!=emp}" th:value="${emp.id}">
@@ -381,10 +381,10 @@
 		</script>
 
 	1.删除逻辑
-		@DeleteMapping("/{id}")
+		@DeleteMapping("/emp/{id}")
 		public String delete(@PathVariable Integer id) {
 			EmpUtils.empList.deleteById(id);
-			return "redirect:/emp/emps";
+			return "redirect:/emp/list";
 		}
 		
 	3.升级版 //不使用<form/>发送DELETE,使用ajax异步删除
@@ -409,7 +409,7 @@
 		</script>
 		
 	4.ajax后台逻辑
-		@DeleteMapping("/{id}")
+		@DeleteMapping("/emp/{id}")
 		@ResponseBody
 		public String delete(@PathVariable Integer id) {
 			EmpUtils.empList.deleteById(id);
@@ -700,8 +700,8 @@
 
 //}
 
-//{--------<<<ORM>>>-----------------------------------------------------------------------
-#整合Druid数据源 //sp1.x默认数据源为: org.apache.tomcat.jdbc.pool.DataSource
+//{--------<<<DATA>>>-----------------------------------------------------------------------
+#整合Druid数据源 
         <dependency>
             <groupId>com.alibaba</groupId>
             <artifactId>druid-spring-boot-starter</artifactId>
@@ -709,6 +709,7 @@
         </dependency>
 	
 	0.配置文件
+		//sp1.x默认数据源为: org.apache.tomcat.jdbc.pool.DataSource
 		spring.datasource.type=com.alibaba.druid.pool.DruidDataSource
 		
 		spring.datasource.url=jdbc:mysql://127.0.0.1:3306/test0329?useSSL=false
@@ -951,15 +952,16 @@
 //}
 
 //{--------<<<exception>>>-----------------------------------------------------------------
-#SpringBoot 中对于异常处理提供了五种处理方式
-	
-	1.自定义错误页面(默认的异常处理机制)
+#Boot对于异常处理提供了五种处理方式 --> //推荐: 3/5
+http://blog.51cto.com/13902811/2170945?source=dra
+
+	1.自定义错误页面(默认)
 		一旦程序出现异常, SpringBoot 会向url '/error' 发送请求.
 		通过默认的 BasicExceptionController 来处理请求 '/error',然后跳转到默认异常页面,显示异常信息.
 		
 		所以, 如果需要将所有异常统一跳转到自定义错误页面,需新建页面 /templates/error.html //必须叫 error.html
 		缺点: 不符合实际需求; 应该对于不同错误跳转不同页面.
-		
+
 	2.注解处理异常@ExceptionHandler
 	3.注解处理异常@ExceptionHandler + @ControllerAdvice	
 		//处理顺序: 本类 --> @ControllerAdvice 标识类
@@ -969,7 +971,7 @@
 		//处理优先级: 异常的最近继承关系
 		例如发生异常 NullPointerException; 但是声明的异常有 RuntimeException 和 Exception
 		此时,根据异常的最近继承关系,找到继承深度最浅的那个, 即 RuntimeException 的声明方法
-		
+
 		@ControllerAdvice //异常处理类
 		public class GlobalException {
 			/**
@@ -1002,11 +1004,11 @@
 				return mv;
 			}
 		}
-		
+
 	4.配置 SimpleMappingExceptionResolver(3的简化)
 		//优点: 在全局异常类的一个方法中完成所有异常的统一处理
 		//缺点: 只能进行异常与视图的映射, 不能传递异常信息.
-		
+
 		@Configuration //(1).此处的注解不同
 		public class GlobalException {
 			
@@ -1024,11 +1026,11 @@
 				return resolver;
 			}
 		}
-	
+
 	5.自定义类处理异常 HandlerExceptionResolver
 		@Configuration
 		public class GlobalException implements HandlerExceptionResolver {
-			
+
 			@Override
 			public ModelAndView resolveException(
 					HttpServletRequest request, HttpServletResponse response, @Nullable Object handler, Exception ex) {
@@ -1576,6 +1578,27 @@
         </dependency>
 	
 
+//}
+
+//{--------<<<restful>>>-------------------------------------------------------------------------
+#restful是对于同一个服务器资源的一组不同的操作,包括: GET/POST/PUT/DELETE/PATCH/HEAD/OPTIONS
+	
+	1.http请求的安全和幂等
+		安全 -> 请求不会影响资源的状态. 只读的请求: GET,HEAD,OPTIONS
+		幂等 -> 多次相同的请求,目的一致.
+				
+		GET /emp/list --> 只读请求,不改变资源状态. //安全,幂等.
+		
+		PUT /emp/5    --> 多次请求都是将id为 5 的员工姓名修改成'wang'. //不安全,幂等.
+		
+		POST /emp     --> 多次请求会新增多条相同的数据. //不安全,不幂等.
+		
+		DELETE /emp/5 --> 多次请求目的都是删除id为 5 的员工. //不安全,幂等.
+		///注意: 第一次成功删除,第二次及以后,虽资源已不存在,但也得返回 200 OK,不能返回 404.
+		
+
+
+				
 //}
 
 //{--------<<<x>>>-------------------------------------------------------------------------

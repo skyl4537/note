@@ -1,7 +1,6 @@
 
 
-
-//{-----------<<<mini-tool>>>------------------------------------------------------------------
+//{-----------<<<mini-tool>>>--------------------------------------------------------------
 #JSON-Handle //Chrome插件
 	浏览器输入: chrome://extensions/
 	将下载后的文件拖入浏览器即可
@@ -11,6 +10,90 @@
 	
 	右键菜单: '配置系统环境变量,然后使用系统cmd执行命令: Cmder.exe /register ALL'
 	中文乱码: 'settings -> Environment -> 添加: set LANG=zh_CN.UTF-8'
+	
+//}
+
+
+//{-----------<<<SystemUtil>>>>------------------------------------------------------------
+#常用工具
+	public class SystemUtil {
+		//获取项目class路径
+		public static String getClassPath() throws FileNotFoundException {
+			// ClassUtils.getDefaultClassLoader().getResource("").getPath();//等同
+			return ResourceUtils.getURL("classpath:").getPath();
+		}
+
+		//获取项目根路径
+		public static String getFilePath() throws FileNotFoundException {
+			return ResourceUtils.getURL("").getPath();
+		}
+		
+		//系统换行
+		public static String newline() {
+			return System.getProperty("line.separator");
+		}
+	}
+	
+#常用解析
+	0.org.apache.commons.lang3.StringUtils
+		isEmpty(); //为空判断标准是: str==null 或 str.length()==0
+		isBlank(); //在isEmpty()的基础上增加: 制表符,换行符,换页符,回车符...等
+
+	1.保留两位有效小数
+		double num = 12.1250/12.1251;
+		String num0 = String.format("%.2f", num);// 12.13/12.13
+		String num1 = new DecimalFormat("#0.00").format(num);// 12.12/12.13
+		
+		//DecimalFormat特殊字符说明
+		//	"0"指定位置不存在数字则显示为0: 123.123 ->0000.0000 ->0123.1230
+		//	"#"指定位置不存在数字则不显示: 123.123 ->####.####  ->123.123
+		//	"."小数点
+		//	"%"会将结果数字乘以100 后面再加上% 123.123 ->#.00%  ->12312.30%
+
+	2.使用占位符拼接字符串
+		MessageFormat.format("域名{0}被访问了{1}次", "\"www.qq.com\"", 123.456); //域名"www.qq.com"被访问了123.456次
+		
+		//String.format() ==> 创建格式化的字符串; 及连接多个字符串对象.
+		String.format("域名%s被访问了%3.2f次", "\"www.qq.com\"", 123.456); //域名"www.qq.com"被访问了123.46次
+		
+		//先转化十六进制,再高位补0
+		String.format("%04d",Integer.parseInt(String.format("%x", 16))); //0010
+		
+		/String.format()具体详见: https://www.cnblogs.com/Dhouse/p/7776780.html
+		
+#通过类目获取类的对象
+	@Component
+	public class MyApplicationContextAware implements ApplicationContextAware {// 获取bean的工具类
+
+		private static ApplicationContext context;
+
+		// 实现ApplicationContextAware接口的回调方法，设置上下文环境
+		@Override
+		public void setApplicationContext(ApplicationContext context) throws BeansException {
+			MyApplicationContextAware.context = context;
+		}
+
+		// 获取applicationContext
+		public static ApplicationContext getApplicationContext() {
+			return context;
+		}
+
+		// 通过name获取Bean.
+		public static Object getBean(String name) {
+			return context.getBean(name);
+
+		}
+
+		// 通过clazz获取Bean.
+		public static <T> T getBean(Class<T> clazz) {
+			return context.getBean(clazz);
+		}
+
+		// 通过name及clazz返回指定的Bean
+		public static <T> T getBean(String name, Class<T> clazz) {
+			return context.getBean(name, clazz);
+		}
+	}
 	
 //}
 	
@@ -789,90 +872,7 @@
 		
 //}		
 
-//{-----------<<<SystemUtil>>>>--------------------------------------------
-#常用工具
-	public class SystemUtil {
-		//获取项目class路径
-		public static String getClassPath() throws FileNotFoundException {
-			// ClassUtils.getDefaultClassLoader().getResource("").getPath();//等同
-			return ResourceUtils.getURL("classpath:").getPath();
-		}
-
-		//获取项目根路径
-		public static String getFilePath() throws FileNotFoundException {
-			return ResourceUtils.getURL("").getPath();
-		}
-		
-		//系统换行
-		public static String newline() {
-			return System.getProperty("line.separator");
-		}
-	}
-	
-#常用解析
-	0.org.apache.commons.lang3.StringUtils
-		isEmpty(); //为空判断标准是: str==null 或 str.length()==0
-		isBlank(); //在isEmpty()的基础上增加: 制表符,换行符,换页符,回车符...等
-
-	1.保留两位有效小数
-		double num = 12.1250/12.1251;
-		String num0 = String.format("%.2f", num);// 12.13/12.13
-		String num1 = new DecimalFormat("#0.00").format(num);// 12.12/12.13
-		
-		//DecimalFormat特殊字符说明
-		//	"0"指定位置不存在数字则显示为0: 123.123 ->0000.0000 ->0123.1230
-		//	"#"指定位置不存在数字则不显示: 123.123 ->####.####  ->123.123
-		//	"."小数点
-		//	"%"会将结果数字乘以100 后面再加上% 123.123 ->#.00%  ->12312.30%
-
-	2.使用占位符拼接字符串
-		MessageFormat.format("域名{0}被访问了{1}次", "\"www.qq.com\"", 123.456); //域名"www.qq.com"被访问了123.456次
-		
-		//String.format() ==> 创建格式化的字符串; 及连接多个字符串对象.
-		String.format("域名%s被访问了%3.2f次", "\"www.qq.com\"", 123.456); //域名"www.qq.com"被访问了123.46次
-		
-		//先转化十六进制,再高位补0
-		String.format("%04d",Integer.parseInt(String.format("%x", 16))); //0010
-		
-		/String.format()具体详见: https://www.cnblogs.com/Dhouse/p/7776780.html
-		
-#通过类目获取类的对象
-	@Component
-	public class MyApplicationContextAware implements ApplicationContextAware {// 获取bean的工具类
-
-		private static ApplicationContext context;
-
-		// 实现ApplicationContextAware接口的回调方法，设置上下文环境
-		@Override
-		public void setApplicationContext(ApplicationContext context) throws BeansException {
-			MyApplicationContextAware.context = context;
-		}
-
-		// 获取applicationContext
-		public static ApplicationContext getApplicationContext() {
-			return context;
-		}
-
-		// 通过name获取Bean.
-		public static Object getBean(String name) {
-			return context.getBean(name);
-
-		}
-
-		// 通过clazz获取Bean.
-		public static <T> T getBean(Class<T> clazz) {
-			return context.getBean(clazz);
-		}
-
-		// 通过name及clazz返回指定的Bean
-		public static <T> T getBean(String name, Class<T> clazz) {
-			return context.getBean(name, clazz);
-		}
-	}
-	
-//}
-	
-//{-----------<<<fastjson>>>---------------------------------------------
+//{-----------<<<fastjson>>>-----------------------------------------------------------------
 	<dependency>
 		<groupId>com.alibaba</groupId>
 		<artifactId>fastjson</artifactId>
@@ -910,14 +910,213 @@
 
 //}
 	
+//{-----------<<<docker>>>-------------------------------------------------------------------
+#abc
+	一个开源的应用容器引擎; 一个轻量级容器技术!
+	将软件做好配置; 编译成一个镜像; 将镜像发布出去; 其他使用者就可以直接使用这个镜像
+	运行中的这个镜像称为容器,容器启动是非常快速的!
+	
+	主机(Host)		->	安装了Docker程序的机器 (Docker直接安装在操作系统之上)
+	客户端(Client)	->	连接docker主机进行操作
+	仓库(Registry)	->	用来保存各种打包好的软件镜像
+	镜像(Images)	->	软件打包好的镜像;放在docker仓库中
+	容器(Container)	->	镜像启动后的实例称为一个容器; 容器是独立运行的一个或一组应用
+
+#Ubuntu安装Docker
+	$ uname -a							//内核版本必须是3.10及以上
+	$ apt-get install docker.io			//安装Docker -(可能存在权限错误,使用时添加 sudo 前缀)
+	$ service docker status/start	//启动服务和守护进程
+	$ docker version					//检测是否安装成功
+	$ ln -sf /usr/bin/docker.io /usr/local/bin/docker	//创建软连接-(方便使用docker命令)
+	
+	1.权限问题
+		#permission denied. Are you trying to connect to a TLS-enabled daemon without TLS?
+		#注意: 默认情况,执行 docker 都需要运行 sudo 命令. 如何免去 sudo?
+		sudo groupadd docker			//如果还没有 docker group 就添加一个
+		sudo gpasswd -a ${USER} docker	//将用户加入该 group 内.然后退出并重新登录就生效啦
+		sudo service docker restart		//重启 docker 服务
+		newgrp - docker					//切换当前会话到新 group
+
+#CentOS安装Docker
+	$ yum install docker
+	$ systemctl start/stop docker
+	$ docker -v							//docker版本
+	$ systemctl enable docker			//开机启动
+	
+#镜像下载:
+	1).docker search x 或 https://hub.docker.com/explore/	//查找镜像
+	2).docker pull x:y	//下载镜像,x为镜像名,y为版本号. (可用镜像加速 registry.docker-cn.com/library/x:y)
+	3).
+
+	去Docker仓库找到这个软件对应的镜像
+	3).使用Docker运行这个镜像,这个镜像就会生成一个Docker容器
+	4).对容器的启动停止就是对软件的启动停止	
+	
+	0.国内镜像
+		https://registry.docker-cn.com //Docker 官方中国区
+		http://hub-mirror.c.163.com //网易
+		https://docker.mirrors.ustc.edu.cn //ustc
+	
+	1.修改镜像源地址
+		//直接设置 –registry-mirror 参数,仅对当前的命令有效 
+		docker run hello-world --registry-mirror=https://docker.mirrors.ustc.edu.cn
+		
+		//修改 /etc/default/docker,加入 DOCKER_OPTS=”镜像地址”，可以有多个 
+		DOCKER_OPTS="--registry-mirror=https://docker.mirrors.ustc.edu.cn"
+
+		//支持 systemctl 的系统,通过 sudo systemctl edit docker.service
+		//会生成 etc/systemd/system/docker.service.d/override.conf 覆盖默认的参数,在该文件中加入如下内容
+		[Service] 
+		ExecStart= 
+		ExecStart=/usr/bin/docker -d -H fd:// --registry-mirror=https://docker.mirrors.ustc.edu.cn
+		
+		//新版的 Docker 推荐使用 json 配置文件的方式,默认为 /etc/docker/daemon.json
+		//非默认路径需要修改 dockerd 的 –config-file，在该文件中加入如下内容
+		{"registry-mirrors": ["https://docker.mirrors.ustc.edu.cn"]}
+
+#docker命令:
+	docker search 关键字		-> //检索软件的相关信息(eg: docker search redis)
+	docker pull 镜像名:tag		-> //版本号tag可选,默认为最新版latest
+	docker images				-> //查看本地所有镜像及id
+	docker rmi 镜像id			-> //删除指定的本地镜像
+	
+	docker stop/start/rm 容器id	-> //停止/启动/移除 运行中的容器
+	docker rm 容器id			-> //移除容器(一定要是停止状态); rm->移除容器; rmi->移除镜像!
+	docker ps					-> //查看运行中的容器
+	docker ps ‐a				-> //查看所有的容器
+	
+	docker logs 容器名/容器id	-> //查看容器日志
+	
+	docker run ‐‐name mytomcat ‐d tomcat:latest		-> //根据镜像启动容器
+	
+	//‐d: 后台运行;‐p: 端口映射(主机端口:容器内部的端口); --name:容器别名
+	docker run ‐d ‐p 8888:8080 tomcat		->	//启动一个做了端口映射的tomcat
+	
+	//正确启动mysql镜像,并做了端口映射
+	docker run ‐p 3306:3306 ‐‐name mysql02 ‐e MYSQL_ROOT_PASSWORD=123456 ‐d mysql
+	
+	//把主机的 /conf/mysql 文件夹挂载到 mysqldocker容器的 /etc/mysql/conf.d 文件夹里面
+	//以后mysql的配置可以直接在 自定义文件夹下(/conf/mysql)更改
+	docker run ‐‐name mysql03 ‐v /conf/mysql:/etc/mysql/conf.d ‐e MYSQL_ROOT_PASSWORD=my‐secret‐pw ‐d mysql:tag
+
+	//指定mysql的一些配置参数
+	docker run ‐‐name mysql04 ‐e MYSQL_ROOT_PASSWORD=my‐secret‐pw ‐d mysql:tag ‐‐character‐set‐server=utf8mb4 ‐‐collation‐server=utf8mb4_unicode_ci
+		
+#更多命令: https://docs.docker.com/engine/reference/commandline/docker/
+		
+//}
+
+//{-----------<<<HttpClient>>>---------------------------------------------------------------
+#pom文件
+        //<!-- HttpClient -->
+        <dependency>
+            <groupId>org.apache.httpcomponents</groupId>
+            <artifactId>httpclient</artifactId>
+        </dependency>
+
+#GET/POST区别
+	超链接<a/>	---> ///只能用 GET 提交HTTP请求
+	表单</form>	---> ///可以用 GET,POST .......
+
+	GET			---> ///参数只能在请求行(request-line)
+	POST		---> ///参数可在请求行,亦可在请求体(request-body)
+
+#GET -> request-line
+	1.两种方式获取HttpGet
+		#(1).直接将参数拼接在 URI 之后
+		String uri = "http://127.0.0.1:8090/demo/http/get?name=中国&age=70";
+		HttpGet httpGet = new HttpGet(uri);
+		
+		#(2).通过 URIUtils 工具类生成带参数的 URI
+		String param = "name=中国&age=70";
+        // String param = "name=" + URLEncoder.encode("中国", "UTF-8") + "&age=70"; //中文参数,encode
+        URI uri = URIUtils.createURI("http", "127.0.0.1", 8090, "/demo/http/get", param, null);
+        HttpGet httpGet = new HttpGet(uri);
+		
+	2.执行请求获取结果
+		@Test
+		public void doGet() {
+			String uri = "http://127.0.0.1:8090/demo/http/get?name=中国&age=70";
+			HttpGet httpGet = new HttpGet(uri); //组装请求-GET
+			// HttpPost httpPost = new HttpPost(uri); //组装请求-POST
+
+			try (CloseableHttpResponse httpResponse = HttpClients.createDefault().execute(httpGet)) { //发送请求
+				if (null != httpResponse && HttpStatus.SC_OK == httpResponse.getStatusLine().getStatusCode()) {
+					String res = EntityUtils.toString(httpResponse.getEntity(), "UTF-8"); //获取结果
+					System.out.println(res);
+				}
+			} catch (IOException e) {
+				e.printStackTrace();
+			}
+		}
+		
+#POST -> request-line
+	1.两种方式获取httpPost //(同上)
+		#(1).拼接字符串
+        String uri = "http://127.0.0.1:8090/demo/http/post?name=中国&age=70";
+        HttpPost httpPost = new HttpPost(uri);
+		
+		#(2).工具类 URIUtils
+		String param = "name=中国&age=70";
+        // String param = "name=" + URLEncoder.encode("中国", "UTF-8") + "&age=70"; //中文参数,encode
+        URI uri = URIUtils.createURI("http", "127.0.0.1", 8090, "/demo/http/post", param, null);
+        HttpPost httpPost = new HttpPost(uri);
+
+#POST -> request-body -> keyValue
+	1.POST表单
+        List<NameValuePair> nvps = new ArrayList<>();
+        nvps.add(new BasicNameValuePair("name", "中国"));
+        nvps.add(new BasicNameValuePair("age", "70"));
+        UrlEncodedFormEntity entity = new UrlEncodedFormEntity(nvps, "UTF-8"); //中文乱码
+
+        HttpPost httpPost = new HttpPost("http://127.0.0.1:8090/demo/http/post");
+        httpPost.setEntity(entity);
+		
+    2.查看HTTP数据
+        System.out.println(entity.getContentType()); //Content-Type: application/x-www-form-urlencoded; charset=UTF-8
+        System.out.println(entity.getContentLength()); //30
+        System.out.println(EntityUtils.toString(entity)); //name=%E4%B8%AD%E5%9B%BD&age=70
+
+#POST -> request-body -> json
+	1.中文乱码
+        String json = "{\"name\":\"中国\",\"age\":\"70\"}";
+        StringEntity entity = new StringEntity(json, "UTF-8"); //中文乱码,默认"ISO-8859-1"
+        entity.setContentEncoding("UTF-8");
+        entity.setContentType("application/json");//设置contentType --> json
+
+        HttpPost httpPost = new HttpPost("http://127.0.0.1:8090/demo/http/postBody");
+        httpPost.setEntity(entity);
+
+#POST -> request-body -> file
+	1.pom文件
+        //<!-- HttpClient-File -->
+        <dependency>
+            <groupId>org.apache.httpcomponents</groupId>
+            <artifactId>httpmime</artifactId>
+        </dependency>
+		
+	2.中文乱码
+        MultipartEntityBuilder builder = MultipartEntityBuilder.create();
+        ContentType contentType = ContentType.create("text/plain", "UTF-8"); //中文乱码,默认"ISO-8859-1"
+        builder.addTextBody("fileName", "中国", contentType);
+        builder.addBinaryBody("file", new File("C:\\Users\\BlueCard\\Desktop\\StatusCode.png"));
+        HttpEntity entity = builder.build();
+
+        HttpPost httpPost = new HttpPost("http://127.0.0.1:8090/demo/http/postFile");
+        httpPost.setEntity(entity);
+	
+	3.前台页面	
+		<form action="http://127.0.0.1:8090/demo/http/postFile" method="POST" enctype="multipart/form-data">  
+			<input type="text" name="fileName" value="中国"/>  
+			<input type="file" name="file"/>  
+			<inupt type="submit" value="提交"/>  
+		</form>  
+	
+	
+
+//}
 
 
-	
-	
-	
-	
-	
-	
 	
 	
 	

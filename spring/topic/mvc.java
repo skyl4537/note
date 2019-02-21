@@ -29,7 +29,7 @@
 //}		
 	
 //{--------<<<@Request*>>>----------------------------------------------------------------
-#RequestMapping ///可标注在(类/方法)上
+#@RequestMapping ///可标注在(类/方法)上
 	#value		-> 请求地址,默认属性. //@RequestMapping(value = "/hello") == @RequestMapping("/hello")
 	#name		-> 给这个mapping分配一个名称,类似于注释
 	#method		-> 请求方式. //RequestMethod.GET; .POST; .PUT; .DELETE; ...
@@ -45,7 +45,7 @@
 		http://127.0.0.1:8090/demo/hello?name=5&age=10	(F)
 		http://127.0.0.1:8090/demo/hello?names=5&age=11	(F)
 		
-#PathVariable ///将url中的占位符映射到方法的入参
+#@PathVariable ///将url中的占位符映射到方法的入参
 
 		@GetMapping("/hello/{name}") //两个'name'必须一致,入参名'args'无所谓
 		public String hello(@PathVariable("name") String args) { 
@@ -53,7 +53,7 @@
 		}		
 		http://127.0.0.1:8090/demo/hello/spring ---> hello spring
 	
-#RequestParam ///将{请求参数}映射到方法的入参
+#@RequestParam ///将{请求参数}映射到方法的入参
 	#value: 参数名,必须和url中的参数名保持一致
 	#required: 是否为必须,默认true 
 	#defaultValue: 参数的默认值,当url中没有该参数时取默认值
@@ -66,8 +66,8 @@
 		
 		http://127.0.0.1:8090/demo/hello?name=wang&sex=99 ---> hello wang 18
 		
-#RequestHeader ///Header属性.(属性同上)
-#CookieValue///Cookie属性.(属性同上)
+#@RequestHeader ///Header属性.(属性同上)
+#@CookieValue///Cookie属性.(属性同上)
 	
 		@GetMapping("/hello")
 		public String hello(@RequestHeader("Connection") String arg0) {	}
@@ -94,12 +94,13 @@
 			String url = request.getRequestURL().toString(); //http://192.168.8.7:8090/demo/hello
 		}
 		
-#ResponseBody
+#@ResponseBody
 	#方法的返回结果直接写入 HTTP 响应正文中.
 	#返回非页面, 而是其他数据格式时使用(如json,xml等). 一般用于异步获取数据.
 	
-#RequestBody
-	#获取请求体的数据, 默认使用 HttpMessageConverter 解析,然后把相应数据绑定到 ctrller 方法的参数上
+#@RequestBody
+	#获取请求体的数据,可转换成javaBean对象,也可以转换成Map类型.
+	#默认使用 HttpMessageConverter 解析,然后把相应数据绑定到 controller 方法的参数上
 	#multipart/form-data: //不能处理
 	#application/x-www-form-urlencoded: //PUT时必须; GET,POST时可选(@RequestParam, @ModelAttribute 也可以)
 	#其他(application/json, application/xml等): //必须
