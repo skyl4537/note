@@ -566,7 +566,7 @@
 	
 	(3).Controller 要配置在子容器(springmvc.xml)中,否则客户端请求时会找不到对应的 Controller 而出错	
 	(4).通常, 整合其他框架(Service,Dao,事务等)的配置都放在父容器中,即 applicationContext.xml
-		//加载其他框架的配置文件
+		//读取配置文件
 		<context:property-placeholder location="classpath:*.properties"/>
 
 //}
@@ -650,8 +650,8 @@
 
 //}
 
-//{--------<<<标签>>>---------------------------------------------------------------------
-#mvc:view-controller -> 页面跳转没有任何业务逻辑,只是单纯的路由过程(点击按钮跳转到一个页面)
+//{--------<<<页面跳转>>>---------------------------------------------------------------------
+#页面跳转 -> 没有任何业务逻辑,只是单纯的路由过程(点击按钮跳转到一个页面)
 	1.配置Controller
 		@RequestMapping("/toView")
 		public String view(){
@@ -661,7 +661,6 @@
 	2.实现接口
 		@Configuration
 		public class MyWebMvcConfigurer implements WebMvcConfigurer {
-
 			@Override
 			public void addViewControllers(ViewControllerRegistry registry) {
 				//url访问: ip:port/demo/toView ---> 对应资源: /templates/view.html
@@ -670,7 +669,7 @@
 		}
 		
 	3.配置xml
-		//(1).使用此标签后必须配置 <mvc:annotation-driven />,否则会造成所有的@Controller注解无法解析,导致404错误
+		//(1).使用此标签后必须配置 <mvc:annotation-driven />,否则会造成所有的 @Controller 注解无法解析,导致404错误
 		//(2).如果请求存在处理器,则这个标签对应的请求处理将不起作用. 因为请求是先去找处理器处理,如果找不到才会去找这个标签配置
 		<mvc:view-controller path="/toView" view-name="view"/>
 		<mvc:annotation-driven />

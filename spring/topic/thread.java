@@ -89,7 +89,14 @@
 	
 #threadFactory //线程工厂,主要用来创建线程
 
-#workQueue //缓冲队列,用来存储等待执行的任务.(都是线程安全的)	
+#workQueue
+	//缓冲队列(线程安全),用于提交和存储待处理任务.
+	(1).poolSize  < corePoolSize, 添加新线程
+	(2).poolSize >= corePoolSize, 将请求加入队列
+	(3).poolSize > maximumPoolSize, 请求无法加入队列,任务将被拒绝
+	
+	//队列的三种通用策略: 直接提交; 无界队列; 有界队列.
+	
 	1.LinkedBlockingQueue //常用
 		基于链表的 FIFO 队列(先进先出); 创建时不指定大小,则使用默认值, Integer.MAX_VALUE
 	
@@ -97,8 +104,8 @@
 		基于数组的 FIFO 队列,此队列创建时必须指定大小
 		当队列为空,消费者线程被阻塞; 当队列装满,生产者线程被阻塞
 		
-	3.SynchronousQueue
-		不会缓存任务,而是直接新建一个线程来执行新来的任务
+	1.SynchronousQueue
+		直接提交,不进行缓存, 直接新建一个线程来执行任务
 	
 	4.PriorityBlockingQueue
 		按照'优先级'进行排序的/*无限队列*/,优先级最高的元素将始终排在队列的头部

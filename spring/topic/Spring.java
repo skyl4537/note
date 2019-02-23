@@ -563,27 +563,19 @@
 			http://www.springframework.org/schema/context http://www.springframework.org/schema/context/spring-context-4.0.xsd
 			http://www.springframework.org/schema/tx http://www.springframework.org/schema/tx/spring-tx-4.0.xsd">
 
-		// <!-- 组件扫描 -->
+		// <!-- springIOC 组件扫描 -->
 		<context:component-scan base-package="com.example.spring"> //<!-- 排除controller -->
 			<context:exclude-filter type="annotation" expression="org.springframework.stereotype.Controller" />
 		</context:component-scan>
 
 		// <!-- 数据源 -->
-		<context:property-placeholder location="classpath:db.properties" />
+		<context:property-placeholder location="classpath:db.properties" /> //读取配置文件
 		<bean id="dataSource" class="com.alibaba.druid.pool.DruidDataSource">
 			<property name="driverClass" value="${jdbc.driver}" />
 			<property name="jdbcUrl" value="${jdbc.url}" />
 			<property name="user" value="${jdbc.username}" />
 			<property name="password" value="${jdbc.password}" />
 		</bean>
-
-		// <!-- 事务 -->
-		<bean id="dataSourceTransactionManager" class="org.springframework.jdbc.datasource.DataSourceTransactionManager">
-			<property name="dataSource" ref="dataSource" />
-		</bean>
-		
-		// <!--基于注解使用事务 -->
-		<tx:annotation-driven transaction-manager="dataSourceTransactionManager" />
 
 		// <!-- Spring 整合 Mybatis -->
 		// <!-- 1.SqlSession 对象的创建,管理等  -->
@@ -604,6 +596,14 @@
 
 		// <!-- 2.另一种实现方案(mybatis-spring-1.3.0.jar 整合包提供的实现方案) -->
 		// <!-- <mybatis-spring:scan base-package="com.example.spring.mapper" /> -->
+		
+		// <!-- 事务管理器 -->
+		<bean id="transactionManager" class="org.springframework.jdbc.datasource.DataSourceTransactionManager">
+			<property name="dataSource" ref="dataSource" />
+		</bean>
+		
+		// <!-- 开启注解事务处理 -->
+		<tx:annotation-driven transaction-manager="transactionManager" />
 	</beans>
 	}
 
