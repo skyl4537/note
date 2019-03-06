@@ -3,7 +3,7 @@
 
 //}
 
-//{--------<<<概念>>>---------------------------------------------------------------------
+//{--------<<<abc>>>---------------------------------------------------------------------
 #框架	-> 为解决某些问题而提出的一整套解决方案.
 #轻量级	-> 不需要实现框架的接口. (非侵入式)
 
@@ -16,13 +16,13 @@
 	
 //{--------<<<IoC>>>----------------------------------------------------------------------
 #IoC和DI -> 解耦
-	//IoC(Inversion of Control)控制反转: 是一个定义对象依赖的过程,反转资源的获取方向. 
+	//IoC(Inversion-of-Control)控制反转: 是一个定义对象依赖的过程,反转资源的获取方向. 
 	传统的资源查找方式是组件主动向容器发起查找资源请求, 作为回应, 容器适时的返回资源. 
 	而应用了 IOC 之后, 则是容器主动地将资源推送给它所管理的组件,
 	组件所要做的仅是选择一种合适的方式来接收资源. 这种行为也被称为查找的被动形式.
 
-	//DI(Dependency Injection): 依赖注入 — IOC 的另一种表述方式.
-	组件以一些预先定义好的方式(如: setter方法)接收来自如容器的资源注入.
+	//DI(Dependency-Injection): 依赖注入,IOC的另一种表述方式.
+	组件以一些预先定义好的方式(如: Setter())接收来自容器的资源注入.
 	IoC是一种思想, DI是具体的实现.
 	
 #IoC容器创建
@@ -32,12 +32,9 @@
 			//ClassPathXmlApplicationContext: 接口的实现类,从类路径下记载配置文件.
 			ApplicationContext context = new ClassPathXmlApplicationContext("applicationContext.xml");
 			
-			//(1).根据Type获取IoC容器中的bean -> 要求容器中{有且只有一个}该类型的bean
-			//(2).根据id获取IoC容器中的bean
-			//(3).根据id和Type获取IoC容器中的bean
-			Person person1 = context.getBean(Person.class); 
-			Person person2 = (Person) context.getBean("person"); 
-			Person person3 = context.getBean("person", Person.class);
+			Person person1 = context.getBean(Person.class); //type --->要求容器中{有且只有一个}该类型的bean
+			Person person2 = (Person) context.getBean("person"); //id
+			Person person3 = context.getBean("person", Person.class); //id + type
 		}
 		
 	1.Web应用(详见附表1)
@@ -61,10 +58,10 @@
 			ApplicationContext context = new ClassPathXmlApplicationContext(config); //创建IOC容器
 			sc.setAttribute("ApplicationContext", context); //把IOC容器放在 ServletContext 的一个属性中
 
-			//Spring和web整合后,SpringMVC所有配置信息保存在 WebApplicationContext. (ApplicationContext的子类)
+			//Spring和web整合后,SpringMVC所有配置信息保存在 WebApplicationContext. (ApplicationContext-子类)
 			ApplicationContext context = WebApplicationContextUtils.getRequiredWebApplicationContext(sc);
 		}
-		
+
 //}
 
 //{--------<<<依赖注入>>>-----------------------------------------------------------------
@@ -484,8 +481,20 @@
 		
 
 //{--------<<<SSM>>>----------------------------------------------------------------------
+#Spring
+	Spring家族的最底层,用于项目组件间解耦.
+	常用的是IOC容器,自动初始化bean; 另外,还有AOP, 声明式事务等
+	
+#SpringMVC //web层
+	拦截用户请求,调用相应的 Controller 方法, ..., 最终把结果(页面或josn/xml数据)返回给用户.
+	MVC就是做前面和后面的过程,与用户打交道. 中间与数据库的交互过程,则属于DAO层
+
+#MyBatis
+	半自动ORM框架,区别于 Hibernate 的全自动ORM.
+	(1).自由控制sql; (2).使用xml组织管理sql,易于维护	
+
 #搭建环境
-	创建一个动态的WEB工程
+	创建一个动态的web工程
 	导入SSM需要使用的jar包
 	导入整合适配包 (mybatis-spring-1.3.0.jar)
 	导入其他技术的一些支持包 (数据库驱动,连接池,日志)
@@ -532,21 +541,27 @@
 			<listener-class>org.springframework.web.context.ContextLoaderListener</listener-class>
 		</listener>
 
-		// <!-- Springmvc 的前端控制器 -->
+		// <!-- SpringMVC 前端控制器 -->
 		<servlet>
-			<servlet-name>springDispatcherServlet</servlet-name>
+			<servlet-name>springmvc</servlet-name>
 			<servlet-class>org.springframework.web.servlet.DispatcherServlet</servlet-class>
 			<init-param>
-				<param-name>contextConfigLocation</param-name>
+				<param-name>contextConfigLocation</param-name> 
+				///默认加载: /WEB-INF/servlet名称-servlet.xml (即默认 springmvc-servlet.xml)
 				<param-value>classpath:springmvc.xml</param-value>
 			</init-param>
 			<load-on-startup>1</load-on-startup>
 		</servlet>
 		<servlet-mapping>
-			<servlet-name>springDispatcherServlet</servlet-name>
+			<servlet-name>springmvc</servlet-name>
+			///可选参数: ①/ ②*.action ③/*
+			///①. 所有地址的访问都要由'前端控制器'进行解析, 静态文件另配不解析
+			///②. 以".action"结尾的访问,由'前端控制器'解析
+			///③. 错误配置; 当转发到jsp页面时,仍由'前端控制器'解析jsp地址,找不到导致报错
 			<url-pattern>/</url-pattern>
 		</servlet-mapping>
 		
+		// <!-- 欢迎页面 -->
 		<welcome-file-list>
 			<welcome-file>/index.html</welcome-file>
 		</welcome-file-list>
@@ -607,7 +622,7 @@
 	</beans>
 	}
 
-#Springmvc	
+#SpringMVC
 	{//springmvc.xml
 	<?xml version="1.0" encoding="UTF-8"?>
 	<beans xmlns="http://www.springframework.org/schema/beans" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
@@ -621,19 +636,29 @@
 			<context:include-filter type="annotation" expression="org.springframework.stereotype.Controller" />
 		</context:component-scan>
 
-		// <!-- 视图解析器 -->
+		// <!-- 视图解析器,配置jsp -->
 		<bean class="org.springframework.web.servlet.view.InternalResourceViewResolver">
 			<property name="prefix" value="/WEB-INF/views/" />
 			<property name="suffix" value=".jsp" />
 		</bean>
 
-		// <!-- mvc -->
-		<mvc:default-servlet-handler />
+		// <!-- 配置SpringMVC -->
+		// <!-- 1.开启SpringMVC注解模式 -->
+		// <!-- 简化配置:
+		//		(1)自动注册 DefaultAnootationHandlerMapping,AnotationMethodHandlerAdapter 
+		//		(2)提供一些列: 数据绑定,数字和日期的format @NumberFormat, @DateTimeFormat, xml,json默认读写支持 
+		// -->
 		<mvc:annotation-driven />
+		
+		// <!-- 2.静态资源默认servlet配置
+		//		(1)加入对静态资源的处理: js,gif,png
+		//		(2)允许使用"/"做整体映射
+		 // -->
+		<mvc:default-servlet-handler />
 	</beans>
 	}
 
-#mybatis
+#MyBatis
 	{//mybatis-config.xml
 	<?xml version="1.0" encoding="UTF-8" ?>
 	<!DOCTYPE configuration

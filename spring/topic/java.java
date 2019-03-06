@@ -388,8 +388,9 @@ https://blog.csdn.net/w1196726224/article/details/54428493
 //}
 
 //{--------<<<idea-快捷键>>>------------------------------------------------------------------
-	psvm, sout, fori	///main(),syso,for(i)
-
+	psvm, sout, fori, iter, Ctrl+Alt+T	///main(),syso,for(i),foreach(),try/catch
+	
+	
 	Ctrl+P				//参数提示
 	Ctrl+Alt+V | M		//抽取变量(方法)
 	
@@ -407,6 +408,10 @@ https://blog.csdn.net/w1196726224/article/details/54428493
 	Ctrl+D				//整行复制
 	Ctrl+X				//整行删除
 	Ctrl+Shift+U		//大小写转化
+	
+	//技巧1: 复制警告或者错误信息
+	鼠标光标悬浮在报错的地方,待错误提示出现后,键盘按住 Alt,同时点击鼠标左键, Ctrl+V 到度娘即可
+	
 //}
 
 //{--------<<<idea-设置>>>--------------------------------------------------------------------

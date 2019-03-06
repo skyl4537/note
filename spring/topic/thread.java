@@ -1,10 +1,10 @@
 
 
-//{--------<<<hello>>>--------------------------------------------------------------------
+//{--------<<<hello>>>-------------------------------------------------------------------
 
 //}
 
-//{--------<<<线程池-abc>>>-------------------------------------------------------------------
+//{--------<<<pool-abc>>>----------------------------------------------------------------
 #优点
 	(0).降低资源消耗: 通过重复利用已创建的线程,降低线程创建和销毁造成的消耗
 	(1).提高响应速度: 当任务到达时,任务可以不需要等待线程的创建就能立即执行
@@ -18,7 +18,7 @@
 
 //}
 
-//{--------<<<线程池状态>>>---------------------------------------------------------------
+//{--------<<<pool-状态>>>---------------------------------------------------------------
 	public class ThreadPoolExecutor extends AbstractExecutorService {	
 		volatile int runState;
 		static final int RUNNING    = 0;
@@ -46,7 +46,7 @@
 	任务缓存队列已经清空或执行结束后,线程池被设置为 TERMINATED 状态
 //}
 
-//{--------<<<核心参数>>>-----------------------------------------------------------------
+//{--------<<<pool-核心参数>>>-----------------------------------------------------------
 	public class ThreadPoolExecutor extends AbstractExecutorService {
 		
 		//前面三个构造器,底层都是调用的第四个构造器进行的初始化工作
@@ -95,7 +95,7 @@
 	(2).poolSize >= corePoolSize, 将请求加入队列
 	(3).poolSize > maximumPoolSize, 请求无法加入队列,任务将被拒绝
 	
-	//队列的三种通用策略: 直接提交; 无界队列; 有界队列.
+	#队列的三种通用策略: 直接提交; 无界队列; 有界队列.
 	
 	1.LinkedBlockingQueue //常用
 		基于链表的 FIFO 队列(先进先出); 创建时不指定大小,则使用默认值, Integer.MAX_VALUE
@@ -131,7 +131,7 @@
 	
 //}
 
-//{--------<<<核心方法>>>-----------------------------------------------------------------
+//{--------<<<pool-核心方法>>>-----------------------------------------------------------
 	public class ThreadPoolExecutor extends [AbstractExecutorService implements (ExecutorService extends Executor)] {
 
 		// 在 Executor 中声明的方法,在 ThreadPoolExecutor 进行了具体的实现
@@ -151,7 +151,7 @@
 	}
 //}
 
-//{--------<<<任务的执行>>>---------------------------------------------------------------
+//{--------<<<pool-执行任务>>>-----------------------------------------------------------
 #poolSize  < corePoolSize 
 	每来一个任务,就会创建一个线程去执行这个任务
 
@@ -184,7 +184,7 @@
 
 //}
 
-//{--------<<<线程池中的线程初始化>>>-----------------------------------------------------
+//{--------<<<pool-线程初始化>>>---------------------------------------------------------
 #默认情况,创建线程池之后,线程池中是没有线程的,需要提交任务之后才会创建线程
 
 #如果需要预创建线程,可通过以下两个方法实现. 创建完成后,等待任务队列中有任务
@@ -193,7 +193,7 @@
 
 //}
 
-//{--------<<<线程池的关闭>>>-------------------------------------------------------------
+//{--------<<<pool-关闭>>>---------------------------------------------------------------
 #shutdown();
 	不会立即终止线程池,而是要等缓存队列中的所有任务都执行完后才终止,但再也不会接受新的任务
 		
@@ -202,7 +202,7 @@
 
 //}
 
-//{--------<<<线程池容量的动态调整>>>-----------------------------------------------------
+//{--------<<<pool-动态调整容量>>>-------------------------------------------------------
 #当下列参数从小变大时,ThreadPoolExecutor 进行线程赋值,还可能立即创建新的线程来执行任务
 
 #setCorePoolSize();
@@ -212,7 +212,7 @@
 	设置线程池最大能创建的线程数目大小
 //}
 
-//{--------<<<如何合理配置线程池的大小>>>-------------------------------------------------
+//{--------<<<pool-合理配置大小>>>-------------------------------------------------------
 	//获取cpu核心数
 	int cpuSize = Runtime.getRuntime().availableProcessors();
 	
@@ -238,7 +238,7 @@
 
 //}
 
-//{--------<<<示例-DEMO>>>----------------------------------------------------------------
+//{--------<<<pool-DEMO>>>---------------------------------------------------------------
 #自定义类
     static class MyTask implements Runnable {
         private int taskNum;
@@ -332,7 +332,7 @@
 
 //}
 
-//{--------<<<jdk-自带线程池>>>-----------------------------------------------------------
+//{--------<<<pool-jdk自带>>>------------------------------------------------------------
 #4种内置线程池
 	1.单例线程池
 		//有且仅有1个线程处于活动状态,适用于有序执行任务.
@@ -380,7 +380,7 @@
 	
 //}
 
-//{--------<<<推荐方案>>>-----------------------------------------------------------------
+//{--------<<<pool-ali推荐>>>------------------------------------------------------------
 #DEMO-1
 	//org.apache.commons.lang3.concurrent.BasicThreadFactory
 	ScheduledExecutorService executorService = new ScheduledThreadPoolExecutor(1,
@@ -438,10 +438,300 @@
 //}
 
 
-//{--------<<<Spring-异步方法>>>--------------------------------------------------------------------
-https://www.cnblogs.com/yangfanexp/p/7747225.html
-http://www.cnblogs.com/yangfanexp/p/7594557.html
+//{--------<<<Spring-异步任务>>>---------------------------------------------------------
+https://blog.csdn.net/CJ_66/article/details/82503665
+
+#定时任务
+	1.DEMO
+		@EnableScheduling //全局注解
+		@Component //必要注解
+		public class ScheduledTask {
+			
+			@Scheduled(initialDelay = 1 * 1000, fixedRate = 2 * 1000) //定时注解
+			public void test1() throws InterruptedException {
+				System.out.println(SystemUtils.getAll() + " -> task1 - start!");
+				Thread.sleep(3 * 1000);
+				System.out.println(SystemUtils.getAll() + " -> task1 - end !!");
+			}
+
+			@Scheduled(initialDelay = 1 * 1000, fixedRate = 2 * 1000)
+			public void test2() throws InterruptedException {
+				System.out.println(SystemUtils.getAll() + " -> task2 - start!");
+				Thread.sleep(3 * 1000);
+				System.out.println(SystemUtils.getAll() + " -> task2 - end !!");
+				// int i = 1 / 0;
+			}
+		}
+
+		//@Scheduled: 默认使用'单例线程池' ---> org.springframework.scheduling.concurrent.ThreadPoolTaskScheduler#poolSize=1
+		//所以 task1,2 虽然同时启动,但还是顺序执行
+		//并且,当 task2 执行过程出现异常,也不会影响 task1 及 task2的后续执行
+		2019-03-04 19:53:19.709 - 29 - scheduling-1 -> task1 - start!
+		2019-03-04 19:53:22.710 - 29 - scheduling-1 -> task1 - end !!
+		2019-03-04 19:53:22.710 - 29 - scheduling-1 -> task2 - start!
+		2019-03-04 19:53:25.711 - 29 - scheduling-1 -> task2 - end !!
+
+#异步任务 ---> 异步方法和调用方法一定要写在'不同的类中'; 同一类中不起效果.
+	1.DEMO
+		@Async //异步注解
+		@EnableAsync //全局注解
+		@EnableScheduling
+		@Component
+		public class ScheduledTask {
+			//... task1,2 同上
+		}
+
+		//@Async: 开启异步后,使用 SpringBoot 默认的线程池执行定时任务.
+		2019-03-04 19:53:54.997 - 62 - SimpleAsyncTaskExecutor-2 -> task2 - start!
+		2019-03-04 19:53:54.997 - 61 - SimpleAsyncTaskExecutor-1 -> task1 - start!
+		2019-03-04 19:53:56.984 - 63 - SimpleAsyncTaskExecutor-3 -> task1 - start!
+		2019-03-04 19:53:56.984 - 64 - SimpleAsyncTaskExecutor-4 -> task2 - start!
+		2019-03-04 19:53:57.998 - 62 - SimpleAsyncTaskExecutor-2 -> task2 - end !!
+		2019-03-04 19:53:57.998 - 61 - SimpleAsyncTaskExecutor-1 -> task1 - end !!
+		
+	2.自定义线程池Bean
+		@Configuration
+		public class SchedulerConfig {
+
+			private int corePoolSize = 10;
+			private int maxPoolSize = 200;
+			private int queueCapacity = 10;
+
+			@Bean
+			public Executor demoScheduler() {
+				ThreadPoolTaskExecutor executor = new ThreadPoolTaskExecutor();
+				executor.setCorePoolSize(corePoolSize);
+				executor.setMaxPoolSize(maxPoolSize);
+				executor.setQueueCapacity(queueCapacity);
+				executor.setThreadNamePrefix("demoScheduler-");
+
+				executor.initialize(); //必须初始化
+				return executor;
+			}
+		}
+		
+	3.使用线程池Bean
+		@Async("demoScheduler") //指定线程池
+		@EnableAsync
+		@EnableScheduling
+		@Component
+		public class ScheduledTask { }
 	
+		2019-03-04 20:03:41.510 - 63 - demoScheduler-2 -> task2 - start!
+		2019-03-04 20:03:41.510 - 62 - demoScheduler-1 -> task1 - start!
+		2019-03-04 20:03:43.476 - 64 - demoScheduler-3 -> task1 - start!
+		2019-03-04 20:03:43.476 - 65 - demoScheduler-4 -> task2 - start!
+		2019-03-04 20:03:44.511 - 62 - demoScheduler-1 -> task1 - end !!
+		2019-03-04 20:03:44.511 - 63 - demoScheduler-2 -> task2 - end !!
+		
+#异常处理
+	1.有返回值 //通过 AsyncResult 捕获异常
+		@Service
+		public class AsyncService {
+
+			@Async
+			public AsyncResult<String> asyncMethodWithResult() {
+				int i = 1/0; //异常
+				return new AsyncResult("hello");
+			}
+		}
+	
+		@Test
+		public void test() {
+			try {
+				Future future = asyncService.asyncMethodWithResult();
+				future.get(); //异常捕获
+			} catch (ExecutionException | InterruptedException e) {
+				logger.error("exception: ", e);
+			}
+		}
+	
+	2.无返回值 //配置 AsyncUncaughtExceptionHandler
+		@Slf4j
+		@Configuration
+		public class SchedulerConfig implements AsyncConfigurer {
+			
+			@Bean
+			@Override
+			public Executor demoScheduler() {
+				//... ...
+			}
+			
+			@Override //@Async 标注的任务,执行过程中出现异常,则会被此方法处理
+			public AsyncUncaughtExceptionHandler getAsyncUncaughtExceptionHandler() {
+				return (throwable, method, obj) -> {
+					StringBuilder sb = new StringBuilder("Method:");
+					sb.append(method.getDeclaringClass().getName()).append(".").append(method.getName()).append(";");
+					
+					sb.append(" Params:");
+					Arrays.stream(obj).forEach(sb::append);
+					sb.append(";");
+					
+					sb.append(" Exception: ").append(throwable.getMessage());
+					log.info(sb.toString());
+				};
+			}
+		}
+	
+		
+#扩展 -> 线程池状态
+	1.自定义线程池
+		public class VisiableThreadPoolTaskExecutor extends ThreadPoolTaskExecutor {
+			private static final Logger logger = LoggerFactory.getLogger(VisiableThreadPoolTaskExecutor.class);
+
+			private void showThreadPoolInfo(String prefix) {
+				ThreadPoolExecutor executor = getThreadPoolExecutor();
+
+				logger.info("{}({}), core-{}, max-{}, active-{}, queue-{}, taskCount-{}, completed-{}",
+						this.getThreadNamePrefix(),
+						prefix,
+						executor.getCorePoolSize(),
+						executor.getMaximumPoolSize(),
+						executor.getActiveCount(),
+						executor.getQueue().size(),
+						executor.getTaskCount(),
+						executor.getCompletedTaskCount());
+			}
+			
+			@Override
+			public <T> Future<T> submit(Callable<T> task) {
+				showThreadPoolInfo("do-submit");
+				return super.submit(task);
+			}
+		}
+		
+	2.自定义线程池时使用以上线程池
+		@Bean
+		public Executor demoScheduler() {
+			// ThreadPoolTaskExecutor executor = new ThreadPoolTaskExecutor();
+			ThreadPoolTaskExecutor executor = new VisiableThreadPoolTaskExecutor();
+			//... ...
+		}
+		
+		2019-03-04 20:34:56.768 - 63 - demoScheduler-2 -> task1 - start!
+		2019-03-04 20:34:56.768 - 62 - demoScheduler-1 -> task2 - start!
+		2019-03-04 20:34:58.746 - ** - demoScheduler-(do-submit), core-2, max-4, active-2, queue-0, taskCount-2, completed-0
+		2019-03-04 20:34:58.746 - ** - demoScheduler-(do-submit), core-2, max-4, active-2, queue-1, taskCount-3, completed-0
+		2019-03-04 20:34:59.770 - 63 - demoScheduler-2 -> task1 - end !!
+		2019-03-04 20:34:59.770 - 62 - demoScheduler-1 -> task2 - end !!
+		
+//}
+		
+
+//{--------<<<thread-异常处理>>>--------------------------------------------------------
+#如何正确处理子线程中的异常呢???
+	//java中两种异常: 
+		已检测异常(Checked-Exceptions), 未检测异常(Unchecked-Exceptions)
+		前者必须使用 throws 或 try catch 进行异常处理; 后者不需要指定或捕获.
+		
+	因为run()不接受 throws 语句,所以当抛出已检测异常时,需要手动 try...catch.. 做相应的处理.
+	
+	//未检测异常的默认处理方式:
+		将堆栈跟踪信息打印控制台(或者记录到错误日志文件中),然后退出程序.
+		常见的APP崩溃现象(应用程序XXX已经停止),正是基于这一原理.
+		
+	
+
+#子线程 try... catch... ---> 子线程处理
+	
+		public class ChildThread implements Runnable {			
+			public void run() {
+				//...1...				
+				try {
+					int i = 1/0;
+				} catch (Exception e) {
+					System.out.println(String.format("handle exception in child thread. %s", e));
+				}
+				//...2...
+			}
+		}
+
+#设置异常处理器 ---> 子线程处理
+	注意: 子线程中发生了异常,如果没有任何类来接手处理的话,是会直接退出的,而不会记录任何日志.
+		  所以,如果什么都不做的话,是会出现子线程任务既没执行成功,也没有任何日志提示的"诡异"现象的.
+				
+		// 如果当前线程有异常处理器(默认没有), 则优先使用;
+		// 否则,如果当前线程所属的线程组有异常处理器,则使用;
+		// 否则,使用全局默认的;
+		// 最后,如果都没有的话,子线程就会退出.
+		
+			
+	2.1.当前线程的异常处理器
+	
+		public static void main(String[] args) {
+			new Thread(() -> {
+				Thread.currentThread().setUncaughtExceptionHandler((t, e) ->
+						System.out.println(String.format("Thread-Exception-Handler: %s", e)));
+
+				System.out.println(SystemUtils.getAll() + " - 1");
+				int i = 1 / 0;
+				System.out.println(SystemUtils.getAll() + " - 2");
+			}).start();
+
+			new Thread(() -> {
+				System.out.println(SystemUtils.getAll() + " - a");
+				String s = "aa".split("_")[1];
+				System.out.println(SystemUtils.getAll() + " - b");
+			}).start();
+		}
+		
+		// 2019-03-05 10:32:28.573 - 12 - Thread-1 - a
+		// 2019-03-05 10:32:28.573 - 11 - Thread-0 - 1
+		// Thread-Exception-Handler: java.lang.ArithmeticException: / by zero
+		
+	2.2.全局的异常处理器
+	
+		public static void main(String[] args) {
+			Thread.setDefaultUncaughtExceptionHandler((t, e) ->
+					System.out.println(String.format("Default-Exception-Handler: %s", e)));
+
+			new Thread(() -> {
+				System.out.println(SystemUtils.getAll() + " - 1");
+				int i = 1 / 0;
+				System.out.println(SystemUtils.getAll() + " - 2");
+			}).start();
+
+			new Thread(() -> {
+				System.out.println(SystemUtils.getAll() + " - a");
+				String s = "aa".split("_")[1];
+				System.out.println(SystemUtils.getAll() + " - b");
+			}).start();
+		}
+		
+		// 2019-03-05 10:30:55.626 - 12 - Thread-1 - a
+		// 2019-03-05 10:30:55.626 - 11 - Thread-0 - 1
+		// Default-Exception-Handler: java.lang.ArrayIndexOutOfBoundsException: 1
+		// Default-Exception-Handler: java.lang.ArithmeticException: / by zero
+
+#通过Future.get()捕获异常(推荐) ---> 父线程处理
+
+		public static void main(String[] args) {
+			ExecutorService executor = Executors.newSingleThreadExecutor();
+			
+			Future<Object> future = executor.submit(() -> {
+				System.out.println(SystemUtils.getAll() + " - 1");
+				try {
+					int i = 1 / 0;
+				} catch (Exception e) {
+					throw new RuntimeException(e.getMessage()); //抛出异常
+				}
+				System.out.println(SystemUtils.getAll() + " - 2");
+				return "";
+			});
+
+			try {
+				System.out.println("res: " + future.get()); //get捕获异常
+			} catch (InterruptedException | ExecutionException e) {
+				System.out.println("Future-Exception-Handler: " + e);
+				executor.shutdown();
+			}
+		}
+
+//}
+
+
+
+//{--------<<<Spring-异步任务000>>>-------------------------------------------------------
 	0.
 		@Slf4j
 		@Configuration
@@ -650,7 +940,7 @@ http://www.cnblogs.com/yangfanexp/p/7594557.html
 		
 //}
 
-//{--------<<<join()>>>--------------------------------------------------------------------
+//{--------<<<join()>>>-------------------------------------------------------------------
 #三个线程顺序执行 --> 两种解决方案
 	1.使用'单例线程池'
 	
@@ -727,7 +1017,7 @@ http://www.cnblogs.com/yangfanexp/p/7594557.html
 		2018-12-07 11:11:46.924 -> 1 - main --> end!
 //}
 
-//{--------<<<execute()&&submit()>>>--------------------------------------------------------------------
+//{--------<<<execute()&&submit()>>>------------------------------------------------------
 #两种任务
 	'java5之后,任务分两类': 一类 implements Runnable; 另一类 implements Callable.
 	(0).两者都可以被 ExecutorService 执行,但前者没有返回值,后者有.
@@ -801,7 +1091,7 @@ http://www.cnblogs.com/yangfanexp/p/7594557.html
 	2018-12-07 17:06:22.617 -> 1 - main --> submit---res: 2 //正常结果
 //}
 
-//{--------<<<附加>>>--------------------------------------------------------------------
+//{--------<<<附加>>>---------------------------------------------------------------------
 #区别Thread.run()和start()
 	.run(): //不会新开线程;直接在调用线程中执行run()方法内容
 	
@@ -844,8 +1134,6 @@ http://www.cnblogs.com/yangfanexp/p/7594557.html
 		future.cancel(true); //单个
 		pool.shutdown();//整体
 //}
-
-
 
 //{--------<<<多线程与final>>>--------------------------------------------------------------------
 	final + 类			//该类不能作为父类被继承; String

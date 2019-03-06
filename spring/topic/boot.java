@@ -818,8 +818,7 @@
 //}
 
 //{--------<<<exception>>>-----------------------------------------------------------------
-#Boot对于异常处理提供了五种处理方式 --> //推荐: 3/5
-http://blog.51cto.com/13902811/2170945?source=dra
+#Boot对于异常处理提供了五种处理方式 --> //推荐: 3/5  http://blog.51cto.com/13902811/2170945?source=dra
 
 	1.自定义错误页面(默认)
 		一旦程序出现异常, SpringBoot 会向url '/error' 发送请求.
@@ -1290,6 +1289,24 @@ http://blog.51cto.com/13902811/2170945?source=dra
 
 //}
 
+//{--------<<<异步任务>>>------------------------------------------------------------------
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+//}
+
 //{--------<<<常用包>>>--------------------------------------------------------------------
 #org.apache.commons
         // <!-- 该版本完全支持 Java5 的特性,如泛型和可变参数. 该版本无法兼容以前的版本,简化很多平时经常要用到的写法,如判断字符串是否为空等等 -->
@@ -1601,20 +1618,28 @@ http://blog.51cto.com/13902811/2170945?source=dra
 	2.基于注解的方式
 		public interface EmployeeRepoDao extends Repository<Employee, Integer> {
 
-			//(1).hql: 使用bean属性名称替代数据库字段进行查询
+			//(1).hql --> 使用bean属性名称替代数据库字段进行查询
 			@Query("FROM Employee WHERE firstName LIKE ?1 OR genderFlag=?2 ORDER BY id DESC")
 			List<Employee> queryByHQL(String firstName, boolean genderFlag);
 
-			//(2).原生sql
-			@Query(value = "SELECT * FROM t_emp WHERE first_name LIKE ?1 OR gender_flag=?2 ORDER BY id DESC", 
+			//(2-1).原生sql --> 参数序号从①开始; nativeQuery=true
+			@Query(value = "SELECT * FROM t_emp WHERE first_name LIKE ?1 OR gender_flag = ?2 ORDER BY id DESC", 
 					nativeQuery = true)
 			List<Employee> queryBySQL(String firstName, boolean genderFlag);
+			
+			//(2-2).原生sql --> @Param("参数名")
+			@Query(value = "SELECT * FROM t_emp WHERE first_name LIKE :fName OR gender_flag = :lName ORDER BY id DESC", 
+					nativeQuery = true)
+			List<Employee> queryBySQL(@Param("fName") String firstName, @Param("lName") boolean genderFlag);
 			
 			@Modifying //更新|删除,必须添加此注解
 			//@Transactional 
 			@Query(value = "UPDATE t_emp SET first_name=?1 WHERE id=?2", nativeQuery = true)
 			Integer updateBySQL(String firstName, Integer id);
 		}
+		
+	3.事务
+		业务逻辑层 Service 调用多个 Repository 方法时, 需要在 Service 方法上声明事务 @Transactional
 		
 #CrudRepository
 	0.最基础的CRUD; extends Repository;
@@ -1676,19 +1701,19 @@ http://blog.51cto.com/13902811/2170945?source=dra
 					// AND id BETWEEN 3 AND 9
 					// AND id>=4
 					// ORDER BY first_name DESC, id ASC;
-					Predicate or = builder.or(builder.like(root.get("firstName"), "%ang%"),
-							builder.equal(root.get("genderFlag"), true)); //OR
+					Predicate or = builder.or(builder.like(root.get("firstName").as(String.class), "%ang%"),
+							builder.equal(root.get("genderFlag").as(boolean.class), true)); //OR
 
 					List<Predicate> list = new ArrayList<>(); //AND
 					list.add(or);
-					list.add(builder.between(root.get("id"), 3, 9));
-					list.add(builder.greaterThanOrEqualTo(root.get("id"), 4));
+					list.add(builder.between(root.get("id").as(Integer.class), 3, 9));
+					list.add(builder.greaterThanOrEqualTo(root.get("id").as(Integer.class), 4));
 					Predicate[] predicates = new Predicate[list.size()];
 					
 					Predicate predicate = builder.and(list.toArray(predicates)); //所有条件
 					query.where(predicate); //WHERE ... OR ... AND ... AND ...
 
-					query.multiselect(root.get("id"), root.get("firstName")); //SELECT
+					query.multiselect(root.get("id"), root.get("firstName")); //SELECT *,*
 
 					query.orderBy(builder.desc(root.get("firstName")),
 							builder.asc(root.get("id"))); //ORDER BY ..., ...
@@ -1823,7 +1848,311 @@ http://blog.51cto.com/13902811/2170945?source=dra
 //}
 
 
+//{--------<<<WebSocket>>>-----------------------------------------------------------------------
+        <dependency>
+            <groupId>org.springframework.boot</groupId>
+            <artifactId>spring-boot-starter-websocket</artifactId>
+        </dependency>	
+	
+#ABC
+	B/S结构的软件项目中有时客户端需要实时的获得服务器消息,但默认HTTP协议只支持 '请求响应模式'. 
+	对于这种需求可以通过 polling, Long-polling, 长连接, Flash-Socket, HTML5中定义的WebSocket 完成.
+	
+	HTTP模式可以简化Web服务器,减少服务器的负担,加快响应速度,
+	因为服务器不需要与客户端长时间建立一个通信链接.
+	但不容易直接完成实时的消息推送功能(如聊天室,后台信息提示,实时更新数据等).
 
+#Socket简介
+	Socket 又称'套接字',应用程序通常通过 Socket 向网络发出请求或者应答网络请求.
+	Socket 可以使用TCP/IP协议或UDP协议.
+	
+	//TCP协议:  面向连接的,可靠的,基于字节流的传输层通信协议,负责数据的可靠性传输的问题.
+	//UDP协议:  无连接,不可靠,基于报文的传输层协议; 优点 ----> 发送后不用管,速度比TCP快.
+	
+	//HTTP协议: 无状态协议, 通过 Internet 发送请求消息和响应消息, 使用端口接收和发送消息,默认为80端口. (底层Socket)
+
+#双向通信
+	HTTP协议决定了服务器与客户端之间的连接方式,无法直接实现消息推送(F5已坏),一些变相的解决办法:
+	
+	1.轮询 
+		客户端定时向服务器发送Ajax请求,服务器接到请求后马上返回响应信息并关闭连接.
+		
+		优点: 后端程序编写比较容易. 
+		缺点: 请求中有大半是无用,浪费带宽和服务器资源. 
+		实例: 适于小型应用.
+		
+	2.长轮询 
+		客户端向服务器发送Ajax请求,服务器接到请求后hold住连接,直到有新消息才返回响应信息并关闭连接,
+		客户端处理完响应信息后再向服务器发送新的请求. 
+		
+		优点: 在无消息的情况下不会频繁的请求,耗费资小. 
+		缺点: 服务器hold连接会消耗资源,返回数据顺序无保证,难于管理维护. Comet异步的ashx,
+		实例: WebQQ、Hi网页版、Facebook-IM.
+
+	3.长连接 
+		在页面里嵌入一个隐蔵iframe,将这个隐蔵iframe的src属性设为对一个长连接的请求或是采用xhr请求,
+		服务器端就能源源不断地往客户端输入数据. 
+		
+		优点: 消息即时到达,不发无用请求,管理起来也相对便. 
+		缺点: 服务器维护一个长连接会增加开销. 
+		实例: Gmail聊天
+		
+	4.Flash—Socket
+		在页面中内嵌入一个使用了Socket类的 Flash 程序, JavaScript通过调用此Flash程序提供的Socket接口与服务器端的Socket接口进行通信,
+		JavaScript在收到服务器端传送的信息后控制页面的显示. 
+		
+		优点: 实现真正的即时通信,而不是伪即时. 
+		缺点: 客户端必须安装Flash插件,非HTTP协议,无法自动穿越防火墙. 
+		实例: 网络互动游戏.
+		
+	5.Websocket
+		HTML5提供的一种浏览器与服务器间进行全双工通讯的网络技术. 依靠这种技术可以实现客户端和服务器端的长连接,双向实时通信.
+		//特点: 事件驱动, 异步, 使用ws或者wss协议的客户端socket, 能够实现真正意义上的推送功能,
+		//缺点: 少部分浏览器不支持,浏览器支持的程度与方式有区别.
+		
+		Websocket 允许通过js与远程服务器建立连接,从而实现客户端与服务器间双向的通信.
+		
+		Websocket 的url开头是ws, 如果需要ssl加密可以使用wss,
+		当调用构造方法构建一个 Websocket 对象后,就可以进行即时通信了. ---> new WebSocket(url)
+			
+#客户端说明
+		<body>
+			<input id="text" type="text"/>
+			<button onclick="send()">Send</button>
+			<button onclick="closeWebSocket()">Close</button>
+			<div id="message"></div>
+		</body>
+		<script type="text/javascript">
+			var websocket = null;
+
+			//判断当前浏览器是否支持WebSocket
+			if (!'WebSocket' in window) {
+				alert('Not support websocket')
+			} else {
+				var userId = parseInt(Math.random() * (99 + 1), 10); //生成[0,99]的任意随机数
+				websocket = new WebSocket("ws://localhost:8090/demo/websocket?id=" + userId);
+
+				//监听事件 -> 连接成功建立时触发该事件
+				websocket.onopen = function (event) {
+					setMessageInnerHTML("open: " + new Date());
+				};
+
+				//监听事件 -> 连接关闭
+				websocket.onclose = function (event) {
+					setMessageInnerHTML("close: " + new Date() + " - " + event.code);
+					websocket.send(event.code);
+				};
+
+				//监听事件 -> 接收到服务器发来的消息
+				websocket.onmessage = function (event) {
+					setMessageInnerHTML(event.data);
+				};
+
+				//监听事件 -> 连接发生错误
+				websocket.onerror = function () {
+					setMessageInnerHTML("error: " + new Date());
+				};
+
+				//监听事件 -> 监听窗口关闭事件,当窗口关闭时,主动去关闭websocket连接,防止连接还没断开就关闭窗口,server端会抛异常
+				window.onbeforeunload = function () {
+					if (null != websocket) {
+						websocket.close();
+					}
+				};
+
+				//将消息显示在网页上
+				function setMessageInnerHTML(innerHTML) {
+					document.getElementById('message').innerHTML += innerHTML + '<br/>';
+				}
+
+				//关闭连接
+				function closeWebSocket() {
+					websocket.close();
+				}
+
+				//向远程服务器发送数据
+				function send() {
+					var message = document.getElementById('text').value;
+					websocket.send(message);
+				}
+			}
+		</script>
+	
+#服务端说明
+		@Configuration
+		public class WebSocketConfig {
+
+			//这个bean会自动注册使用 @ServerEndpoint 注解声明的 WebSocket-Endpoint.
+			//注意: 如果使用独立的servlet容器,而不是直接使用 SpringBoot 内置容器,就不要注入此bean,因为它将由容器自己提供和管理
+			@Bean
+			public ServerEndpointExporter serverEndpointExporter() {
+				return new ServerEndpointExporter();
+			}
+		}
+
+		// 使用 SpringBoot 要使用注解 @Component
+		// 而使用独立容器(tomcat)是由容器自己管理 WebSocket,但在 SpringBoot 中连容器都是 Spring 管理.
+		//
+		// 虽然 @Component 默认是单例模式的
+		// 但 SpringBoot 还是会为每个 WebSocket 连接初始化一个bean,所以可以用一个静态 Set/Map 保存起来.
+		@Component
+
+		// 使用注解 @ServerEndpoint 可以将一个普通Java类作为 WebSocket 服务器的端点
+		//
+		// WebSocket 服务端运行在 ws://[Server端IP或域名]:[Server端口]/项目/push
+		// 客户端浏览器已经可以对WebSocket客户端API发起 <<<HTTP长连接>>>.
+		//
+		// 使用 ServerEndpoint 注解的类必须有一个公共的无参数构造函数.
+		@ServerEndpoint("/push")
+		public class EchoEndpoint {
+
+			/**
+			 * 客户端注册时调用
+			 *
+			 * @param session 封装客户端的更多细节信息
+			 */
+			@OnOpen
+			public void onOpen(Session session) {
+			}
+
+			/**
+			 * 客户端关闭
+			 *
+			 * @param session 同上
+			 * @param reason  关闭细节,如为什么关闭
+			 */
+			@OnClose
+			public void onClose(Session session, CloseReason reason) {
+			}
+
+			/**
+			 * 客户端异常
+			 *
+			 * @param t 异常信息
+			 */
+			@OnError
+			public void onError(Throwable t) {
+			}
+
+			/**
+			 * 收到浏览器客户端消息后调用
+			 *
+			 * @param message 客户端消息,可以是文本,也可以是二进制
+			 */
+			@OnMessage
+			public void onMessage(String message) {
+			}
+
+			//更高级的注解,MaxMessageSize 属性可以被用来定义消息字节最大限制,在示例程序中,如果超过6个字节的信息被接收,就报告错误和连接关闭.
+			// @Message(maxMessageSize = 6)
+			// public void receiveMessage(String s) {
+			// }
+		}
+
+		
+#后台DEMO
+		@Component
+		@ServerEndpoint(value = "/websocket")
+		public class MyWebSocket {
+			
+			//静态变量,用来记录当前在线连接数. 应该把它设计成线程安全的
+			private static int onlineCount = 0;
+
+			//旧版: concurrent包的线程安全Set,用来存放每个客户端对应的 MyWebSocket 对象
+			// private static CopyOnWriteArraySet<WebSocketServer> webSocketSet = new CopyOnWriteArraySet<>();
+
+			//新版: 使用map对象,便于根据 userId 来获取对应的 MyWebSocket
+			private static ConcurrentHashMap<String, MyWebSocket> webSocketMap = new ConcurrentHashMap<>();
+
+			//区别: 非静态变量 和 静态变量
+			//与某个客户端的连接会话,需要通过它来给客户端发送数据
+			private Session session;
+
+			//当前会话session对应的显式id
+			private String userId = "";
+
+			//客户端注册
+			@OnOpen
+			public void onOpen(Session session) {
+				String id = this.userId = session.getRequestParameterMap().get("id").get(0);
+				this.session = session;
+				addOnlineCount(); //在线数加1
+				webSocketMap.put(id, this); //加入Map
+				System.out.println("有新连接加入: " + this.userId + " 当前在线人数为: " + getOnlineCount());
+
+				sendMsg2All(this.userId + " - 已上线! 欢迎");
+			}
+
+			//客户端关闭
+			@OnClose
+			public void onClose() {
+				if (null != webSocketMap.get(this.userId)) {
+					subOnlineCount(); //在线数减1
+					webSocketMap.remove(this.userId); //从Map中删除
+					System.out.println("有一连接关闭: " + this.userId + " 当前在线人数为: " + getOnlineCount());
+
+					sendMsg2All(this.userId + " - 已下线! 再见");
+				}
+			}
+
+			//客户端异常
+			@OnError
+			public void onError(Session session, Throwable error) {
+				System.out.println("发生错误: " + error);
+				error.printStackTrace();
+			}
+
+			///收到浏览器客户端消息后调用的方法
+			@OnMessage
+			public void onMessage(String message, Session session) {
+				System.out.println("来自客户端的消息: " + this.userId + " - " + message);
+
+				if (message.contains("-")) {
+					String[] split = message.split("-");
+					webSocketMap.keySet().forEach(x -> {
+						if (split[0].equalsIgnoreCase(x))
+							sendMsg2One(this.userId + "->" + x + " - " + split[1], x); //点对点
+					});
+				} else {
+					sendMsg2All(userId + " - " + message); //群发
+				}
+			}
+
+			///群发消息
+			public static void sendMsg2All(String message) {
+				webSocketMap.values().forEach(x -> x.sendMsg(message));
+			}
+
+			///点对点发送消息
+			public static void sendMsg2One(String message, String userId) {
+				webSocketMap.get(userId).sendMsg(message);
+			}
+
+			///实现服务器主动推送
+			private void sendMsg(String message) {
+				try {
+					this.session.getBasicRemote().sendText(message);
+					// this.session.getAsyncRemote().sendText(message);
+				} catch (IOException e) {
+					System.out.println("异常---发送消息: " + e);
+				}
+			}
+
+			//三个同步方法,线程安全
+			private static synchronized int getOnlineCount() {
+				return onlineCount;
+			}
+
+			private static synchronized void addOnlineCount() {
+				MyWebSocket.onlineCount++;
+			}
+
+			private static synchronized void subOnlineCount() {
+				MyWebSocket.onlineCount--;
+			}
+		}
+
+//}
 
 
 

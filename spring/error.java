@@ -1,12 +1,12 @@
 
 //{--------<<<error>>>--------------------------------------------------------------------
-#list.add() -> java.lang.UnsupportedOperationException
+#java.lang.UnsupportedOperationException
 	List<Integer> list = Arrays.asList(1, 3, 5);
 	list.add(7); //ex
 	
-	Arrays.asList() -> 返回的 ArrayList 是 java.util.Arrays$ArrayList; 而非 java.util.ArrayList.
-	它俩都 extends AbstractList(抽象类), AbstractList.add() 和 remove() 默认 throw UnsupportedOperationException().
-	ArrayList override 这些method来对list进行操作; 但是 Arrays$ArrayList 并没有,所以 throw UnsupportedOperationException()。
+	//Arrays.asList() 返回的 ArrayList 是 java.util.Arrays$ArrayList; 而非 java.util.ArrayList.
+	//它俩都 extends AbstractList(抽象类), AbstractList.add() 和 remove() 默认 throw UnsupportedOperationException().
+	//ArrayList override 这些method来对list进行操作; 但是 Arrays$ArrayList 并没有,所以 throw UnsupportedOperationException()。
 
 	List<Integer> list = new ArrayList<>(Arrays.asList(1, 3, 5));
 	list.add(7);

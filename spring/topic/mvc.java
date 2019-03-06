@@ -460,7 +460,7 @@
 		}
 
 //}
-		
+
 //{--------<<<上传下载>>>-----------------------------------------------------------------
 #文件上传
 	0.流程步骤
@@ -514,47 +514,30 @@
 		
 	4.
 		
-#文件下载
-	response.setContentType("application/force-download"); //设置强制下载不打开
-	response.addHeader("Content-Disposition", "attachment;fileName=" + fileName); //设置文件名
-	
-//}
-		
-//{--------<<<异常处理>>>-----------------------------------------------------------------
-#处理顺序
-	#当方法执行过程中出现异常,首先在本类中查找 @ExceptionHandler 标识的方法,
-	#找不到, 再去查找 @ControllerAdvice 标识类中的 @ExceptionHandler 标识方法来处理异常.
-		
-#处理优先级
-	#例如发生异常 NullPointerException; 但是声明的异常有 RuntimeException 和 Exception，
-	#此时,根据异常的最近继承关系,找到继承深度最浅的那个, 即声明 RuntimeException 的方法
-	
-		@ControllerAdvice //标识为异常处理类
-		public class MyHandlerExceptionResolver {
-			/**
-			 * 参数(可选):
-			 * 		异常参数(包括自定义异常);
-			 * 		请求或响应对象(HttpServletRequest; ServletRequest; PortleRequest/ActionRequest/RenderRequest) 
-			 * 		Session对象(HttpSession; PortletSession) 
-			 * 		WebRequest; NativeWebRequest; Locale; 
-			 * 		InputStream/Reader; OutputStream/Writer; Model
-			 * 
-			 * 返回值(可选)：
-			 * 		ModelAndView; Model; Map; View; String; @ResponseBody;
-			 * 		HttpEntity<?>或ResponseEntity<?>; 以及void
-			 */
-			@ExceptionHandler(Exception.class) //ex对应发生的异常对象
-			public ModelAndView handlerException(HttpServletRequest request, Exception ex) {				
-				//区分: URL & URI
-				//http://ip:port/demo/hello/hello - /demo/hello/hello - /by zero
-				log.info("{} - {} - {}", request.getRequestURL(), request.getRequestURI(), ex.getMessage());
+#文件下载 -> 一般都借助于以下两个 header 达到效果:
+	1.Content—Type
+		告知浏览器当前的响应体是什么类型的数据.
+		当为 application/octet-stream 时,就说明 body 里是一堆不知道是啥的二进制数据.
 
-				ModelAndView mv = new ModelAndView("error");
-				mv.addObject("errMsg", ex.getLocalizedMessage());
-				return mv; //跳转异常页
-			}
-		}
+	2.Content—Disposition
+		用于向浏览器提供一些关于如何处理响应内容的额外的信息,同时也可以附带一些其它数据,
+		比如,在保存响应体到本地的时候应该使用什么样的文件名.
 		
+		常用取值:
+			(1).inline		-> 建议浏览器使用默认的行为处理响应体
+			(2).attachment	-> ..........将响应体保存到本地,而不是正常处理响应体
+			
+		返回文件名的两种形式:
+			(1).filename=yourfilename.suffix			-> 直接指明文件名和后缀
+			(2).filename*=utf-8''yourfilename.suffix	-> 指定文件名及编码方式
+					其中,编码后面的那对单引号中还可以填入内容,此处不赘述,可参考规范 https://tools.ietf.org/html/rfc6266
+					
+			(*).以上标识有些浏览器不认识,估计是太复杂, 所以最好再带上 filename=yourfilename.suffix 。
+		
+		//response.addHeader("Content-Type", "application/force-download"); //不推荐使用
+		response.addHeader("Content-Type", "application/octet-stream");
+		response.addHeader("Content-Disposition", "attachment; filename=\"" + new String(fileName.getBytes("UTF-8"), "ISO-8859-1") + "\".xlsx;filename*=UTF-8''" + new String(fileName.getBytes("UTF-8"), "ISO-8859-1"));
+	
 //}
 
 //{--------<<<父子容器>>>-----------------------------------------------------------------
@@ -570,7 +553,7 @@
 		<context:property-placeholder location="classpath:*.properties"/>
 
 //}
-		
+
 //{--------<<<国际化>>>-------------------------------------------------------------------
 #两种方式
 	(1).页面根据'浏览器的语言设置'对文本(不是内容),时间,数值进行本地化处理

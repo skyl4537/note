@@ -147,10 +147,10 @@
 #安装
 	0.ubuntu安装
 		sudo apt-get install redis-server //安装完成后,redis服务会自动启动
+		sudo /etc/init.d/redis-server status/start/stop //切换Redis服务的状态
 		
 		ps -aux|grep redis		//检查Redis服务器系统进程
-		netstat -nlt|grep 6379	//通过启动命令检查Redis服务器状态
-		sudo /etc/init.d/redis-server status //同上
+		netstat -nlt|grep 6379	//通过启动命令检查Redis服务器状态		
 
 	1.其他方式
 		yum install gcc-c++				//安装gcc
@@ -163,14 +163,15 @@
 #配置 -> 使用命令'whereis redis', 查找redis的安装路径,编辑文件 redis.conf
 	1.Redis的访问账号
 		//默认,访问Redis服务器是不需要密码的. 现配置密码为: redis
-		requirepass redis //取消 requirepass 这一行的注释,或者新增一行
+		//取消 requirepass 这一行的注释,或者新增一行
+		requirepass redis
 
 	2.配置Redis服务器可以远程访问
 		//默认,Redis服务器不允许远程访问,只允许本机访问
 		#bind 127.0.0.1 //注释此行
 		sudo /etc/init.d/redis-server restart //重启redis
-
-	3.redis客户端可视化工具推荐 -> RedisDesktopManager
+		
+	9.redis客户端可视化工具推荐 -> RedisDesktopManager
 
 #整合测试
 	0.pom文件
@@ -216,6 +217,7 @@
 				// redisSerializer.setObjectMapper(om);
 
 				GenericJackson2JsonRedisSerializer redisSerializer = new GenericJackson2JsonRedisSerializer();
+				
 				RedisCacheConfiguration redisCacheConfiguration = RedisCacheConfiguration.defaultCacheConfig();
 				redisCacheConfiguration = redisCacheConfiguration.serializeValuesWith(
 						RedisSerializationContext.SerializationPair.fromSerializer(redisSerializer)
@@ -225,7 +227,7 @@
 		}
 	3.显示操作DEMO
 		@Test
-		public void test00() {
+		public void test() {
 			Student student = new Student(1, "009");
 			redisTemplate.opsForValue().set("student", student, 5, TimeUnit.SECONDS); //有效期5s,写入
 
@@ -236,21 +238,20 @@
 	4.注解DEMO
 		@Override
 		@Cacheable(value = "student", key = "'id-' + #p0")
-		public Student selStudentById(int id) {
-			return helloMapper.selStudentById(id);
+		public Student findById(int id) {
+			return helloMapper.findById(id);
 		}
 		
 		@Test
 		public void test() {
-			System.out.println(helloService.selStudentById(2)); //Person implements Serializable
-			System.out.println(helloService.selStudentById(2)); //第二次不读库
+			System.out.println(helloService.findById(2)); //必须: Student implements Serializable
+			System.out.println(helloService.findById(2)); //第二次不读库
 		}
 	
 	5.GenericJackson2JsonRedisSerializer VS Jackson2JsonRedisSerializer
 		(1).G* 比 J* 效率低,占用内存高
 		
-		(2).使用 G* 序列化时,会保存序列化对象的全类名, 即'@class'
-			反序列化时以此标识就可以反序列化成指定的对象. 如下所示
+		(2).G* 序列化时,会保存对象的全类名, 即'@class'.反序列化时以此标识就可以反序列化成指定的对象. 如下所示
 	
 			{ //redis中数据
 			  "@class": "com.example.spring.bean.Student",
