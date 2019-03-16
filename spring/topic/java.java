@@ -1,7 +1,7 @@
 
 
 
-//{--------<<<基础>>>-------------------------------------------------------------------------
+//{--------<<<基础>>>----------------------------------------------
 #访问级别修饰符
 		-		同一个类	同一个包	不同包的子类	不同包的非子类
 	private		√
@@ -72,7 +72,7 @@
 
 //}
 
-//{--------<<<Reflect>>>----------------------------------------------------------------------
+//{--------<<<Reflect>>>-------------------------------------------
 #基础
 	java三大特性: 封装; 继承; 多态.
 	java核心思想: 面向对象 --> 万事万物皆对象.
@@ -110,21 +110,21 @@
 			
 #构造器
 	1.所有构造器
-        Constructor<?>[] constructors = clazz.getConstructors(); //该类的 public
-        Constructor<?>[] declaredConstructors = clazz.getDeclaredConstructors(); //该类的 all
+        Constructor<?>[] constructors = clazz.getConstructors(); //public
+        Constructor<?>[] constructors = clazz.getDeclaredConstructors(); //all(private + public +protected + default)
 
 	2.无参构造器
         Constructor<?> constructor = clazz.getConstructor();
-        Person p9 = (Person) constructor.newInstance(); //新建对象 <--等同于--> clazz.newInstance();
+        Person p9 = (Person) constructor.newInstance(); //等同于 new Person();
 	
 	3.有参构造器
-        Constructor<?> constructor0 = clazz.getConstructor(boolean.class);
-        Person p8 = (Person) constructor0.newInstance(true);
+        Constructor<?> constructor = clazz.getConstructor(boolean.class);
+        Person p8 = (Person) constructor.newInstance(true); // new Person(true);
 		
 #属性
 	1.所有属性
-		Field[] fields = clazz.getFields(); //该类及[所有父类]的	--> public fields
-		Field[] declaredFields = clazz.getDeclaredFields(); //该类	--> all fields.(private + public +protected + default)
+		Field[] fields = clazz.getFields(); //public
+		Field[] fields = clazz.getDeclaredFields(); //all
 	
 	2.具体属性
 		Field gender = clazz.getField("gender"); //public boolean gender;
@@ -149,7 +149,7 @@
 #方法
 	1.所有方法
         Method[] methods = clazz.getMethods(); //同上
-        Method[] declaredMethods = clazz.getDeclaredMethods();
+        Method[] methods = clazz.getDeclaredMethods();
 
 	2.无参 public static
         Method staticHello = clazz.getMethod("staticHello");
@@ -183,9 +183,11 @@
 
         // helloArray.invoke(null, new String[]{"aaa", "bbb"}); //错误写法
 
-#性能问题 -> 反射相对传统方式,性能下降,约3倍速度.
-	//是否取消访问时的安全检查 -> true,不仅可以访问级别 private,还可以提高反射的运行速度.
-	setAccessible(true);
+#性能问题
+	反射相对传统方式,性能下降,约3倍速度.
+	
+		//是否取消访问时的安全检查 -> true,不仅可以访问级别 private,还可以提高反射的运行速度.
+		setAccessible(true);
 	
 #反射操作泛型
 	public class Demo04 {
@@ -241,7 +243,7 @@
 
 //}
 
-//{--------<<<Annotation>>>-------------------------------------------------------------------
+//{--------<<<Annotation>>>----------------------------------------
 #概念
 	1.基础概念
 		注解不是程序本身,可看作注释.	-> 这一点和普通注释没区别.
@@ -315,7 +317,7 @@
 
 //}
 
-//{--------<<<动态编译>>>---------------------------------------------------------------------
+//{--------<<<动态编译>>>------------------------------------------
 #动态编译
 		@Test
 		public void Test02() {
@@ -350,7 +352,7 @@
 
 //}
 
-//{--------<<<ClassLoader>>>------------------------------------------------------------------
+//{--------<<<ClassLoader>>>---------------------------------------
 https://blog.csdn.net/w1196726224/article/details/54428493
 
 #类加载过程
@@ -383,11 +385,158 @@ https://blog.csdn.net/w1196726224/article/details/54428493
 
 //}
 
-//{--------<<<x>>>----------------------------------------------------------------------------
+//{--------<<<运算符>>>--------------------------------------------
+
+
+
+#位运算 ---> (int, long, short, char, byte)
+	1.按位左右移运算 
+		//左移n位,相当于乘以2^n, 右移相当于除以
+		byte aByte = (1115 >> 8) & 0xFF;
+		byte aByte = (1115 / 256) & 0xFF;
+
+	2.异或运算
+		& 如果相对应位都是1,  则结果为1, 否则为0
+		| 如果相对应位都是0,  则结果为0, 否则为1
+		^ 如果相对应位值相同, 则结果为0, 否则为1
+		
+		~ 按位取反运算符, 翻转操作数的每一位, 即0变成1, 1变成0
+		
+	3.DEMO	
+		public static void main(String[] args) {
+			int a = 60; /** 60 = 0011 1100 */
+			int b = 13; /** 13 = 0000 1101 */
+			int c = 0;
+			
+			c = a & b;       /** 12 = 0000 1100 */
+			System.out.println("a & b = " + c);
+
+			c = a | b;       /** 61 = 0011 1101 */
+			System.out.println("a | b = " + c);
+
+			c = a ^ b;       /** 49 = 0011 0001 */
+			System.out.println("a ^ b = " + c);
+
+			c = ~a;          /** -61 = 1100 0011 */
+			System.out.println("~a = " + c);
+
+			c = a << 2;     /** 240 = 1111 0000 */
+			System.out.println("a << 2 = " + c);
+
+			c = a >> 2;     /** 15 = 1111 */
+			System.out.println("a >> 2  = " + c);
+
+			c = a >>> 2;     /** 15 = 0000 1111 */
+			System.out.println("a >>> 2 = " + c);
+		}
+
+1.运算符
+	取模运算(%求余数): 左小右则取左; n%p结果正负由被除数n决定,与p无关. 如: 7%4= 3; 7%-4= 3; -7%4= -3; -7%-4= -3
+	
+	异或运算: 左右相同为false, 左右不同为true!
+	
+		"&"和"&&","|"和"||"の区别：'后者&& ||皆为短路运算'
+			& |		---> 左无论真假,右都进行运算
+			&& ||	---> 左为真(假),右参与运算; 左为假(真),则右不参与运算
+
 
 //}
 
-//{--------<<<idea-快捷键>>>------------------------------------------------------------------
+//{--------<<<Convert>>>-------------------------------------------
+#int <-> byte[]
+	1.大端模式 //高位在前,低位在后
+		public static byte[] int2Bytes(int value, int len) {
+			if (len > 4) throw new RuntimeException("int 最大长度4个字节");
+			
+			byte[] bytes = new byte[len];
+			for (int i = 0; i < len; i++) {
+				bytes[i] = (byte) ((value >> 8 * (len - 1 - i)) & 0xFF);
+			}
+			return bytes;
+		}
+	
+		//offset: 从数组的第offset位开始
+		public static int bytes2Int(byte[] bytes) {
+			byte[] dest = new byte[4];
+			System.arraycopy(bytes, 0, dest, 4 - bytes.length, bytes.length);
+			return (dest[0] & 0xFF) << 24
+					| ((dest[1] & 0xFF) << 16)
+					| ((dest[2] & 0xFF) << 8)
+					| (dest[3] & 0xFF << 0);
+		}
+	
+	2.小端模式 //低位在前,高位在后	
+		public static byte[] int2Bytes(int value, int len) {
+			if (len > 4) throw new RuntimeException("int 最大长度4个字节");
+			
+			byte[] bytes = new byte[len];
+			for (int i = 0; i < len; i++) {
+				bytes[i] = (byte) ((value >> 8 * i) & 0xFF);
+			}
+			return bytes;
+		}
+		
+		public static int bytes2Int(byte[] bytes, int offset) {
+			return (bytes[offset + 0] & 0xFF)
+					| ((bytes[offset + 1] & 0xFF) << 8)
+					| ((bytes[offset + 2] & 0xFF) << 16)
+					| ((bytes[offset + 3] & 0xFF) << 24);
+		}
+	
+#int <-> Hex
+		public static String int2Hex(int value) {
+			return Integer.toHexString(value);
+		}
+		
+		private static int hex2Int(String hexString) {
+			return Integer.parseInt(hexString, 16);
+		}
+		
+#String <-> Hex
+		public static String string2Hex(String value) {
+			StringBuilder hexString = new StringBuilder();
+			for (char aChar : value.toCharArray()) {
+				hexString.append(Integer.toHexString(aChar));
+			}
+			return hexString.toString();
+		}
+		
+#String <-> byte[]
+        byte[] bytes = "hello".getBytes(Charset.forName("utf-8"));
+		
+        String s = new String(bytes, Charset.forName("utf-8"));
+
+#校验和	
+		/**
+		 * 第13位 -> 校验和 -> 前面所有字节的异或
+		 */
+		data[13] = data[0];//校验和->13
+		for (int i = 1; i < 13; i++) {
+			data[13] = (byte) (data[13] ^ data[i]);
+		}
+	
+#数组拷贝
+
+		/**
+		 * 拷贝数组
+		 *
+		 * @param src     源数组
+		 * @param srcPos  源数组要复制的起始位置
+		 * @param dest    目的数组
+		 * @param destPos 目的数组放置的起始位置
+		 * @param length  复制的长度
+		 */
+		public static void copyArray(Object src, int srcPos, Object dest, int destPos, int length) {
+			System.arraycopy(src, srcPos, dest, destPos, length);
+		}
+
+//}
+
+//{--------<<<hello>>>---------------------------------------------
+
+//}
+
+//{--------<<<idea-快捷键>>>---------------------------------------
 	psvm, sout, fori, iter, Ctrl+Alt+T	///main(),syso,for(i),foreach(),try/catch
 	
 	
@@ -414,14 +563,14 @@ https://blog.csdn.net/w1196726224/article/details/54428493
 	
 //}
 
-//{--------<<<idea-设置>>>--------------------------------------------------------------------
+//{--------<<<idea-设置>>>-----------------------------------------
 	//黑色主题
 	Appearance & Behavior - Appearance - Theme(选为Darcula) 
-	勾选 Override default fonts by(......) - Name(Mircrosoft Yahei UI) - Size(12) //更改设置界面的字体大小，非代码字体
+	勾选 Override default fonts by(......) - Name(Mircrosoft Yahei UI) - Size(12) //更改设置界面的字体大小,非代码字体
 		
 	//改变代码的字体和大小
 	Editor - Colors & Fonts
-	//首先,点击 Save As...，自定义一个名为 skyl 的样式
+	//首先,点击 Save As...,自定义一个名为 skyl 的样式
 	//然后,选择具体的字体和大小 Primary font(Source Code Pro) - Size(15)
 		
 	//缩进采用4个空格,禁止使用tab字符
@@ -464,151 +613,424 @@ https://blog.csdn.net/w1196726224/article/details/54428493
 //}	
 
 
-//{---------快捷键----
+//{--------<<<Eclipse-快捷键>>>------------------------------------
+	
+	Ctrl+1		//快速修复(最经典的快捷键,就不用多说了)
+	Alt+/      ///代码补全
+	F2			//查看方法说明	
+	Ctrl+左键	//进入方法内部
+	
+	Alt+Shift+L	//抽取本地变量
+	Alt+Shift+M	//........方法
+	Alt+Shift+R	//重命名
 
-	Ctrl+Shift + Enter，语句完成
-“！”，否定完成，输入表达式时按 “！”键
-Ctrl+E，最近的文件
-Ctrl+Shift+E，最近更改的文件
-Shift+Click，可以关闭文件
-Ctrl+[ OR ]，可以跑到大括号的开头与结尾
-Ctrl+F12，可以显示当前文件的结构
-Ctrl+F7，可以查询当前元素在当前文件中的引用，然后按 F3 可以选择
-Ctrl+N，可以快速打开类
-Ctrl+Shift+N，可以快速打开文件
-Alt+Q，可以看到当前方法的声明
-Ctrl+P，可以显示参数信息
-Ctrl+Shift+Insert，可以选择剪贴板内容并插入
-Alt+Insert，可以生成构造器/Getter/Setter等
-Ctrl+Alt+V，可以引入变量。例如：new String(); 自动导入变量定义
-Ctrl+Alt+T，可以把代码包在一个块内，例如：try/catch
-Ctrl+Enter，导入包，自动修正
-Ctrl+Alt+L，格式化代码
-Ctrl+Alt+I，将选中的代码进行自动缩进编排，这个功能在编辑 JSP 文件时也可以工作
-Ctrl+Alt+O，优化导入的类和包
-Ctrl+R，替换文本
-Ctrl+F，查找文本
-Ctrl+Shift+Space，自动补全代码
-Ctrl+空格，代码提示（与系统输入法快捷键冲突）
-Ctrl+Shift+Alt+N，查找类中的方法或变量
-Alt+Shift+C，最近的更改
-Alt+Shift+Up/Down，上/下移一行
-Shift+F6，重构 – 重命名
-Ctrl+X，删除行
-Ctrl+D，复制行
-Ctrl+/或Ctrl+Shift+/，注释（//或者/**/）
-Ctrl+J，自动代码（例如：serr）
-Ctrl+Alt+J，用动态模板环绕
-Ctrl+H，显示类结构图（类的继承层次）
-Ctrl+Q，显示注释文档
-Alt+F1，查找代码所在位置
-Alt+1，快速打开或隐藏工程面板
-Ctrl+Alt+left/right，返回至上次浏览的位置
-Alt+left/right，切换代码视图
-Alt+Up/Down，在方法间快速移动定位
-Ctrl+Shift+Up/Down，向上/下移动语句
-F2 或 Shift+F2，高亮错误或警告快速定位
-Tab，代码标签输入完成后，按 Tab，生成代码
-Ctrl+Shift+F7，高亮显示所有该文本，按 Esc 高亮消失
-Alt+F3，逐个往下查找相同文本，并高亮显示
-Ctrl+Up/Down，光标中转到第一行或最后一行下
-Ctrl+B/Ctrl+Click，快速打开光标处的类或方法（跳转到定义处）
-Ctrl+Alt+B，跳转到方法实现处
-Ctrl+Shift+Backspace，跳转到上次编辑的地方
-Ctrl+O，重写方法
-Ctrl+Alt+Space，类名自动完成
-Ctrl+Alt+Up/Down，快速跳转搜索结果
-Ctrl+Shift+J，整合两行
-Alt+F8，计算变量值
-Ctrl+Shift+V，可以将最近使用的剪贴板内容选择插入到文本
-Ctrl+Alt+Shift+V，简单粘贴
-Shift+Esc，不仅可以把焦点移到编辑器上，而且还可以隐藏当前（或最后活动的）工具窗口
-F12，把焦点从编辑器移到最近使用的工具窗口
-Shift+F1，要打开编辑器光标字符处使用的类或者方法 Java 文档的浏览器
-Ctrl+W，可以选择单词继而语句继而行继而函数
-Ctrl+Shift+W，取消选择光标所在词
-// Alt+F7，查找整个工程中使用地某一个类、方法或者变量的位置
-Ctrl+I，实现方法
-Ctrl+Shift+U，大小写转化
-Ctrl+Y，删除当前行
+	Ctrl+Shift+O	//自动导包
+	Ctrl+/		   ///注释当前行,再按则取消注释
+	Ctrl+D			//删除当前行
+	
+	Ctrl+T			//快速显示当前类的继承结构
+	Ctrl+Alt+H		//查看函数的调用
+	
+	Ctrl+Alt+↓		//复制当前行到下一行(复制增加)
+	Alt+↓			//当前行和下面一行交互位置
+
+//}
 
 
-Shift+Enter，向下插入新行
-psvm/sout，main/System.out.println(); Ctrl+J，查看更多
-Ctrl+Shift+F，全局查找
-Ctrl+F，查找/Shift+F3，向上查找/F3，向下查找
-Ctrl+Shift+S，高级搜索
-Ctrl+U，转到父类
-Ctrl+Alt+S，打开设置对话框
-Alt+Shift+Inert，开启/关闭列选择模式
-Ctrl+Alt+Shift+S，打开当前项目/模块属性
-// Ctrl+G，定位行
-Alt+Home，跳转到导航栏
-Ctrl+Enter，上插一行
-Ctrl+Backspace，按单词删除
-Ctrl+”+/-”，当前方法展开、折叠
-Ctrl+Shift+”+/-”，全部展开、折叠
-【调试部分、编译】
-Ctrl+F2，停止
-Alt+Shift+F9，选择 Debug
-Alt+Shift+F10，选择 Run
-Ctrl+Shift+F9，编译
-Ctrl+Shift+F10，运行
-Ctrl+Shift+F8，查看断点
-F8，步过
-F7，步入
-Shift+F7，智能步入
-Shift+F8，步出
-Alt+Shift+F8，强制步过
-Alt+Shift+F7，强制步入
-Alt+F9，运行至光标处
-Ctrl+Alt+F9，强制运行至光标处
-F9，恢复程序
-Alt+F10，定位到断点
-Ctrl+F8，切换行断点
-Ctrl+F9，生成项目
-Alt+1，项目
-Alt+2，收藏
-Alt+6，TODO
-// Alt+7，结构
-Ctrl+Shift+C，复制路径
-Ctrl+Alt+Shift+C，复制引用，必须选择类名
-Ctrl+Alt+Y，同步
-Ctrl+~，快速切换方案（界面外观、代码风格、快捷键映射等菜单）
-Shift+F12，还原默认布局
-Ctrl+Shift+F12，隐藏/恢复所有窗口
-Ctrl+F4，关闭
-Ctrl+Shift+F4，关闭活动选项卡
-Ctrl+Tab，转到下一个拆分器
-Ctrl+Shift+Tab，转到上一个拆分器
-【重构】
-Ctrl+Alt+Shift+T，弹出重构菜单
-Shift+F6，重命名
-F6，移动
-F5，复制
-Alt+Delete，安全删除
-Ctrl+Alt+N，内联
-【查找】
-// Ctrl+F，查找
-// Ctrl+R，替换
-// F3，查找下一个
-// Shift+F3，查找上一个
-Ctrl+Shift+F，在路径中查找
-Ctrl+Shift+R，在路径中替换
-Ctrl+Shift+S，搜索结构
-Ctrl+Shift+M，替换结构
-// Alt+F7，查找用法
-Ctrl+Alt+F7，显示用法
-Ctrl+F7，在文件中查找用法
-Ctrl+Shift+F7，在文件中高亮显示用法
+//{--------<<<IO>>>------------------------------------------------
+#IO操作
+	输入流,输出流. <---> 字节流,字符流. <---> InputStream, OutputStream <---> Reader, Writer
+	//注意: 在 finally 代码中调用 close() 对流进行关闭.
+	
+	0.区别: flush(); close();
+		//A: close() 关闭流对象,但是先刷新一次缓冲区,关闭之后,流对象将不可用
+		//B: flush() 仅仅是刷新缓冲区(一般写字符时要用,因为字符是先进入的缓冲区),流对象还可以继续使用
+
+	1.转换流: 字节流 ---> 字符流
+		InputStream in = System.in;
+		BufferedReader br = new BufferedReader(new InputStreamReader(in));
+		
+#File
+	boolean createNewFile();  //只用于创建新文件,不能创建目录及多层文件
+	boolean Mkdir();		  //只用于创建单层目录
+	boolean Mkdirs();		  //用于创建多层目录
+	boolean renameTo();		  //重命名抽象路径名表示的文件
+	                          
+	boolean delete();		  //只能单层删除文件或目录
+	void dedeleteOnExit();	  //在 jvm 退出的时候删除
+	                          
+	boolean exists();		  //测试文件或目录是否存在
+	boolean isFile();		  //测试是否是一个标准文件.(先 exists())
+	boolean isDirectory();	  //同上
+
+	String getAbsolutePath(); //返回绝对路径
+	File getAbsoluteFile();	  //返回绝对路径名的file
+	
+	File[]   listFiles();	  //目录下的所有文件
+	String[] List();		  //文件调用此方法,返回 null.(先 exists())
+	String[] list(FilenameFilter filter); //返回指定过滤器的文件和目录
+	
+	0.过滤遍历
+		@Test
+		public void test01() {
+			File file = new File("F:");
+			//过滤 ---> 以 .log 结尾的文件
+			String[] files = file.list((dir, name) -> name.endsWith(".log"));
+			//注意: null==files ??
+			Arrays.stream(null != files ? files : new String[0]).forEach(System.out::println);
+		}
+		
+	1.递归删除
+		@Test
+		public void test01() {
+			File file = new File("F:\\var\\lib\\webpark\\logs\\aiRes");
+			removeDirs(file);
+		}
+		
+		public void removeDirs(File dir) {
+			Arrays.stream(Objects.requireNonNull(dir.listFiles())).forEach(x -> {
+				if (x.isDirectory()) {
+					removeDirs(x);
+				} else {
+					x.delete(); //删除文件
+				}
+			});
+			dir.delete(); //删除目录
+		}
+		
+#Properties
+	//继承, 所以具有 map 集合的特点.
+	class Properties extends Hashtable<Object,Object> {}
+	
+	0.DEMO
+		public void test04() {
+			Properties properties = new Properties();
+			try (FileReader reader = new FileReader(new File("application.properties"))) {
+				properties.load(reader); //读取配置
+				
+				Enumeration<?> enumeration = properties.propertyNames();
+				while (enumeration.hasMoreElements()) {
+					Object key = enumeration.nextElement();
+					Object value = properties.get(key);
+					System.out.println(key + " = " + value); //自动过滤 # 开头的注释
+				}
+			} catch (IOException e) {
+				e.printStackTrace();
+			}
+		}
+		
+//}
+
+//{--------<<<Socket>>>--------------------------------------------
+#IP&Port(协议端口)
+	IPv4由4段组成,每段取值范围: 0~255 (2^8-1)
+
+	如果把IP地址比作一间房子,端口就是出入这间房子的门.
+	一个IP地址的端口可以有 65536. 2^16 . 端口号 0~65535, 2^16-1.
+	
+	//网络聊天数据发送到本机,为什么QQ接收,而不是MSN接收??
+	端口号进行区分,聊天数据实际是发送到 ip:port.
+	
+#网络参考模型
+	1.OSI参考模型(7)
+		应用层,表示层,会话层 --> 传输层 --> 网络层 --> 数据链路层,物理层
+	
+	2.TCP-IP参考模型(4)
+		应用层				 --> 传输层 --> 网际层 --> 主机至网络层
+		
+	3.常用协议
+		应用层: HTTP/FTP;	传输层: UDP/TCP;	传输层: IP;
+
+#Socket(插座,套接字)
+ Socket 就是为网络服务提供的一种机制, //网络通信其实就是 Socket 间通信.
+ 通信两端都是 Socket,数据在两个 Socket 间通过 IO 传输.
+
+#UDP&TCP
+	UDP --> 面向无连接; 传输速度快; 但不可靠; 数据包大小 64 k. //类比'邮局'
+		0.广播模式
+			IP指定"192.168.8.255",代表'192.168.8.*'这一网段的所有主机都能收到
+		1.点对点
+			必须手动指定服务器IP,该IP主机才能收到UDP信息.
+			
+	TCP --> 需要建立连接(三次握手); 速度慢; 可靠协议; 可进行大数据量传输. //类比'打电话'
+	
+	三次握手: A在吗; 我在; 我知道A在了.
+	
+#DEMO-UDP
+	1.发送和接受2线程
+		public static void main(String[] args) {
+			new Thread(new UDPSend(8500)).start();
+			new Thread(new UDPRecv(8500)).start();
+		}
+
+		private static class UDPSend implements Runnable {
+			private int sendPort;
+
+			UDPSend(int sendPort) {
+				this.sendPort = sendPort;
+			}
+
+			@Override
+			public void run() {
+				try (DatagramSocket send = new DatagramSocket(); //切记: 关闭操作
+					 BufferedReader br = new BufferedReader(new InputStreamReader(System.in))) {
+					String line;
+					while (null != (line = br.readLine())) {
+						if (line.endsWith("8"))
+							break;
+
+						//数据包: 数据, 目标ip, 目标port
+						byte[] bytes = line.getBytes(Charset.forName("UTF-8"));
+						DatagramPacket packet = new DatagramPacket(bytes, bytes.length,
+								InetAddress.getByName("192.168.8.255"), sendPort);
+						System.out.println("send: " + line);
+
+						//发送
+						send.send(packet);
+					}
+				} catch (IOException e) {
+					e.printStackTrace();
+				}
+			}
+		}
+
+		private static class UDPRecv implements Runnable {
+			private int recvPort;
+
+			UDPRecv(int recvPort) {
+				this.recvPort = recvPort;
+			}
+
+			@Override
+			public void run() {
+				try (DatagramSocket recv = new DatagramSocket(recvPort)) {
+					while (true) {
+						byte[] bytes = new byte[1024 * 64]; //数据包最大 64k
+						DatagramPacket packet = new DatagramPacket(bytes, bytes.length);
+
+						//接收: 阻塞方法,线程的 wait-notify 机制.
+						recv.receive(packet);
+
+						String hostAddress = packet.getAddress().getHostAddress();
+						String data = new String(packet.getData(), Charset.forName("UTF-8"));
+						System.out.println("recv: " + hostAddress + " - " + data);
+					}
+				} catch (IOException e) {
+					e.printStackTrace();
+				}
+			}
+		}
+		
+#DEMO-TCP
+	0.客户端 ---> //模拟多客户端向同一服务器端发送请求		
+		public static void main(String[] args) {
+			String host = "192.168.8.7";
+			int port = 8100;
+			int nThread = 5;
+			ExecutorService pool = Executors.newFixedThreadPool(nThread);
+			for (int i = 0; i < nThread; i++) {
+				int index = i;
+				pool.execute(() -> {
+					try (Socket socket = new Socket(host, port); 
+						 OutputStream out = socket.getOutputStream();
+						 InputStream in = socket.getInputStream()) {
+						String request = "hello, my No is " + index;
+						out.write(request.getBytes(Charset.forName("UTF-8")));
+						out.flush();
+						System.out.println("客户端-发送: " + request); //发送
+
+						int len;
+						byte[] inBytes = new byte[1024];
+						StringBuilder response = new StringBuilder();
+						while (-1 != (len = in.read(inBytes))) {
+							response.append(new String(inBytes, 0, len, Charset.forName("UTF-8")));
+						}
+						System.out.println("客户端-接收: " + response.toString()); //接收
+					} catch (IOException e) {
+						e.printStackTrace();
+					}
+				});
+			}
+		}
+
+	1.TCP-服务端
+		public static void main(String[] args) {
+			int port = 8100;
+			try (ServerSocket server = new ServerSocket(port)) {
+				int count = 0;
+				while (count < 10) {
+					//获取客户端Socket.(阻塞方法)
+					//每监听到一个客户端的链接,则新开一个线程去处理
+					Socket socket = server.accept();
+
+					Executors.newSingleThreadExecutor().execute(() -> {
+						try (InputStream in = socket.getInputStream(); 
+							 OutputStream out = socket.getOutputStream()) {
+							int len;
+							byte[] inBytes = new byte[1024];
+							StringBuilder request = new StringBuilder();
+							while (-1 != (len = in.read(inBytes))) {
+								request.append(new String(inBytes, 0, len, Charset.forName("UTF-8")));
+							}
+							System.out.println("服务器-接收: " + request);
+
+							String response = "服务器接已收到请求: " + request;
+							out.write(response.getBytes(Charset.forName("UTF-8")));
+							out.flush();
+							System.out.println("服务器-回复: " + response);
+						} catch (IOException e) {
+							e.printStackTrace();
+						}
+					});
+					count++;
+				}
+			} catch (IOException e) {
+				e.printStackTrace();
+			}
+		}
 	
 //}
 
 
+//{---------快捷键----
+
+	Ctrl+Shift + Enter,语句完成
+“！”,否定完成,输入表达式时按 “！”键
+Ctrl+E,最近的文件
+Ctrl+Shift+E,最近更改的文件
+Shift+Click,可以关闭文件
+Ctrl+[ OR ],可以跑到大括号的开头与结尾
+Ctrl+F12,可以显示当前文件的结构
+Ctrl+F7,可以查询当前元素在当前文件中的引用,然后按 F3 可以选择
+Ctrl+N,可以快速打开类
+Ctrl+Shift+N,可以快速打开文件
+Alt+Q,可以看到当前方法的声明
+Ctrl+P,可以显示参数信息
+Ctrl+Shift+Insert,可以选择剪贴板内容并插入
+Alt+Insert,可以生成构造器/Getter/Setter等
+Ctrl+Alt+V,可以引入变量。例如：new String(); 自动导入变量定义
+Ctrl+Alt+T,可以把代码包在一个块内,例如：try/catch
+Ctrl+Enter,导入包,自动修正
+Ctrl+Alt+L,格式化代码
+Ctrl+Alt+I,将选中的代码进行自动缩进编排,这个功能在编辑 JSP 文件时也可以工作
+Ctrl+Alt+O,优化导入的类和包
+Ctrl+R,替换文本
+Ctrl+F,查找文本
+Ctrl+Shift+Space,自动补全代码
+Ctrl+空格,代码提示（与系统输入法快捷键冲突）
+Ctrl+Shift+Alt+N,查找类中的方法或变量
+Alt+Shift+C,最近的更改
+Alt+Shift+Up/Down,上/下移一行
+Shift+F6,重构 – 重命名
+Ctrl+X,删除行
+Ctrl+D,复制行
+Ctrl+/或Ctrl+Shift+/,注释（//或者/**/）
+Ctrl+J,自动代码（例如：serr）
+Ctrl+Alt+J,用动态模板环绕
+Ctrl+H,显示类结构图（类的继承层次）
+Ctrl+Q,显示注释文档
+Alt+F1,查找代码所在位置
+Alt+1,快速打开或隐藏工程面板
+Ctrl+Alt+left/right,返回至上次浏览的位置
+Alt+left/right,切换代码视图
+Alt+Up/Down,在方法间快速移动定位
+Ctrl+Shift+Up/Down,向上/下移动语句
+F2 或 Shift+F2,高亮错误或警告快速定位
+Tab,代码标签输入完成后,按 Tab,生成代码
+Ctrl+Shift+F7,高亮显示所有该文本,按 Esc 高亮消失
+Alt+F3,逐个往下查找相同文本,并高亮显示
+Ctrl+Up/Down,光标中转到第一行或最后一行下
+Ctrl+B/Ctrl+Click,快速打开光标处的类或方法（跳转到定义处）
+Ctrl+Alt+B,跳转到方法实现处
+Ctrl+Shift+Backspace,跳转到上次编辑的地方
+Ctrl+O,重写方法
+Ctrl+Alt+Space,类名自动完成
+Ctrl+Alt+Up/Down,快速跳转搜索结果
+Ctrl+Shift+J,整合两行
+Alt+F8,计算变量值
+Ctrl+Shift+V,可以将最近使用的剪贴板内容选择插入到文本
+Ctrl+Alt+Shift+V,简单粘贴
+Shift+Esc,不仅可以把焦点移到编辑器上,而且还可以隐藏当前（或最后活动的）工具窗口
+F12,把焦点从编辑器移到最近使用的工具窗口
+Shift+F1,要打开编辑器光标字符处使用的类或者方法 Java 文档的浏览器
+Ctrl+W,可以选择单词继而语句继而行继而函数
+Ctrl+Shift+W,取消选择光标所在词
+// Alt+F7,查找整个工程中使用地某一个类、方法或者变量的位置
+Ctrl+I,实现方法
+Ctrl+Shift+U,大小写转化
+Ctrl+Y,删除当前行
 
 
-
-
+Shift+Enter,向下插入新行
+psvm/sout,main/System.out.println(); Ctrl+J,查看更多
+Ctrl+Shift+F,全局查找
+Ctrl+F,查找/Shift+F3,向上查找/F3,向下查找
+Ctrl+Shift+S,高级搜索
+Ctrl+U,转到父类
+Ctrl+Alt+S,打开设置对话框
+Alt+Shift+Inert,开启/关闭列选择模式
+Ctrl+Alt+Shift+S,打开当前项目/模块属性
+// Ctrl+G,定位行
+Alt+Home,跳转到导航栏
+Ctrl+Enter,上插一行
+Ctrl+Backspace,按单词删除
+Ctrl+”+/-”,当前方法展开、折叠
+Ctrl+Shift+”+/-”,全部展开、折叠
+【调试部分、编译】
+Ctrl+F2,停止
+Alt+Shift+F9,选择 Debug
+Alt+Shift+F10,选择 Run
+Ctrl+Shift+F9,编译
+Ctrl+Shift+F10,运行
+Ctrl+Shift+F8,查看断点
+F8,步过
+F7,步入
+Shift+F7,智能步入
+Shift+F8,步出
+Alt+Shift+F8,强制步过
+Alt+Shift+F7,强制步入
+Alt+F9,运行至光标处
+Ctrl+Alt+F9,强制运行至光标处
+F9,恢复程序
+Alt+F10,定位到断点
+Ctrl+F8,切换行断点
+Ctrl+F9,生成项目
+Alt+1,项目
+Alt+2,收藏
+Alt+6,TODO
+// Alt+7,结构
+Ctrl+Shift+C,复制路径
+Ctrl+Alt+Shift+C,复制引用,必须选择类名
+Ctrl+Alt+Y,同步
+Ctrl+~,快速切换方案（界面外观、代码风格、快捷键映射等菜单）
+Shift+F12,还原默认布局
+Ctrl+Shift+F12,隐藏/恢复所有窗口
+Ctrl+F4,关闭
+Ctrl+Shift+F4,关闭活动选项卡
+Ctrl+Tab,转到下一个拆分器
+Ctrl+Shift+Tab,转到上一个拆分器
+【重构】
+Ctrl+Alt+Shift+T,弹出重构菜单
+Shift+F6,重命名
+F6,移动
+F5,复制
+Alt+Delete,安全删除
+Ctrl+Alt+N,内联
+【查找】
+// Ctrl+F,查找
+// Ctrl+R,替换
+// F3,查找下一个
+// Shift+F3,查找上一个
+Ctrl+Shift+F,在路径中查找
+Ctrl+Shift+R,在路径中替换
+Ctrl+Shift+S,搜索结构
+Ctrl+Shift+M,替换结构
+// Alt+F7,查找用法
+Ctrl+Alt+F7,显示用法
+Ctrl+F7,在文件中查找用法
+Ctrl+Shift+F7,在文件中高亮显示用法
+	
+//}
 
 
 

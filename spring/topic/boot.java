@@ -1848,7 +1848,7 @@
 //}
 
 
-//{--------<<<WebSocket>>>-----------------------------------------------------------------------
+//{--------<<<WebSocket>>>-----------------------------------------------------------------
         <dependency>
             <groupId>org.springframework.boot</groupId>
             <artifactId>spring-boot-starter-websocket</artifactId>
@@ -2154,8 +2154,36 @@
 
 //}
 
+//{--------<<<DEBUG>>>---------------------------------------------------------------------
+#开启DEBUG
+	debug=true //配置文件中添加
+	
+#分析日志
+	Positive match //列出匹配到对应类的配置项
+	Negative match //不包括某个配置项的原因
+	
+#举例分析
+	1.ConditionalOnClass
+		//所必须的类在classpath路径下存在时,才会去解析对应的配置文件. .
+		对于'DataSourceAutoConfiguration'而言,所必须的类是指: '*.DataSource'和'*.EmbeddedDatabaseType',
+		只有这两个类都存在时,才会去配置对应的数据库资源.	
 
+	2.ConditionalOnMissingClass
+		//所必须的类在classpath路径下找不到.
+		
+	3.探测条件
+		OnClassCondition    //表示匹配的类型存在与否
+		OnBeanCondition     //指定bean实例存在与否
+		OnPropertyCondition //检查指定属性是否存在
+		
+		DataSourceAutoConfiguration matched:
+		  - @ConditionalOnClass found required classes 'javax.sql.DataSource', 'org.springframework.jdbc.datasource.embedded.EmbeddedDatabaseType' (OnClassCondition)
 
+		DataSourceAutoConfiguration.PooledDataSourceConfiguration matched:
+		  - AnyNestedCondition 2 matched 0 did not; NestedCondition on DataSourceAutoConfiguration.PooledDataSourceCondition.PooledDataSourceAvailable PooledDataSource found supported DataSource; NestedCondition on DataSourceAutoConfiguration.PooledDataSourceCondition.ExplicitType @ConditionalOnProperty (spring.datasource.type) matched (DataSourceAutoConfiguration.PooledDataSourceCondition)
+		  - @ConditionalOnMissingBean (types: javax.sql.DataSource,javax.sql.XADataSource; SearchStrategy: all) did not find any beans (OnBeanCondition)
+
+//}
 
 
 

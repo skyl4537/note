@@ -851,14 +851,203 @@ new出来的对象再注入其他bean就会 发生获取不到的现象。所以
 	NoSQL特点: 数据量大; 价值较低; 写入操作频繁(非重要).
 	
 	
+#十次方-04
+	数据库优化: 设计优化(必须熟悉业务), 查询优化.
+	
+	查询优化
+		(1).查询语句不要用 SELECT * FROM
+		(2).避免全局扫描,即涉及到 非 逻辑 NOT IN....
+		(3).创建索引,加速查询，但影响增删改
+		
+	搜索分类: 搜索引擎, 站内搜索
+	
+	ElasticSearch && Solar: 前者可以实现'分布式搜索'
 	
 
 	
+// 0.restful操作
+	// 新建索引
+		// PUT http://127.0.0.1:9002/myindex
+		
+	// 新建文档
+		// POST http://127.0.0.1:9002/myindex/article
+		
+			 // body <-> {"title":"boot2","content":"新版本!"}
+			 
+	// 修改文档
+		// //类似 SpringData 的更新API,查询时: 有ID则更新,无ID则新增
+		// PUT  http://127.0.0.1:9002/myindex/article/AODIEWNUWEU9H
+			
+			 // body <-> {"title":"boot2正式版","content":"新版本发布了吗?"}
+		
+	// 查询所有
+		// GET  http://127.0.0.1:9002/myindex/article/_search
+		
+	// 查询ID
+		// GET  http://127.0.0.1:9002/myindex/article/1
+		
+	// 基本查询
+		// //查询关键字是一个词(如: 正式),则不能称之为模糊查询
+		// GET  http://127.0.0.1:9002/myindex/article/_search?q=title:正式
+		
+		// GET  http://127.0.0.1:9002/myindex/article/_search?q=title:boot2正式版
 	
+	// 模糊查询
+		// //*代表任意字符; 模糊查询是针对每个单词而言,而不是整个句子
+		// GET  http://127.0.0.1:9002/myindex/article/_search?q=title:*b*
+		
+	// 删除文档
+		// DELETE http://127.0.0.1:9002/myindex/article/1
+		
+1.head插件操作
+
+2.IK分词器
+	下载 https://github.com/medcl/elasticsearch-analysis-ik/releases
 	
+	安装 解压,拷贝到ES的 /plugins 目录,重启ES即可
 	
+	测试
+		//中华人民共和国, 国歌
+		http://localhost:9200/_analyze?pretty&analyzer=ik_smart&text=中华人民共和国国歌
+		
+		//分词粒度更细: 中华人民共和国,中华人民,中华,华人,人民共和国,人民,人,民,共和国,共和,和,国国,国歌
+		http://localhost:9200/_analyze?pretty&analyzer=ik_max_word&text=中华人民共和国国歌
 	
-	
-	
+	自定义词库
+		//默认不作为一个词
+		http://localhost:9200/_analyze?pretty&analyzer=ik_smart&text=人艰不拆
+		
+		(1).在'/elasticsearch/plugins/ik/config/'新建 my.dic (编码UTF-8)
+			人艰不拆
+			
+		(2).修改'/~/ik/config/IKAnalyzer.cfg.xml'
+			<properties> 
+				<comment>IK Analyzer 扩展配置</comment> 
+				// <!--用户可以在这里配置自己的扩展字典 --> 
+				<entry key="ext_dict">my.dic</entry> 
+				 // <!--用户可以在这里配置自己的扩展停止词字典--> 
+				<entry key="ext_stopwords"></entry>
+				
+				// <!--用户可以在这里配置远程扩展字典 --> 
+				<entry key="remote_ext_dict">location</entry> 
+				// <!--用户可以在这里配置远程扩展停止词字典--> 
+				<entry key="remote_ext_stopwords">location</entry> 
+			</properties> 
+		
+3.API操作
+        <dependency>
+            <groupId>org.springframework.data</groupId>
+            <artifactId>spring-data-elasticsearch</artifactId>
+        </dependency>
+
+	application.properties
+		spring.data.elasticsearch.cluster-nodes=127.0.0.1:9300
+		
+	注解详解
+		public @interface Document {
+			String indexName(); //索引库的名称,个人建议以项目的名称命名
+			 
+			String type() default ""; //类型,个人建议以实体的名称命名
+			 
+			short shards() default 5; //默认分区数
+			 
+			short replicas() default 1; //每个分区默认的备份数
+			 
+			String refreshInterval() default "1s"; //刷新间隔
+			 
+			String indexStoreType() default "fs"; //索引文件存储类型
+		}
+		
+		public @interface Field {
+			FieldType type() default FieldType.Auto; //自动检测属性的类型,可以根据实际情况自己设置
+			 
+			FieldIndex index() default FieldIndex.analyzed; //默认情况,一般默认分词就好,除非这个字段你确定查询时不会用到
+			 
+			DateFormat format() default DateFormat.none; //时间类型的格式化
+			 
+			String pattern() default ""; 
+			 
+			boolean store() default false; //默认情况下不存储原文
+			 
+			String searchAnalyzer() default ""; //指定字段搜索时使用的分词器
+			 
+			String indexAnalyzer() default ""; //指定字段建立索引时指定的分词器
+			 
+			String[] ignoreFields() default {}; //如果某个字段需要被忽略
+			 
+			boolean includeInParent() default false;
+		}
+
+	javabean
+		//索引库的名称, 类型名称(同实体名称)
+		@Document(indexName = "myindex", type = "article")
+		public class Article {
+			//mysql中的id,非索引库中的id
+			@Id
+			private String id;
+
+			// 对应索引库中的域
+			// index: 是否被索引(能否被搜索); 是否分词(搜索时是整体匹配还是分词匹配); 是否存储(是否在页面上显示)
+			// analyzer: 存储时使用的分词策略
+			// searchAnalyzer 查询时的.....(二者必须一致)
+			@Field(index = true, analyzer = "ik_max_word", searchAnalyzer = "ik_max_word")
+			private String title;
+
+			@Field(index = true, analyzer = "ik_smart", searchAnalyzer = "ik_smart")
+			private String content;
+		}
+
+
+#logstash
+	轻量级的日志搜集处理框架.
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
 
 	

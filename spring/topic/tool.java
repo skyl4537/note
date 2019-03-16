@@ -1,6 +1,6 @@
 
 
-//{-----------<<<mini-tool>>>--------------------------------------------------------------
+//{-----------<<<mini-tool>>>-------------------------------
 #JSON-Handle //Chrome插件
 	浏览器输入: chrome://extensions/
 	将下载后的文件拖入浏览器即可
@@ -14,7 +14,7 @@
 //}
 
 
-//{-----------<<<SystemUtil>>>>------------------------------------------------------------
+//{-----------<<<SystemUtil>>>>-----------------------------
 #常用工具
 	public class SystemUtil {
 		//获取项目class路径
@@ -97,7 +97,7 @@
 	
 //}
 	
-//{-----------<<<lombok>>>------------------------------------------------------------------
+//{-----------<<<lombok>>>----------------------------------
 	///减少很多重复代码的书写. 比如:getter/setter/toString等
 	<dependency>
 		<groupId>org.projectlombok</groupId>
@@ -134,7 +134,7 @@
 	
 //}	
 	
-//{-----------<<<thymeleaf>>>---------------------------------------------------------------
+//{-----------<<<thymeleaf>>>-------------------------------
 	模板引擎:'将后台数据 填充 到前台模板的表达式中!' //thymeleaf; freemarker; jsp; velocity;
 
 #sts代码提示
@@ -440,8 +440,8 @@
 	
 //}
 
-//{-----------<<<<Maven>>>------------------------------------------------------------------
-	'约定>配置>编码' -> 能用配置解决的问题就不编码,能基于约定的就不进行配置
+//{-----------<<<<Maven>>>----------------------------------
+	'约定 > 配置 > 编码' -> 能用配置解决的问题就不编码,能基于约定的就不进行配置
 	
 #基本概念
 	0.什么是构建???
@@ -463,9 +463,11 @@
 		mvn site			//生成站点
 		
 	3.依赖的范围
-		compile: //主程序(√);测试程序(√);打包(√);部署(√); 如: spring-core
-		provied: //主程序(√);测试程序(√);打包(x);部署(x); 如: servlet-api(tomcat提供)
-		test:	 //主程序(x);测试程序(√);打包(x);部署(X); 如: junit
+		compile //主程序(√); 测试程序(√); 打包(√); 部署(√); 如: spring-core
+		provied //主程序(√); 测试程序(√); 打包(x); 部署(x); 如: servlet-api(tomcat提供)
+		test    //主程序(x); 测试程序(√); 打包(x); 部署(X); 如: junit
+		
+		runtime //主程序(x); 测试程序(√); 打包(√); 部署(√); 如: mysql-connector-java
 
 	4.依赖的传递
 		A依赖B,B依赖C, A能否使用C呢???
@@ -675,7 +677,7 @@
 			<groupId>javax.servlet</groupId>
 			<artifactId>javax.servlet-api</artifactId>
 			<version>3.0.1</version>
-			<scope>provided</scope>//依赖的范围(详见1.3.)
+			<scope>provided</scope>//依赖的范围(详见1.3)
 		</dependency>
 		<dependency>
 			<groupId>javax.servlet.jsp</groupId>
@@ -725,7 +727,7 @@
 	
 //}
 	
-//{-----------<<<SonarQube>>>---------------------------------------------------------------
+//{-----------<<<SonarQube>>>-------------------------------
 	'代码质量管理平台,可以快速的定位代码中潜在的或者明显的错误'
 	
 #下载配置
@@ -872,7 +874,7 @@
 		
 //}		
 
-//{-----------<<<fastjson>>>-----------------------------------------------------------------
+//{-----------<<<fastjson>>>--------------------------------
 	<dependency>
 		<groupId>com.alibaba</groupId>
 		<artifactId>fastjson</artifactId>
@@ -909,24 +911,24 @@
 	List<Person> list = JSON.parseArray(json, Person.class);
 
 //}
-	
-//{-----------<<<docker>>>-------------------------------------------------------------------
-#abc
-	一个开源的应用容器引擎; 一个轻量级容器技术!
-	将软件做好配置; 编译成一个镜像; 将镜像发布出去; 其他使用者就可以直接使用这个镜像
-	运行中的这个镜像称为容器,容器启动是非常快速的!
+
+
+//{-----------<<<Docker>>>----------------------------------
+#ABC
+	开源的应用容器引擎; 轻量级容器技术!
+	将软件做好配置 --> 编译成一个镜像 --> 将镜像发布出去 --> 其他使用者就可以直接使用这个镜像
 	
 	主机(Host)		->	安装了Docker程序的机器 (Docker直接安装在操作系统之上)
 	客户端(Client)	->	连接docker主机进行操作
 	仓库(Registry)	->	用来保存各种打包好的软件镜像
-	镜像(Images)	->	软件打包好的镜像;放在docker仓库中
-	容器(Container)	->	镜像启动后的实例称为一个容器; 容器是独立运行的一个或一组应用
+	镜像(Images)	->	软件打包好的镜像,放在docker仓库中
+	容器(Container)	->	运行中的这个镜像称为容器,容器启动是非常快速的!
 
-#Ubuntu安装Docker
-	$ uname -a							//内核版本必须是3.10及以上
+#Ubuntu安装
+	$ uname -r							//内核版本必须是3.10及以上
 	$ apt-get install docker.io			//安装Docker -(可能存在权限错误,使用时添加 sudo 前缀)
-	$ service docker status/start	//启动服务和守护进程
-	$ docker version					//检测是否安装成功
+	$ service docker status/start		//启动服务和守护进程
+	$ docker -v							//检测是否安装成功
 	$ ln -sf /usr/bin/docker.io /usr/local/bin/docker	//创建软连接-(方便使用docker命令)
 	
 	1.权限问题
@@ -937,76 +939,250 @@
 		sudo service docker restart		//重启 docker 服务
 		newgrp - docker					//切换当前会话到新 group
 
-#CentOS安装Docker
+#CentOS安装
 	$ yum install docker
 	$ systemctl start/stop docker
 	$ docker -v							//docker版本
 	$ systemctl enable docker			//开机启动
 	
-#镜像下载:
-	1).docker search x 或 https://hub.docker.com/explore/	//查找镜像
-	2).docker pull x:y	//下载镜像,x为镜像名,y为版本号. (可用镜像加速 registry.docker-cn.com/library/x:y)
-	3).
+#相关命令
+	docker search mysql			//镜像查找
+	docker pull mysql:5.6.7		//下载指定版本,默认为最新版latest
+	docker images				//查看本地镜像
+	docker rmi imageId/name		//删除本地指定的镜像
+	
+	docker tag imageId/name rename:retag //镜像重命名,然后删除旧的镜像
 
-	去Docker仓库找到这个软件对应的镜像
-	3).使用Docker运行这个镜像,这个镜像就会生成一个Docker容器
-	4).对容器的启动停止就是对软件的启动停止	
+	docker ps					//查看运行中的容器
+	docker ps -a				//查看所有的容器
 	
-	0.国内镜像
-		https://registry.docker-cn.com //Docker 官方中国区
-		http://hub-mirror.c.163.com //网易
-		https://docker.mirrors.ustc.edu.cn //ustc
+	docker start/stop 容器id/name	//启动/停止 容器
+	docker rm 容器id/name			//移除容器(一定要是停止状态); rm->移除容器; rmi->移除镜像!
+
+	docker logs 容器id/name			//查看容器日志
 	
-	1.修改镜像源地址
-		//直接设置 –registry-mirror 参数,仅对当前的命令有效 
-		docker run hello-world --registry-mirror=https://docker.mirrors.ustc.edu.cn
+#镜像下载
+	(1).docker search mysql		//命令行查找,或直接从网页查找 https://hub.docker.com/explore/
+	(2).docker pull x:y			//镜像下载.(x为镜像名,y为版本号)
+	(4).docker images			//下载完成,查看本地镜像
+	
+	(3).docker pull registry.docker-cn.com/library/x //国内镜像加速功能
+	
+#启动参数(docker run)
+	(1).-d ---> 后台运行容器,并返回容器ID
+	
+	(2).-e ---> 设置环境变量  //-e ES_JAVA_OPTS="-Xms256m -Xmx256m"
 		
-		//修改 /etc/default/docker,加入 DOCKER_OPTS=”镜像地址”，可以有多个 
-		DOCKER_OPTS="--registry-mirror=https://docker.mirrors.ustc.edu.cn"
+	(3).-p ---> 端口映射,格式为: 主机(宿主):容器 //-p 9200:9200
+	
+	(4).--name ---> 为容器指定一个名称 //--name ES01
+	
+#DEMO
+	0.ES
+		//后台启动ES,指定内存大小,端口号,及自定义名称
+		//ES的web通信使用 9200, 分布式集群的节点间通信使用 9300
+		docker run --name ES01 -d -e ES_JAVA_OPTS="-Xms256m -Xmx256m" -p 9200:9200 -p 9300:9300 4f7e4c61f09d
 
-		//支持 systemctl 的系统,通过 sudo systemctl edit docker.service
-		//会生成 etc/systemd/system/docker.service.d/override.conf 覆盖默认的参数,在该文件中加入如下内容
-		[Service] 
-		ExecStart= 
-		ExecStart=/usr/bin/docker -d -H fd:// --registry-mirror=https://docker.mirrors.ustc.edu.cn
+	1.tomcat
+		//最后参数 ---> 镜像名:版本号(latest可省)
+		docker run --name tomcat01 -d -p 9090:8080 tomcat:8.5-jre8-alpine
 		
-		//新版的 Docker 推荐使用 json 配置文件的方式,默认为 /etc/docker/daemon.json
-		//非默认路径需要修改 dockerd 的 –config-file，在该文件中加入如下内容
-		{"registry-mirrors": ["https://docker.mirrors.ustc.edu.cn"]}
+	2.mysql
+		//指定root密码
+		docker run --name mysql01 -d -p 33066:3306 -e MYSQL_ROOT_PASSWORD=123456 mysql
 
-#docker命令:
-	docker search 关键字		-> //检索软件的相关信息(eg: docker search redis)
-	docker pull 镜像名:tag		-> //版本号tag可选,默认为最新版latest
-	docker images				-> //查看本地所有镜像及id
-	docker rmi 镜像id			-> //删除指定的本地镜像
-	
-	docker stop/start/rm 容器id	-> //停止/启动/移除 运行中的容器
-	docker rm 容器id			-> //移除容器(一定要是停止状态); rm->移除容器; rmi->移除镜像!
-	docker ps					-> //查看运行中的容器
-	docker ps ‐a				-> //查看所有的容器
-	
-	docker logs 容器名/容器id	-> //查看容器日志
-	
-	docker run ‐‐name mytomcat ‐d tomcat:latest		-> //根据镜像启动容器
-	
-	//‐d: 后台运行;‐p: 端口映射(主机端口:容器内部的端口); --name:容器别名
-	docker run ‐d ‐p 8888:8080 tomcat		->	//启动一个做了端口映射的tomcat
-	
-	//正确启动mysql镜像,并做了端口映射
-	docker run ‐p 3306:3306 ‐‐name mysql02 ‐e MYSQL_ROOT_PASSWORD=123456 ‐d mysql
-	
-	//把主机的 /conf/mysql 文件夹挂载到 mysqldocker容器的 /etc/mysql/conf.d 文件夹里面
-	//以后mysql的配置可以直接在 自定义文件夹下(/conf/mysql)更改
-	docker run ‐‐name mysql03 ‐v /conf/mysql:/etc/mysql/conf.d ‐e MYSQL_ROOT_PASSWORD=my‐secret‐pw ‐d mysql:tag
+		//把主机的 /conf/mysql 文件夹挂载到 mysql02 容器的 /etc/mysql/conf.d 文件夹里面
+		//以后mysql的配置可以直接在 自定义文件夹下(/conf/mysql)更改
+		docker run --name mysql02 -d -v /conf/mysql:/etc/mysql/conf.d -e MYSQL_ROOT_PASSWORD=123456 mysql:tag
 
-	//指定mysql的一些配置参数
-	docker run ‐‐name mysql04 ‐e MYSQL_ROOT_PASSWORD=my‐secret‐pw ‐d mysql:tag ‐‐character‐set‐server=utf8mb4 ‐‐collation‐server=utf8mb4_unicode_ci
-		
-#更多命令: https://docs.docker.com/engine/reference/commandline/docker/
+		//指定mysql的一些配置参数
+		docker run --name mysql03 -e MYSQL_ROOT_PASSWORD=123456 -d mysql:tag --character-set-server=utf8mb4 --collation-server=utf8mb4_unicode_ci
+	
+	#更多命令: https://docs.docker.com/engine/reference/commandline/docker/
+	
+#修改镜像源地址
+	//直接设置 –registry-mirror 参数,仅对当前的命令有效 
+	docker run hello-world --registry-mirror=https://docker.mirrors.ustc.edu.cn
+	
+	//修改 /etc/default/docker,加入 DOCKER_OPTS=”镜像地址”，可以有多个 
+	DOCKER_OPTS="--registry-mirror=https://docker.mirrors.ustc.edu.cn"
+
+	//支持 systemctl 的系统,通过 sudo systemctl edit docker.service
+	//会生成 etc/systemd/system/docker.service.d/override.conf 覆盖默认的参数,在该文件中加入如下内容
+	[Service] 
+	ExecStart= 
+	ExecStart=/usr/bin/docker -d -H fd:// --registry-mirror=https://docker.mirrors.ustc.edu.cn
+	
+	//新版的 Docker 推荐使用 json 配置文件的方式,默认为 /etc/docker/daemon.json
+	//非默认路径需要修改 dockerd 的 –config-file，在该文件中加入如下内容
+	{"registry-mirrors": ["https://docker.mirrors.ustc.edu.cn"]}		
 		
 //}
 
-//{-----------<<<HttpClient>>>---------------------------------------------------------------
+//{-----------<<<ES>>>--------------------------------------
+#下载启动
+	docker search elasticsearch //以docker形式,检索
+	docker pull registry.docker-cn.com/library/elasticsearch //下载,镜像加速
+	
+	//后台启动ES,指定内存大小,端口号,及自定义名称
+	//ES的web通信使用 9200, 分布式集群的节点间通信使用 9300
+	docker run -d -e ES_JAVA_OPTS="-Xms256m -Xmx256m" -p 9200:9200 -p 9300:9300 --name ES01 4f7e4c61f09d
+	
+	http://192.168.5.23:9200/ //检测是否启动成功
+	
+#基础概念
+	1.ES与MySQL逻辑结构的概念对比
+		索引(index)			库(database)
+		类型(type)			表(table)
+		文档(document)		行(row)
+		//1个ES集群 --> 多个索引(index) --> 多个类型(type) --> 多个文档(document) --> 多个属性.
+		
+	2.DEMO说明
+		每个雇员对应一个文档,包含该雇员的所有信息
+		每个文档都将是 employee 类型
+		该类型位于 索引 megacorp 内
+		该索引保存在我们的 Elasticsearch 集群中
+		
+#基础操作		
+	0.新建索引(库)
+		PUT http://192.168.5.23:9200/megacorp
+		
+	1.新增文档(行)
+		PUT http://192.168.5.23:9200/megacorp/employee/1
+		{
+			"first_name": "二狗",
+			"last_name":  "王",
+			"age":        30,
+			"about":      "没事打游戏",
+			"interests":  ["吹牛", "农药"]
+		}
+			 
+	2.修改文档
+		//类似 SpringData 的更新API,新增时: 有ID则更新,无ID则新增
+		PUT  http://192.168.5.23:9200/megacorp/employee/1
+		{
+			"first_name": "二狗",
+			"last_name":  "王",
+			"age":        33,
+			"about":      "没事打游戏",
+			"interests":  ["吹牛", "农药"]
+		}
+		
+	3.判断是否存在
+		//根据响应码判断, 200: 存在; 404: 不存在.
+		HEAD http://192.168.5.23:9200/megacorp/employee/4
+		
+	4.删除文档
+		DELETE http://192.168.5.23:9200/megacorp/employee/4
+		
+	5.查询所有文档
+		GET  http://192.168.5.23:9200/megacorp/employee/_search
+		
+	6.查询根据ID
+		GET  http://192.168.5.23:9200/megacorp/employee/1
+		
+	7.查询根据条件
+		//first_name 中包含"狗"
+		GET  http://192.168.5.23:9200/megacorp/employee/_search?q=first_name:狗
+		
+	8.查询根据表达式
+		//first_name 包含"狗"
+		POST  http://192.168.5.23:9200/megacorp/employee/_search
+		{
+			"query" : {
+				"match" : {
+					"first_name" : "狗"
+				}
+			}
+		}
+		
+		//first_name 包含"狗", age > 30
+		POST  http://192.168.5.23:9200/megacorp/employee/_search
+		{
+			"query" : {
+				"bool": {
+					"must": {
+						"match" : {
+							"first_name" : "狗" 
+						}
+					},
+					"filter": {
+						"range" : {
+							"age" : { "gt" : 30} 
+						}
+					}
+				}
+			}
+		}
+		
+#IK分词器
+	
+	
+#整合boot
+	SpringBoot 默认支持两种技术和ES进行交互: jest, SpringData(默认).
+	
+#jest	
+		// <!-- https://mvnrepository.com/artifact/io.searchbox/jest -->
+		<dependency>
+			<groupId>io.searchbox</groupId>
+			<artifactId>jest</artifactId>
+			<version>5.3.4</version>
+		</dependency>
+ 
+		//#properties
+		spring.elasticsearch.jest.uris=192.168.5.23:9200
+
+#SpringData(默认)
+        <dependency>
+            <groupId>org.springframework.data</groupId>
+            <artifactId>spring-data-elasticsearch</artifactId>
+        </dependency>
+		
+		//#properties
+		spring.data.elasticsearch.cluster-name=elasticsearch
+		spring.data.elasticsearch.cluster-nodes=192.168.5.23:9300
+		
+	0.javabean
+		@Document(indexName = "book", type = "article")
+		public class Article {
+			//mysql中的id,非索引库中的id
+			@Id
+			private String id;
+
+			// 对应索引库中的域
+			// index: 是否被索引(能否被搜索); 是否分词(搜索时是整体匹配还是分词匹配); 是否存储(是否在页面上显示)
+			// analyzer: 存储时使用的分词策略
+			// searchAnalyzer 查询时的.....(二者必须一致)
+			@Field(index = true, analyzer = "ik_max_word", searchAnalyzer = "ik_max_word")
+			private String title;
+
+			@Field(index = true, analyzer = "ik_smart", searchAnalyzer = "ik_smart")
+			private String content;
+		}
+	
+	0.ElasticsearchTemplate(方式1,略)
+	
+	1.ElasticsearchRepository(方式2)
+		@Repository
+		public interface ArticleDao extends ElasticsearchRepository<Article, java.lang.String> {
+			List<Article> findByTitleLike(String title); //查询接口
+		}
+		
+		@Autowired
+		ArticleDao articleDao;
+
+		@Test
+		public void test() {
+			Object index = articleDao.index(new Article("1", "三国演义", "群雄逐鹿中原")); //新增
+
+			List<Article> articleList = articleDao.findByTitleLike("三"); //查询
+		}
+	
+		
+//}
+
+
+//{-----------<<<HttpClient>>>------------------------------
 #pom文件
         //<!-- HttpClient -->
         <dependency>

@@ -1,10 +1,329 @@
 #观察者
 #异步回调机制
 
-#builder
+#GoF23: Group of Four,四个人提出的23中设计模式.
 
-#----------------------------------------------------------------------------------------------
 
+//{--------<<<abc>>>---------------------------------------------
+
+//}
+
+//{--------<<<0>>>-----------------------------------------------
+#创建型模式
+	单例(Singleton), 工厂, 抽象工厂, Builder, 原型.
+
+#结构型模式
+	适配器模式、桥接模式、装饰模式(Decorator), 组合模式、外观模式、享元模式、代理模式。
+
+#行为型模式
+	模版方法模式、命令模式、迭代器模式、观察者模式、中介者模式、备忘录模式、
+	解释器模式、状态模式、策略模式、职责链模式、访问者模式。
+
+//}
+
+//{--------<<<Singleton>>>---------------------------------------
+#单例: 解决一个类在内存只存在一个对象的问题.(适用于实例化需要较多资源的对象)
+	(1).私有构造函数,避免其他类实例化该类对象
+	(2).为了让其他程序可以访问到该类对象,在本类中自定义一个对象
+	(3).对外提供一个获取类对象的方法 ---> 必须 static
+	
+	0.区别对比
+		饿汉式  --->  线程安全,调用效率高. 不能'延时加载'
+		懒汉式  --->  线程安全,但效率不高. 可以'延时加载'
+		
+		双重检测锁 -> 饿汉式是方法锁,此方法是局部锁.
+		静态内部类 -> 线程安全,调用效率高, 可以'延时加载'!!
+		
+		枚举实现   -> 线程安全,调用效率高, 不能'延时加载'
+				   -> 枚举本身就是单例模式,由 JVM 从根本上提供保障! 避免通过反射和反序列化的漏洞!
+				   
+	0.如何选用
+		占用资源少,不要 延时加载: //枚举式     > 饿汉式
+		占用资源大,需要 延时加载: //静态内部类 > 懒汉式
+
+	1.饿汉式
+		public class Singleton {
+			private Singleton() {}
+
+			private static Singleton instance = new Singleton();
+
+			//(a).static 变量会在类装载时初始化,此时也不会涉及多个线程访问该对象的问题.
+			//(b).虚拟机保证只会装载一次该类,肯定也不会发生并发访问的问题. 
+			//	  因此,可以省略关键字 synchronized
+			public static /*synchronized*/ Singleton newInstance() {
+				return instance;
+			}
+		}
+	
+	2.懒汉式
+		public class Singleton {
+			private Singleton() {}
+
+			//延迟加载 ---> 假如 newInstance() 从不调用,则也不会实例化对象,有效避免了资源的浪费.
+			private static Singleton instance;
+
+			//懒汉式 ---> 对于多线程访问容易出问题,加上同步锁
+			public static synchronized Singleton newInstance() {
+				if (null == instance) {
+					instance = new Singleton();
+				}
+				return instance;
+			}
+		}
+	
+	3.双重检测锁 ---> (有问题,不建议使用) ---> https://www.cnblogs.com/xz816111/p/8470048.html
+		public class Singleton {
+			private Singleton() {}
+			
+			private volatile static Singleton instance; ///关键字: volatile
+
+			//双重检测锁
+			//(1).内层: 必须有
+			//(2).外层: 使用同步锁会消耗系统资源,加上外层判断,可减少判断次数,稍微提高效率
+			public static Singleton newInstance() {
+
+				if (null == instance) {
+					synchronized (Singleton.class) { //静态方法的同步锁一般选为当前类的 class 文件
+						if (null == instance) {
+							instance = new Singleton();
+						}
+					}
+				}
+				return instance;
+			}
+		}
+		
+	4.静态内部类
+		public class Singleton {
+			private Singleton() {}
+
+			// – 外部类没有 static 属性,则不会像饿汉式那样立即加载对象
+			// – 只有真正调用 newInstance(),才会加载静态内部类.加载类时是线程安全的.
+			// - static final instance, 保证了内存中只有这样一个实例存在,而且只能被赋值一次,从而保证了线程安全性.
+			// – 兼备了并发高效调用和延迟加载的优势!!!
+			private static class SingletonInner {
+				private static final Singleton instance = new Singleton();
+			}
+
+			public static Singleton newInstance() {
+				return SingletonInner.instance;
+			}
+		}
+		
+	5.枚举实现
+		public enum Singleton {
+			INSTANCE;
+
+			public void doSth() {
+			}
+		}
+	
+	6.反射破解(不包括枚举)
+		@Test
+		public void test05() throws Exception {
+			Singleton instance0 = Singleton.newInstance();
+			Singleton instance1 = Singleton.newInstance();
+			System.out.println(instance0 == instance1); ///true
+
+			Class<?> clazz = Class.forName("com.example.spring.test.Singleton");
+			Constructor<?> constructor = clazz.getDeclaredConstructor(); //无参构造
+			constructor.setAccessible(true); //必要
+			Object instance2 = constructor.newInstance();
+			System.out.println(instance2 == instance0); ///false
+		}
+		
+	7.反序列化破解(不包括枚举)
+		@Test
+		public void test05() {
+			Singleton instance0 = Singleton.newInstance();
+
+			String path = "d:/1.txt";
+			try (ObjectOutputStream oos = new ObjectOutputStream(new FileOutputStream(path));
+				 ObjectInputStream ois = new ObjectInputStream(new FileInputStream(path))) {
+
+				oos.writeObject(instance0); //序列化, implements Serializable
+
+				Singleton instance3 = (Singleton) ois.readObject(); //反序列化
+				
+				System.out.println(instance0 == instance3); ///false
+			} catch (IOException | ClassNotFoundException e) {
+				e.printStackTrace();
+			}
+		}
+		
+	8.效率测试
+		public static void main(String[] args) throws InterruptedException {
+			long start = System.currentTimeMillis();
+			int nThread = 10;
+
+			//同步辅助类,它允许一个或多个线程一直等待,直到其他线程的操作执行完后再执行
+			CountDownLatch count = new CountDownLatch(nThread); //初始值为线程的数量 10
+
+			for (int i = 0; i < nThread; i++) {
+				new Thread(() -> {
+					for (int j = 0; j < 10000; j++) {
+						Singleton instance = Singleton.newInstance();
+					}
+
+					count.countDown(); //每当一个线程完成了自己的任务后,计数器的值就会减 1
+				}).start();
+			}
+
+			count.await(); // main线程阻塞,直到 count 减到0,才继续向下执行
+			System.out.println("耗时: " + (System.currentTimeMillis() - start));
+		}
+		
+#常见场景
+	– Windows 的 Task-Manager(任务管理器) 和 Recycle-Bin(回收站). 在整个系统运行过程中,一直维护着仅有的一个实例
+	– 操作系统的文件系统,也是大的单例模式实现的具体例子,一个操作系统只能有一个文件系统
+	
+	– 项目中读取配置文件的类. 没必要每次使用配置文件数据,每次 new 一个对象去读取.
+	
+	– 网站的计数器,一般也是采用单例模式实现,否则难以同步
+	
+	– 应用程序的日志应用,一般都何用单例模式实现,这一般是由于共享的日志文件一直处于打开状态,因为只能有一个实例去操作,否则内容不好追加
+	
+	– 数据库连接池的设计一般也是采用单例模式,因为数据库连接是一种数据库资源
+	
+	– Application 也是单例的典型应用(Servlet编程中会涉及到)
+	– 在servlet编程中,每个Servlet也是单例
+	
+	– 在Spring中,每个Bean默认就是单例的,这样做的优点是Spring容器可以管理
+	– 在Spring MVC框架/struts1框架中,控制器对象也是单例
+
+
+//}
+
+
+//{--------<<<装饰>>>--------------------------------------------
+#基础
+	(0).装饰模式(Decorator),也叫包装模式(Wrapper)
+	(1).动态的为一个对象增加新的功能
+	
+#优点
+	(2).是一种用于代替'继承'的技术. /*勿需继承就能扩展子类的功能*/
+	(3).使用对象的关联关系代替继承关系,更加灵活. /*有效避免类型体系的快速膨胀*/
+
+#缺点
+	(4).产生很多小对象. 大量小对象占据内存,一定程度上影响性能
+	(5).装饰模式易于出错,调试排查比较麻烦
+	
+#DEMO
+	1.抽象构件角色Component
+		public interface IMan {
+			void doit();
+		}
+
+	2.具体构件角色ConcreteComponent(真实对象)
+		class Man implements IMan {
+
+			@Override
+			public void doit() {
+				System.out.println("da da da...");
+			}
+		}
+
+	3.装饰角色Decorator 
+		class ISuperMan implements IMan {
+			protected IMan man;
+
+			ISuperMan(IMan man) {
+				this.man = man;
+			}
+
+			@Override
+			public void doit() {
+				man.doit();
+			}
+		}
+
+	4.1.具体装饰角色ConcreteDecorator 
+		class SpiderMan extends ISuperMan {
+
+			SpiderMan(IMan man) {
+				super(man);
+			}
+
+			@Override
+			public void doit() {
+				super.doit();
+				System.out.println("fly fly fly...");
+			}
+		}
+
+	4.2.具体装饰角色ConcreteDecorator 
+		class IronMan extends ISuperMan {
+
+			IronMan(IMan man) {
+				super(man);
+			}
+
+			@Override
+			public void doit() {
+				super.doit();
+				System.out.println("money money money...");
+			}
+		}
+		
+	5.TEST
+		@Test
+		public void test() {
+			Man man = new Man();
+			man.doit();
+
+			SpiderMan spiderMan = new SpiderMan(man);
+			spiderMan.doit();
+
+			IronMan ironMan = new IronMan(new SpiderMan(new Man()));
+			ironMan.doit();
+		}
+	
+#常见场景
+	(0).Servlet API 中的 HttpServletRequestWrapper 增强了 request 对象的功能
+	(1).IO流实现细节, 举例以 BufferedOutputStream
+	
+	1.抽象构件角色Component 
+		public interface Flushable {
+			
+			void flush() throws IOException;
+		}
+		
+	2.具体构件角色ConcreteComponent(真实对象)
+		public abstract class OutputStream implements Closeable, Flushable {
+			
+			public void flush() throws IOException {
+			}
+		}		
+	
+	3.装饰角色Decorator 
+		public class FilterOutputStream extends OutputStream {
+			protected OutputStream out;
+			
+			public FilterOutputStream(OutputStream out) {
+				this.out = out;
+			}
+			
+			public void flush() throws IOException {
+				out.flush();
+			}
+		}
+	
+	4.具体装饰角色ConcreteDecorator 
+		public class BufferedOutputStream extends FilterOutputStream {
+			
+			public BufferedOutputStream(OutputStream out) {
+				this(out, 8192);
+			}
+			
+			public synchronized void flush() throws IOException {
+				flushBuffer();
+				out.flush();
+			}
+		}
+
+//}
+
+//{--------<<<abc>>>---------------------------------------------
 #观察者 Observer Pattern
 	//One object changes state, all of its dependents are updated automatically.
 	在对象之间定义了一对多的依赖; 这样一来,当一个对象改变状态,依赖它的对象会收到通知并自动更新.
@@ -234,7 +553,7 @@
 
 
 
-
+//}
 
 
 
@@ -264,8 +583,8 @@
     instantiated or called, based on the conditions or parameters given.
 --- Prototype
     Cloning an object by reducing the cost of creation.
---- Singleton
-    One instance of a class or one value accessible globally in an application.
+// --- Singleton
+    // One instance of a class or one value accessible globally in an application.
 Structural Patterns
 --- Adapter
     Convert the existing interfaces to a new interface to achieve compatibility and reusability of the unrelated classes

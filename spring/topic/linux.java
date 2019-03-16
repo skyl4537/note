@@ -1,6 +1,6 @@
 #!/bin/bash
 
-//{--------<<<基础配置>>>-----------------------------------------------------------------
+//{--------<<<基础配置>>>--------------------------------
 #putty配置
 	字体大小: Windows -> Appearance -> Font Settings -> Consolas(12)
 	绿色字体: Windows -> Color -> Default Foregroud -> 0 255 0
@@ -18,7 +18,7 @@
 
 //}
 
-//{--------<<<单一指令>>>-----------------------------------------------------------------
+//{--------<<<单一指令>>>--------------------------------
  kill -9 `lsof -t -i:8090`
 	#kill -9 `lsof -i:8090 | awk '{print $2}' | sed -n '2p'`		//等同于上面命令
 	#nohup java -jar blue.jar > ./logs/blue.log >/dev/null 2>&1 &	//不再输出日志
@@ -92,7 +92,7 @@
 	#-n<N>或——line=<N>: 文件尾部的 N 行内容.
 	#-f: 动态显示文件最新的追加内容 (适合查看日志)
 	#-s<秒数>或——sleep-interal=<秒数>: 与'-f'选项连用,指定监视文件变化的间隔秒数
-	#--pid=<进程号>：与'-f'选项连用,当指定的进程号的进程终止后,自动退出tail命令
+	#--pid=<进程号>:与'-f'选项连用,当指定的进程号的进程终止后,自动退出tail命令
 
 	tail -n 5 file	//最后5行内容
 	tail -n +5 file	//第5行至末尾(包含第5行)	
@@ -119,15 +119,24 @@
 	# cat -n file -> 显示文件的行号,从1开始
 	cat -n error | head -n 10	等同于 head -n 10
 	
-#df: 显示目前在Linux系统上的文件系统的磁盘使用情况统计
+#df: 显示文件系统的磁盘使用情况
 	#-l: --local 限制列出的文件结构
+	#-h: --human-readable 使用人类可读的格式
+	
+	df -lh				//当前linux系统所有目录的磁盘使用情况
+	df -lh --total		//增加统计信息
 
+	//(1). 查看指定目录所属挂载点
+	//(2). 显示指定目录所属挂载点的磁盘使用情况
+	df -lh /var/lib/webpark/logs/sm
+	
+	
 #du: 显示指定的目录或文件所占用的磁盘空间
 	#--max-depth=<目录层数>: 超过指定层数的目录后,予以忽略
 
 	# 相结合使用,查看磁盘情况
 	df -lh
-	du -h --max-depth=1 /var/lib/webpark/logs
+	du -h --max-depth=1 /var/lib/webpark/logs | sort -nr
 	
 #zip: zip压缩和unzip解压缩
 	#-q: 执行时不显示任何信息 
@@ -255,11 +264,6 @@
 	
 	ls -lhtr s*		//列出目录下所有名称 s 开头的文件,以最后修改时间升序排列.(r代表排序取反)
 
-#chmod: 变更文件或目录的权限
-	#-R: 递归处理,将目录下所有文件及子目录一并处理
-
-	chmod -R 777 ./sm	//sm目录及其子目录皆赋值777权限
-
 #wget: 从指定的URL下载文件
 	#-o: 下载信息写入日志,而非显示控制台
 	#-O: 下载并以不同的文件名保存.(默认以最后一个/后面的字符来命名,动态链接文件名会不正确)
@@ -312,7 +316,7 @@
 
 //}
 
-//{--------<<<常用指令>>>-----------------------------------------------------------------
+//{--------<<<常用指令>>>--------------------------------
 '常用命令': http://www.runoob.com/w3cnote/linux-useful-command.html
 
 #touch 新建空文件,或修改文件的时间属性.(ls -l 查看文件的时间属性)
@@ -395,7 +399,7 @@
 
 //}
 
-//{--------<<<vi>>>-----------------------------------------------------------------------
+//{--------<<<vi>>>--------------------------------------
 #vi使用
 	vi hello.sh		//使用Vi编辑器,新建并打开hello.sh文件
 	
@@ -429,49 +433,8 @@
 
 //}
 		
-//{--------<<<定时任务>>>-----------------------------------------------------------------
-#nano编辑器
-	yum -y install nano //安装
-	nano 路径+文件名 //新建/打开
-	退出: Ctrl+x (y确认); 保存修改: Ctrl+o; 取消返回: Ctrl+c
-	剪贴/删除整行: Ctrl+k; 复制整行: Alt+6; 粘贴: Ctrl+U 
-	
-#crontab
-	rpm -qa | grep crontab //检查是否安装(rpm: Red-Hat Package Manager)
-	
-	sudo /etc/init.d/cron start-stop-restart //命令形式
-	sudo service cron start-stop-restart //服务形式
 
-	执行日志在 /var/log/cron.log; //对于ubuntu: http://www.cnblogs.com/nieqibest/p/9353927.html
-	crontab -l(e/r) //列出(编辑/删除)当前用户的定时任务
-
-	//分 时 日 月 周 (user可省) cmd
-	m h dom mon dow (user)  command
-	* * * * * cmd			// 每隔一分钟执行一次任务  
-	0 * * * * cmd			// 每小时的0点执行一次任务, 如6:00; 10:00
-	6,10 * 2 * * cmd		// 每个月2号, 每小时的6分和10分执行一次任务
-	*/3,*/5 * * * * cmd		// 每隔3分钟或5分钟执行一次任务, 比如10:03, 10:05, 10:06 
-	0 23-7/2,8 * * * cmd	// 晚上11点到早上8点之间每2个小时和早上8点 
-	20 3 * * * (xxx; yyy)	// 每天早晨3点20分执行用户目录下的两个指令(每个指令以;分隔)
-	0 11 4 * mon-wed /etc/init.d/smb restart	// 每月的4号与每周1到周3的11点重启smb 
-
-	//"%"是特殊字符(换行),所以命令中必须对其进行转义(\%).
-	*/2 * * * * echo $(date '+\%Y-\%m-\%d \%H:\%M:\%S')  >> file 
-
-	#!/bin/bash
-	#执行结果赋值给变量
-	DATE=$(date '+%Y-%m-%d %H:%M:%S') //%对于crontab是关键字; 而对于shell脚本则不是,不需要转义
-	LSOF=$(lsof -p $(lsof -t +D /var/lib/webpark/logs/device) |wc -l)
-	CLOSE=$(netstat -anp |grep java |grep CLOSE |wc -l)
-
-	cd /var/lib/webpark/logs/sm/file
-	echo $DATE '---' $LSOF >> lsof
-	echo $DATE '---' $CLOSE > close
-	grep -d skip -n 'Init---args' ../_* > ztj
-	
-//}
-
-//{--------<<<shell>>>--------------------------------------------------------------------
+//{--------<<<shell>>>-----------------------------------
 #算术运算符
 	#原生bash不支持简单的数学运算,可通过其他命令来实现. 如: expr.
 		a=10; b=20;
@@ -548,7 +511,7 @@ else
 fi
 //}
 
-//{--------<<<系统级别>>>-----------------------------------------------------------------
+//{--------<<<系统级别>>>--------------------------------
 #目录结构	
 	/tmp - 存放临时文件.
 	/etc - 系统管理所需要的配置文件和子目录.
@@ -587,7 +550,7 @@ fi
 
 //}
 
-//{--------<<<awk命令>>>-----------------------------------------------------------------
+//{--------<<<awk命令>>>---------------------------------
 awk是一种处理文本文件的语言,是一个强大的文本分析工具.
 
 #-F 相当于内置变量FS,指定分割字符, 默认'任何空格'
@@ -618,7 +581,7 @@ awk是一种处理文本文件的语言,是一个强大的文本分析工具.
 	
 //}
 
-//{--------<<<组合指令>>>-----------------------------------------------------------------
+//{--------<<<组合指令>>>--------------------------------
 //查看不同状态的连接数数量
 # netstat -n | awk '/^tcp/ {++y[$NF]} END {for(w in y) print w, y[w]}'
 	TIME_WAIT 251 
@@ -655,7 +618,7 @@ awk是一种处理文本文件的语言,是一个强大的文本分析工具.
 
 //}
 
-//{--------<<<thread>>>-------------------------------------------------------------------
+//{--------<<<thread>>>----------------------------------
 #jps -l //列出所有java进程的 pid + 项目名.
 
 #ps xH | wc -l //查看linux所有存在的线程数
@@ -667,6 +630,256 @@ awk是一种处理文本文件的语言,是一个强大的文本分析工具.
 
 //}
 
-//{--------<<<x>>>-----------------------------------------------------------------
+//{--------<<<x>>>---------------------------------------
 
 //}
+
+
+//{--------<<<0>>>---------------------------------------
+#命令行格式
+	linux区分大小写; 命令过长,则使用 \ 进行换行.
+	
+#关机重启(reboot)
+	shutdown -r now		//立即重启,等同于 reboot
+	
+	shutdown -h now		//立即关机
+	shutdown -h 11:33	//定时关机,今天的11::33
+	shutdown -h +10		//10分钟后关机
+	
+#启动 X Window 界面
+	crtl + alt + backspace
+	
+#
+
+
+//}
+
+//{--------<<<ABCD>>>------------------------------------
+#ls: 
+	-l	//
+	-h	//
+
+
+	0.DEMO
+		parkmanager@bc-ai-server:/var/lib/webpark/logs/sm/task$ ls -lh
+		total 4.9G
+		drwxrwxrwx 3 parkmanager root 4.0K  1月 25 17:12 dir
+		-rw-r--r-- 1 parkmanager root  35M  3月 13 11:46 file
+
+		//目录大小总计 4.9G. 详解:
+		drwxrwxrwx 3 parkmanager root 4.0K  1月 25 17:12 dir
+		|    1   | 2  |    3    |   4  | 5  |      6     |   7  |
+		|档案属性|连接|  拥有者 | 分组 |大小|  修改日期  |文件名|
+		
+#用户&分组
+	more /etc/passwd		//所有用户名信息
+	more /etc/group			//用户组信息
+	
+	useradd -g group user	//新建用户&分组
+	useradd user			//不指定分组,则分组名和用户名相同
+	
+	groupadd police			//添加一个分组 police
+
+	userdel -r user			//若不加参数 -r,则仅删除用户帐号,而不删除相关文件
+	
+	passwd user				//修改账户密码
+	
+	chgrp [-R] user dir			//改变'档案'所属分组
+	chown [-R] user:root dir	//..............拥有者&分组
+	
+#档案属性 d - rwx - rwx - rwx 【rwx: 读写执行】
+	(0).是否是目录. d表示目录; -表示文件.
+	
+	(1).文件拥有者 所具有的读写权限. u
+	(2).文件拥有者同组用户.......... g
+	(3).其他用户.................... o
+
+	chmod [-R] 777 dir		//更改档案属性.
+	
+	chmod u-x file			//移除file所属用户(u)的执行权限.
+	chmod a-x file			//移除file所有用户(a = u+g+o)的执行权限.
+	
+#rwx
+ r: //当目录有读取(r)权限时,就可以利用 ls 这个指令展示该目录的列表
+ x: //与能否进入该目录有关
+ w: //当目录有写入(w)权限时,将具有移动该目录结构清单的权限:
+		(1). 建立新的档案与目录
+		(2). 删除已经存在的档案与目录(不论该档案是属于谁)
+		(3). 将已存在的档案或目录进行更名
+		(4). 搬移该目录内的档案,目录位置
+	
+	
+	
+		
+//}
+
+
+//{--------<<<SHELL>>>-----------------------------------	
+#0.格式
+	文件第一行必须是 "#!/bin/sh"; 注释符号为 '#'.
+
+#1.变量
+	不需要声明; 只能由字母,数字,下划线组成,不能以数字开头
+	echo $JAVA_HOME //输出变量的值
+
+#2.转义符
+	单引号不解析变量			//echo '$JAVA_HOME' 输出"$JAVA_HOME"
+	
+	双引号会解析变量			//echo "$JAVA_HOME" 输出"/usr/java"
+	飘号为执行内容,类似于$(...)	//echo `$JAVA_HOME` 输出"/usr/java"
+	
+#3.输入参数
+	执行脚本时,传入的参数按照先后顺序使用 $1,$2 等顺序引用变量值($0 就是文件名)
+	test.sh abc 123 //在 test.sh 中,可通过 $2 读取 123.
+
+#4.格式化
+	date '+%Y-%m-%d %H:%M:%S'	//格式化输出
+	
+	date '+%S'				 	//提取当前时间的秒数
+	date '+%s'				 	//自 1970-01-01 00:00:00 以来的总秒数
+	
+	echo $(date '+%Y-%m-%d %H:%M:%S')	//shell中输出日期
+	echo `date '+%Y-%m-%d %H:%M:%S'`	//同上
+	
+	date --date='3 days ago'	//3天以前
+	date --date="3 days ago" "+%Y-%m-%d %H:%M:%S"	//3天以前,并格式化
+	
+	//shell中以日期命名文件
+	FILE=$(date '+%Y%m%d-%H%M%S')
+	sudo zip -qr slow-$FILE.zip slow.log >/dev/null 2>&1
+	
+#5.重定向
+	'>>': 追加更新 '>': 覆盖更新
+
+#6.if
+	0.DEMO
+		file="/var/lib/webpark/logs/sm/task/file/lsof"
+
+		if [ -e $file ] //if 和 fi 是一对闭合体,少一个则报语法错误
+		then
+		   echo "文件存在"
+		else
+		   echo "文件不存在"
+		fi
+	
+#7.for
+	0.fori风格
+		for ((a=1,b=9; a<10; a++,b--)) //for 由 ((***)) 两个小括号引起
+		do
+		   echo "$a - $b"
+		done
+	
+	1.foreach风格
+		for file in /var/lib/webpark/logs/sm/task/file/_*;
+		do
+			echo FILE_PATH: $file
+		done
+		
+#8.引用其他shell
+	0.定义SHELL(func.sh)
+		#!/bin/bash
+		count=$1 //取值第一个参数
+
+		echo $(date --date="$count days ago" "+%Y-%m-%d %H:%M:%S")
+		
+	1.引用SHELL(test.sh)
+		#!/bin/bash
+		source ./func.sh 3 //引用shell,并传参3
+		
+#自定义函数
+	0.函数定义(func.sh)
+		#!/bin/bash
+		function daysAgo(){
+			date --date="$1 days ago" "+%Y-%m-%d %H:%M:%S"
+		}
+
+		function daysAfter(){
+			date --date="-$1 days ago" "+%Y-%m-%d %H:%M:%S"
+		}
+	
+	1.调用函数(test.sh)
+		#!/bin/bash
+		source ./func.sh
+
+		echo "daysAgo:" $(daysAgo 3)
+		echo "daysAfter:" $(daysAfter 3) //调用函数 daysAfter()
+
+//}
+
+
+//{--------<<<Crontab>>>---------------------------------
+#nano编辑器
+	yum -y install nano		//安装
+	nano 路径+文件名		//新建/打开
+	退出: Ctrl+x (y确认)	保存修改: Ctrl+o	取消返回: Ctrl+c
+	剪贴/删除整行: Ctrl+k	复制整行: Alt+6		粘贴: Ctrl+U 
+	
+#crontab	
+	rpm -qa | grep crontab //检查是否安装(rpm: Red-Hat Package Manager)
+	
+	sudo /etc/init.d/cron start(stop/restart)	//命令形式
+	sudo service cron start(stop/restart)		//服务形式
+
+	crontab -l(e/r)			//列出(编辑/删除)当前用户的定时任务
+
+	日志位置: /var/log/cron.log; //对于ubuntu: http://www.cnblogs.com/nieqibest/p/9353927.html
+	
+	1.DEMO
+		//分 时 日 月 周 (user可省) cmd
+		m h dom mon dow (user)  command
+		* * * * * cmd			// 每分钟执行一次任务  
+		0 * * * * cmd			// 每小时的0点执行一次任务, 如6:00; 10:00
+		6,10 * 2 * * cmd		// 每个月2号, 每小时的6分和10分执行一次任务
+		*/3,*/5 * * * * cmd		// 每隔3分钟或5分钟执行一次任务, 比如10:03, 10:05, 10:06 
+		0 23-7/2,8 * * * cmd	// 晚上11点到早上8点之间每2个小时和早上8点 
+		20 3 * * * (xxx; yyy)	// 每天早晨3点20分执行用户目录下的两个指令(每个指令以;分隔)
+		0 11 4 * mon-wed /etc/init.d/smb restart	// 每月的4号与每周1到周3的11点重启smb 
+
+	2.关键字
+		//"%"是特殊字符(换行),所以命令中必须对其进行转义(\%).
+		*/2 * * * * echo $(date '+\%Y-\%m-\%d \%H:\%M:\%S')  >> file 
+
+	3.shell脚本
+		#!/bin/bash
+		#执行结果赋值给变量
+		DATE=$(date '+%Y-%m-%d %H:%M:%S') //%对于crontab是关键字; 而对于shell脚本则不是,不需要转义
+		LSOF=$(lsof -p $(lsof -t +D /var/lib/webpark/logs/device) |wc -l)
+		CLOSE=$(netstat -anp |grep java |grep CLOSE |wc -l)
+
+		cd /var/lib/webpark/logs/sm/file
+		echo $DATE '---' $LSOF >> lsof
+		echo $DATE '---' $CLOSE > close
+		grep -d skip -n 'Init---args' ../_* > ztj
+	
+//}
+
+
+//{--------<<<COMMAND>>>---------------------------------
+#nohup command>/dev/null 2>&1 &
+	1.nohup
+		该命令可以在 '退出帐户/关闭终端' 之后继续运行相应的进程.
+		默认情况,该作业的所有输出都被重定向到一个名为 'nohup.out' 的文件中
+		
+	2.&
+		表示在后台运行.		
+		nohup COMMAND &	//使命令永久的在后台执行
+		
+	3.2>&1
+		默认, 0表示标准输入, 1表示标准输出, 2表示标准错误.
+		
+		//nohup command > myout.file 2>&1 &
+		表示将标准错误(2)重定向到标准输出(&1),标准输出(&1)再被重定向输入到 'myout.file' 文件中
+	
+	4./dev/null
+		表示空设备,这里就是把日志记录到空设备里,就是不记录日志.
+		/dev/null 2>&1	//将产生的所有信息丢弃
+	
+//}
+
+
+
+
+
+
+
+
