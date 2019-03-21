@@ -912,14 +912,309 @@
 
 //}
 
+//{-----------<<<WebSocket>>>-------------------------------
+        <dependency>
+            <groupId>org.springframework.boot</groupId>
+            <artifactId>spring-boot-starter-websocket</artifactId>
+        </dependency>	
+	
+#ABC
+	B/S结构的软件项目中有时客户端需要实时的获得服务器消息,但默认HTTP协议只支持 '请求响应模式'. 
+	对于这种需求可以通过 polling, Long-polling, 长连接, Flash-Socket, HTML5中定义的WebSocket 完成.
+	
+	HTTP模式可以简化Web服务器,减少服务器的负担,加快响应速度,
+	因为服务器不需要与客户端长时间建立一个通信链接.
+	但不容易直接完成实时的消息推送功能(如聊天室,后台信息提示,实时更新数据等).
+
+#Socket简介
+	Socket 又称'套接字',应用程序通过 Socket 向网络发出请求或者应答网络请求.
+	Socket 可以使用TCP/IP协议或UDP协议.
+	
+	//TCP协议:  面向连接的,可靠的,基于字节流的传输层通信协议,负责数据的可靠性传输问题.
+	//UDP协议:  无连接,不可靠,基于报文的传输层协议; 优点 ----> 发送后不用管,速度比TCP快.
+	
+	//HTTP协议: 无状态协议, 通过 Internet 发送请求消息和响应消息, 使用端口接收和发送消息,默认80端口. (底层Socket)
+
+#双向通信
+	HTTP协议决定了服务器与客户端之间的连接方式,无法直接实现消息推送(F5已坏),一些变相的解决办法:
+	
+	1.轮询 
+		客户端定时向服务器发送Ajax请求,服务器接到请求后马上返回响应信息并关闭连接.
+		
+		优点: 后端程序编写比较容易. 
+		缺点: 请求中有大半是无用,浪费带宽和服务器资源. 
+		实例: 适于小型应用.
+		
+	2.长轮询 
+		客户端向服务器发送Ajax请求,服务器接到请求后hold住连接,直到有新消息才返回响应信息并关闭连接,
+		客户端处理完响应信息后再向服务器发送新的请求. 
+		
+		优点: 在无消息的情况下不会频繁的请求,耗费资小. 
+		缺点: 服务器hold连接会消耗资源,返回数据顺序无保证,难于管理维护. Comet异步的ashx,
+		实例: WebQQ、Hi网页版、Facebook-IM.
+
+	3.长连接 
+		在页面里嵌入一个隐蔵iframe,将这个隐蔵iframe的src属性设为对一个长连接的请求或是采用xhr请求,
+		服务器端就能源源不断地往客户端输入数据. 
+		
+		优点: 消息即时到达,不发无用请求,管理起来也相对便. 
+		缺点: 服务器维护一个长连接会增加开销. 
+		实例: Gmail聊天
+		
+	4.Flash—Socket
+		在页面中内嵌入一个使用了Socket类的 Flash 程序, JavaScript通过调用此Flash程序提供的Socket接口
+		与服务器端的Socket接口进行通信,	JavaScript在收到服务器端传送的信息后控制页面的显示. 
+		
+		优点: 实现真正的即时通信,而不是伪即时. 
+		缺点: 客户端必须安装Flash插件,非HTTP协议,无法自动穿越防火墙. 
+		实例: 网络互动游戏.
+		
+	5.Websocket
+		HTML5提供的一种浏览器与服务器间进行全双工通讯的网络技术. 依靠这种技术可以实现客户端和服务器端的长连接,双向实时通信.
+		
+		//特点: 事件驱动, 异步, 使用ws或者wss协议的客户端socket, 能够实现真正意义上的推送功能,
+		//缺点: 少部分浏览器不支持,浏览器支持的程度与方式有区别.
+		
+		Websocket 允许通过js与远程服务器建立连接,从而实现客户端与服务器间双向的通信.
+		
+		Websocket 的url开头是ws, 如果需要ssl加密可以使用wss,
+		当调用构造方法构建一个 Websocket 对象后,就可以进行即时通信了. ---> new WebSocket(url)
+			
+#客户端说明
+		<body>
+			<input id="text" type="text"/>
+			<button onclick="send()">Send</button>
+			<button onclick="closeWebSocket()">Close</button>
+			<div id="message"></div>
+		</body>
+		<script type="text/javascript">
+			var websocket = null;
+
+			//判断当前浏览器是否支持WebSocket
+			if (!'WebSocket' in window) {
+				alert('Not support websocket')
+			} else {
+				var userId = parseInt(Math.random() * (99 + 1), 10); //生成[0,99]的任意随机数
+				websocket = new WebSocket("ws://localhost:8090/demo/websocket?id=" + userId);
+
+				//监听事件 -> 连接成功建立时触发该事件
+				websocket.onopen = function (event) {
+					setMessageInnerHTML("open: " + new Date());
+				};
+
+				//监听事件 -> 连接关闭
+				websocket.onclose = function (event) {
+					setMessageInnerHTML("close: " + new Date() + " - " + event.code);
+					websocket.send(event.code);
+				};
+
+				//监听事件 -> 接收到服务器发来的消息
+				websocket.onmessage = function (event) {
+					setMessageInnerHTML(event.data);
+				};
+
+				//监听事件 -> 连接发生错误
+				websocket.onerror = function () {
+					setMessageInnerHTML("error: " + new Date());
+				};
+
+				//监听事件 -> 监听窗口关闭事件,当窗口关闭时,主动去关闭websocket连接,防止连接还没断开就关闭窗口,server端会抛异常
+				window.onbeforeunload = function () {
+					if (null != websocket) {
+						websocket.close();
+					}
+				};
+
+				//将消息显示在网页上
+				function setMessageInnerHTML(innerHTML) {
+					document.getElementById('message').innerHTML += innerHTML + '<br/>';
+				}
+
+				//关闭连接
+				function closeWebSocket() {
+					websocket.close();
+				}
+
+				//向远程服务器发送数据
+				function send() {
+					var message = document.getElementById('text').value;
+					websocket.send(message);
+				}
+			}
+		</script>
+	
+#服务端说明
+		@Configuration
+		public class WebSocketConfig {
+
+			//这个bean会自动注册使用 @ServerEndpoint 注解声明的 WebSocket-Endpoint.
+			//注意: 如果使用独立的servlet容器,而不是直接使用 SpringBoot 内置容器,就不要注入此bean,因为它将由容器自己提供和管理
+			@Bean
+			public ServerEndpointExporter serverEndpointExporter() {
+				return new ServerEndpointExporter();
+			}
+		}
+
+		// 使用 SpringBoot 要使用注解 @Component
+		// 而使用独立容器(tomcat)是由容器自己管理 WebSocket,但在 SpringBoot 中连容器都是 Spring 管理.
+		//
+		// 虽然 @Component 默认是单例模式的
+		// 但 SpringBoot 还是会为每个 WebSocket 连接初始化一个bean,所以可以用一个静态 Set/Map 保存起来.
+		@Component
+
+		// 使用注解 @ServerEndpoint 可以将一个普通Java类作为 WebSocket 服务器的端点
+		//
+		// WebSocket 服务端运行在 ws://[Server端IP或域名]:[Server端口]/项目/push
+		// 客户端浏览器已经可以对WebSocket客户端API发起 <<<HTTP长连接>>>.
+		//
+		// 使用 ServerEndpoint 注解的类必须有一个公共的无参数构造函数.
+		@ServerEndpoint("/push")
+		public class EchoEndpoint {
+
+			//客户端注册时调用
+			@OnOpen
+			public void onOpen(Session session) {
+			}
+
+			//客户端关闭
+			@OnClose
+			public void onClose(Session session, CloseReason reason) {
+			}
+
+			//客户端异常
+			@OnError
+			public void onError(Throwable t) {
+			}
+
+			//收到浏览器客户端消息后调用
+			@OnMessage
+			public void onMessage(String message) {
+			}
+
+			//更高级的注解,MaxMessageSize 属性可以被用来定义消息字节最大限制,在示例程序中,如果超过6个字节的信息被接收,就报告错误和连接关闭.
+			// @Message(maxMessageSize = 6)
+			// public void receiveMessage(String s) {
+			// }
+		}
+
+		
+#后台DEMO
+		@Component
+		@ServerEndpoint(value = "/websocket")
+		public class MyWebSocket {
+			
+			//静态变量,用来记录当前在线连接数. 应该把它设计成线程安全的
+			private static int onlineCount = 0;
+
+			//旧版: concurrent包的线程安全Set,用来存放每个客户端对应的 MyWebSocket 对象
+			// private static CopyOnWriteArraySet<WebSocketServer> webSocketSet = new CopyOnWriteArraySet<>();
+
+			//新版: 使用map对象,便于根据 userId 来获取对应的 MyWebSocket
+			private static ConcurrentHashMap<String, MyWebSocket> webSocketMap = new ConcurrentHashMap<>();
+
+			//区别: 非静态变量 和 静态变量
+			//与某个客户端的连接会话,需要通过它来给客户端发送数据
+			private Session session;
+
+			//当前会话session对应的显式id
+			private String userId = "";
+
+			//客户端注册
+			@OnOpen
+			public void onOpen(Session session) {
+				String id = this.userId = session.getRequestParameterMap().get("id").get(0);
+				this.session = session;
+				addOnlineCount(); //在线数加1
+				webSocketMap.put(id, this); //加入Map
+				System.out.println("有新连接加入: " + this.userId + " 当前在线人数为: " + getOnlineCount());
+
+				sendMsg2All(this.userId + " - 已上线! 欢迎");
+			}
+
+			//客户端关闭
+			@OnClose
+			public void onClose() {
+				if (null != webSocketMap.get(this.userId)) {
+					subOnlineCount(); //在线数减1
+					webSocketMap.remove(this.userId); //从Map中删除
+					System.out.println("有一连接关闭: " + this.userId + " 当前在线人数为: " + getOnlineCount());
+
+					sendMsg2All(this.userId + " - 已下线! 再见");
+				}
+			}
+
+			//客户端异常
+			@OnError
+			public void onError(Session session, Throwable error) {
+				System.out.println("发生错误: " + error);
+				error.printStackTrace();
+			}
+
+			///收到浏览器客户端消息后调用的方法
+			@OnMessage
+			public void onMessage(String message, Session session) {
+				System.out.println("来自客户端的消息: " + this.userId + " - " + message);
+
+				if (message.contains("-")) {
+					String[] split = message.split("-");
+					webSocketMap.keySet().forEach(x -> {
+						if (split[0].equalsIgnoreCase(x))
+							sendMsg2One(this.userId + "->" + x + " - " + split[1], x); //点对点
+					});
+				} else {
+					sendMsg2All(userId + " - " + message); //群发
+				}
+			}
+
+			///群发消息
+			public static void sendMsg2All(String message) {
+				webSocketMap.values().forEach(x -> x.sendMsg(message));
+			}
+
+			///点对点发送消息
+			public static void sendMsg2One(String message, String userId) {
+				webSocketMap.get(userId).sendMsg(message);
+			}
+
+			///实现服务器主动推送
+			private void sendMsg(String message) {
+				try {
+					this.session.getBasicRemote().sendText(message);
+					// this.session.getAsyncRemote().sendText(message);
+				} catch (IOException e) {
+					System.out.println("异常---发送消息: " + e);
+				}
+			}
+
+			//三个同步方法,线程安全
+			private static synchronized int getOnlineCount() {
+				return onlineCount;
+			}
+
+			private static synchronized void addOnlineCount() {
+				MyWebSocket.onlineCount++;
+			}
+
+			private static synchronized void subOnlineCount() {
+				MyWebSocket.onlineCount--;
+			}
+		}
+
+//}
 
 //{-----------<<<Docker>>>----------------------------------
 #ABC
-	开源的应用容器引擎; 轻量级容器技术!
-	将软件做好配置 --> 编译成一个镜像 --> 将镜像发布出去 --> 其他使用者就可以直接使用这个镜像
+	能够把应用程序自动部署到容器的开源引擎; 轻量级容器技术!
+	
+	简化程序
+		将软件做好配置依赖 -> 编译成镜像 -> 镜像发布 -> 其他使用者就可以直接使用这个镜像
+	
+	简化部署
+		传统  : 安装(包管理工具或者源码包编译) -> 配置 -> 运行
+		Docker: 复制 -> 运行		
 	
 	主机(Host)		->	安装了Docker程序的机器 (Docker直接安装在操作系统之上)
-	客户端(Client)	->	连接docker主机进行操作
+	客户端(Client)	->	命令行
 	仓库(Registry)	->	用来保存各种打包好的软件镜像
 	镜像(Images)	->	软件打包好的镜像,放在docker仓库中
 	容器(Container)	->	运行中的这个镜像称为容器,容器启动是非常快速的!
@@ -941,47 +1236,64 @@
 
 #CentOS安装
 	$ yum install docker
-	$ systemctl start/stop docker
-	$ docker -v							//docker版本
-	$ systemctl enable docker			//开机启动
+	$ systemctl start/restart docker
+	$ docker -v						//docker版本
+	$ systemctl enable docker		//开机启动
 	
-#相关命令
-	docker search mysql			//镜像查找
-	docker pull mysql:5.6.7		//下载指定版本,默认为最新版latest
-	docker images				//查看本地镜像
-	docker rmi imageId/name		//删除本地指定的镜像
+#相关命令 
+	//http://www.runoob.com/docker/docker-command-manual.html
+	1.状态
+		service docker status(SSR)
+		docker info
+		
+	2.镜像
+		docker search mysql
+		docker pull mysql:5.6.7
+		/// docker pull registry.docker-cn.com/library/mysql:5.6.7 ---> 官方加速
+		
+		docker images [-q]				//-q: 只显示id
+		docker rmi [-f] IMAGE_ID
+		docker rmi $(docker image -q)	//删除所有
+		
+		docker inspect IMAGE_ID			//相关信息
+		docker tag IMAGE_ID NEW_NAME:NEW_TAG //拷贝重命名
 	
-	docker tag imageId/name rename:retag //镜像重命名,然后删除旧的镜像
-
-	docker ps					//查看运行中的容器
-	docker ps -a				//查看所有的容器
+	3.容器
+		docker ps [-a]				//运行中的容器.(-a: 所有)
+		docker start(SSR) CONTAINER //容器的启动,停止,重启
+		docker rm CONTAINER			//移除容器(停止状态); rm->移除容器; rmi->移除镜像!
+		
+		docker top CONTAINER		//容器内进程
+		docker inspect CONTAINER	//容器相关信息
+		
+		docker logs [-t] [--tail 10] CONTAINER	//容器日志(-t: 显示时间, --tail: 最新10条)
 	
-	docker start/stop 容器id/name	//启动/停止 容器
-	docker rm 容器id/name			//移除容器(一定要是停止状态); rm->移除容器; rmi->移除镜像!
-
-	docker logs 容器id/name			//查看容器日志
+	4.互动
+		docker exec -it CONTAINER /bin/bash		//进入容器.(exit: 退出)
+		
+		docker cp CONTAINER:SRC_PATH DEST_PATH	//拷出来
+		docker cp DEST_PATH CONTAINER:SRC_PATH	//拷进去
 	
-#镜像下载
-	(1).docker search mysql		//命令行查找,或直接从网页查找 https://hub.docker.com/explore/
-	(2).docker pull x:y			//镜像下载.(x为镜像名,y为版本号)
-	(4).docker images			//下载完成,查看本地镜像
-	
-	(3).docker pull registry.docker-cn.com/library/x //国内镜像加速功能
-	
-#启动参数(docker run)
+#启动容器(docker run)
+	(0).--name ---> 为容器指定一个名称 //--name ES01
 	(1).-d ---> 后台运行容器,并返回容器ID
 	
 	(2).-e ---> 设置环境变量  //-e ES_JAVA_OPTS="-Xms256m -Xmx256m"
 		
 	(3).-p ---> 端口映射,格式为: 主机(宿主):容器 //-p 9200:9200
 	
-	(4).--name ---> 为容器指定一个名称 //--name ES01
+	(4).-v ---> 容器启动时,挂载宿主机的目录作为配置文件 //-v /conf/mysql:/etc/mysql/conf.d
 	
-#DEMO
+	(5).-it --> 配合 exec 使用,开启一个交互模式的终端	
+	
+#DEMO-RUN
 	0.ES
 		//后台启动ES,指定内存大小,端口号,及自定义名称
 		//ES的web通信使用 9200, 分布式集群的节点间通信使用 9300
 		docker run --name ES01 -d -e ES_JAVA_OPTS="-Xms256m -Xmx256m" -p 9200:9200 -p 9300:9300 4f7e4c61f09d
+		
+		//将 IK 插件解压到宿主机,然后配置docker容器加载宿主机 /plugins 目录.
+		docker run --name ES02 -d -e ES_JAVA_OPTS="-Xms256m -Xmx256m" -p 9201:9200 -p 9301:9300 -v /var/tmp/plugins:/usr/share/elasticsearch/plugins 4f7e4c61f09d
 
 	1.tomcat
 		//最后参数 ---> 镜像名:版本号(latest可省)
@@ -991,16 +1303,50 @@
 		//指定root密码
 		docker run --name mysql01 -d -p 33066:3306 -e MYSQL_ROOT_PASSWORD=123456 mysql
 
-		//把主机的 /conf/mysql 文件夹挂载到 mysql02 容器的 /etc/mysql/conf.d 文件夹里面
-		//以后mysql的配置可以直接在 自定义文件夹下(/conf/mysql)更改
-		docker run --name mysql02 -d -v /conf/mysql:/etc/mysql/conf.d -e MYSQL_ROOT_PASSWORD=123456 mysql:tag
+		//启动,并指定一些配置参数
+		docker run --name mysql02 -d -e MYSQL_ROOT_PASSWORD=123456 mysql:tag --character-set-server=utf8mb4 --collation-server=utf8mb4_unicode_ci
+		
+		//将上述配置参数保存到宿主机文件'/conf/mysql'
+		//启动,指定 docker-mysql 加载宿主机的配置文件. 即可以修改宿主机文件来配置mysql
+		docker run --name mysql02 -d -e MYSQL_ROOT_PASSWORD=123456 mysql:tag -v /conf/mysql:/etc/mysql/conf.d
+		
+	3.mysql-8.0.4
+		///对于 8.0.4 之后的mysql版本,不能简单的通过 '-e MYSQL_ROOT_PASSWORD=123456' 来指定root密码.
+		docker exec -it 1457d60b0375  /bin/bash //进入mysql所在docker
+		
+		mysql -u root -p //进入docker-mysql
+		
+		ALTER USER 'root'@'%' IDENTIFIED WITH mysql_native_password BY '123456'; //修改root密码
+		
+		exit //执行两次,依次退出 docker-mysql, docker.
+	
+#构建镜像
+	1.commit
+		//通过已有的容器,打包成新的镜像
+		// -a: 作者相关; -m: 描述信息; mysql01: 已有容器; skyl/mysql: 新镜像
+		docker commit -a 'skyl' -m 'hello skyl' mysql01 skyl/mysql
+		
+		//使用新镜像
+		docker run --name skyl-mysql -d -e MYSQL_ROOT_PASSWORD=123456 mysql
+		
+	2.build
+		#First Dockerfile				//#   : 注释
+		FROM ubuntu:14.01				//FROM: 基础镜像, 必须写在第一行
+		MAINTAINER skyl 'skyl@qq.com'	//MAI*: 作者相关
+		RUN apt-get update				//RUN : 
+		RUN apt-get install -y nginx
+		EXPOSE 80						//运行该容器所使用的端口
+		
+		//build-构建(dockerfile所在目录)
+		docker build -t 'skyl-nginx' /var/tmp/docker/
+	
+#镜像加速
+	aliyun加速
+		https://cr.console.aliyun.com/cn-hangzhou/mirrors
+		
+	daocloud加速
+		https://hub.daocloud.io/
 
-		//指定mysql的一些配置参数
-		docker run --name mysql03 -e MYSQL_ROOT_PASSWORD=123456 -d mysql:tag --character-set-server=utf8mb4 --collation-server=utf8mb4_unicode_ci
-	
-	#更多命令: https://docs.docker.com/engine/reference/commandline/docker/
-	
-#修改镜像源地址
 	//直接设置 –registry-mirror 参数,仅对当前的命令有效 
 	docker run hello-world --registry-mirror=https://docker.mirrors.ustc.edu.cn
 	
@@ -1019,14 +1365,18 @@
 		
 //}
 
+
 //{-----------<<<ES>>>--------------------------------------
+#搜索分两类: 搜索引擎, 站内搜索.
+#ES & Solar: 前者可以实现'分布式搜索',后者依赖插件.
+
 #下载启动
 	docker search elasticsearch //以docker形式,检索
 	docker pull registry.docker-cn.com/library/elasticsearch //下载,镜像加速
 	
 	//后台启动ES,指定内存大小,端口号,及自定义名称
 	//ES的web通信使用 9200, 分布式集群的节点间通信使用 9300
-	docker run -d -e ES_JAVA_OPTS="-Xms256m -Xmx256m" -p 9200:9200 -p 9300:9300 --name ES01 4f7e4c61f09d
+	docker run --name ES01 -d -e ES_JAVA_OPTS="-Xms256m -Xmx256m" -p 9200:9200 -p 9300:9300 4f7e4c61f09d
 	
 	http://192.168.5.23:9200/ //检测是否启动成功
 	
@@ -1114,14 +1464,11 @@
 				}
 			}
 		}
-		
-#IK分词器
-	
 	
 #整合boot
 	SpringBoot 默认支持两种技术和ES进行交互: jest, SpringData(默认).
 	
-#jest	
+#(1).jest	
 		// <!-- https://mvnrepository.com/artifact/io.searchbox/jest -->
 		<dependency>
 			<groupId>io.searchbox</groupId>
@@ -1132,7 +1479,7 @@
 		//#properties
 		spring.elasticsearch.jest.uris=192.168.5.23:9200
 
-#SpringData(默认)
+#(2).SpringData(默认)
         <dependency>
             <groupId>org.springframework.data</groupId>
             <artifactId>spring-data-elasticsearch</artifactId>
@@ -1143,6 +1490,40 @@
 		spring.data.elasticsearch.cluster-nodes=192.168.5.23:9300
 		
 	0.javabean
+		public @interface Document {
+			String indexName(); //索引库的名称,个人建议以项目的名称命名
+			 
+			String type() default ""; //类型,个人建议以实体的名称命名
+			 
+			short shards() default 5; //默认分区数
+			 
+			short replicas() default 1; //每个分区默认的备份数
+			 
+			String refreshInterval() default "1s"; //刷新间隔
+			 
+			String indexStoreType() default "fs"; //索引文件存储类型
+		}
+		
+		public @interface Field {
+			FieldType type() default FieldType.Auto; //自动检测属性的类型,可以根据实际情况自己设置
+			 
+			FieldIndex index() default FieldIndex.analyzed; //默认情况,一般默认分词就好,除非这个字段你确定查询时不会用到
+			 
+			DateFormat format() default DateFormat.none; //时间类型的格式化
+			 
+			String pattern() default ""; 
+			 
+			boolean store() default false; //默认情况下不存储原文
+			 
+			String searchAnalyzer() default ""; //指定字段搜索时使用的分词器
+			 
+			String indexAnalyzer() default ""; //指定字段建立索引时指定的分词器
+			 
+			String[] ignoreFields() default {}; //如果某个字段需要被忽略
+			 
+			boolean includeInParent() default false;
+		}
+	
 		@Document(indexName = "book", type = "article")
 		public class Article {
 			//mysql中的id,非索引库中的id
@@ -1160,9 +1541,9 @@
 			private String content;
 		}
 	
-	0.ElasticsearchTemplate(方式1,略)
+	1.ElasticsearchTemplate(方式1,略)
 	
-	1.ElasticsearchRepository(方式2)
+	2.ElasticsearchRepository(方式2)
 		@Repository
 		public interface ArticleDao extends ElasticsearchRepository<Article, java.lang.String> {
 			List<Article> findByTitleLike(String title); //查询接口
@@ -1179,6 +1560,96 @@
 		}
 	
 		
+//}
+
+//{-----------<<<IK分词>>>----------------------------------
+#Windows版
+	//下载,解压,拷贝到ES的 '/plugins' 目录,重启ES即可
+	https://github.com/medcl/elasticsearch-analysis-ik/releases/download/v5.6.12/elasticsearch-analysis-ik-5.6.12.zip			
+	
+#Docker版
+	//(F1).下载(版本一定要对应),解压,拷贝到docker容器,重启ES
+	docker exec -it ES01 /bin/bash
+	docker cp /var/lib/elasticsearch-analysis-ik-5.6.12 ES01:/usr/share/elasticsearch/plugins
+	
+	//(F2).下载,解压,启动image时挂载外部配置文件
+	docker run --name ES02 -d -e ES_JAVA_OPTS="-Xms256m -Xmx256m" -p 9201:9200 -p 9301:9300 -v /var/tmp/plugins:/usr/share/elasticsearch/plugins 4f7e4c61f09d
+	
+#两种测试
+	//最少切分: 中华人民共和国, 国歌
+	http://localhost:9200/_analyze?pretty&analyzer=ik_smart&text=中华人民共和国国歌
+	
+	//最细切分: 中华人民共和国,中华人民,中华,华人,人民共和国,人民,共和国,共和,国歌
+	http://localhost:9200/_analyze?pretty&analyzer=ik_max_word&text=中华人民共和国国歌
+
+#自定义词库
+	//默认不作为一个词
+	http://localhost:9200/_analyze?pretty&analyzer=ik_smart&text=人艰不拆
+	
+	(1).在'/elasticsearch/plugins/ik/config/'新建 my.dic (编码UTF-8),编写内容'人艰不拆'			
+		
+	(2).修改'/~/ik/config/IKAnalyzer.cfg.xml',重启ES
+		<properties> 
+			<comment>IK Analyzer 扩展配置</comment> 
+			<entry key="ext_dict">my.dic</entry> //配置此项
+			<entry key="ext_stopwords"></entry>
+			
+			<entry key="remote_ext_dict">location</entry> 
+			<entry key="remote_ext_stopwords">location</entry> 
+		</properties>
+//}
+
+//{-----------<<<logstash>>>--------------------------------
+#开源的服务器端数据处理管道,可以同时从多个数据源获取数据,并对其进行转换,然后将其发送到指定的"存储目的地".
+
+#Docker安装,运行并加载自定义配置
+	1.新增配置文件'mysql.conf'
+		input {
+			stdin {
+			}
+			jdbc {
+			  # mysql 数据库链接,shop为数据库名
+			  jdbc_connection_string => "jdbc:mysql://127.0.0.1:3306/shop"
+			  # 用户名和密码
+			  jdbc_user => "root"
+			  jdbc_password => "123456"
+			  # 驱动
+			  jdbc_driver_library => "./elasticsearch/logstash-5.5.2/mysqletc/mysql-connector-java-5.0.8.jar"
+			  jdbc_driver_class => "com.mysql.jdbc.Driver"
+			  # 分页相关
+			  jdbc_paging_enabled => "true"
+			  jdbc_page_size => "50000"
+			  # 执行的sql 文件路径+名称
+			  statement_filepath => "./elasticsearch/logstash-5.5.2/mysqletc/shop.sql"
+			  # 设置监听间隔  各字段含义(由左至右)分、时、天、月、年，全部为*默认含义为每分钟都更新
+			  schedule => "* * * * *"
+			  # 索引类型
+			  type => "content"
+			}
+		}
+		 
+		filter {
+			json {
+				source => "message"
+				remove_field => ["message"]
+			}
+		}
+		 
+		output {
+			elasticsearch {
+				# ES信息, %{id} 表示使用上述sql结果的id
+				hosts => ["localhost:9200"]
+				index => "shop_content"
+				document_id => "%{id}"
+			}
+			stdout {
+				codec => json_lines
+			}
+		}
+	
+	2.加载配置文件启动
+		logstash -f ../mysqletc/mysql.conf
+
 //}
 
 
@@ -1293,7 +1764,22 @@
 //}
 
 
+//{-----------<<<RabbitMQ>>>------------------------------
+#消息队列中间件
+	常用: ActiveMQ(*), RabbitMQ(*), Kafka(*), ZeroMq, MetaMQ, RocketMQ
 	
+	执行速度(安全性相反): K > R > A
+	
+#docker启动
+	docker run --name rabbitmq01 -d -p 5671:5671 -p 5672:5672 -p 4369:4369 -p 15671:15671 -p 15672:15672 -p 25672:25672 rabbitmq
+	
+#直接模式
+
+#分裂模式
+
+#主题模式
+	
+//}
 	
 	
 	
