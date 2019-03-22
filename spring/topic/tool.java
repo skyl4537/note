@@ -909,8 +909,36 @@
 	Person person = JSON.parseObject(json, Person.class);
 	Map map = JSON.parseObject(json, Map.class);
 	List<Person> list = JSON.parseArray(json, Person.class);
+	
+#boot整合
+	//boot2.x默认使用 jacksonJson 解析,现转换为 fastjson
+	@Configuration
+	public class WebMvcConfig extends WebMvcConfigurationSupport {
+		Logger logger = LoggerFactory.getLogger(getClass());
+
+		//利用fastjson替换掉jackson,且解决中文乱码问题
+		@Override
+		public void configureMessageConverters(List<HttpMessageConverter<?>> converters) {
+			//1.构建了一个消息转换器 converter
+			FastJsonHttpMessageConverter converter = new FastJsonHttpMessageConverter();
+
+			//2.添加fastjson配置,如: 是否格式化返回的json数据;设置编码方式
+			FastJsonConfig config = new FastJsonConfig();
+
+			config.setSerializerFeatures(SerializerFeature.PrettyFormat);//格式化
+
+			List<MediaType> list = new ArrayList<>();//中文乱码
+			list.add(MediaType.APPLICATION_JSON_UTF8);
+			converter.setSupportedMediaTypes(list);
+
+			//3.在消息转换器中添加fastjson配置
+			converter.setFastJsonConfig(config);
+			converters.add(converter);
+		}
+	}
 
 //}
+
 
 //{-----------<<<WebSocket>>>-------------------------------
         <dependency>
@@ -1201,6 +1229,7 @@
 		}
 
 //}
+
 
 //{-----------<<<Docker>>>----------------------------------
 #ABC
@@ -1764,21 +1793,171 @@
 //}
 
 
-//{-----------<<<RabbitMQ>>>------------------------------
+//{-----------<<<RabbitMQ>>>--------------------------------
 #消息队列中间件
 	常用: ActiveMQ(*), RabbitMQ(*), Kafka(*), ZeroMq, MetaMQ, RocketMQ
 	
-	执行速度(安全性相反): K > R > A
+	执行速度(安全性相反): K > R > A	
+	
+#核心概念
+	1.Message
+		消息,由消息头和消息体组成. 消息体不透明, 而消息头由一系列的可选属性组成:
+			routing-key		--> 路由键
+			priority		--> 相对于其他消息的优先权
+			delivery-mode	--> 该消息可能需要持久性存储
+	
+	2.Publisher
+		消息的生产者,一个向交换器(Exchange)发布消息的客户端应用程序
+		
+	3.Consumer
+		消息的消费者, 表示一个从消息队列中取得消息的客户端应用程序.
+	
+	4.Queue
+		消息队列, 用来保存消息直到发送给消费者.	它是消息的容器,也是消息的终点.
+		
+		一个消息可投入一个或多个队列. 消息一直在队列里面,等待消费者连接到这个队列将其取走.
+		
+	5.Exchange
+		交换器, 用来接收生产者发送的消息并将该消息路由给服务器中的队列.
+		1.Message(2.Publisher) --> 4.Exchange --> 5.Queue(3.Consumer)
+		
+		Exchange(4种类型): direct(默认), fanout, topic, headers(几乎不用).
+	
+	6.Binding
+		绑定, 用于消息队列和交换器之间的关联. 
+		一个绑定就是基于路由键将交换器和消息队列连接起来的路由规则,所以可以将交换器理解成一个由绑定构成的路由表
+		
+		Exchange 和 Queue 的绑定可以是多对多的关系.
 	
 #docker启动
+	//必须下载'management'版本才能有管理界面
+	// 4369: erlang发现; 5672: client通信; 15672: UI管理界面; 25672: server间内部通信	
 	docker run --name rabbitmq01 -d -p 5671:5671 -p 5672:5672 -p 4369:4369 -p 15671:15671 -p 15672:15672 -p 25672:25672 rabbitmq
 	
-#直接模式
+	http://localhost:15672/ //UI管理页面,默认用户名密码: guest
+		
+#boot整合
+	0.先决条件
+        <dependency>
+            <groupId>org.springframework.boot</groupId>
+            <artifactId>spring-boot-starter-amqp</artifactId>
+        </dependency>
+		
+		#rabbitmq
+		spring.rabbitmq.host=192.168.5.23
+		spring.rabbitmq.port=5672
+		spring.rabbitmq.username=guest //默认,可省
+		spring.rabbitmq.password=guest
+		
+		///全局注解   + 监听注解
+		@EnableRabbit + @RabbitListener
+		
+	1.序列化器 ---> ///默认以java序列化,现配置json序列化
+		@Configuration
+		public class AMQPConfig {
+			@Bean
+			public MessageConverter messageConverter() {
+				return new Jackson2JsonMessageConverter(); 
+			}
+		}
+		
+	2.直接模式 --> direct(1对1) --> Msg 直接发送到 Queue
+		//页面访问 http://192.168.5.23:15672/#/queues  Add a new queue --> queue.direct
+		//Durability: 是否持久化,即 rabbitmq 重启该queue是否还存在??
+		//AutoDelete: 是否自动删除.
+		
+		@Component ///消费者
+		public class Customer {
 
-#分裂模式
+			//启动2个消费者都监听"direct.queue",
+			//则每次发送消息只会被2者中的一个接收到,并且负载均衡,每个接收者收到消息概率相同
+			@RabbitListener(queues = "queue.direct")
+			public void recvDirect0(Dog dog) {
+				System.out.println("queue.direct-0: " + dog);
+			}
 
-#主题模式
-	
+			@RabbitListener(queues = "queue.direct")
+			public void recvDirect1(Dog dog) {
+				System.out.println("queue.direct-1: " + dog);
+			}
+		}
+
+		@Test ///生产者
+		public void send() {
+			/**
+			 * @param exchange	 交换器,点对点模式-不用指定
+			 * @param routingKey 路由键
+			 * @param object	 消息对象
+			 */
+			rabbitTemplate.convertAndSend("", "queue.direct", new Dog(18, "小王"));
+		}
+
+	3.路由模式 --> fanout(多对多) --> Msg 发送到 Exchange,路由到绑定的 Queue
+		//新增: queue.fanout.0, queue.fanout.1
+		//新增: exchange.fanout (Type: fanout)
+		
+		//绑定: exchange.fanout <--> queue.fanout.0 queue.fanout.1
+
+		@Component ///消费者
+		public class Customer {
+
+			@RabbitListener(queues = "queue.fanout.0")
+			public void recvDirect0(Dog dog) {
+				System.out.println("queue.fanout.0: " + dog);
+			}
+
+			@RabbitListener(queues = "queue.fanout.1")
+			public void recvDirect1(Dog dog) {
+				System.out.println("queue.fanout.1: " + dog);
+			}
+		}
+		
+		@Test ///生产者
+		public void send() {
+			/**
+			 * @param exchange	 交换器
+			 * @param routingKey 路由键,路由模式-不用指定
+			 * @param object	 消息对象
+			 */
+			rabbitTemplate.convertAndSend("exchange.fanout", "", new Dog(18, "小王"));
+		}
+
+	4.主题模式 --> topic(多对多) --> Exchange 可以模糊匹配路由键,类似于SQL中 =和like 的关系
+		//新增: queue.topic.0, queue.topic.1, queue.topic.2
+		//新增: exchange.topic (Type: topic)
+		
+		//绑定(Routing_key)
+		// exchange.topic --> queue.topic.0	-> blue.# //#匹配一个或多个字符, *匹配一个字符
+		// exchange.topic --> queue.topic.1	-> #.log
+		// exchange.topic --> queue.topic.2	-> blue.log
+		
+		@Component ///消费者
+		public class Customer {
+
+			@RabbitListener(queues = "queue.topic.0")
+			public void recvDirect0(Dog dog) {
+				System.out.println("queue.fanout.0: " + dog);
+			}
+
+			@RabbitListener(queues = "queue.topic.1")
+			public void recvDirect1(Dog dog) {
+				System.out.println("queue.fanout.1: " + dog);
+			}
+
+			@RabbitListener(queues = "queue.topic.2")
+			public void recvDirect2(Dog dog) {
+				System.out.println("queue.fanout.2: " + dog);
+			}
+		}
+		
+		@Test ///生产者
+		public void send() {
+			rabbitTemplate.convertAndSend("exchange.topic", "blue.x", new Dog(18, "blue.x"));		  //0
+			rabbitTemplate.convertAndSend("exchange.topic", "x.log", new Dog(18, "x.log"));			  //1
+			rabbitTemplate.convertAndSend("exchange.topic", "blue.log", new Dog(18, "blue.log"));	  //0,1,2
+			rabbitTemplate.convertAndSend("exchange.topic", "blue.x.log", new Dog(18, "blue.x.log")); //0,1
+		}
+
 //}
 	
 	

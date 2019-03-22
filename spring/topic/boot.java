@@ -1281,162 +1281,6 @@
 
 //}
 
-//{--------<<<常用包>>>------------------------------
-#org.apache.commons
-        // <!-- 该版本完全支持 Java5 的特性,如泛型和可变参数. 该版本无法兼容以前的版本,简化很多平时经常要用到的写法,如判断字符串是否为空等等 -->
-        <dependency>
-            <groupId>org.apache.commons</groupId>
-            <artifactId>commons-lang3</artifactId>
-            <version>3.8.1</version>
-        </dependency>
-
-        // <!-- 对象池的实现,显著的提升了性能和可伸缩性,特别是在高并发加载的情况下 -->
-        <dependency>
-            <groupId>org.apache.commons</groupId>
-            <artifactId>commons-pool2</artifactId>
-            <version>2.4.2</version>
-        </dependency>
-
-        // <!-- email -->
-        <dependency>
-            <groupId>org.apache.commons</groupId>
-            <artifactId>commons-email</artifactId>
-            <version>1.4</version>
-        </dependency>
-        // <!-- spring-boot email -->
-        <dependency>
-            <groupId>org.springframework.boot</groupId>
-            <artifactId>spring-boot-starter-mail</artifactId>
-        </dependency>
-
-        // <!-- IO工具类,文件操作及字符串比较功能 -->
-        <dependency>
-            <groupId>org.apache.commons</groupId>
-            <artifactId>commons-io</artifactId>
-            <version>1.3.2</version>
-        </dependency>
-
-#spring
-        // <!-- 为Spring核心提供了大量扩展.可以找到使用 Spring ApplicationContext 特性时所需的全部类,JDNI所需的全部类,
-        //		UI模板引擎(Templating),如 Velocity、FreeMarker、JasperReports, 以及校验 Validation 方面的相关类 -->
-        <dependency>
-            <groupId>org.springframework</groupId>
-            <artifactId>spring-context</artifactId>
-            <version>4.3.3.RELEASE</version>
-        </dependency>
-
-        // <!-- 含支持UI模版(Velocity,FreeMarker,JasperReports),邮件服务,脚本服务(JRuby),缓存Cache(EHCache),
-        // 		任务计划Scheduling(uartz)方面的类. 外部依赖spring-context, (spring-jdbc, Velocity, FreeMarker,
-        // 		JasperReports, BSH, Groovy, JRuby, Quartz, EHCache) -->
-        <dependency>
-            <groupId>org.springframework</groupId>
-            <artifactId>spring-context-support</artifactId>
-            <version>4.3.3.RELEASE</version>
-        </dependency>
-
-        // <!-- spring测试框架,需要配合 junit 进行使用创建单元测试. spring测试所需包: sring的相关组件,spring-test,junit -->
-        <dependency>
-            <groupId>org.springframework</groupId>
-            <artifactId>spring-test</artifactId>
-            <version>4.3.3.RELEASE</version>
-        </dependency>
-
-        // <!-- 包含Spring 框架基本的核心工具类. Spring 其它组件要都要使用到这个包里的类，是其它组件的基本核心.
-        //		也可以在自己的应用系统中使用这些工具类.外部依赖Commons-logging,Log4J -->
-        <dependency>
-            <groupId>org.springframework</groupId>
-            <artifactId>spring-core</artifactId>
-            <version>4.3.3.RELEASE</version>
-        </dependency>
-
-        // <!-- 所有应用都要用到的,它包含访问配置文件,创建和管理bean 以及 进行(IoC/DI)操作相关的所有类.
-		//		如果应用只需基本的IoC/DI 支持，引入spring-core.jar 及spring-beans.jar 文件就可以了. 外部依赖spring-core，(CGLIB)。 -->
-        <dependency>
-            <groupId>org.springframework</groupId>
-            <artifactId>spring-beans</artifactId>
-            <version>4.3.3.RELEASE</version>
-        </dependency>
-
-        // <!-- https://mvnrepository.com/artifact/org.springframework/spring-web
-            // 包含Web 应用开发时，用到Spring 框架时所需的核心类，包括自动载入Web Application Context
-            // 特性的类、Struts  与JSF 集成类、文件上传的支持类、Filter 类和大量工具辅助类。
-            // 外部依赖spring-context, Servlet API, (JSP API, JSTL, Commons FileUpload, COS)。 -->
-        <dependency>
-            <groupId>org.springframework</groupId>
-            <artifactId>spring-web</artifactId>
-            <version>4.3.3.RELEASE</version>
-        </dependency>
-
-        // <!-- https://mvnrepository.com/artifact/org.springframework/spring-webmvc
-            // 包含Spring MVC 框架相关的所有类。包括框架的Servlets，Web MVC框架，控制器和视图支持。
-            // 当然，如果你的应用使用了独立的MVC
-            // 框架，则无需这个JAR 文件里的任何类。
-            // 外部依赖spring-web, (spring-support，Tiles，iText，POI)。 -->
-        <dependency>
-            <groupId>org.springframework</groupId>
-            <artifactId>spring-webmvc</artifactId>
-            <version>4.3.3.RELEASE</version>
-        </dependency>
-
-        // <!-- https://mvnrepository.com/artifact/org.springframework/spring-jdbc
-            // 包含对Spring 对JDBC 数据访问进行封装的所有类。 外部依赖spring-beans，spring-dao。 -->
-        <dependency>
-            <groupId>org.springframework</groupId>
-            <artifactId>spring-jdbc</artifactId>
-            <version>4.3.3.RELEASE</version>
-        </dependency>
-
-        // <!-- https://mvnrepository.com/artifact/org.springframework/spring-aop
-            // AOP（Aspect Oriented Programming），即面向切面编程（也叫面向方面编程，面向方法编程）。
-            // 其主要作用是，在不修改源代码的情况下给某个或者一组操作添加额外的功能。像日志记录，事务处理，
-            // 权限控制等功能，都可以用AOP来“优雅”地实现，使这些额外功能和真正的业务逻辑分离开来，
-            // 软件的结构将更加清晰。AOP是OOP的一个强有力的补充。 -->
-        <dependency>
-            <groupId>org.springframework</groupId>
-            <artifactId>spring-aop</artifactId>
-            <version>4.3.3.RELEASE</version>
-        </dependency>
-
-        // <!-- https://mvnrepository.com/artifact/org.springframework/spring-tx 事物控制 -->
-        <dependency>
-            <groupId>org.springframework</groupId>
-            <artifactId>spring-tx</artifactId>
-            <version>4.3.3.RELEASE</version>
-        </dependency>
-
-        // <!-- https://mvnrepository.com/artifact/org.springframework/spring-orm
-            // 包含Spring对DAO特性集进行了扩展，使其支持 iBATIS、JDO、OJB、TopLink， 因为Hibernate已经独立成包了，现在不包含在这个包里了。这个jar文件里大部分的类都要
-            // 依赖spring-dao.jar里的类，用这个包时你需要同时包含spring-dao.jar包。 -->
-        <dependency>
-            <groupId>org.springframework</groupId>
-            <artifactId>spring-orm</artifactId>
-            <version>4.3.3.RELEASE</version>
-        </dependency>
-        <dependency>
-            <groupId>org.springframework</groupId>
-            <artifactId>spring-aspects</artifactId>
-            <version>4.3.3.RELEASE</version>
-        </dependency>
-
-        //<!-- https://mvnrepository.com/artifact/org.springframework/spring-expression
-        //    SPEL表达式支持:
-        //    一、基本表达式：字面量表达式、关系，逻辑与算数运算表达式、字符串连接及截取表达式、
-        //        三目运算及Elivis表达式、正则表达式、括号优先级表达式；
-        //    二、类相关表达式：类类型表达式、类实例化、instanceof表达式、变量定义及引用、赋值表达式、
-        //        自定义函数、对象属性存取及安全导航表达式、对象方法调用、Bean引用；
-        //    三、集合相关表达式：内联List、内联数组、集合，字典访问、列表，字典，数组修改、集合投影、
-        //        集合选择；不支持多维内联数组初始化；不支持内联字典定义；
-        //    四、其他表达式：模板表达式。
-        //    注：SpEL表达式中的关键字是不区分大小写的。-->
-        <dependency>
-            <groupId>org.springframework</groupId>
-            <artifactId>spring-expression</artifactId>
-            <version>4.3.3.RELEASE</version>
-        </dependency>
-	
-
-//}
-
 //{--------<<<restful>>>-----------------------------
 #restful是对于同一个服务器资源的一组不同的操作,包括: GET/POST/PUT/DELETE/PATCH/HEAD/OPTIONS
 	
@@ -1879,6 +1723,162 @@
 
 //}
 
+
+//{--------<<<常用包>>>------------------------------
+#org.apache.commons
+        // <!-- 该版本完全支持 Java5 的特性,如泛型和可变参数. 该版本无法兼容以前的版本,简化很多平时经常要用到的写法,如判断字符串是否为空等等 -->
+        <dependency>
+            <groupId>org.apache.commons</groupId>
+            <artifactId>commons-lang3</artifactId>
+            <version>3.8.1</version>
+        </dependency>
+
+        // <!-- 对象池的实现,显著的提升了性能和可伸缩性,特别是在高并发加载的情况下 -->
+        <dependency>
+            <groupId>org.apache.commons</groupId>
+            <artifactId>commons-pool2</artifactId>
+            <version>2.4.2</version>
+        </dependency>
+
+        // <!-- email -->
+        <dependency>
+            <groupId>org.apache.commons</groupId>
+            <artifactId>commons-email</artifactId>
+            <version>1.4</version>
+        </dependency>
+        // <!-- spring-boot email -->
+        <dependency>
+            <groupId>org.springframework.boot</groupId>
+            <artifactId>spring-boot-starter-mail</artifactId>
+        </dependency>
+
+        // <!-- IO工具类,文件操作及字符串比较功能 -->
+        <dependency>
+            <groupId>org.apache.commons</groupId>
+            <artifactId>commons-io</artifactId>
+            <version>1.3.2</version>
+        </dependency>
+
+#spring
+        // <!-- 为Spring核心提供了大量扩展.可以找到使用 Spring ApplicationContext 特性时所需的全部类,JDNI所需的全部类,
+        //		UI模板引擎(Templating),如 Velocity、FreeMarker、JasperReports, 以及校验 Validation 方面的相关类 -->
+        <dependency>
+            <groupId>org.springframework</groupId>
+            <artifactId>spring-context</artifactId>
+            <version>4.3.3.RELEASE</version>
+        </dependency>
+
+        // <!-- 含支持UI模版(Velocity,FreeMarker,JasperReports),邮件服务,脚本服务(JRuby),缓存Cache(EHCache),
+        // 		任务计划Scheduling(uartz)方面的类. 外部依赖spring-context, (spring-jdbc, Velocity, FreeMarker,
+        // 		JasperReports, BSH, Groovy, JRuby, Quartz, EHCache) -->
+        <dependency>
+            <groupId>org.springframework</groupId>
+            <artifactId>spring-context-support</artifactId>
+            <version>4.3.3.RELEASE</version>
+        </dependency>
+
+        // <!-- spring测试框架,需要配合 junit 进行使用创建单元测试. spring测试所需包: sring的相关组件,spring-test,junit -->
+        <dependency>
+            <groupId>org.springframework</groupId>
+            <artifactId>spring-test</artifactId>
+            <version>4.3.3.RELEASE</version>
+        </dependency>
+
+        // <!-- 包含Spring 框架基本的核心工具类. Spring 其它组件要都要使用到这个包里的类，是其它组件的基本核心.
+        //		也可以在自己的应用系统中使用这些工具类.外部依赖Commons-logging,Log4J -->
+        <dependency>
+            <groupId>org.springframework</groupId>
+            <artifactId>spring-core</artifactId>
+            <version>4.3.3.RELEASE</version>
+        </dependency>
+
+        // <!-- 所有应用都要用到的,它包含访问配置文件,创建和管理bean 以及 进行(IoC/DI)操作相关的所有类.
+		//		如果应用只需基本的IoC/DI 支持，引入spring-core.jar 及spring-beans.jar 文件就可以了. 外部依赖spring-core，(CGLIB)。 -->
+        <dependency>
+            <groupId>org.springframework</groupId>
+            <artifactId>spring-beans</artifactId>
+            <version>4.3.3.RELEASE</version>
+        </dependency>
+
+        // <!-- https://mvnrepository.com/artifact/org.springframework/spring-web
+            // 包含Web 应用开发时，用到Spring 框架时所需的核心类，包括自动载入Web Application Context
+            // 特性的类、Struts  与JSF 集成类、文件上传的支持类、Filter 类和大量工具辅助类。
+            // 外部依赖spring-context, Servlet API, (JSP API, JSTL, Commons FileUpload, COS)。 -->
+        <dependency>
+            <groupId>org.springframework</groupId>
+            <artifactId>spring-web</artifactId>
+            <version>4.3.3.RELEASE</version>
+        </dependency>
+
+        // <!-- https://mvnrepository.com/artifact/org.springframework/spring-webmvc
+            // 包含Spring MVC 框架相关的所有类。包括框架的Servlets，Web MVC框架，控制器和视图支持。
+            // 当然，如果你的应用使用了独立的MVC
+            // 框架，则无需这个JAR 文件里的任何类。
+            // 外部依赖spring-web, (spring-support，Tiles，iText，POI)。 -->
+        <dependency>
+            <groupId>org.springframework</groupId>
+            <artifactId>spring-webmvc</artifactId>
+            <version>4.3.3.RELEASE</version>
+        </dependency>
+
+        // <!-- https://mvnrepository.com/artifact/org.springframework/spring-jdbc
+            // 包含对Spring 对JDBC 数据访问进行封装的所有类。 外部依赖spring-beans，spring-dao。 -->
+        <dependency>
+            <groupId>org.springframework</groupId>
+            <artifactId>spring-jdbc</artifactId>
+            <version>4.3.3.RELEASE</version>
+        </dependency>
+
+        // <!-- https://mvnrepository.com/artifact/org.springframework/spring-aop
+            // AOP（Aspect Oriented Programming），即面向切面编程（也叫面向方面编程，面向方法编程）。
+            // 其主要作用是，在不修改源代码的情况下给某个或者一组操作添加额外的功能。像日志记录，事务处理，
+            // 权限控制等功能，都可以用AOP来“优雅”地实现，使这些额外功能和真正的业务逻辑分离开来，
+            // 软件的结构将更加清晰。AOP是OOP的一个强有力的补充。 -->
+        <dependency>
+            <groupId>org.springframework</groupId>
+            <artifactId>spring-aop</artifactId>
+            <version>4.3.3.RELEASE</version>
+        </dependency>
+
+        // <!-- https://mvnrepository.com/artifact/org.springframework/spring-tx 事物控制 -->
+        <dependency>
+            <groupId>org.springframework</groupId>
+            <artifactId>spring-tx</artifactId>
+            <version>4.3.3.RELEASE</version>
+        </dependency>
+
+        // <!-- https://mvnrepository.com/artifact/org.springframework/spring-orm
+            // 包含Spring对DAO特性集进行了扩展，使其支持 iBATIS、JDO、OJB、TopLink， 因为Hibernate已经独立成包了，现在不包含在这个包里了。这个jar文件里大部分的类都要
+            // 依赖spring-dao.jar里的类，用这个包时你需要同时包含spring-dao.jar包。 -->
+        <dependency>
+            <groupId>org.springframework</groupId>
+            <artifactId>spring-orm</artifactId>
+            <version>4.3.3.RELEASE</version>
+        </dependency>
+        <dependency>
+            <groupId>org.springframework</groupId>
+            <artifactId>spring-aspects</artifactId>
+            <version>4.3.3.RELEASE</version>
+        </dependency>
+
+        //<!-- https://mvnrepository.com/artifact/org.springframework/spring-expression
+        //    SPEL表达式支持:
+        //    一、基本表达式：字面量表达式、关系，逻辑与算数运算表达式、字符串连接及截取表达式、
+        //        三目运算及Elivis表达式、正则表达式、括号优先级表达式；
+        //    二、类相关表达式：类类型表达式、类实例化、instanceof表达式、变量定义及引用、赋值表达式、
+        //        自定义函数、对象属性存取及安全导航表达式、对象方法调用、Bean引用；
+        //    三、集合相关表达式：内联List、内联数组、集合，字典访问、列表，字典，数组修改、集合投影、
+        //        集合选择；不支持多维内联数组初始化；不支持内联字典定义；
+        //    四、其他表达式：模板表达式。
+        //    注：SpEL表达式中的关键字是不区分大小写的。-->
+        <dependency>
+            <groupId>org.springframework</groupId>
+            <artifactId>spring-expression</artifactId>
+            <version>4.3.3.RELEASE</version>
+        </dependency>
+	
+
+//}
 
 
 
