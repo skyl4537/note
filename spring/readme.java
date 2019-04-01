@@ -1002,13 +1002,70 @@ new出来的对象再注入其他bean就会 发生获取不到的现象。所以
 	轻量级的日志搜集处理框架.
 
 
+// #0326-短信注册
+	// service, dao --> 抛出异常;
+	// Controller/全局异常处理器 --> 处理异常.
+	
+	// @Service
+	// public class PersonService{
+
+		// private void add(Person person, String smsCode) {
+			// if (StringUtils.isEmpty(smsCode))
+				// throw new RuntimeException("请输入验证码");
+
+			// if (!smsCodeRedis.equalsIgnoreCase(smsCode))
+				// throw new RuntimeException("验证码不正确或已过期");
+
+			// personDao.add(person); //写库
+		// }
+	// }
 
 
+#0329-BCrypt 密码加密
+	// //SpringSecurity 提供的 BCrypt 强哈希方法每次加密的结果都不一样. 
+	
+        // <dependency>
+            // <groupId>org.springframework.boot</groupId>
+            // <artifactId>spring-boot-starter-security</artifactId>
+        // </dependency>
+	
+		// @Bean
+		// public BCryptPasswordEncoder encoder(){
+			// return new BCryptPasswordEncoder();
+		// }
+		
+		// @Autowired
+		// BCryptPasswordEncoder encoder;
+		
+		// @Test //测试加密
+		// public void encoder() {
+			// String encode = encoder.encode("123");
+			// System.out.println("encode: " + encode); //加密: $2a$10$ujGzEaaHHU0y72yzfwMk.OA0KUNpKfRFr291I5YuGqnWawmnAQV1y
 
+			// boolean matches = encoder.matches("123", "$2a$10$ujGzEaaHHU0y72yzfwMk.OA0KUNpKfRFr291I5YuGqnWawmnAQV1y");
+			// System.out.println("matches: " + matches); //比对: true
+		// }
+		
+		// //登陆逻辑S
+		// public User login(String loginName, String loginPwd) {
+			// User user = helloMapper.findByName(loginName);
+			// if (null != user && encoder.matches(loginPwd, user.getPwd())) {
+				// System.out.println("登陆成功");
+				// return user;
+			// } else {
+				// System.out.println("用户名或密码不正确");
+				// return null;
+			// }
+		// }
 
+#0330
+	SpringMVC 配置的基本功能
+		组件扫描; 
+		配置视图解析器; 
+		开启MVC注解支持; 
+		释放静态资源.
 
-
-
+	
 
 
 

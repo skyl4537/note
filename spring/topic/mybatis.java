@@ -19,7 +19,7 @@
 		key			-> http://mybatis.org/dtd/mybatis-3-config.dtd
 		
 #boot整合
-	0.pom文件
+	0.pom.xml
         // <!-- Mybatis 启动器 -->
         <dependency>
             <groupId>org.mybatis.spring.boot</groupId>

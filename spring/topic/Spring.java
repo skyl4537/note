@@ -1,9 +1,9 @@
 
-//{--------<<<x>>>------------------------------------------------------------------------
+//{--------<<<x>>>-------------------------------
 
 //}
 
-//{--------<<<abc>>>---------------------------------------------------------------------
+//{--------<<<abc>>>-----------------------------
 #框架	-> 为解决某些问题而提出的一整套解决方案.
 #轻量级	-> 不需要实现框架的接口. (非侵入式)
 
@@ -11,10 +11,37 @@
 	IoC/DI	-> 控制反转/依赖注入
 	AOP		-> 面向切面编程 (Aspect Oriented Programming)
 	声明式事务 @Transactional
+	
+#什么是Spring
+	1.Spring实现了工厂模式的工厂类(什么是工厂模式),这个类名为 BeanFactory (实际上是一个接口),
+	在程序中通常使用 BeanFactory 的子类 ApplicationContext.
+	Spring 相当于一个大的工厂类,通过读取配置文件中的<bean>标签,实例化对应的类对象.
+	
+	2.Spring提供了对IOC良好支持,IOC 是一种编程思想,利用这种思想可以很好地实现模块之间的解耦。
+	IOC 也称为 DI(Depency Injection), 什么叫依赖注入呢??
+	
+	
+	3.Spring提供了对AOP技术的良好封装,
+		AOP 面向切面编程,就是系统中有很多各不相干的类的方法,在这些方法中要加入某种系统功能的代码,
+		例如, 加入日志,加入权限判断,加入异常处理,这种应用称为 AOP. 
+		
+		实现 AOP 功能采用的是代理技术,客户端程序不再调用目标,而是调用代理类,
+		代理类与目标类对外具有相同的方法声明,有两种方式可以实现相同的方法声明:
+		(1).实现相同的接口; (2).是作为目标的子类在.
+		
+		JDK 中采用 Proxy 类产生动态代理的方式为某个接口生成实现类,如果要为某个类生成子类,
+		则可以用 CGLIB 在生成的代理类的方法中加入系统功能和调用目标类的相应方法,
+		系统功能的代理以 Advice 对象进行提供, 显然要创建出代理对象,至少需要目标类和 Advice 类.
+		Spring 提供了这种支持, 只需要在 Spring 配置文件中配置这两个元素即可实现代理和 aop 功能. 例如:
+			<bean id=”proxy” type=”org.spring.framework.aop.ProxyBeanFactory”>
+			<property name=”target”ref=””></property>
+			<property name=”advisor”ref=””></property>
+			</bean>
+	
 
 //}
 	
-//{--------<<<IoC>>>----------------------------------------------------------------------
+//{--------<<<IoC>>>-----------------------------
 #IoC和DI -> 解耦
 	//IoC(Inversion-of-Control)控制反转: 是一个定义对象依赖的过程,反转资源的获取方向. 
 	传统的资源查找方式是组件主动向容器发起查找资源请求, 作为回应, 容器适时的返回资源. 
@@ -64,7 +91,7 @@
 
 //}
 
-//{--------<<<依赖注入>>>-----------------------------------------------------------------
+//{--------<<<依赖注入>>>------------------------
 #实例化bean -> 反射原理
 	#无参构造
 		//id: bean名称; 在IOC容器中必须唯一; 默认使用类名小驼峰
@@ -232,7 +259,7 @@
 			
 //}
 
-//{--------<<<@Autowired & @Resource>>>---------------------------------------------------
+//{--------<<<@Autowired & @Resource>>>----------
 #@ComponentScan ---> 指定Spring在哪些包及其子包中寻找bean
 	(1).Boot项目,该注解包含在 @SpringBootApplication,所以只需在启动类中配置前者即可.
 	
@@ -285,7 +312,7 @@
 		InfoService upInfoService;
 //}
 
-//{--------<<<AOP>>>----------------------------------------------------------------------
+//{--------<<<AOP>>>-----------------------------
 #基本概念
 	AOP: 面向切面编程, 通过'动态代理'实现程序功能的统一维护. (Aspect-Oriented Programming)
 
@@ -431,7 +458,7 @@
 
 //}	
 
-//{--------<<<声明式事务>>>---------------------------------------------------------------
+//{--------<<<声明式事务>>>----------------------
 #基本概念(ACID)
 	一系列的动作, 一个单独的工作单元. 这些动作要么全部完成, 要么全部失败.
 
@@ -480,13 +507,13 @@
 //}	
 		
 
-//{--------<<<SSM>>>----------------------------------------------------------------------
+//{--------<<<SSM>>>-----------------------------
 #Spring
 	Spring家族的最底层,用于项目组件间解耦.
 	常用的是IOC容器,自动初始化bean; 另外,还有AOP, 声明式事务等
 	
 #SpringMVC //web层
-	拦截用户请求,调用相应的 Controller 方法, ..., 最终把结果(页面或josn/xml数据)返回给用户.
+	拦截用户请求,调用相应的 Controller 方法, ..., 最终把结果(页面/josn/xml)返回给用户.
 	MVC就是做前面和后面的过程,与用户打交道. 中间与数据库的交互过程,则属于DAO层
 
 #MyBatis
@@ -631,28 +658,27 @@
 			http://www.springframework.org/schema/beans http://www.springframework.org/schema/beans/spring-beans.xsd
 			http://www.springframework.org/schema/context http://www.springframework.org/schema/context/spring-context-4.0.xsd">
 
-		// <!-- 组件扫描 -->
+		// <!-- 1.组件扫描 -->
 		<context:component-scan base-package="com.example.spring" use-default-filters="false"> //<!-- 指定扫描,即设置false -->
 			<context:include-filter type="annotation" expression="org.springframework.stereotype.Controller" />
 		</context:component-scan>
 
-		// <!-- 视图解析器,配置jsp -->
+		// <!-- 2.配置视图解析器,配置jsp -->
 		<bean class="org.springframework.web.servlet.view.InternalResourceViewResolver">
 			<property name="prefix" value="/WEB-INF/views/" />
 			<property name="suffix" value=".jsp" />
 		</bean>
 
-		// <!-- 配置SpringMVC -->
-		// <!-- 1.开启SpringMVC注解模式 -->
+		// <!-- 3.开启MVC注解支持 -->
 		// <!-- 简化配置:
-		//		(1)自动注册 DefaultAnootationHandlerMapping,AnotationMethodHandlerAdapter 
-		//		(2)提供一些列: 数据绑定,数字和日期的format @NumberFormat, @DateTimeFormat, xml,json默认读写支持 
+		//		(A).自动注册 DefaultAnootationHandlerMapping,AnotationMethodHandlerAdapter 
+		//		(B).提供一些列: 数据绑定,数字和日期的format @NumberFormat, @DateTimeFormat, xml,json默认读写支持 
 		// -->
 		<mvc:annotation-driven />
 		
-		// <!-- 2.静态资源默认servlet配置
-		//		(1)加入对静态资源的处理: js,gif,png
-		//		(2)允许使用"/"做整体映射
+		// <!-- 4.释放静态资源
+		//		(A).加入对静态资源的处理: js,gif,png
+		//		(B).允许使用"/"做整体映射
 		 // -->
 		<mvc:default-servlet-handler />
 	</beans>

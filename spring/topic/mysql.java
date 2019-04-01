@@ -67,12 +67,34 @@
 	
 //{--------<<<Method>>>--------------------------------------------------------------------
 	SELECT VERSION(); //数据库版本
+	SELECT name, DATABASE() FROM flower; //查看当前所在的数据库或表
 	
 	SELECT ROW_COUNT(); //返回受影响的行数
-	SELECT name, DATABASE() FROM flower; //查看当前所在的数据库或表
 
+#字符串
+	SELECT LENGTH('测试') AS length;			//6 --> 以'字节'为单位
+	SELECT CHAR_LENGTH('测试') AS charLength;	//2 --> ..'字符'......,推荐
+	
+	SELECT LEFT('RUNOOB', 3) AS leftStr;		//RUN --> 左侧前3位字符
+	SELECT RIGHT('RUNOOB', 3) AS rightStr;		//OOB --> 右侧后3......
+	
+	SELECT MID('RUNOOB', 2, 3) AS midStr;		//UNO --> 从第2位字符开始(从1开始计数),截取3位
+	
+	SELECT SUBSTR('RUNOOB', 2) AS subStr;		//UNOOB
+	SELECT SUBSTR('RUNOOB', 2, 3) AS subStr;	//UNO --> 同 MID()
+	SELECT SUBSTR('RUNOOB', -3) AS subStr;		//OOB --> 同 RIGHT()
 	
 	
+	SELECT SUBSTRING_INDEX('192.168.5.120', '.', 2) AS subIndex;  //192.168 --> 截取第二个'.'之前的所有字符
+	SELECT SUBSTRING_INDEX('192.168.5.120', '.', -2) AS subIndex; //5.120   --> ...............后..........
+	SELECT SUBSTRING_INDEX('192.168.5.120', '..', 2) AS subIndex; //192.168.5.120 --> 找不到'..'就返回整个字符串
+	
+	SELECT REPLACE('192.168.5.120','.','') INTO @repStr; //1921685120 --> 替换
+	
+	SELECT UCASE("runoob") AS uCase; //RUNOOB
+	SELECT LCASE("RUNOOB") AS lCase; //runoob --> 大小写转换
+	
+	SELECT SUBSTR(@device_id FROM LENGTH(@device_id)-2 FOR 3) INTO @device_id;
 	
 	
 	

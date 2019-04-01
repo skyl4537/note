@@ -43,71 +43,72 @@
 
 //{--------<<<ehcache>>>-------------------------------------------------------------------
 #ehcache - 纯java的进程内缓存框架! 快速,精干
-	0.pom文件
-		<dependency>
-			<groupId>org.springframework.boot</groupId>
-			<artifactId>spring-boot-starter-cache</artifactId>
-		</dependency>
-		<dependency>
-			<groupId>net.sf.ehcache</groupId>
-			<artifactId>ehcache</artifactId>
-		</dependency>
-		
-	1.properties
-		spring.cache.type=ehcache //缓存类型, 如用redis改为redis
-		spring.cache.ehcache.config=classpath:ehcache.xml //存放'/resources'目录下
-	
-	2.ehcahe.xml
-		<ehcache xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
-			xsi:noNamespaceSchemaLocation="ehcache.xsd"
-			updateCheck="true" monitoring="autodetect" dynamicConfig="true">
 
-			<diskStore path="java.io.tmpdir/ehcache" />
-			
-			// <!-- 的默认缓存策略 -->
-			<defaultCache
-				eternal="false" //是否永不过期?? 默认false. true则属性 timeTo* 将不起作用. 
-				timeToIdleSeconds="120" //缓存最大闲置时间. 0无限.
-				timeToLiveSeconds="120" //........存活............
-				
-				maxEntriesLocalHeap="100" //内存缓存最大个数. 0无限. 过时属性 maxElementsInMemory
-				maxEntriesLocalDisk="100" //磁盘.......................... maxElementsOnDisk
-				
-				//磁盘缓存相关
-				overflowToDisk="true" //内存中缓存过量是否输出到磁盘?? 默认true
-				diskSpoolBufferSizeMB="30" //写入磁盘时IO缓冲区大小. 默认30MB. 每个Cache一个缓冲区
-				diskExpiryThreadIntervalSeconds="120" //磁盘缓存清理线程的运行间隔. 默认120s.
-				diskPersistent="false" //磁盘缓存在jvm重启后是否保持. 默认为false
-				
-				memoryStoreEvictionPolicy="LRU"> //内存中缓存过量后的移除策略. 默认 LRU(最近最少使用)
-				
-				<persistence strategy="localTempSwap" />
-			</defaultCache>
-			
-			// <!-- 自定义缓存策略 -->
-			<cache
-				name="system_set"
-				eternal="false"
-				timeToLiveSeconds="300"
-				maxEntriesLocalHeap="2"
-				overflowToDisk="true"
-				maxEntriesLocalDisk="5">
-			</cache>
-		</ehcache>
+#pom.xml
+	<dependency>
+		<groupId>org.springframework.boot</groupId>
+		<artifactId>spring-boot-starter-cache</artifactId>
+	</dependency>
+	<dependency>
+		<groupId>net.sf.ehcache</groupId>
+		<artifactId>ehcache</artifactId>
+	</dependency>
 	
-	3.配置说明
-		diskStore: 过量缓存输出到磁盘的存储路径.
-			//默认 path="java.io.tmpdir".
-			//windows-> "C:\Users\当前用户\AppData\Local\Temp\"; linux-> "/tmp"
-			//缓存文件名为缓存name, 后缀为data. 如: C:\Users\当前用户\AppData\Local\Temp\system_set.data
+#properties
+	spring.cache.type=ehcache //缓存类型, 如用redis改为redis
+	spring.cache.ehcache.config=classpath:ehcache.xml //存放'/resources'目录下
+
+#ehcahe.xml
+	<ehcache xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+		xsi:noNamespaceSchemaLocation="ehcache.xsd"
+		updateCheck="true" monitoring="autodetect" dynamicConfig="true">
+
+		<diskStore path="java.io.tmpdir/ehcache" />
 		
-		当 maxEntriesLocalHeap 过量时,两种情况: 
-			//overflowToDisk=true  --> 过量缓存输出磁盘. 
-			//overflowToDisk=false --> 则按照 memoryStoreEvictionPolicy 从内存中移除缓存
+		// <!-- 的默认缓存策略 -->
+		<defaultCache
+			eternal="false" //是否永不过期?? 默认false. true则属性 timeTo* 将不起作用. 
+			timeToIdleSeconds="120" //缓存最大闲置时间. 0无限.
+			timeToLiveSeconds="120" //........存活............
 			
-		clearOnFlush: 调用 flush() 方法时,是否清空内存缓存??? 默认true.
-			//设为true, 则系统在初始化时会在磁盘中查找 CacheName.index 缓存文件, 如 system_set.index. 找到后将其加载到内存.
-			//注意: 在使用 net.sf.ehcache.Cache 的 void put (Element element) 方法后要使用 void flush() 方法
+			maxEntriesLocalHeap="100" //内存缓存最大个数. 0无限. 过时属性 maxElementsInMemory
+			maxEntriesLocalDisk="100" //磁盘.......................... maxElementsOnDisk
+			
+			//磁盘缓存相关
+			overflowToDisk="true" //内存中缓存过量是否输出到磁盘?? 默认true
+			diskSpoolBufferSizeMB="30" //写入磁盘时IO缓冲区大小. 默认30MB. 每个Cache一个缓冲区
+			diskExpiryThreadIntervalSeconds="120" //磁盘缓存清理线程的运行间隔. 默认120s.
+			diskPersistent="false" //磁盘缓存在jvm重启后是否保持. 默认为false
+			
+			memoryStoreEvictionPolicy="LRU"> //内存中缓存过量后的移除策略. 默认 LRU(最近最少使用)
+			
+			<persistence strategy="localTempSwap" />
+		</defaultCache>
+		
+		// <!-- 自定义缓存策略 -->
+		<cache
+			name="system_set"
+			eternal="false"
+			timeToLiveSeconds="300"
+			maxEntriesLocalHeap="2"
+			overflowToDisk="true"
+			maxEntriesLocalDisk="5">
+		</cache>
+	</ehcache>
+
+#配置说明
+	diskStore: 过量缓存输出到磁盘的存储路径.
+		//默认 path="java.io.tmpdir".
+		//windows-> "C:\Users\当前用户\AppData\Local\Temp\"; linux-> "/tmp"
+		//缓存文件名为缓存name, 后缀为data. 如: C:\Users\当前用户\AppData\Local\Temp\system_set.data
+	
+	当 maxEntriesLocalHeap 过量时,两种情况: 
+		//overflowToDisk=true  --> 过量缓存输出磁盘. 
+		//overflowToDisk=false --> 则按照 memoryStoreEvictionPolicy 从内存中移除缓存
+		
+	clearOnFlush: 调用 flush() 方法时,是否清空内存缓存??? 默认true.
+		//设为true, 则系统在初始化时会在磁盘中查找 CacheName.index 缓存文件, 如 system_set.index. 找到后将其加载到内存.
+		//注意: 在使用 net.sf.ehcache.Cache 的 void put (Element element) 方法后要使用 void flush() 方法
 		
 #测试DEMO
 	0.bean
@@ -160,7 +161,10 @@
 		make PREFIX=/usr/local/redis install	//将redis安装到指定目录
 		./redis-server					//启动redis
 		
-#配置 -> 使用命令'whereis redis', 查找redis的安装路径,编辑文件 redis.conf
+#配置
+	0.查找位置
+		使用命令'whereis redis', 查找redis的安装路径,编辑文件 redis.conf
+		
 	1.Redis的访问账号
 		//默认,访问Redis服务器是不需要密码的. 现配置密码为: redis
 		//取消 requirepass 这一行的注释,或者新增一行
@@ -171,10 +175,34 @@
 		#bind 127.0.0.1 //注释此行
 		sudo /etc/init.d/redis-server restart //重启redis
 		
-	9.redis客户端可视化工具推荐 -> RedisDesktopManager
+	3.redis客户端可视化工具推荐 -> RedisDesktopManager
+	
+#docker
+	1.下载
+		docker pull registry.docker-cn.com/library/redis
+		
+	2.启动
+		docker run --name redis01 -d -p 6379:6379 cde2f58f5aa6
+		
+	3.配置
+		///重要: docker镜像 reids 默认'无配置文件'
+		
+		//下载默认配置
+		wget https://raw.githubusercontent.com/antirez/redis/4.0/redis.conf -O conf/redis.conf
+	
+		//(1). --name redis01 --> 容器名redis01
+		//(2). -d redis		  --> 后台模式启动 redis 
+		//(3). -p 6379:6379   --> 映射端口6379
+		
+		//(4). -v /var/tmp/docker/redis.conf:/etc/redis/redis.conf --> 文件映射. 将宿主机的配置文件复制到docker中
+		//(5). -v /var/tmp/docker/data:/data		--> 容器映射/data
+		//(6). redis-server /etc/redis/redis.conf	--> redis加载配置文件(/etc/redis/redis.conf),默认不加载
+
+		//(7). --appendonly yes --> 开启redis持久化
+		docker run --name redis01 -d -p 6379:6379 -v /var/tmp/docker/redis.conf:/etc/redis/redis.conf -v /var/tmp/docker/data:/data redis redis-server /etc/redis/redis.conf --appendonly yes
 
 #整合测试
-	0.pom文件
+	0.pom.xml
         <dependency>
             <groupId>org.springframework.boot</groupId>
             <artifactId>spring-boot-starter-data-redis</artifactId>
@@ -482,6 +510,7 @@
 	'最先移除最近最常使用的条目'. 一个MRU算法擅长处理一个条目越久,越容易被访问的情况
 	
 //}	
+
 ///-------------------<<<附录>>>--------------------------------------------------------------------
 
 	
