@@ -80,12 +80,7 @@
 		lsof -i@host		//显示基于指定主机的连接
 		lsof -i@host:port	//显示基于主机与端口的连接
 
-#more: 基于vi编辑器的文本过滤器,按页显示文件内容,支持vi中的关键字定位操作
-	#一次显示一屏文本,满屏后停下来,并在屏幕底部提示至今己显示的百分比: --More--(XX%)
-	#Enter: 下一行内容;	空格: 下一屏(页)内容;	B:上一屏内容;	Q: 退出命令
 	
-	more -5 file	//只显示5行内容(非显示一屏)
-	more +100 file	//从100行开始显示	
 	
 #tail: 默认显示指定文件的末尾10行; 如给定多个文件,则在显示时,每个文件前加一个文件名标题. 如未指定文件或文件名为'-',则读取标准输入
 	#-c<N>或——bytes=<N>: 文件尾部的N个字节内容
@@ -101,34 +96,8 @@
 	
 	tail -c 10 file	//最后10个字符	
 	
-#sed: 利用script来处理文本文件
-	#-n: 仅显示script处理后的结果(通常与p相结合使用)
 
-	#sed -n '[i],[j]p' -> 输出第i到第j行内容. 其中,j<=i时,只输出第i行
-	
-	#head -n i file -> 文件的前i行内容
-	
-	#查看文件第3行到第5行内容. (顺序不同,执行过程不同)
-	sed -n '3,5p'
-	
-	cat file | head -n 5 | tail -n +3
-	cat file | tail -n +3 | head -n 3
-	
-	'cat tail head more sed': cat只能查看整个文件,查看指定行数得配合head或tail使用
-	
-	# cat -n file -> 显示文件的行号,从1开始
-	cat -n error | head -n 10	等同于 head -n 10
-	
-#df: 显示文件系统的磁盘使用情况
-	#-l: --local 限制列出的文件结构
-	#-h: --human-readable 使用人类可读的格式
-	
-	df -lh				//当前linux系统所有目录的磁盘使用情况
-	df -lh --total		//增加统计信息
 
-	//(1). 查看指定目录所属挂载点
-	//(2). 显示指定目录所属挂载点的磁盘使用情况
-	df -lh /var/lib/webpark/logs/sm
 	
 	
 #du: 显示指定的目录或文件所占用的磁盘空间
@@ -137,44 +106,6 @@
 	# 相结合使用,查看磁盘情况
 	df -lh
 	du -h --max-depth=1 /var/lib/webpark/logs | sort -nr
-	
-#zip: zip压缩和unzip解压缩
-	#-q: 执行时不显示任何信息 
-	#-r: 迭代压缩目录及子目录
-	#-l: 显示压缩文件内所包含的文件(不解压的前提)
-	
-	zip -qr sm.zip /logs/sm		//将目录 /logs/sm 下所有文件和文件夹压缩为当前目录下的 sm.zip
-	zip -qr sm.zip *			//当前目录为 /logs/sm ,则使用此命令完成以上功能
-	
-	zip -d sm.zip a.log			//从压缩文件中删除文件a.log	
-	
-	unzip sm.zip				//解压到当前目录
-	unzip -l sm.zip				//查看压缩包中的文件信息(不解压)
-	
-	j=0; for i in *; do unzip -d ./$j $i; let j++; done //批量解压
-	
-#tar: 打包文件(可指定压缩), 用于备份文件!!!(相比zip更优)
-	#-z: 通过gzip指令处理备份文件	->	gzip
-	#-v: 显示指令执行过程			->	verbose
-	#-f: 指定备份文件				->	file
-	#-c: 建立新的备份文件			->	create
-	#-x: 从备份文件中还原文件		->	extrac
-	#-t: 列出备份文件的内容			->	list
-	#-r: 新增文件到已备份文件的尾部	->	append
-	#-g: 增量备份
-
-	tar -zcvf test.tar.gz test		//压缩文件test
-	
-	tar -zxvf test.tar.gz			//解压到<当前>目录
-	tar -zxvf test.tar.gz -C test/	//解压到<指定>目录
-	
-	tar -ztvf test.tar.gz			//列出归档文件的内容
-	
-	echo -n "123" > test	//-n表示不换行,即结尾没有换行符
-	tar -g snapshot -zcvf test0.tar.gz test	//第1次归档(123)
-	echo "456" >> test		//追加test末尾
-	tar -g snapshot -zcvf test1.tar.gz test	//第2次归档(123456)
-	tar -g snapshot -zcvf test2.tar.gz test	//第3次归档(空的,因为没有修改)
 	
 #echo: ""会将内容转义; ''不会转义,原样输出
 	echo "$(date)"			//输出当前时间
@@ -199,18 +130,6 @@
 	split -b 10m park.log		#每个小文件大小为10MB
 	split -b 10k sm.log sm -d	#小文件10kb/个,前缀sm (默认是x), 后缀从00开始的数字
 	
-#find: 根据 [文件属性] 进行 [递归] 查找
-	#-name: 根据文件名查找;	iname: 忽略大小写
-	#-size: 文件大小;	-user: 所属用户;	-empty: 空文件
-
-	find . -name 'sm*'		//(递归)-当前目录下名为 'sm' 或 'sm*' 的文件及文件夹
-	find . -empty 　　		//(递归)-.......... '空' 文件或者文件夹
-	find . -size +10M		//(递归)-.......... 大于10MB的文件(c:字节, w:双字, k:KB, M:MB, G:GB) (+:大于,-:小于)
-
-	#混合查找 ---> 参数: !; -and(-a); -or(-o)
-	find /tmp -size +10000c -and -mtime +2	#在/tmp目录下查找大于10000字节并在最后2分钟内修改的文件
-	find / -user fred -or -user george		#在/目录下查找用户是fred或者george的文件文件
-	find /tmp ! -user panda					#在/tmp目录中查找所有不属于panda用户的文件
 	
 #grep: 根据 [文件内容] 进行查找
 	#-n: 显示匹配行及行号
@@ -246,18 +165,7 @@
 		
 	grep -inE '*c29a2' *.log > file		#功能==后者
 	egrep -in '*c29a2' *.log > file		#过滤出日志中包含"c29a2"字符串的行,并导出到file文件
-	
-#whereis: 
-	只能用于查找二进制文件,源代码和man手册页; 一般文件的定位需使用locate命令
 
-#which: 在环境变量 $PATH 设置的目录里查找符合条件的文件
-	whereis或which java		//显示java所在位置
-	
-#locate: 搜索linux系统中的文件
-	locate mysql.cnf	//查找mysql.cnf文件
-		
-	'locate与findの不同': find是去硬盘找, locate只在(/var/lib/slocate.db)资料数据库中找,速度快,但不是实时的
-	locate -u			#//ocate数据库一般是系统自己维护,也可以通过命令手工升级数据库
 	
 #ls: 显示指定目录下的内容(文件及子目录)
 	#-a: 显示所有,包含.开头的隐藏文件		-l: 显示文件的详细信息	-h: 以MB,GB等形式显示文件大小
@@ -332,18 +240,7 @@
 	(3). echo -n "" > file	//要加上"-n"参数,默认情况下会有"\n",即有个空行
 	
 	
-#端口占用(windows/Linux) - windown换行为'^', linux为'\'
-	netstat -aon | findstr 8080		//根据端口查找pid
-	taskkill -f /pid 9984			//强制杀死pid 9984
-	tasklist | findstr 10876		//根据pid查找进程名
 
-	#linux版
-	lsof -i:8080 //只显示pid -> lsof -t -i:8080
-	netstat -anp | grep 8080 //netstat用于显示网络状态 - 过滤端口
-	ps -aux|grep java //ps用于显示当前进程(process)的状态 - 过滤进程
-	
-	kill -9 21458 //杀死进程
-	telnet ip port //检查端口是否可以连接
 	
 #软件相关
 	apt-get update				//更新安装列表
@@ -367,9 +264,7 @@
 	
 	sudo ufw allow from 192.168.1.1	//允许此IP访问所有的本机端口
 	
-#jps(jdk提供的一个查看当前java进程的小工具)	
-	jps		//列出pid和java主类名
-	jps -l	//列出pid和java主类全称
+
 	
 #free -> 当前内存的使用.(-m: 以MB为单位)
 		parkmanager@bc-ai-server:/var/lib/webpark/logs/sm/task$ free -h
@@ -380,39 +275,6 @@
 
 //}
 
-//{--------<<<vi>>>--------------------------------------
-#vi使用
-	vi hello.sh		//使用Vi编辑器,新建并打开hello.sh文件
-	
-	默认初始为'命令模式',使用以下操作进入'编辑模式'	//使用Esc (进入或退出命令模式)
-		i - 光标[前]插入文本	I - 本行[开始]插入文本
-		a - 光标[后]插入文本	A - 本行[末尾]插入文本
-		o - 光标[下]插入新行	O - 光标[上]插入新行
-						
-	'命令模式'常用命令
-		x - 删除光标所在字符	15x - 删除光标所在的15个字符
-		d - 删除当前行			3dd - 删除光标所在的3行	//dG - 删除光标所在到末尾的所有行
-		D - 删除光标所在到行结尾	
-		
-		'底行模式' :n1,n2d - 删除指定范围的行
-
-		gg - 到第一行			G - 到最后一行	//667G - 定位到667行, :667 - 也是同样定位到667行
-		
-		yy/Y - 复制当前行		//nyy/nY - 复制当前及以下n行
-		dd - 剪切当前行			//ndd - 剪切当前及以下n行
-		p/P - 粘贴在当前光标所在行的上/下
-		
-		r - 替换光标所在字符	R - 从光标所在处开始替换字符，按Esc结束
-		u - 取消上一步操作
-
-	在'命令模式'下按':'进入'底行模式'
-		:set nu - 显示行号		:set nonu - 隐藏行号
-		:w - 保存修改			:w filename - 另存为新的文件名
-		:q - 退出				:q! - 强制退出
-		:wq - 保存修改并退出	//等同于ZZ
-		//对于只读文档修改时,提示"readonly", 使用 :wq! 强制保存退出(root有效).
-
-//}
 		
 
 //{--------<<<shell>>>-----------------------------------
@@ -596,7 +458,7 @@ awk是一种处理文本文件的语言,是一个强大的文本分析工具.
 //}
 
 //{--------<<<thread>>>----------------------------------
-#jps -l //列出所有java进程的 pid + 项目名.
+
 
 #ps xH | wc -l //查看linux所有存在的线程数
 
@@ -612,7 +474,7 @@ awk是一种处理文本文件的语言,是一个强大的文本分析工具.
 //}
 
 
-//{--------<<<0>>>---------------------------------------
+//{--------<<<000>>>-------------------------------------
 #命令行格式
 	linux区分大小写; 命令过长,则使用 \ 进行换行.
 	
@@ -671,8 +533,57 @@ awk是一种处理文本文件的语言,是一个强大的文本分析工具.
 		(3). 将已存在的档案或目录进行更名
 		(4). 搬移该目录内的档案,目录位置
 	
-#
+#RPM RPM软件包管理器(RPM Package Manager),用于联网下载安装包
+	rpm –qa | more 			//查询系统所安装的所有rpm软件包,并以分页的形式显示
+	rpm –qa | grep mysql	//查询系统所安装的所有rpm软件包,并返回和mysql相关的RPM包
+	rpm –q mysql			//查询软件是否被安装,是则返回该软件相关的版本信息,否则返回 is not installed.
+	rpm –i RPM包的全路径	//安装RPM包
+	rpm –ivh RPM包的全路径	//安装并有进度条等提示( i=install安装 v=verbose提示 h=hash进度条)
+	rpm –e RPM包名			//删除相关的rpm包(若果有依赖则报错，一般使用下者)
+	rpm –e RPM包名 –nodeps	//解除依赖,强制删除
+	
+#YUM包管理
+	1.相比rpm的好处: 自动解决软件包依赖关系 + 方便的软件包升级
+	2.安装 yum install sudo				//指定软件名，系统会自动的从网上获取安装镜像，并自动解决依赖关系
+	3.检测升级 yum check-update sudo	//如果有则返回新版本的版本号
+	4.升级 yum update sudo				//升级指定的也是软件名
+	5.软件包查询 yum list | more 		//返回yum源所有的软件包名，以及是否安装过的信息
+	6.相关查询 yum list | grep sudo		//返回yum源中和sudo相关的软件包
+	7.软件包信息 yum info sudo			//返回软件sudo相关的信息
+	8.软件卸载 yum remove sudo
+	9.软件帮助 yum –help 或者 man yum
 
+//}
+
+
+//{--------<<<123>>>-------------------------------------
+#查询PID
+	1.jps -l ///列出所有java进程的 pid + 项目名
+		16874 webpark.war 
+		
+	2.ps -ef | grep webpark
+		// C		--> CPU占用率			STIME	--> 开始时间
+		// TIME		--> 进程运行的总时间	CMD		--> 启动命令
+		UID			PID		PPID	C	STIME	TTY		TIME	CMD
+		parkman+	16874		1	11	11:01	?	00:20:51	/usr/java/jdk1.8.0_191/bin/java -jar webpark.war
+		
+	3.netstat ///显示网络状态 -> 过滤端口
+		netstat -anp | grep 8080
+
+	4.lsof ///
+		lsof -t -i:8080
+		
+		
+#Windows
+	netstat -aon | findstr 8080		//根据端口查找pid
+	taskkill -f /pid 9984			//强制杀死pid 9984
+	
+	tasklist | findstr 10876		//根据pid查找进程名
+	
+#kill 杀死某个进程
+	kill -9 16874 //杀死进程
+	
+	
 
 //}
 
@@ -684,7 +595,7 @@ awk是一种处理文本文件的语言,是一个强大的文本分析工具.
 	-f	//强制操作,勿需确认
 	-i	//操作前,逐一询问确认
 	
-	-r	//递归操作目录
+	-r	//递归操作目录(recursion)
 
 #ls 用于显示指定工作目录下的内容
 	[root@linux]# ls -lh
@@ -692,6 +603,9 @@ awk是一种处理文本文件的语言,是一个强大的文本分析工具.
 	drwxrwxrwx 3 parkmanager root 4.0K  1月 25 17:12 dir
 	|    1   | 2  |    3    |   4  | 5  |      6     |   7  |
 	|档案属性|连接|  拥有者 | 分组 |大小|  修改日期  |文件名|
+	
+#mkdir 创建目录
+	mkdir -p ./test/test01/test02 //-p: 创建多层目录
 
 #rm 删除文件或目录
 	rm -rf /var/log			//递归+强制-删除
@@ -707,6 +621,62 @@ awk是一种处理文本文件的语言,是一个强大的文本分析工具.
 	
 	mv /student/_* . 		//批量移动
 	
+#zip 压缩和解压(unzip)
+	#-q: 不显示压缩过程信息
+	#-l: 在不解压的前提下,显示压缩文件内所包含的文件
+	
+	zip -qr err.zip ./err*	//将当前目录下所有以'err'开头的文件压缩到'err.zip'
+	zip -qr sm.zip /logs/sm	//将目录 /logs/sm 下所有文件夹和文件压缩到'sm.zip'
+		
+	zip -d sm.zip a.log		//从压缩文件中删除文件a.log	
+	
+	unzip sm.zip			//解压到当前目录
+	unzip err.zip -d ./err	//......指定目录	
+	
+	unzip -l sm.zip			//查看压缩包中的文件信息(不解压)
+	
+	j=0; for i in ./_*; do unzip $i -d $j; let j++; done //批量解压
+	
+#tar 打包压缩, 用于备份文件!!!(相比zip更优)
+	#-z: 通过gzip指令处理备份文件	->	gzip
+	#-v: 显示指令执行过程			->	verbose
+	#-f: 指定备份文件				->	file
+	#-t: 列出备份文件的内容			->	list
+	#-r: 新增文件到已备份文件的尾部	->	append
+	#-g: 增量备份
+	
+	#-c: (压缩)建立新的备份文件		->	create
+	#-x: (解压)从备份文件中还原文件	->	extrac
+
+	tar -zcvf test.tar.gz test		//压缩文件test
+	
+	tar -zxvf test.tar.gz			//解压到'当前'目录
+	tar -zxvf test.tar.gz -C test/	//......'指定'....
+	
+	tar -ztvf test.tar.gz			//列出归档文件的内容
+	
+	echo -n "123" > test	//-n表示不换行,即结尾没有换行符
+	tar -g snapshot -zcvf test0.tar.gz test	//第1次归档(123)
+	echo "456" >> test		//追加test末尾
+	tar -g snapshot -zcvf test1.tar.gz test	//第2次归档(123456)
+	tar -g snapshot -zcvf test2.tar.gz test	//第3次归档(空的,因为没有修改)
+	
+#find 根据 [文件属性] 进行 [递归] 查找
+	#-name: 根据文件名查找.(-iname: 忽略大小写)
+	#-size: 文件大小	
+	#-user: 所属用户
+	#-empty: 空文件
+
+	find . -name 'sm*'		//(递归)-当前目录下名为 'sm' 或 'sm*' 的文件及文件夹
+	find . -empty 　　		//(递归)-.......... '空' 文件或者文件夹
+	find . -size +10M		//(递归)-.......... 大于10MB的文件(c:字节, w:双字, k:KB, M:MB, G:GB) (+:大于,-:小于)
+
+	///混合查找 ---> !(非); -and(且); -or(或)
+	find /tmp -size +10000c -and -mtime +2	//在/tmp目录下查找大于10000字节并在最后2分钟内修改的文件
+	find / -user fred -or -user george		//在/目录下查找用户是fred或者george的文件文件
+	find /tmp ! -user panda					//在/tmp目录中查找所有不属于panda用户的文件
+
+	
 	
 	
 	
@@ -716,15 +686,34 @@ awk是一种处理文本文件的语言,是一个强大的文本分析工具.
 
 //{--------<<<XYZ>>>-------------------------------------
 #ln 为某一个文件在另外一个位置建立一个同步的链接
-	-f 强制执行
-	-s 软链接(符号链接)
+	#-f: 强制执行
+	#-s: 软链接(符号链接)
 
-	//软链接 & 硬链接
-	ln –s 源文件 目标文件 ---> 只在选定的位置上生成一个文件的镜像,不会占用磁盘空间,类似与Windows的'快捷方式'
+	//硬 & 软链接  ---> 无论软还是硬,文件都保持同步变化
+	ln src dest    ---> 在选定的位置上生成一个和源文件大小相同的文件
 	
-	ln 源文件 目标文件    ---> 在选定的位置上生成一个和源文件大小相同的文件. //无论是软链接还是硬链接,文件都保持同步变化
+	ln –s src dest ---> 只在指定的位置上生成一个文件的镜像,不会占用磁盘空间,类似'快捷方式'
+	
+#df 显示系统的磁盘使用情况
+	#-l: 列出文件结构
+	#-h: 以人类可读的格式显示大小
+	
+	df -lh				//当前linux系统所有目录的磁盘使用情况
+	df -lh --total		//增加统计信息
+
+	//查看指定目录所属挂载点,及挂载点的磁盘使用情况
+	df -lh /var/lib/webpark/logs/sm
+
+#date 详见SHELL-格式化
+	date '+%Y-%m-%d %H:%M:%S'	//格式化输出当前时间
+	
+#alias 临时简化命令,重新打开CMD则不起作用
+	alias datef='date "+%Y-%m-%d %H:%M:%S"'	//''不可省, =号不可省
+
+
 
 //}
+
 
 //{--------<<<SHELL>>>-----------------------------------	
 #0.格式
@@ -774,20 +763,29 @@ awk是一种处理文本文件的语言,是一个强大的文本分析工具.
 		   echo "文件不存在"
 		fi
 	
-#7.for
-	0.fori风格
-		for ((a=1,b=9; a<10; a++,b--)) //for 由 ((***)) 两个小括号引起
+#7.fori
+	1.行内风格
+		for i in {1..10}; do echo $i; done
+		
+		for ((i=1; i<11; i++)); do echo $i; done
+	
+	2.脚本文件
+		for((i=1; i<11; i++))
 		do
-		   echo "$a - $b"
+		   echo $i
 		done
 	
-	1.foreach风格
-		for file in /var/lib/webpark/logs/sm/task/file/_*;
+#8.foreach
+	1.行内风格
+		for file in /var/lib/webpark/logs/sm/err/_*; do echo FILE_PATH: $file; done
+	
+	2.脚本风格
+		for file in /var/lib/webpark/logs/sm/err/_*;
 		do
 			echo FILE_PATH: $file
 		done
 		
-#8.引用其他shell
+#9.引用其他shell
 	0.定义SHELL(func.sh)
 		#!/bin/bash
 		count=$1 //取值第一个参数
@@ -819,7 +817,7 @@ awk是一种处理文本文件的语言,是一个强大的文本分析工具.
 //}
 
 
-//{--------<<<COMMAND>>>---------------------------------
+//{--------<<<CMD>>>-------------------------------------
 #nohup command>/dev/null 2>&1 &
 	1.nohup
 		该命令可以在 '退出帐户/关闭终端' 之后继续运行相应的进程.
@@ -838,7 +836,122 @@ awk是一种处理文本文件的语言,是一个强大的文本分析工具.
 	4./dev/null
 		表示空设备,这里就是把日志记录到空设备里,就是不记录日志.
 		/dev/null 2>&1	//将产生的所有信息丢弃
+		
+#文档查阅
+	1.cat -n file			//从第1行开始,显示全部(-n: 显示行号)
+		
+	2.tac file				//从倒1行开始,显示全部
+		
+	3.nl file				//从第1行开始,显示全部.自动显示行号
 	
+	4.more file				//1次显示1屏内容(空格: 下1屏内容)
+		more -5 file		//设置1屏只显示5行
+		more +100 file		//从100行开始显示
+		
+	5.less file				//从倒1行开始,1次显示1屏内容
+	
+	6.head -n 10 file		//只显示前10行
+	
+	7.tail -n 10 file		//只显示倒10行
+	
+	8.sed -n '[i],[j]p' ---> 输出第i到第j行内容. 其中,j<=i时,只输出第i行
+		sed -n '3,5p'		//显示第3到第5行的内容
+		
+		cat -n file | head -n 5 | tail -n +3	//效果同上
+		cat -n file | tail -n +3 | head -n 3	//效果同上
+		
+#文档检索
+	0.先考虑 whereis 或 locate, 最后才考虑 find. ---> 前两者是利用数据库来搜寻数据,相当快速!!
+	
+	1.whereis java		//只用于查找二进制文件,源代码和man手册页; 一般文件的定位需使用locate命令
+		
+	2.which java		//在环境变量 $PATH 中查找符合条件的文件
+		
+	3.locate mysql.cnf	//查找mysql.cnf文件
+	
+	4.find . -name 'sm*'//(递归)-查找当前目录下名为 'sm' 或 'sm*' 的文件及文件夹
+
+	
+	
+
+		
+
+	
+//}
+
+
+//{--------<<<vi>>>--------------------------------------
+#vi使用
+	vi hello.sh		//使用Vi编辑器,新建并打开hello.sh文件
+	
+	默认初始为'命令模式',使用以下操作进入'编辑模式'	//使用Esc (进入或退出命令模式)
+		i - 光标[前]插入文本	I - 本行[开始]插入文本
+		a - 光标[后]插入文本	A - 本行[末尾]插入文本
+		o - 光标[下]插入新行	O - 光标[上]插入新行
+						
+	'命令模式'常用命令
+		x - 删除光标所在字符	15x - 删除光标所在的15个字符
+		d - 删除当前行			3dd - 删除光标所在的3行	//dG - 删除光标所在到末尾的所有行
+		D - 删除光标所在到行结尾	
+		
+		'底行模式' :n1,n2d - 删除指定范围的行
+
+		gg - 到第一行			G - 到最后一行	//667G - 定位到667行, :667 - 也是同样定位到667行
+		
+		yy/Y - 复制当前行		//nyy/nY - 复制当前及以下n行
+		dd - 剪切当前行			//ndd - 剪切当前及以下n行
+		p/P - 粘贴在当前光标所在行的上/下
+		
+		r - 替换光标所在字符	R - 从光标所在处开始替换字符，按Esc结束
+		u - 取消上一步操作
+
+	在'命令模式'下按':'进入'底行模式'
+		:set nu - 显示行号		:set nonu - 隐藏行号
+		:w - 保存修改			:w filename - 另存为新的文件名
+		:q - 退出				:q! - 强制退出
+		:wq - 保存修改并退出	//等同于ZZ
+		//对于只读文档修改时,提示"readonly", 使用 :wq! 强制保存退出(root有效).
+		
+		
+28.Vim编辑器
+i, I  	i为『从光标所在处插入』，I 为『在光标所在行的第一个非空格符处开始插入』。 (常用)
+a,A 	a为『从光标所在的下一个字符开始插入』，A为『从光标所在行最后一个字符开始插入』。(常用)
+o, O	o为『在光标所在的下一行插入新的一行』；O为在光标所在处的上一行插入新行！(常用)
+r, R	取代：r会取代光标所在的那一个字符；R会一直取代光标所在的文字，直到按下ESC为止；(常用)
+
+G		 移动到这个档案的最后一行(常用)		gg	移动到这个档案的第一行！(常用)
+n<Enter>  n为数字，光标向下移动n行(常用)	
+0  		 数字0，移到行的第一字符处 (常用)	$  	移动到这一行的最后面字符处(常用)
+
+/word	 向光标之下寻找一个名称为 word 的字符串。例如要在档案内搜寻 hello 这个字符串，就输入/hello即可！(常用)
+:n1,n2s/word1/word2/g		n1与n2为数字。在第n1与n2行之间寻找 word1 这个字符串，并将该字符取代为word2！举例来说，在100到200行之间搜寻hello并取代为 HELLO则：『:100,200s/hello/HELLLO/g』。
+:1,$s/word1/word2/g		从第一行到最后一行寻找 word1字符串，并将该字符串取代为word2！(常用)
+:1,$s/word1/word2/gc		从第一行到最后一行寻找 word1字符串，并将该字符串取代为word2！且在取代前显示提示字符给使用者确认 (conform) 是否需要取代！(常用)
+
+	x,X		在一行字当中，x为向后删除一个字符(相当于[del]按键)，X为向前删除一个字符(相当于[backspace]亦即是退格键)(常用)
+u		撤销前一个动作。(常用)
+[Ctrl]+r  	重做上一个动作。(常用)
+.			不要怀疑！这就是小数点！意思是重复前一个动作的意思。如果您想要重复删除、重复贴上等等动作，按下小数点『.』就好了！(常用)
+dd  		删除游标所在的那一整行(常用)
+ndd		n为数字。删除光标所在的向下n列，例如 20dd 则是删除20列(常用)
+yy/Y		复制游标所在的那一行(常用)
+nyy		n为数字。复制光标所在的向下n列，例如 20yy则是复制20行(常用)
+vi复制一个单词的方法：光标移到想要被复制词的词首，输入yw，光标移到想到粘贴的位置，输入p
+
+p, P		p为将已复制的数据在光标下一行贴上，P则为贴在游标上一行！举例来说，目前光标在第 20 行，且已经复制了 10 行数据。则按下 p 后， 那 10 行数据会贴在原本的 20 行之后，亦即由 21行开始贴。但如果是按下 P 呢？那么原本的第 20 行会被推到变成 30 行。(常用)
+
+:w  		保存当前文档(常用)
+:w!		若档案属性为『只读』时，强制写入该档案。不过，到底能不能写入， 还是跟您对该档案的档案权限有关啊！
+:q  		离开vi (常用)
+:q! 		强制离开不保存档案
+:wq		保存并离开，若为:wq!则为强制保存并离开 (常用)
+ZZ		若档案没有更动，则不储存离开，若档案已经经过更动，则储存后离开！
+:e!  		将档案还原到最原始的状态！
+
+:! command	暂时离开vi到指令模式，执行command的显示结果！例如『:! ls /home』即可在vi当中察看/home 底下以 ls 输出的档案信息！
+:set nu  		显示行号，设定之后，会在每一行的前缀显示该行的行号
+:set nonu  	与 set nu 相反，为取消行号！
+
 //}
 
 

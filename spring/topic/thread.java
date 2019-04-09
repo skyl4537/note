@@ -465,7 +465,7 @@ https://blog.csdn.net/CJ_66/article/details/82503665
 
 		//@Scheduled: 默认使用'单例线程池' ---> org.springframework.scheduling.concurrent.ThreadPoolTaskScheduler#poolSize=1
 		//所以 task1,2 虽然同时启动,但还是顺序执行
-		//并且,当 task2 执行过程出现异常,也不会影响 task1 及 task2的后续执行
+		//并且 task2 执行过程出现异常,也不会影响 task1 及 task2的后续执行
 		2019-03-04 19:53:19.709 - 29 - scheduling-1 -> task1 - start!
 		2019-03-04 19:53:22.710 - 29 - scheduling-1 -> task1 - end !!
 		2019-03-04 19:53:22.710 - 29 - scheduling-1 -> task2 - start!

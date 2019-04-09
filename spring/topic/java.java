@@ -532,11 +532,9 @@ https://blog.csdn.net/w1196726224/article/details/54428493
 
 //}
 
-//{--------<<<hello>>>-----------------------------
 
-//}
 
-//{--------<<<idea-快捷键>>>-----------------------
+//{--------<<<idea->>>-----------------------------
 #快捷键
 	psvm, sout, fori, iter, Ctrl+Alt+T	///main(),syso,for(i),foreach(),try/catch
 	
@@ -565,13 +563,11 @@ https://blog.csdn.net/w1196726224/article/details/54428493
 	
 	//men打包时,跳过Test
 	打开右侧标签页'Maven-Project' --> 当前项目'Lifecycle' --> 选中'Test' --> 菜单栏的'闪电'
-	
-//}
 
-//{--------<<<idea-设置>>>-------------------------
-	//黑色主题
+#设置
+	//黑色主题 --> 界面的字体大小,非代码字体
 	Appearance & Behavior - Appearance - Theme(选为Darcula) 
-	勾选 Override default fonts by(......) - Name(Mircrosoft Yahei UI) - Size(12) //更改设置界面的字体大小,非代码字体
+	勾选 Override default fonts by(......) - Name(Mircrosoft Yahei UI) - Size(12)
 		
 	//改变代码的字体和大小
 	Editor - Colors & Fonts
@@ -617,20 +613,19 @@ https://blog.csdn.net/w1196726224/article/details/54428493
 	
 //}	
 
-
-//{--------<<<Eclipse-快捷键>>>--------------------
+//{--------<<<eclipse>>>---------------------------
+#快捷键
+	Ctrl+1			//快速修复(最经典的快捷键,就不用多说了)
+	Alt+/    		///代码补全
+	F2				//查看方法说明	
+	Ctrl+左键		//进入方法内部
 	
-	Ctrl+1		//快速修复(最经典的快捷键,就不用多说了)
-	Alt+/      ///代码补全
-	F2			//查看方法说明	
-	Ctrl+左键	//进入方法内部
-	
-	Alt+Shift+L	//抽取本地变量
-	Alt+Shift+M	//........方法
-	Alt+Shift+R	//重命名
+	Alt+Shift+L		//抽取本地变量
+	Alt+Shift+M		//........方法
+	Alt+Shift+R		//重命名
 
 	Ctrl+Shift+O	//自动导包
-	Ctrl+/		   ///注释当前行,再按则取消注释
+	Ctrl+/			///注释当前行,再按则取消注释
 	Ctrl+D			//删除当前行
 	
 	Ctrl+T			//快速显示当前类的继承结构
@@ -638,6 +633,8 @@ https://blog.csdn.net/w1196726224/article/details/54428493
 	
 	Ctrl+Alt+↓		//复制当前行到下一行(复制增加)
 	Alt+↓			//当前行和下面一行交互位置
+	
+#	
 
 //}
 
@@ -656,40 +653,15 @@ https://blog.csdn.net/w1196726224/article/details/54428493
 		BufferedReader br = new BufferedReader(new InputStreamReader(in));
 		
 #File
-	boolean createNewFile();  //只用于创建新文件,不能创建目录及多层文件
 	boolean Mkdir();		  //只用于创建单层目录
 	boolean Mkdirs();		  //用于创建多层目录
+	
 	boolean renameTo();		  //重命名抽象路径名表示的文件
-	                          
-	boolean delete();		  //只能单层删除文件或目录
-	void dedeleteOnExit();	  //在 jvm 退出的时候删除
-	                          
-	boolean exists();		  //测试文件或目录是否存在
-	boolean isFile();		  //测试是否是一个标准文件.(先 exists())
-	boolean isDirectory();	  //同上
-
-	String getAbsolutePath(); //返回绝对路径
-	File getAbsoluteFile();	  //返回绝对路径名的file
-	
-	File[]   listFiles();	  //目录下的所有文件
-	String[] List();		  //文件调用此方法,返回 null.(先 exists())
-	String[] list(FilenameFilter filter); //返回指定过滤器的文件和目录
-	
-	0.过滤遍历
-		@Test
-		public void test01() {
-			File file = new File("F:");
-			//过滤 ---> 以 .log 结尾的文件
-			String[] files = file.list((dir, name) -> name.endsWith(".log"));
-			//注意: null==files ??
-			Arrays.stream(null != files ? files : new String[0]).forEach(System.out::println);
-		}
 		
 	1.递归删除
 		@Test
 		public void test01() {
-			File file = new File("F:\\var\\lib\\webpark\\logs\\aiRes");
-			removeDirs(file);
+			removeDirs(new File("F:\\var\\lib\\webpark\\logs\\aiRes"));
 		}
 		
 		public void removeDirs(File dir) {
@@ -896,47 +868,130 @@ https://blog.csdn.net/w1196726224/article/details/54428493
 	
 //}
 
-//{--------<<<ABC>>>-------------------------------
-#Web-Service
-	基于网络的,分布式的模块化组件,它执行特定的任务,遵守具体的技术规范,这些规范使得 Web-Service 能与其他兼容的组件进行互操作.
-	
-#JAXP(Java API for XML Parsing)
-	定义了在Java中使用 DOM, SAX, XSLT 的通用的接口. 
-	这样在程序中只要使用这些通用的接口,当需要改变具体的实现时候也不需要修改代码
-	
-#SOAP(Simple Object Access Protocol)
-	简单对象访问协议,它是用于交换XML编码信息的轻量级协议
-	
-#JAXM(Java API for XML Messaging) 
-	为 SOAP 通信提供访问方法和传输机制的API
-	
-#WSDL
-	一种 XML 格式,用于将网络服务描述为一组端点,这些端点对包含面向文档信息或面向过程信息的消息进行操作.
-	这种格式首先对操作和消息进行抽象描述,然后将其绑定到具体的网络协议和消息格式上以定义端点.
-	相关的具体端点即组合成为抽象端点(服务)
-	
-#UDDI 
-	目的是为电子商务建立标准, UDDI是一套基于Web的分布式的,为Web-Service提供的,信息注册中心的实现标准规范,
-	同时也包含一组使企业能将自身提供的Web Service注册,以使别的企业能够发现的访问协议的实现标准
 
-//}
 
 
 
 //{--------<<<Object>>>----------------------------
 #ABC
-	Java语言中所有类的父类, 其中定义的 11 个方法子类都可以使用.
-	
-#toString() -> 返回该对象的字符串表示
-	默认返回: 对象的类型+@+内存地址值
-	
+	1.命名规则
+		包名统一小写,统一单数,类名使用复数.  //com.example.mydemo.util.CommUtils
+		常量命名全部大写,单词间用下划线隔开. //MAX_STOCK_COUNT
+		
+	2.运算符
+		%(取模)		-> 左<边,值为左. //-1%5==5
+		
+		^(异或)		-> 左右同为 false,左右不同为 true. (和其他差别很大)
+		
+		'&'和'&&'	-> //都是逻辑与运算符,但后者为短路运算
+			单&, 左边无论真假,右边都要运算
+		  双&, 如果左边为真,右边参与运算; 如果左边为假,那么右边不参与运算
+		
+		<<(位运算)
+			<<(左移) -> 乘以 2 的移动位数次幂 //3<<2 = 3 * 2^2 =12
+			>>(右移) -> 除以 2 .............. //6>>2 = 6 / 2^2 =1
+			
+	3.栈内存 //值类型
+		存储局部变量. 当数据使用完,所占空间会自动释放
+		
+	4.堆内存 //引用类型
+		(1).数组和对象. 通过 new 建立的实例都存放在堆内存中
+		(2).每一个实体都有内存地址值
+		(3).实体中的变量都有默认初始化值
+		(4).实体不再被使用,会在不确定的时间内被系统的垃圾回收器回收
+		
+		//首先,在 堆内存 中划分一个长度为 4 的int数组
+		//其次,在 栈内存 中划分一个名为 arr 的变量
+		//最后,再将 int 数组第一个元素的内存地址赋给 arr 变量
+		int[] arr = new int[4];
+		
+	5.extends
+		java 只支持'单继承',不支持'多继承'. 但支持'多层继承'和'多实现'.
+		//当多个父类中定义了相同函数名的函数,而各个函数的实现各不相同,则子类就不确定要调用哪一个
+		
+	6.implements
+		接口可看作一个特殊的抽象类. //方法全是抽象的
+		一个类可以实现多个接口
+		类与类之间是'继承关系', 类与接口之间是'实现关系', 接口与接口之间是'继承关系'
+		
+	7.基本数据类型
+		boolean 类型(1位,1bit)
+		字符类型(char-2字节,2byte)
+		数值类型(整数类型 + 浮点类型)
+			byte-1, short-2, int-4, long-8
+			float-4, double-8
 
+#Object
+	Java中所有类的父类, 其定义的 11 个方法子类都可以使用.
+	
+	1.toString	//默认返回: 对象的类型名+@+内存地址值
+		public String toString() {
+			return getClass().getName() + "@" + Integer.toHexString(hashCode());
+		}
 
+	2.equals	//判断两对象是否是相同(2种方式: 默认和自定义).		
+		(1).默认对于运算符"=="采用内存地址进行比较
+		
+		(2).自定义比较方式,重写 equals()
+		
+		public boolean equals(Object o) {
+			// 如果对象地址一样，则认为相同
+			if (this == o)
+				return true;
+
+			// 如果参数为空,或者类型信息不一样,则认为不同
+			if (o == null || this.getClass() != o.getClass())
+				return false;
+
+			Person person = (Person) o;
+			// 比较基本类型(age)相等,
+			// 比较引用类型(name)交给java.util.Objects类的equals静态方法取用结果
+			return age == person.age && Objects.equals(name, person.name);
+		}
+		
+#Objects
+		//类中的方法都是'空指针安全的'或'容忍空指针的'
+		public static boolean equals(Object a, Object b) {
+			return (a == b) || (a != null && a.equals(b));
+		}
+		
+#System
+	1.currentTimeMillis	//返回以毫秒为单位的当前时间
+		public static native long currentTimeMillis();
+		
+	2.arraycopy	//数组拷贝,非常高效	
+		public void demo01() {
+			List<String> list = Arrays.asList("a", "b", "c");
+			String[] src = list.toArray(new String[list.size()]); //src
+			
+			String[] dest = new String[2]; //dest
+			System.arraycopy(src, 1, dest, 0, 2);
+			Arrays.stream(dest).forEach(System.out::println); //b-c
+		}
+
+#Date
+	1.getTime
+		//把日期对象转换成对应的时间毫秒值,等同于后者
+		System.out.println(new Date().getTime() == System.currentTimeMillis());
+	
+#DateFormat
+	1.计算个人已经出生了多少天
+		public void demo01() throws ParseException {
+			DateFormat format = new SimpleDateFormat("yyyy-MM-dd HH:mm:ss.SSS");
+
+			Date birth = format.parse("1990-04-21 09:31:30.110"); //String -> Date
+			long len = System.currentTimeMillis() - birth.getTime();
+			long day = len / (24 * 60 * 60 * 1000);
+
+			String now = format.format(new Date()); //Date -> String
+			System.out.println("今天: " + now + ", 已出生: " + day + "天");
+		}
+		
 //}
 
 //{--------<<<String>>>----------------------------
-    @Test
-    public void demo01() throws IOException {
+#字符串常量池
+	public void demo01() throws IOException {
         String s1 = "abc";
         String s2 = "abc";
         String s3 = new String("abc");
@@ -947,36 +1002,695 @@ https://blog.csdn.net/w1196726224/article/details/54428493
         System.out.println(s1 == s4); //true
 	}
 	
-#字符串常量池
-	栈内存: 基本类型的变量和对象的引用变量
-	堆内存: new 出来的对象和数组
-	
-	常量池: (A).字面量   -> 字符串, final-常量, 基本数据类型的值
-			(B).符号引用 -> 类和结构的完全限定名, 字段名称和描述符, 方法名称和描述符
+	1.栈和堆
+		栈内存 -> 基本类型的变量和对象的引用变量
+		堆内存 -> new 出来的对象和数组
+		
+		常量池 -> (A).字面量   -> 字符串, final-常量, 基本数据类型的值
+				  (B).符号引用 -> 类和结构的完全限定名, 字段名称和描述符, 方法名称和描述符
 			
-	字符串常量池 保存着很多String对象,并且可以被共享使用,提高了效率.
-	由于String是 final 的,一经创建就不可改变,因此不用担心String对象共享而带来程序的混乱.
+	2.字符串常量池 
+		保存着很多String对象,并且可以被共享使用,提高了效率.
+		由于String是 final 的,一经创建就不可改变,因此不用担心String对象共享而带来程序的混乱.
 	
-	0.分步解析	
-		String s1 = "abc"; //先在常量池中查找是否存在"abc", 存在则让s1指向这个值, 没有则创建
+	3.分步解析	
+		String s1 = "abc"; //先在常量池中查找是否存在"abc", 存在则让s1指向这个值,没有则新建
 		String s2 = "abc"; //同上
 		
-	1.目前还只创建了 1个字符串对象
-	
+	4.目前还只创建了 1个字符串对象
 		//String s3 只是定义了一个名为 s3 的String类型变量,并没有创建对象
 		//new String() 在堆空间上创建1个字符串对象
 		String s3 = new String("abc");
 		
-	2至此一共创建了 2个对象.(1个在堆内存上,1个在字符串常量池)
-	
+	5.至此一共创建了 2个对象.(1个在堆内存上,1个在字符串常量池)	
 		String s4 = "ab" + "c"; //先在常量池中创建 2 个对象,再将 s4 指向已有的"abc"
 	
-	3.最后一共存在 4个对象.(1个在堆内存,3个在字符串常量池)
+	6.最后一共存在 4个对象.(1个在堆内存,3个在字符串常量池)
 	
-	4其中栈内存中存在 4个引用变量 s1,s2,s3,s4
+	7.其中栈内存中存在 4个引用变量 s1,s2,s3,s4
+	
+#常见方法
+	1.lenth(数组&字符串)
+		public void demo01() {
+			String[] array = {"a", "b", "c"};
+			System.out.println("数组的长度: " + array.length); //数组的属性
+
+			System.out.println("字符串长度: " + "abc".length()); //字符串的方法
+		}
+
+	2.split
+		//String#split() 得到的数组,需做最后一个分隔符后有无内容的检查,否则会有抛 IndexOutOfBoundsException
+		public void demo01() {
+			String str = "a,b,c,,";
+			String[] ary = str.split(",");
+			System.out.println(ary.length); //预期大于 3,结果是 3
+		}
+
+#StringBuilder
+	内部拥有一个数组用来存放字符串内容,当进行字符串拼接时,直接在数组中加入新内容,并自动维护数组的扩容.
+
+	1.以下DEMO会产生3个字符串
+		public void demo01() {
+			String s1 = "hello"; //3个字符串: "hello" " world" "hello world"
+			s1 += " world";
+			System.out.println(s1);
+		}
+
+	2.大量字符串拼接
+		//每次循环都会 new 一个 StringBuilder 对象,然后进行 append() 操作
+		//最后通过 toString() 返回 String 对象,造成内存资源浪费
+		public void demo01() {
+			String str = "start";
+			for (int i = 0; i < 100; i++) {
+				str += i + "-";
+			}
+			System.out.println(str);
+		}
+
+	3.比对三者
+		String			线程不安全	-> 产生大量中间字符串,时间消耗长
+		StringBuilder	线程不安全	-> 单线程进行大量字符串操作时,推荐使用(√)
+		
+		StringBuffer	线程安全	-> 支持同步锁,性能稍差,比 StringBuilder 
+
+#包装类
+	1.装箱与拆箱
+		public void demo01() {
+			Integer i0 = new Integer(3);
+			Integer i1 = Integer.valueOf(3); //装箱: 基本类型 -> 包装类
+
+			int num0 = i0.intValue();		 //拆箱: 包装类 -> 基本类型
+		}
+
+	2.自动装箱与自动拆箱
+		public void demo01() {
+			Integer i = 4; //自动装箱. 相当于Integer i = Integer.valueOf(4);
+			
+			i = i + 5;     //等号右边: 将i对象转成基本数值(自动拆箱) i.intValue() + 5; 
+						   //加法运算完成后,再次装箱,把基本数值转成对象
+		}
+	
+	3.equals
+        // [强制] 所有的相同类型的包装类对象之间值的比较,全部使用 equals 方法比较.
+        // [说明] 对于 Integer 对象,取值区间在 [-128, 127],会复用已有对象,可直接使用==进行比较.
+        //       但区间之外的取值,都会在堆上产生,并不会复用已有对象,推荐使用 equals() 进行判断.
+		public void demo01() {
+			Integer i0 = 128, i1 = 128;
+			System.out.println(i0 == i1); //false
+
+			int j0 = 128, j1 = 128;
+			System.out.println(j0 == j1); //true
+		}
+		
+	4.基本数据类型与包装数据类型的使用标准
+		// POJO 类属性没有初值是提醒使用者在需要使用时,必须自己显式地进行赋值
+		// 任何 NPE(NullPointerExceptionrn) 问题,或者入库检查,都由使用者来保证
+		(1).所有 POJO 类属性必须使用'包装数据类型'
+		(2).RPC 方法的返回值和参数必须使用'包装数据类型'
+		
+		(3).所有的局部变量 [推荐] 使用基本数据类型
+		
+		(4).定义 POJO 类时,不要设定任何属性的默认值. 
+		//反例: Date editTime = new Date();
+		//这个属性在数据提取时并没有置入具体值,在更新其它字段时又附带更新了此字段,导致创建时间被修改成当前时间
+
+//}
+
+//{--------<<<Collection>>>------------------------
+#Collection
+	数组 -> 固定长度, 只能放一种类型
+  集合 -> 可变长度, 可以存多种类型(不考虑泛型)
+
+	//集合放原始类型,其实是通过装箱拆箱来实现的. 以前原生类型只能用数组,现在集合也可以了
+	List<Integer> list = new ArrayList<>();
+	list.add(5);
+	
+  1.list //排列有序,可重复
+		Vector     -> 线程安全		效率低,被 ArrayList 替代
+		
+		ArrayList  -> 线程不安全	查询快,增删慢		底层数组实现
+		LinkedList -> 线程不安全	查找慢,增删快		底层双向循环链表实现
+		
+	2.set //排列无序(存入和取出的顺序不一定相同),不可重复
+		HashSet		-> 线程不安全	存取速度快			底层哈希表实现,内部是HashMap
+		TreeSet		-> 线程不安全	排序存储(可排序)	底层二叉树实现,内部是TreeMap
+		
+	3.list和set比对
+		list 的 contains() 和 remove()底层调用的都是 equals()
+		Set  ....................................... hashCode() 和 equals()		
+		
+	4.Set如何保证元素唯一性???
+		先比较 hashCode(), 如果相同,继续比较 equals() 是否为同一个对象.
+		
+		//hashCode相同, equals不同, 怎么存储呢???
+		在同样的哈希值下顺延(可认为哈希值相同的元素放在一个哈希桶中),也就是哈希一样的存一列.		
+		
+	5.TreeSet排序是如何进行的呢???
+		//(1).元素实现接口Comparable
+		public class Dog implements Comparable<Dog> {
+			@Override
+			public int compareTo(Dog o) {
+				if (this.name.compareTo(o.getName()) == 0) { //先比较 name,再比较 age
+					return Integer.compare(this.age, o.getAge());
+				} else {
+					return this.name.compareTo(o.getName());
+				}
+			}
+		}
+	
+		//(2).集合添加比较器
+		//元素自身不具备比较性,或具备的比较性不满足要求时. 需要让 TreeSet 集合自身具备比较性
+        TreeSet<Dog> dogSet = new TreeSet<>(new Comparator<Dog>() {
+            @Override
+            public int compare(Dog o1, Dog o2) {
+                if (o1.getName().compareTo(o2.getName()) == 0) { //先比较 name,再比较 age
+                    return Integer.compare(o1.getAge(), o2.getAge());
+                } else {
+                    return o2.getName().compareTo(o1.getName());
+                }
+            }
+        });
+
+#具体子类
+	6.Vector
+		线程安全,效率慢. 支持线程的同步,即某一时刻只有一个线程能够写 Vector
+	
+	7.ArrayList
+		底层是通过'数组'实现. 当 add/remove 时,需要对数组进行复制,移动, 代价比较高
+		
+	8.HashSet
+		通过 hashCode 来确定元素在内存中的位置.一个 hashCode 位置上可以存放多个元素(哈希桶).
+
+	9.TreeSet
+		使用二叉树的原理对新 add() 的对象按照指定的顺序排序(升序,降序)
+		每增加一个对象都会进行排序,将对象插入的二叉树指定的位置
+		
+	0.HashTable
+		继承自 Dictionary 类,线程安全. 并发性不如 ConcurrentHashMap,后者引入了分段锁.
+		不推荐使用. 不需要线程安全 ---> HashMap, 需要线程安全 ---> ConcurrentHashMap
+		
+	1.TreeMap
+		可针对key值进行排序,默认按key的升序排列,也可以自定义排序比较器.
+		
+		key 必须 implements Comparable,或在构造 TreeMap 传入自定义的 Comparator
+		
+#Map
+	0.Map和Collection
+		Map 存储的是键值对. Map的Key要保证唯一性
+		Map 存储元素使用 put(), Collection 使用 add()
+		Map 集合没有直接取出元素的方法,而是先转成 Set 集合,再通过迭代获取元素
+		
+	1.Map常见子类 //k不可重复,v可
+		HashTable -> 线程安全		k,v都不可为 null	底层哈希表实现	已被 HashMap 替代
+		HashMap   -> 线程不安全		k,v都可为 null		..............	
+		
+		TreeMap   -> 线程不安全		k不为,v可为 null	底层二叉树实现	可排序 key
+		
+	3.关于hashCode和equals
+		(1).只要重写 equals, 就必须重写 hashCode
+		(2).Set 存储的对象,必须重写这两个方法. // Set存储的元素要保证唯一
+		
+		(3).自定义对象做为Map的key,必须重写这两个方法. //Map的Key要保证唯一
+	
+#常见错误		
+	0.初始化
+		//集合初始化时,尽量指定集合初始值大小. 大小应和实际存储元素个数相近,减少扩容次数.
+		List<String> list = new ArrayList<>(5);
+	1.asList
+		//asList() 返回对象是 Arrays 内部类,并没有实现集合的修改方法.(add/remove/clear)
+		public void demo01() {
+			List<String> asList = Arrays.asList("a", "b", "c");
+			// asList.add("d"); -> UnsupportedOperationException
+
+			ArrayList<String> list = new ArrayList<>(asList); //正解,先转换
+			list.add("d");
+		}
+		
+	2.subList
+		//subList() 返回的是 ArrayList 的内部类 SubList,并不是 ArrayList
+		//而是 ArrayList 的一个视图,对于 SubList 子列表的所有操作最终会反映到原列表上
+		public void demo01() {
+			ArrayList<String> list = new ArrayList<>(Arrays.asList("a", "b", "c"));
+			List<String> subList = list.subList(0, 2);
+			
+			// ArrayList<String> list1 = (ArrayList<String>) subList; -> ClassCastException
+		}
+		
+	3.toArray
+		//直接使用 toArray() 无参方法返回值只能是 Object[]. <<不推荐>>
+		public void demo01() {
+			ArrayList<String> list = new ArrayList<>(Arrays.asList("a", "b", "c"));
+			String[] array = list.toArray(new String[list.size()]); //推荐使用
+		}
+	
+	4.foreach
+		//不要在 foreach 循环里进行元素的 remove/add 操作
+		//remove 元素请使用 Iterator 方式,如果并发操作,需要对 Iterator 对象加锁
+		public void demo01() {
+			ArrayList<String> list = new ArrayList<>(Arrays.asList("a", "b", "c"));
+
+			// for (String s : list) {
+			//     if ("a".equalsIgnoreCase(s)) {
+			//         list.remove(s); //异常 -> ConcurrentModificationException
+			//     }
+			// }
+			// System.out.println(JSON.toJSON(list));
+
+			Iterator<String> iterator = list.iterator();
+			while (iterator.hasNext()) {
+				String next = iterator.next();
+				if ("a".equalsIgnoreCase(next)) {
+					// list.remove(next); //异常 -> ConcurrentModificationException
+
+					iterator.remove();
+				}
+			}
+			System.out.println(JSON.toJSON(list));
+		}
+
+	5.foreach
+		//使用 entrySet 遍历 Map 类集合 KV, 而不是 keySet 方式进行遍历
+		public void demo01() {
+			Map<String, String> map = new HashMap<String, String>() {{
+				put("k1", "v1");
+				put("k2", "v2");
+			}};
+
+			//(1).二次取值 -> 其实是遍历了 2 次,一次是转为 Iterator 对象,另一次是从 hashMap 中取出 key 所对应的 value
+			for (String key : map.keySet()) {
+				System.out.println(key + ":" + map.get(key));
+			}
+
+			//(2).推荐使用 -> 只遍历了一次就把 key 和 value 都放到了 entry 中,效率更高. JDK8使用 Map.forEach()
+			for (Map.Entry<String, String> entry : map.entrySet()) {
+				System.out.println(entry.getKey() + ":" + entry.getValue());
+			}
+
+			//(3).JDK8 -> Map.forEach()
+			map.forEach((k, v) -> System.out.println(k + ":" + v));
+		}
+		
+	6.sort
+		//JDK7 以上, Comparator 要满足自反性,传递性,对称性.
+		//不然 Arrays.sort(), Collections.sort() 会报异常 IllegalArgumentException 
+        new Comparator<Person>() {
+
+            @Override
+            public int compare(Person o1, Person o2) {
+                //return o1.getAge() > o2.getAge() ? 1 : -1; //没有处理相等的情况
+
+                return Integer.compare(o1.getAge(), o2.getAge()); //推荐使用此方法
+            }
+        };
+
+	7.null
+		//高度注意 Map 类集合 K/V 能不能存储 null 值的情况
+		集合类				Key				Value			Super			说明
+		-------------------------------------------------------------------------------
+		Hashtable			不允许为 null	不允许为 null	Dictionary		线程安全
+		ConcurrentHashMap	不允许为 null	不允许为 null	AbstractMap		分段锁技术
+		TreeMap				不允许为 null	允许为 null		AbstractMap		线程不安全
+		HashMap				允许为 null		允许为 null		AbstractMap		线程不安全
+		
+	8.去重
+        //对于存储大量不重复元素,应该选用 Set 集合,利用其元素唯一性特点
+        //而不应该选用 list,使用 List.contains() 进行遍历,对比,去重操作
+	
+//}
+
+
+//{--------<<<static>>>---------------------------
+#static 是一个修饰符,用于修饰类, 类的成员变量, 类的成员方法
+	1.随着类的加载而加载
+		当类被内存所调用的同时, static 修饰的成员也同时在内存中(方法区)划分存储空间.
+		也就是说,静态成员会随着类的消失而消失,说明它的生命周期最长.
+		//所以,不建议定义更多的静态变量.
+		
+	2.优先于类的对象存在，被类的所有对象所共享~
+		静态方法中不可以使用关键字 this, super. 直接被类名所调用
+
+#实例变量和静态变量
+	1.存放位置
+		实例变量-随着对象的建立,存在于堆内存中
+		静态变量-随着类的加载而建立,存在于方法区中
+		
+	2.生命周期
+		实例变量-随着对象的消失而消失
+		静态变量-生命周期最长,随着类的消失而消失
+
+#成员变量和局部变量
+	1.成员变量
+		成员变量定义在类中,在整个类中都可以被访问
+		成员变量随着对象的建立而建立,存在于对象所在的堆内存中
+		生命周期分: 成员变量和静态成员变量
+		//成员变量有默认初始化值
+
+	2.局部变量
+		局部变量只定义在局部范围内. 如: 函数内,语句内等
+		局部变量存在于栈内存中
+		作用的范围结束,变量空间会自动释放
+		//局部变量没有默认初始化值
+	
+#静态代码块 > main() > 构造代码块 > 构造函数
+	1.静态代码块
+		在类中只使用关键字 static{} 声明的代码块.
+		每个静态代码块只会执行一次,用于初始化类的属性. 
+		JVM 在加载类时,会先执行静态代码块, 所以静态代码块优先 main()
+		
+	2.构造代码块
+		直接在类中用{ }扩起来的代码块.
+		每次 new 对象时都会被调用. 执行顺序优先于构造函数
+		作用: 给所有的对象进行统一,共性的初始化.
+		
+	3.构造函数
+		每个类都有一个默认的无参构造函数.
+		作用: 给通过此构造函数(构造函数不止一种) new 的对象进行初始化
+		
+#对象初始化过程
+	Person p = new Person("zhangsan",20);
+	
+	(1).因为用到了 Person.class, 所以会先找到 Person.class 字节码文件并加载到内存中
+	(2).执行该类中的 static '静态代码块', 给 Person.class 类进行初始化
+	(3).在'堆内存'中开辟空间,分配内存地址
+	(4).在'堆内存'中建立对象的特有属性. 并进行默认初始化(string 类型默认为 null, int 默认为 0)
+	(5).对属性进行显示初始化 (即定义类时,属性含有默认的值 private String name = "xiaowang")
+	(6).对对象进行'构造代码块'初始化
+	(7).对对象进行对应的'构造函数'初始化
+	(8).在栈内存中生成变量 p1,将内存地址赋给占内存中的 p1 变量
+	
+#成员内部类 + 静态内部类 + 局部内部类 + 匿名内部类
+	1.成员内部类
+		定义在外部类中,可以访问外部类的所有成员变量和方法.
+	
+	2.静态内部类
+		如果内部类中有 static 成员,则内部类一定是 static 类
+		当外部类的 static 法方法访问内部类时,内部类也必须是 static
+		
+		静态内部类 只可以访问外部类的 static 静态成员
+		
+	3.局部内部类
+		//定义在方法中,只能访问方法中定义的 final 类型的常量.
+		像局部变量一样,不能被 public, protected, private 和 static 修饰
+		
+	4.匿名内部类
+		没有名字的局部内部类. 隐式地 extends 一个父类或 implements 一个接口.
 		
 	
+//}
+
+//{--------<<<Exception>>>------------------------
+#异常分类
+	1.可查异常(checked exceptions)
+		除了 RuntimeException 及其子类以外,其他的 Exception 及其子类都属于可查异常
+		
+		//特点: java编译器会检查它,要求必须处置
+		即,当程序中出现这类异常,要么用 try-catch 捕获,要么 throws 抛出,否则编译不会通过.
+
+	2.不可查异常(unchecked exceptions)
+		//编译器不要求强制处置的异常. 包括运行时异常 RuntimeException 与其子类和错误 Error
+		
+	3.自定义异常的2种选择
+		(1).继承类-Exception
+		(2).继承类-RuntimeException, 对无法处理的异常
+
+//}
+
+//{--------<<<HashMap>>>---------------------------
+HashMap 根据键的 hashCode 值存储数据，大多数情况下可以直接定位到它的值，因而具有很快
+的访问速度，但遍历顺序却是不确定的。 HashMap 最多只允许一条记录的键为 null，允许多条记
+录的值为 null。HashMap 非线程安全，即任一时刻可以有多个线程同时写 HashMap，可能会导
+致数据的不一致。如果需要满足线程安全，可以用 Collections 的 synchronizedMap 方法使
+HashMap 具有线程安全的能力，或者使用 ConcurrentHashMap。我们用下面这张图来介绍 HashMap 的结构。
+
+JAVA7 实现
+	大方向上，HashMap 里面是一个数组，然后数组中每个元素是一个单向链表。上图中，每个绿色
+	的实体是嵌套类 Entry 的实例，Entry 包含四个属性：key, value, hash 值和用于单向链表的 next。
+	1.  capacity：当前数组容量，始终保持 2^n，可以扩容，扩容后数组大小为当前的 2 倍。
+	2.  loadFactor：负载因子，默认为 0.75。
+	3.  threshold：扩容的阈值，等于 capacity * loadFactor
 	
+JAVA8 实现
+	Java8 对 HashMap 进行了一些修改，最大的不同就是利用了红黑树，所以其由 数组+链表+红黑
+	树 组成。
+	根据 Java7 HashMap 的介绍，我们知道，查找的时候，根据 hash 值我们能够快速定位到数组的
+	具体下标，但是之后的话，需要顺着链表一个个比较下去才能找到我们需要的，时间复杂度取决
+	于链表的长度，为 O(n)。为了降低这部分的开销，在 Java8 中，当链表中的元素超过了 8 个以后，
+	会将链表转换为红黑树，在这些位置进行查找的时候可以降低时间复杂度为 O(logN)。
+
+#ConcurrentHashMap
+	1.Segment
+		ConcurrentHashMap 和 HashMap 思路是差不多的，但是因为它支持并发操作，所以要复杂一
+		些。整个 ConcurrentHashMap 由一个个 Segment 组成，Segment 代表”部分“或”一段“的
+		意思，所以很多地方都会将其描述为分段锁。注意，行文中，我很多地方用了“槽”来代表一个
+		segment。
+		
+	2.线程安全
+		简单理解就是，ConcurrentHashMap 是一个 Segment 数组，Segment 通过继承
+		ReentrantLock 来进行加锁，所以每次需要加锁的操作锁住的是一个 segment，这样只要保证每
+		个 Segment 是线程安全的，也就实现了全局的线程安全。
+	
+	3.并行度
+		concurrencyLevel：并行级别、并发数、Segment 数，怎么翻译不重要，理解它。默认是 16，
+		也就是说 ConcurrentHashMap 有 16 个 Segments，所以理论上，这个时候，最多可以同时支
+		持 16 个线程并发写，只要它们的操作分别分布在不同的 Segment 上。这个值可以在初始化的时
+		候设置为其他值，但是一旦初始化以后，它是不可以扩容的。再具体到每个 Segment 内部，其实
+		每个 Segment 很像之前介绍的 HashMap，不过它要保证线程安全，所以处理起来要麻烦些。
+		
+	4.Java8
+		Java8 对 ConcurrentHashMap 进行了比较大的改动,Java8 也引入了红黑树。	
+	
+//}
+
+
+//{--------<<<java>>>------------------------------
+#重写和重载
+	OverWrite: 在子类中,出现和父类中一模一样的方法声明的现象.
+	OverLoad:  同一类中,出现方法名相同,但参数列表不同(参数类型+个数+顺序)的现象.
+	
+	//注意: 如果两个方法的参数列表完全一样,但返回值不同, 不能实现重载 Overload.
+	如果在 Map 中定义了两个方法, boolean remove(key); int remove(key);
+	在调用时 map.remove(key); 不关心返回值, 则编译器无法区分到底调用的是哪个方法...
+		
+	方法包括: 修饰符(可选), 返回值类型, 方法名, 参数列表, 方法体.
+	方法签名: 方法名 + 参数列表(参数类型+个数).
+
+#this-super
+	this:  子类调用'本类'的同名成员时
+	super: 子类调用'父类'............
+	
+	0.DEMO
+		class Outter {
+			int num = 10;
+
+			class Inner {
+				int num = 20;
+
+				void show() {
+					int num = 30;
+
+					System.out.println(num); //30
+					System.out.println(this.num); //20
+					System.out.println(Outter.this.num); //10 --> 切记不能使用 super
+				}
+			}
+		}
+		new Outter().new Inner().show();
+	
+#final-finally-finalize
+	finally  --> 异常处理的一部分,代码肯定会被执行. 常用于释放资源.
+	finalize --> Object类的一个方法,用于垃圾回收.
+	
+	final    --> 修饰类 -> 不能被继承; 修饰方法 -> 不能被重写; 修饰变量 -> 就是常量(只能被赋值一次).
+	
+#一个".java"源文件中是否可以包括多个类(不是内部类)？有什么限制？
+	可以有多个类,但只能有一个 public 的类,并且 public 的类名必须与文件名相一致
+	
+#&和&&
+	都是逻辑与的运算符. 其中,后者为短路操作.
+	
+        if (x == 33 & ++y > 0) //y 会增长
+        if (x == 33 && ++y > 0) //y 不会增长
+	
+#如何跳出当前的多重嵌套循环？
+	//让外层的循环条件表达式的结果,可以受到里层循环体代码的控制
+    public void demo01() {
+        int arr[][] = {{1, 2, 3}, {4, 5, 6, 7}, {9}};
+        boolean found = false;
+        for (int i = 0; i < arr.length && !found; i++) {
+            for (int j = 0; j < arr[i].length; j++) {
+                System.out.println("i =" + i + ", j = " + j);
+                if (arr[i][j] == 5) {
+                    found = true;
+                    break;
+                }
+            }
+        }
+	}
+
+#switch能否作用在 byte 上,能否作用在 long 上,能否作用在 String 上?
+	switch 作用在 byte,short,char,int 这几个基本数据类型和封装类型 或 enum 枚举常量.
+	其中, byte,short,char 都可以隐含转换为 int. //不支持 boolean
+	
+	另外, java7支持 String类型,是通过调用 String.hashCode(), 将String转换为 int
+	
+#short s1 = 1; s1=s1+1; 和 s1+=1;
+	前者, s1+1 运算时会/*自动提升表达式的类型*/,所以结果是 int 型,
+	再赋值给 short 类型 s1时,编译器将报告需要强制转换类型的错误.
+	
+	后者, //+= 编译器会进行特殊处理,因此可以正确编译.
+	
+#char 型变量中能不能存贮一个中文汉字? 
+	char 型变量是/*用来存储 Unicode 编码的字符集*/,Unicode 编码字符集中包含了汉字,
+	所以,char 型变量中当然可以存储汉字.
+	
+	不过,如果某个特殊的汉字没有被包含在 Unicode 编码字符集中,
+	那么,这个 char 型变量中就不能存储这个特殊汉字. 
+	
+	//补充: Unicode 编码占用两个字节, char 类型的变量也占两个字节.
+	
+#final 修饰一个变量时, 是引用不能变,还是引用的对象不能变?
+	引用变量不能变,引用变量所指向的对象中的内容还是可以改变的.
+	
+	(1).final 修饰基本数据类型的变量,那么这个变量的值就定了,不能变了.
+	(2).final 修饰的引用类型的变量, 那么该变量存的是一个内存地址,该地址就不能变了.
+		但是该内存地址所指向的那个对象还是可以变的, 就像你记住了人家的门牌号,但你不能管人家家里人员数量.
+	
+		//定义方法的参数时,通过 final 来阻止方法内部修改传进来的参数对象,
+		//如果, 参数是基本数据类型,则可以实现
+		//但是, 对于引用类型,则无法达到目的
+		public void method(final StringBuffer sb) {
+			sb.append("abc");
+		}
+
+#== equals
+	boolean; char; byte, short, int, long, float, double
+	//前者, 用来比较两个变量的值是否相等
+	对于基本数据类型,比较其值. 对于引用类型,比较堆内存地址.
+	
+	//后者, 用于比较两个独立对象的内容是否相同
+	默认都是比较堆内存地址. 可根据自身需求,重写 equals()
+	
+	// String.==	 -> 比较两字符串的'堆内存地址'是否相同, 属于数值比较
+	// String.equals -> ..............内容................, 属于内容比较
+	
+		public void demo01() {
+			String s1 = "abc";
+			String s2 = "abc";
+			String s3 = new String("abc");
+			String s4 = s3;
+
+			System.out.println(s1 == s2);		//true  字符串常量池中已有"abc",则不会再创建
+			System.out.println(s1 == s3);		//false 比较两对象的堆内存地址
+			System.out.println(s3 == s4);		//true  引用传递
+			System.out.println(s1.equals(s3));	//true  String重写equals()
+		}
+	
+#实例变量&静态变量
+	静态变量-static 关键字修饰
+		
+	1.存放位置
+		实例变量-存在于堆内存中. 必须先创建对象,才可以通过这个对象来使用
+		静态变量-存在于方法区中. 随着类的加载而分配空间,可以直接使用类名来引用
+
+	2.生命周期
+		实例变量-随着对象的消失而消失
+		静态变量-生命周期最长,随着类的消失而消失
+		
+		public class VariantTest {
+			static int staticVar = 0;
+			int instanceVar;
+
+			VariantTest() {
+				staticVar++;
+				instanceVar++;
+
+				// 无论创建多少个实例对象,永远都只分配了一个 staticVar 变量,
+				// 并且每创建一个实例对象,这个 staticVar 就会加1.
+				// 但是,每创建一个实例对象,就会分配一个 instanceVar,
+				// 即可能分配多个 instanceVar,并且每个 instanceVar 的值都只自加了1次
+				System.out.println("staticVar = " + staticVar + ",instanceVar = " + instanceVar);
+			}
+		}
+
+#static 方法是否可以调用 非static 方法???
+	不可以. 因为非 static 方法是要与对象关联在一起的,必须先创建对象,才可以在该对象上进行方法调用.
+	而 static 方法调用时不需要创建对象,可以直接调用.
+	也就是说,当一个 static 方法被调用时,可能还没有创建任何实例对象,	
+	如果从一个 static 方法中发出对非 static 方法的调用,那个非 static 方法是关联到哪个对象上?? 这个逻辑无法成立
+	所以,一个 static 方法内部发出对非 static 方法的调用。
+	
+#Math.round(11.5) 等於多少? Math.round(-11.5) 等於多少?
+	double ceil = Math.ceil(-11.5);   //向上取整-返回double -11.0	
+	double floor = Math.floor(-11.5); //向下取整-返回double -12.0
+	
+	long round = Math.round(-11.5); //四舍五入-返回long -11 (-11>-12)
+	long round = Math.round(11.5);  //12
+	
+#public, private, protected 
+	作用域		当前类	同一包	子孙类	其他包
+	public			*		*		*		*
+	protected		*		*		*		
+	default			*		*
+	private			*
+	
+#构造器 Constructor 是否可被 override?
+	构造器 Constructor 不能被继承,因此不能重写 Override. 但可以被重载 Overload 
+	
+#接口-抽象类
+	接口 implements 接口; 抽象类 implements 接口; 抽象类 extends 具体类; 
+	抽象类中可以有静态的 main() 方法
+	
+	//抽象类与普通类的唯一区别: 不能创建实例对象和允许有 abstract 方法
+	
+#
+	
+	
+//}
+
+//{--------<<<web>>>-------------------------------
+#GET & POST
+
+#servlet-生命周期
+	
+#forward & redirect
+	(1).转发是 1次请求,重定向是 2次请求.
+		服务端返回'302状态码+新地址',浏览器解析到302,会立刻向新的地址再次发送请求.
+		
+	(2).转发时浏览器地址栏地址不变, 重定向则会变.
+	
+	(3).转发共享 Servlet 中的 request 对象; 重定向则不共享.
+	
+	(4).转发只能转发到当前项目的内部资源, 重定向则没有限制,甚至可以重定向到网络资源
+	
+#request.getAttribute() & request.getParameter()
+	getAttribute() 只能收到程序用 setAttribute() 传过来的值.
+	
+	....
+	
+#jsp内置对象(9)
+	request		-> HttpServletRequest,  包含了当前请求的所有信息
+	response	-> HttpServletResponse, ...........应答.........
+	
+	application -> ServletContext, 当前应用上下文
+	session		-> HttpSession, 存贮用户的状态信息
+	out			-> JspWriter, 用于页面显示信息
+	pageContext	-> PageContext, 
+	
+	config		-> ServletConfig, 用于存取 servlet 实例的初始化参数
+	page		-> jsp对象本身,或编译后的Servlet对象	
+	exception	-> 针对错误页面,未捕捉的
+	
+	//pageContext < request < session < application (作用域:从小到大)
+	
+#页面间对象传递的方法
+	request, session, application, cookie等
+
+#JSP & Servlet
+
+
+#MVC 的各个部分都有那些技术来实现? 如何实现?
+	
+
 
 //}
 
