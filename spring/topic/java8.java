@@ -80,7 +80,7 @@
 		Function<T, R> { R apply(T t); } //入参T类型,返回R类型
 		
 	4.断定型接口
-		Predicate<T> { boolean test(T t); } //入参T类型,返回boolean类型
+		Predicate<T> { boolean test(T t); } //入参T类型,返回boolean类型	
 
 //}		
 

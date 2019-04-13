@@ -28,13 +28,7 @@
 	
 #-----------------------------------------------------------------------------------------------------------------
 
-0.关键字 this & super
-	子类调用本类成员变量: this.成员变量; 调用父类: super.成员变量
-	构造函数间调用使用的 this() / super() 语句,只能放在构造函数第一行
-		Person(String name, int age) {
-			this(name);
-			this.age = age;
-		}
+
 		
 0.关键字 static '不能修饰类, 修饰类的成员变量,成员函数'
 	#1. 随着类的加载而加载~
@@ -61,14 +55,7 @@
 		作用的范围结束,变量空间会自动释放~
 		局部变量没有默认初始化值~
 
-0.关键字 public private protected
-	当类没加任何访问修饰符时,默认: package-private (package级别), 即对其所在包内的其他类可见,对包外类不可见.
 
-		Modifier	Class	Package		Subclass	World
-		public		Y		Y			Y			Y
-		protected	Y		Y			Y			N
-		package		Y		Y			N			N
-		private		Y		N			N			N	
 	
 0.对象初始化过程
 	对于 Person p = new Person("zhangsan", 20); 在内存中究竟做了什么事？
@@ -99,47 +86,6 @@
 		
 	方法区, 本地方法区, 寄存器
 
-// 1.运算符
-	// 取模运算(%求余数): 左小右则取左; n%p结果正负由被除数n决定,与p无关. 如: 7%4= 3; 7%-4= 3; -7%4= -3; -7%-4= -3
-	
-	// 异或运算: 左右相同为false, 左右不同为true!
-	
-		// "&"和"&&","|"和"||"の区别：'后者&& ||皆为短路运算'
-			// & |		---> 左无论真假,右都进行运算
-			// && ||	---> 左为真(假),右参与运算; 左为假(真),则右不参与运算
-	
-	// 位运算:
-		// 左移<<: 乘以2的移动位数次幂. 3<<2 = 3 * 2^2 = 12
-		// 右移>>: 除以2的移动位数次幂. 6>>2 = 6 / 2^2 = 1
-		
-2.数据类型
-	- 基础数据类型
-		- 数值型
-			- byte			8位		- 1字节 -128 ~ 127(8位带符号的二进制最高位代表符号)
-			- short			16位	- 2字节 -32768 ~ 32767
-			- int('默认')	32位	- 4字节 -2147483648 ~ 2147483647
-			- long			64位	- 8字节 -9223372036854774808 ~ 9223372036854774807
-		- 字符型
-			- char			8位		- 2字节
-		- 浮点型
-			- float			32位	- 4字节
-			- double('默认')64位	- 8字节
-		- 布尔型
-			只有 true 和 false
-	- 引用数据类型
-		- 类	---> String
-		- 数组
-		- 接口
-	
-	byte s = 2; //此处会检测 2 是否在byte范围内,是则降为byte类型; 否则编译报错!!!
-	
-	s = s + 2;	//编译报错; 原因 ---> s+2结果为int类型, int转byte,丢失精度. 两次运算: 先"+"后"="
-	s += 2;		//编译成功; +=不涉及到类型转换.为1次运算????????
-
-	'a++与++a的区别':	
-		int a = 1, b;
-		b=a++; //b=1;a=2; a先赋值,再加1
-		b=++a; //b=2;a=2; a先加1,再赋值
 
 3.get与set
 	当getAge() 和 setAge()方法内部只放一个赋值语句, 其实和 public int age 并没什么区别.
@@ -210,12 +156,12 @@
 	String b = "HELLO";
 	String c = new String("HELLO");
 	String d = new String("HELLO");
-	System.out.println(a == b);
-	System.out.println(b == c);
-	System.out.println(c == d);
-	System.out.println(a.equals(b));
-	System.out.println(b.equals(c));
-	System.out.println(c.equals(d)); //true, false, false, true, true, true 
+	System.out.println(a == b); //*
+	System.out.println(b == c); //-
+	System.out.println(c == d); //-
+	System.out.println(a.equals(b));//*
+	System.out.println(b.equals(c));//*
+	System.out.println(c.equals(d)); //*true, false, false, true, true, true 
 	//(1).字符串池(String pools)是为了提高java内存利用率而采用的措施!!!
 	//	当遇到String a = "HELLO"时, 首先检查字符串池中是否存在"HELLO"对象?? 没有则先新建,再添加到池中,最后让变量 a 指向这个对象的内存地址;
 	//	当遇到String b = "HELLO"时, 由于已存在"HELLO"对象 (底层通过equals()方法确定), 所以直接将 b 指向此对象内存地址, 省去再分配的麻烦!!
@@ -250,16 +196,7 @@
 		5、因为字符串是不可变的,所以在它创建的时候hashcode就被缓存了,不需要重新计算这就使得字符串很适合作为Map中的键,字符串的处理速度要快过其它的键对象这就是HashMap中的键往往都使用字符串
 	 */
 	 
-7.HashMap、HashTable、ConcurrentHashMap
-	HashTable线程安全, 在多线程情况下, 同步操作能保证程序执行的正确性.
-	但是, HashTable每次同步执行时,都要锁住整个结构.
-	
-	ConcurrentHashMap 正是为了解决这个问题而诞生的.
-	ConcurrentHashMap 锁的方式是稍微细粒度的, 将hash表分为16个桶(默认值), 诸如get,put,remove等常用操作只锁当前需要用到的桶。
-	原来只能一个线程进入, 现在却能同时16个写线程进入 (写线程才需要锁定,而读线程几乎不受限制), 并发性的提升是显而易见的!!!
-	
-	ConcurrentHashMap的'读取操作没有用到锁定',所以读取操作几乎是完全的并发操作.
-	而'写操作锁定的粒度又非常细', 比起之前又更加快速(桶越多,表现越明显). '只有在求size等操作时才需要锁定整个表'
+
 	
 8.java怎么在函数内改变传入的值？
 	1、对于基本类型参数，在方法体内对参数进行重新赋值，并不会改变原有变量的值。
@@ -270,3 +207,111 @@
 	对于基本数据类型，实现的是传值，只是个形参(会在函数内部copy一分放在栈中)，不会改变原有值。
 	对于引用数据类型，对这个引用进行操作，其实也是相当于对形参的操作，不会改变原来的引用。
 	但是，当对这个引用的属性进行操作的时候，相当于CPP中的传址调用，可以改变这个引用的属性的值。
+
+	
+	
+	
+
+
+
+
+/*9999 接口*/
+//接口可以继承接口。抽象类可以实现(implements)接口，抽象类可以继承具体类。抽象类中可以有静态的 main 方法。
+//抽象类与普通类的区别：允许有 abstract 方法和不能被实例化(但是可以有构造函数)
+
+//抽象类是否可继承实体类 (concrete class)???
+//可以继承，但是和实体类的继承一样，也要求父类可继承，并且拥有子类可访问到的构造器。
+
+/*abstract class 和 interface 有什么区别?
+1.抽象类可以有构造方法，【接口中不能有构造方法】。
+2.抽象类中可以包含非抽象的普通方法，【接口中的所有方法必须都是抽象的】
+3.抽象类中的抽象方法访问类型可以是 public，protected 和 默认类型，【接口中抽象方法只能是public abstract类型】。
+4.抽象类中可以包含静态方法，【接口中不能包含静态方法】
+5.抽象类中可以有普通成员变量，【接口中没有普通成员变量】
+6.抽象类和接口中都可以包含静态成员变量，抽象类中的静态成员变量的访问类型可以任意【接口中定义的变量只能是 public static final 类型】
+7.一个类可以实现多个接口，但只能继承一个抽象类。*/
+
+/* abstract 是否可和 static 同用, 是否 native，同用 ，是否 synchronized 同用?*/
+/*1.abstract 的 method 不可以是 static 的，因为抽象的方法是要被子类实现的，而 static 与子类扯不上关系！
+2.native 方法表示该方法要用另外一种依赖平台的编程语言实现的， 不存在着被子类实现的问题，所以，它也不能是抽象的，不能与 abstract 混用。
+3.关于 synchronized 与 abstract 合用的问题，我觉得也不行， 因为在我几年的学习和开发中，从来没见到过这种情况，
+并且我觉得 synchronized 应该是作用在一个具体的方法上才有意义。
+而且，方法上的 synchronized 同步所使用的同步锁对象是 this，而抽象方法上无法确定 this 是什么。*/
+
+
+
+/*什么是内部类？ Static Neste(嵌套) Class 和 Inner Class  的不同。*/
+//Java 中的内部类共分为四种：静态内部类 + 成员内部类 + 局部内部类 + 匿名内部类
+
+/*静态内部类 Static Nested(Inner) Class：
+1.如果内部类中有 static 成员，则一定是 static 内部类。
+2.当外部类的 static 方法访问内部类时，内部类也必须是 static。
+3.静态内部类只可以访问外部类的 static 静态成员，包括 private 私有的。
+4.其他类中生成静态内部类对象的方式：OuterClass.InnerClass inner = new OuterClass.InnerClass();
+5.静态内部类被编译成一个完全独立的.class 文件，名称为 OuterClass$InnerClass.class 的形式。
+*/
+/*成员内部类 Member Inner Class
+1.不用 static 修饰的内部类，它可以访问外部类中所有成员，不管是 static 还是 private 。
+2.在外部类中创建成员内部类的实例：this. new Innerclass();
+3.在内部类中访问外部类的成员~：Outerclass.this.member
+4.在其他类中创建内部类的实例~：new Outerclass().new Innerclass();
+*/
+/*局部内部类  Local Inner Class
+1.定义在方法中，只能访问方法中定义的 final 常量。是 最少 用到的一种类型。
+2.像局部变量一样，【不能】被 public, protected, private 和 static 修饰。
+3.只能在方法当中生成局部内部类的实例并且调用其方法。
+*/
+/*匿名内部类  Anonymous Inner Class
+1.匿名内部类就是没有名字的局部内部类，不能使用关键字 class, extends, implements, 没有构造方法。
+2.匿名内部类【必须】隐式地继承了一个父类或者实现了一个接口~。
+3.生成的.class 文件中，匿名类会生成 OuterClass$1.class 文件，数字根据是第几个匿名类而类推。
+4.简单理解：就是创建一个自带实现内容的父类或接口的子类匿名对象~。
+5.格式为：new 父类名或接口名(){ 覆盖父类或者接口中的代码}.调用的方法*/
+	new AbsDemo(){
+		void show(){
+			System.out.println("show:"+num);
+		}
+	}.show();
+
+/*内部类可以引用外部类的成员吗？有没有什么限制？*/
+//完全可以。如果不是静态内部类，那没有什么限制！
+//静态内部类不可以访问外部类的普通成员变量，而只能访问外部类中的static静态成员，
+
+/*Anonymous Inner Class(匿名内部类)是否可以 extends 其它类，是否可以 implements 其他interface*/
+//可以继承其他类或实现其他接口。不仅是可以，而是必须!!!
+
+
+/*super.getClass() 方法调用*/
+import java.util.Date;
+public class Test extends Date{
+	public static void main(String[] args){
+		new Test().test();
+	}
+	public void test(){
+		//getClass()在 Object 类中定义成了 final，子类不能覆盖该方法
+		//此方法的返回值是：此 Object 的运行时类。即Test
+		System.out.println(getClass().getName());
+		
+		//super().**其实最终调用的也是Object的getClass()方法
+		System.out.println(super.getClass().getName());
+		
+		//getSuperclass()方法：返回此对象所表示类的超类。 
+		System.out.println(this.getClass().getSuperclass().getName());
+		
+		System.out.println(super.getClass().getSuperclass().getName());
+	}
+} 
+
+
+
+
+
+
+
+
+
+
+
+
+
+

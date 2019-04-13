@@ -960,7 +960,7 @@ https://blog.csdn.net/w1196726224/article/details/54428493
 		public static native long currentTimeMillis();
 		
 	2.arraycopy	//数组拷贝,非常高效	
-		public void demo01() {
+		public void test() {
 			List<String> list = Arrays.asList("a", "b", "c");
 			String[] src = list.toArray(new String[list.size()]); //src
 			
@@ -976,7 +976,7 @@ https://blog.csdn.net/w1196726224/article/details/54428493
 	
 #DateFormat
 	1.计算个人已经出生了多少天
-		public void demo01() throws ParseException {
+		public void test() throws ParseException {
 			DateFormat format = new SimpleDateFormat("yyyy-MM-dd HH:mm:ss.SSS");
 
 			Date birth = format.parse("1990-04-21 09:31:30.110"); //String -> Date
@@ -990,92 +990,101 @@ https://blog.csdn.net/w1196726224/article/details/54428493
 //}
 
 //{--------<<<String>>>----------------------------
-#字符串常量池
-	public void demo01() throws IOException {
-        String s1 = "abc";
-        String s2 = "abc";
-        String s3 = new String("abc");
-        String s4 = "ab" + "c";
+// #字符串常量池
+	// public void test() {
+        // String s1 = "abc";
+        // String s2 = "abc";
+        // String s3 = new String("abc");
+        // String s4 = "ab" + "c";
 		
-        System.out.println(s1 == s2); //true
-        System.out.println(s1 == s3); //false
-        System.out.println(s1 == s4); //true
-	}
+        // System.out.println(s1 == s2); //true
+        // System.out.println(s1 == s3); //false
+        // System.out.println(s1 == s4); //true
+	// }
 	
-	1.栈和堆
-		栈内存 -> 基本类型的变量和对象的引用变量
-		堆内存 -> new 出来的对象和数组
+	// 1.栈和堆
+		// 栈内存 -> 基本类型的变量和对象的引用变量
+		// 堆内存 -> new 出来的对象和数组
 		
-		常量池 -> (A).字面量   -> 字符串, final-常量, 基本数据类型的值
-				  (B).符号引用 -> 类和结构的完全限定名, 字段名称和描述符, 方法名称和描述符
+		// 常量池 -> (A).字面量   -> 字符串, final-常量, 基本数据类型的值
+				  // (B).符号引用 -> 类和结构的完全限定名, 字段名称和描述符, 方法名称和描述符
 			
-	2.字符串常量池 
-		保存着很多String对象,并且可以被共享使用,提高了效率.
-		由于String是 final 的,一经创建就不可改变,因此不用担心String对象共享而带来程序的混乱.
+	// 2.字符串常量池 
+		// 保存着很多String对象,并且可以被共享使用,提高了效率.
+		// 由于String是 final 的,一经创建就不可改变,因此不用担心String对象共享而带来程序的混乱.
 	
-	3.分步解析	
-		String s1 = "abc"; //先在常量池中查找是否存在"abc", 存在则让s1指向这个值,没有则新建
-		String s2 = "abc"; //同上
+	// 3.分步解析	
+		// String s1 = "abc"; //先在常量池中查找是否存在"abc", 存在则让s1指向这个值,没有则新建
+		// String s2 = "abc"; //同上
 		
-	4.目前还只创建了 1个字符串对象
-		//String s3 只是定义了一个名为 s3 的String类型变量,并没有创建对象
-		//new String() 在堆空间上创建1个字符串对象
-		String s3 = new String("abc");
+	// 4.目前还只创建了 1个字符串对象
+		// //String s3 只是定义了一个名为 s3 的String类型变量,并没有创建对象
+		// //new String() 在堆空间上创建1个字符串对象
+		// String s3 = new String("abc");
 		
-	5.至此一共创建了 2个对象.(1个在堆内存上,1个在字符串常量池)	
-		String s4 = "ab" + "c"; //先在常量池中创建 2 个对象,再将 s4 指向已有的"abc"
+	// 5.至此一共创建了 2个对象.(1个在堆内存上,1个在字符串常量池)	
+		// String s4 = "ab" + "c"; //先在常量池中创建 2 个对象,再将 s4 指向已有的"abc"
 	
-	6.最后一共存在 4个对象.(1个在堆内存,3个在字符串常量池)
+	// 6.最后一共存在 4个对象.(1个在堆内存,3个在字符串常量池)
 	
-	7.其中栈内存中存在 4个引用变量 s1,s2,s3,s4
+	// 7.其中栈内存中存在 4个引用变量 s1,s2,s3,s4
 	
-#常见方法
-	1.lenth(数组&字符串)
-		public void demo01() {
-			String[] array = {"a", "b", "c"};
-			System.out.println("数组的长度: " + array.length); //数组的属性
+// #常见方法
+	// 0.equals
+		// ==     --> 基本数据类型,比较其值; 引用数据类型,比较其堆内存地址.
+		// equals --> 默认调用==             --> String重写为比较字符串内容
+	
+	// 1.lenth(数组&字符串)
+		// public void test() {
+			// String[] array = {"a", "b", "c"};
+			// System.out.println("数组的长度: " + array.length); //数组的属性
 
-			System.out.println("字符串长度: " + "abc".length()); //字符串的方法
-		}
+			// System.out.println("字符串长度: " + "abc".length()); //字符串的方法
+		// }
 
-	2.split
-		//String#split() 得到的数组,需做最后一个分隔符后有无内容的检查,否则会有抛 IndexOutOfBoundsException
-		public void demo01() {
-			String str = "a,b,c,,";
-			String[] ary = str.split(",");
-			System.out.println(ary.length); //预期大于 3,结果是 3
-		}
+	// 2.split
+		// //String#split() 得到的数组,需做最后一个分隔符后有无内容的检查,否则会有抛 IndexOutOfBoundsException
+		// public void test() {
+			// String str = "a,b,c,,";
+			// String[] ary = str.split(",");
+			// System.out.println(ary.length); //预期大于 3,结果是 3
+		// }
 
-#StringBuilder
-	内部拥有一个数组用来存放字符串内容,当进行字符串拼接时,直接在数组中加入新内容,并自动维护数组的扩容.
+// #StringBuilder
+	// 内部拥有一个数组用来存放字符串内容,当进行字符串拼接时,直接在数组中加入新内容,并自动维护数组的扩容.
 
-	1.以下DEMO会产生3个字符串
-		public void demo01() {
-			String s1 = "hello"; //3个字符串: "hello" " world" "hello world"
-			s1 += " world";
-			System.out.println(s1);
-		}
+	// 1.字符串拼接会产生大量的中间变量
+		// public void test() {
+			// String s1 = "hello" + "-world"; //1个字符串: "hello-world"
+			
+			// String s2 = "hello"; //3个字符串: "hello" "-world" "hello-world"
+			// s1 += "-world";
+			
+			// System.out.println(s1 == "hello-world"); //true
+			// System.out.println(s2 == "hello-world"); //false
+		// }
 
-	2.大量字符串拼接
-		//每次循环都会 new 一个 StringBuilder 对象,然后进行 append() 操作
-		//最后通过 toString() 返回 String 对象,造成内存资源浪费
-		public void demo01() {
-			String str = "start";
-			for (int i = 0; i < 100; i++) {
-				str += i + "-";
-			}
-			System.out.println(str);
-		}
+	// 2.DEMO解析
+	
+		// //每次循环都会 new 一个 StringBuilder 对象,然后进行 append() 操作
+		// //最后通过 toString() 返回 String 对象,造成内存资源浪费
+		// public void test() {
+			// String str = "start";
+			// for (int i = 0; i < 100; i++) {
+				// str += i + "-";
+			// }
+			// System.out.println(str);
+		// }
 
-	3.比对三者
-		String			线程不安全	-> 产生大量中间字符串,时间消耗长
-		StringBuilder	线程不安全	-> 单线程进行大量字符串操作时,推荐使用(√)
+	// 3.比对三者
+		// String			线程安全	-> 产生大量中间字符串,时间消耗长
+		// StringBuilder	线程不安全	-> 单线程进行大量字符串操作时,推荐使用(√)
 		
-		StringBuffer	线程安全	-> 支持同步锁,性能稍差,比 StringBuilder 
+		// StringBuffer	线程安全	-> 支持同步锁,性能稍差,比 StringBuilder 
 
 #包装类
 	1.装箱与拆箱
-		public void demo01() {
+		public void test() {
 			Integer i0 = new Integer(3);
 			Integer i1 = Integer.valueOf(3); //装箱: 基本类型 -> 包装类
 
@@ -1083,7 +1092,7 @@ https://blog.csdn.net/w1196726224/article/details/54428493
 		}
 
 	2.自动装箱与自动拆箱
-		public void demo01() {
+		public void test() {
 			Integer i = 4; //自动装箱. 相当于Integer i = Integer.valueOf(4);
 			
 			i = i + 5;     //等号右边: 将i对象转成基本数值(自动拆箱) i.intValue() + 5; 
@@ -1094,7 +1103,7 @@ https://blog.csdn.net/w1196726224/article/details/54428493
         // [强制] 所有的相同类型的包装类对象之间值的比较,全部使用 equals 方法比较.
         // [说明] 对于 Integer 对象,取值区间在 [-128, 127],会复用已有对象,可直接使用==进行比较.
         //       但区间之外的取值,都会在堆上产生,并不会复用已有对象,推荐使用 equals() 进行判断.
-		public void demo01() {
+		public void test() {
 			Integer i0 = 128, i1 = 128;
 			System.out.println(i0 == i1); //false
 
@@ -1128,7 +1137,7 @@ https://blog.csdn.net/w1196726224/article/details/54428493
   1.list //排列有序,可重复
 		Vector     -> 线程安全		效率低,被 ArrayList 替代
 		
-		ArrayList  -> 线程不安全	查询快,增删慢		底层数组实现
+		ArrayList  -> 线程不安全	查询快,增删慢		底层数组实现,新增时会涉及到数组拷贝
 		LinkedList -> 线程不安全	查找慢,增删快		底层双向循环链表实现
 		
 	2.set //排列无序(存入和取出的顺序不一定相同),不可重复
@@ -1218,7 +1227,7 @@ https://blog.csdn.net/w1196726224/article/details/54428493
 		List<String> list = new ArrayList<>(5);
 	1.asList
 		//asList() 返回对象是 Arrays 内部类,并没有实现集合的修改方法.(add/remove/clear)
-		public void demo01() {
+		public void test() {
 			List<String> asList = Arrays.asList("a", "b", "c");
 			// asList.add("d"); -> UnsupportedOperationException
 
@@ -1229,7 +1238,7 @@ https://blog.csdn.net/w1196726224/article/details/54428493
 	2.subList
 		//subList() 返回的是 ArrayList 的内部类 SubList,并不是 ArrayList
 		//而是 ArrayList 的一个视图,对于 SubList 子列表的所有操作最终会反映到原列表上
-		public void demo01() {
+		public void test() {
 			ArrayList<String> list = new ArrayList<>(Arrays.asList("a", "b", "c"));
 			List<String> subList = list.subList(0, 2);
 			
@@ -1238,7 +1247,7 @@ https://blog.csdn.net/w1196726224/article/details/54428493
 		
 	3.toArray
 		//直接使用 toArray() 无参方法返回值只能是 Object[]. <<不推荐>>
-		public void demo01() {
+		public void test() {
 			ArrayList<String> list = new ArrayList<>(Arrays.asList("a", "b", "c"));
 			String[] array = list.toArray(new String[list.size()]); //推荐使用
 		}
@@ -1246,7 +1255,7 @@ https://blog.csdn.net/w1196726224/article/details/54428493
 	4.foreach
 		//不要在 foreach 循环里进行元素的 remove/add 操作
 		//remove 元素请使用 Iterator 方式,如果并发操作,需要对 Iterator 对象加锁
-		public void demo01() {
+		public void test() {
 			ArrayList<String> list = new ArrayList<>(Arrays.asList("a", "b", "c"));
 
 			// for (String s : list) {
@@ -1270,7 +1279,7 @@ https://blog.csdn.net/w1196726224/article/details/54428493
 
 	5.foreach
 		//使用 entrySet 遍历 Map 类集合 KV, 而不是 keySet 方式进行遍历
-		public void demo01() {
+		public void test() {
 			Map<String, String> map = new HashMap<String, String>() {{
 				put("k1", "v1");
 				put("k2", "v2");
@@ -1319,7 +1328,8 @@ https://blog.csdn.net/w1196726224/article/details/54428493
 //}
 
 
-//{--------<<<static>>>---------------------------
+
+//{--------<<<static>>>----------------------------
 #static 是一个修饰符,用于修饰类, 类的成员变量, 类的成员方法
 	1.随着类的加载而加载
 		当类被内存所调用的同时, static 修饰的成员也同时在内存中(方法区)划分存储空间.
@@ -1398,20 +1408,20 @@ https://blog.csdn.net/w1196726224/article/details/54428493
 	
 //}
 
-//{--------<<<Exception>>>------------------------
-#异常分类
-	1.可查异常(checked exceptions)
-		除了 RuntimeException 及其子类以外,其他的 Exception 及其子类都属于可查异常
+//{--------<<<Exception>>>-------------------------
+// #异常分类
+	// 1.可查异常(checked exceptions)
+		// 除了 RuntimeException 及其子类以外,其他的 Exception 及其子类都属于可查异常
 		
-		//特点: java编译器会检查它,要求必须处置
-		即,当程序中出现这类异常,要么用 try-catch 捕获,要么 throws 抛出,否则编译不会通过.
+		// 特点: java编译器会检查它,要求必须处置
+		// 即,当程序中出现这类异常,要么用 try-catch 捕获,要么 throws 抛出,否则编译不会通过.
 
-	2.不可查异常(unchecked exceptions)
-		//编译器不要求强制处置的异常. 包括运行时异常 RuntimeException 与其子类和错误 Error
+	// 2.不可查异常(unchecked exceptions)
+		// 编译器不要求强制处置的异常. 包括运行时异常 RuntimeException 与其子类和错误 Error
 		
-	3.自定义异常的2种选择
-		(1).继承类-Exception
-		(2).继承类-RuntimeException, 对无法处理的异常
+	// 3.自定义异常的2种选择
+		// (1).继承类-Exception
+		// (2).继承类-RuntimeException, 对无法处理的异常
 
 //}
 
@@ -1462,18 +1472,7 @@ JAVA8 实现
 //}
 
 
-//{--------<<<java>>>------------------------------
-#重写和重载
-	OverWrite: 在子类中,出现和父类中一模一样的方法声明的现象.
-	OverLoad:  同一类中,出现方法名相同,但参数列表不同(参数类型+个数+顺序)的现象.
-	
-	//注意: 如果两个方法的参数列表完全一样,但返回值不同, 不能实现重载 Overload.
-	如果在 Map 中定义了两个方法, boolean remove(key); int remove(key);
-	在调用时 map.remove(key); 不关心返回值, 则编译器无法区分到底调用的是哪个方法...
-		
-	方法包括: 修饰符(可选), 返回值类型, 方法名, 参数列表, 方法体.
-	方法签名: 方法名 + 参数列表(参数类型+个数).
-
+//{--------<<<java0>>>-----------------------------
 #this-super
 	this:  子类调用'本类'的同名成员时
 	super: 子类调用'父类'............
@@ -1496,11 +1495,11 @@ JAVA8 实现
 		}
 		new Outter().new Inner().show();
 	
-#final-finally-finalize
-	finally  --> 异常处理的一部分,代码肯定会被执行. 常用于释放资源.
-	finalize --> Object类的一个方法,用于垃圾回收.
+// #final-finally-finalize
+	// finally  --> 异常处理的一部分,代码肯定会被执行. 常用于释放资源.
+	// finalize --> Object类的一个方法,用于垃圾回收.
 	
-	final    --> 修饰类 -> 不能被继承; 修饰方法 -> 不能被重写; 修饰变量 -> 就是常量(只能被赋值一次).
+	// final    --> 修饰类 -> 不能被继承; 修饰方法 -> 不能被重写; 修饰变量 -> 就是常量(只能被赋值一次).
 	
 #一个".java"源文件中是否可以包括多个类(不是内部类)？有什么限制？
 	可以有多个类,但只能有一个 public 的类,并且 public 的类名必须与文件名相一致
@@ -1513,9 +1512,10 @@ JAVA8 实现
 	
 #如何跳出当前的多重嵌套循环？
 	//让外层的循环条件表达式的结果,可以受到里层循环体代码的控制
-    public void demo01() {
+    public void test() {
         int arr[][] = {{1, 2, 3}, {4, 5, 6, 7}, {9}};
-        boolean found = false;
+		
+        boolean found = false;		
         for (int i = 0; i < arr.length && !found; i++) {
             for (int j = 0; j < arr[i].length; j++) {
                 System.out.println("i =" + i + ", j = " + j);
@@ -1562,62 +1562,28 @@ JAVA8 实现
 			sb.append("abc");
 		}
 
-#== equals
-	boolean; char; byte, short, int, long, float, double
-	//前者, 用来比较两个变量的值是否相等
-	对于基本数据类型,比较其值. 对于引用类型,比较堆内存地址.
+// #== equals
+	// boolean(1bit); char(2byte); byte(1byte), short(2byte), int(4byte), long(8byte), float(4byte), double(8byte)
+	// //前者, 用来比较两个变量的值是否相等
+	// 对于基本数据类型,比较其值. 对于引用类型,比较堆内存地址.
 	
-	//后者, 用于比较两个独立对象的内容是否相同
-	默认都是比较堆内存地址. 可根据自身需求,重写 equals()
+	// //后者, 用于比较两个独立对象的内容是否相同
+	// 默认都是比较堆内存地址. 可根据自身需求,重写 equals()
 	
-	// String.==	 -> 比较两字符串的'堆内存地址'是否相同, 属于数值比较
-	// String.equals -> ..............内容................, 属于内容比较
+	// // String.==	 -> 比较两字符串的'堆内存地址'是否相同, 属于数值比较
+	// // String.equals -> ..............内容................, 属于内容比较
 	
-		public void demo01() {
-			String s1 = "abc";
-			String s2 = "abc";
-			String s3 = new String("abc");
-			String s4 = s3;
+		// public void test() {
+			// String s1 = "abc";
+			// String s2 = "abc";
+			// String s3 = new String("abc");
+			// String s4 = s3;
 
-			System.out.println(s1 == s2);		//true  字符串常量池中已有"abc",则不会再创建
-			System.out.println(s1 == s3);		//false 比较两对象的堆内存地址
-			System.out.println(s3 == s4);		//true  引用传递
-			System.out.println(s1.equals(s3));	//true  String重写equals()
-		}
-	
-#实例变量&静态变量
-	静态变量-static 关键字修饰
-		
-	1.存放位置
-		实例变量-存在于堆内存中. 必须先创建对象,才可以通过这个对象来使用
-		静态变量-存在于方法区中. 随着类的加载而分配空间,可以直接使用类名来引用
-
-	2.生命周期
-		实例变量-随着对象的消失而消失
-		静态变量-生命周期最长,随着类的消失而消失
-		
-		public class VariantTest {
-			static int staticVar = 0;
-			int instanceVar;
-
-			VariantTest() {
-				staticVar++;
-				instanceVar++;
-
-				// 无论创建多少个实例对象,永远都只分配了一个 staticVar 变量,
-				// 并且每创建一个实例对象,这个 staticVar 就会加1.
-				// 但是,每创建一个实例对象,就会分配一个 instanceVar,
-				// 即可能分配多个 instanceVar,并且每个 instanceVar 的值都只自加了1次
-				System.out.println("staticVar = " + staticVar + ",instanceVar = " + instanceVar);
-			}
-		}
-
-#static 方法是否可以调用 非static 方法???
-	不可以. 因为非 static 方法是要与对象关联在一起的,必须先创建对象,才可以在该对象上进行方法调用.
-	而 static 方法调用时不需要创建对象,可以直接调用.
-	也就是说,当一个 static 方法被调用时,可能还没有创建任何实例对象,	
-	如果从一个 static 方法中发出对非 static 方法的调用,那个非 static 方法是关联到哪个对象上?? 这个逻辑无法成立
-	所以,一个 static 方法内部发出对非 static 方法的调用。
+			// System.out.println(s1 == s2);		//true  字符串常量池中已有"abc",则不会再创建
+			// System.out.println(s1 == s3);		//false 比较两对象的堆内存地址
+			// System.out.println(s3 == s4);		//true  引用传递
+			// System.out.println(s1.equals(s3));	//true  String重写equals()
+		// }
 	
 #Math.round(11.5) 等於多少? Math.round(-11.5) 等於多少?
 	double ceil = Math.ceil(-11.5);   //向上取整-返回double -11.0	
@@ -1642,9 +1608,177 @@ JAVA8 实现
 	
 	//抽象类与普通类的唯一区别: 不能创建实例对象和允许有 abstract 方法
 	
+#输出结果
+	class A {
+		int a = 1;
+		double d = 2.0;
+
+		void show() {
+			System.out.println("Class A: a=" + a + "\td=" + d);
+		}
+	}
+	class B extends A {
+		String d = "Java program.";
+
+		void show() {
+			super.show();
+			System.out.println("Class B: a=" + a + "\td=" + d);
+		}
+	}
+	// Class A: a=1	d=2.0
+	// Class B: a=1	d=Java program.
+	
+#java 中会存在内存泄漏吗,请简单描述
+	分配出去的内存不再被使用,但无法GC回收
+	eg: stream, file等资源在程序结束前应该被手动释放,否则容易造成内存泄漏
+	
+#保留两位有效小数
+	double val = 1.1250; //1.1250 & 1.1251
+	BigDecimal bigDecimal = new BigDecimal(val);
+
+	//负数先取绝对值再四舍五入再负数. 四舍五入 ---> 1.13 & 1.13
+	BigDecimal round0 = bigDecimal.round(new MathContext(3, RoundingMode.HALF_UP));
+
+	//五舍六入 ---> 1.12 & 1.13
+	BigDecimal round1 = bigDecimal.round(new MathContext(3, RoundingMode.HALF_DOWN));
+
+	//(X)另一种思路
+	String num0 = String.format("%.2f", val);// 12.13/12.13
+	String num1 = new DecimalFormat("#0.00").format(val);// 12.12/12.13
+	
+	//DecimalFormat特殊字符说明
+	//	"0"指定位置不存在数字则显示为0: 123.123 ->0000.0000 ->0123.1230
+	//	"#"指定位置不存在数字则不显示: 123.123 ->####.####  ->123.123
+	//	"."小数点
+	//	"%"会将结果数字乘以100 后面再加上% 123.123 ->#.00%  ->12312.30%
+	
+// #String反转
+	// //先转换为 StringBuilder,再调用 StringBuilder.reverse()
+	// String str = new StringBuilder("asdfghjjkk").reverse().toString();
+	
+// #try{}里的 return 语句,在 finally 之前还是之后执行？？	
+	// //return : 可当作终止语句来用,经常用来跳出当前方法,并返回一个值给调用方法. 然后该方法就结束了,不会执行return下面的语句
+	// //finally: 无论try语句发生了什么,无论抛出异常还是正常执行,finally语句都会执行
+    // private int doTry() {
+        // int x = 1;
+        // try {
+            // return ++x;
+        // } catch (Exception e) {
+        // } finally {
+            // ++x;
+            // System.out.println("finally - " + x);
+        // }
+        // return x;
+    // }
+	
+	// 无论 try 里执行了 return, break, continue, finally 都会继续执行.
+	// 即, 使用 return 语句把控制权转移给其他的方法前,会执行 finally 语句. //执行完 finally 才执行 return
+	
+	// 如果try语句里有return，那么代码的行为如下：
+	// 1.如果有返回值，就把返回值保存到局部变量中
+	// 2.执行jsr指令跳到finally语句里执行
+	// 3.执行完finally语句后，返回之前保存在局部变量表里的值
+	
+#异常捕获
+	其中, NullPointerException extends RuntimeException extends Exception, 结果如何?
+	try {
+		throw new NullPointerException("b");
+	} catch (RuntimeException e0) {
+		System.out.println("RuntimeException");
+	} catch (Exception e) {
+		System.out.println("Exception");
+	}
+	
+	结果打印: RuntimeException	
+	
+#用程序给出随便大小的 10 个数, 序号为1-10,按从小到大顺序输出,并输出相应的序号
+	//Map 值排序
+	Map<Integer, Integer> map = new HashMap<Integer, Integer>() {{
+		put(1, 9);
+		put(2, 7);
+	}};
+	List<Map.Entry<Integer, Integer>> list = new ArrayList<>(map.entrySet());
+	
+	// Collections.sort(list, Comparator.comparingInt(Map.Entry::getValue)); //lamda再简化
+	Collections.sort(list, (o1, o2) -> Integer.compare(o1.getValue(), o2.getValue()));
+	System.out.println(list);
+	
+	
+//}
+
+//{--------<<<java1>>>-----------------------------
+#final 修饰一个变量时,是引用不能变,还是引用的对象不能变？
+	引用变量不能变,引用变量所指向的对象中的内容还是可以改变的.
+	
+	public void doFinal(final int i, final StringBuilder sb) {
+		// i = i + 1; //编译报错,因为final修饰的基本类型 --> 值不能变
+		// sb = new StringBuilder(); //同上,修饰引用类型 --> 堆内存地址不能变,即引用不能变
+
+		sb.append("java"); //但可以改变 -> 引用变量所指向的对象中的内容
+	}
+	
+#static 方法是否可以调用非 static 方法？
+	不可以, static 方法属于类,直接通过类进行调用. 
+	非 static 方法属于对象,必须先实例化对象,才能通过该对象进行调用.
+	
+	在 static 方法中调用非 static 方法时,可能还没有实例化对象, 这就与以上逻辑不符.
+	
+#OverWrite & OverLoad
+	重写 -> 在子类中,出现和父类中一摸一样的方法.
+	重载 -> 同一类中,出现多个方法名一样,但参数列表(参数类型+个数+顺序)不一样的方法.
+	
+	//重载与方法的返回值类型无关. ---> 方法包括: 修饰符(可选), 返回值类型, 方法名, 参数列表, 方法体
+	假设定义了两个只有返回类型不一样的方法: int add(Object o); boolean add(Object o);
+	当调用者不关心返回值时,写作: add(obj); 编译器如何区分到底调用的是哪个方法???
+	
+#静态变量 & 实例变量
+	1.生命周期
+		静态变量-static 修饰, 随着类的加载而分配内存空间,随着对象的消失而消失.
+		实例变量-随着对象的建立而分配内存空间,随着对象的消失而消失.
+		
+	2.存放区域
+		静态变量-存在于方法区.
+		实例变量-存在于堆内存.
+		
+	3.DEMO
+		class Test{
+			static int staticNum = 0;
+			int num = 0;
+			
+			Test(){
+				staticNum++;
+				num++;
+				
+				//对于 staticNum,全局唯一份. 每实例化一个Test对象,staticNum 就加1
+				//但是, 对于 num,每实例化一个Test对象,就会重新分配一个,所以一直都只增加1次
+				sout(staticNum + " - " + num);
+			}
+		}
+		
+#Integer & int
+	int 是java提供的 8 种原始数据类型之一,默认值为 0	
+	Integer是java为 int 提供的封装类,默认值为 null
+	
+	即 Integer 可以区分出未赋值和值为 0 的两种情况, int 则无法表达出未赋值的情况.
+	如, 要想表达出没有参加考试和考试成绩为0的区别,就只能使用 Integer
+	
+	另外,Integer 提供了多个与整数相关的操作方法. 如,将一个字符串转换成整数.
+	Integer中还定义了表示整数的最大值和最小值的常量.
+	
 #
 	
+#ArrayList, Vector, LinkedList
+
+#Arraylist, Vector
+	同步性   -> Vector 是线程安全的(同步), ArrayList 是线程序不安全的
+	数据增长 -> 当需要增长时,Vector 默认增长一倍, ArrayList 却是 0.5
+
+#HashMap, Hashtable
 	
+#Collection 和 Collections
+
+
+
 //}
 
 //{--------<<<web>>>-------------------------------
@@ -1834,7 +1968,6 @@ Ctrl+F7,在文件中查找用法
 Ctrl+Shift+F7,在文件中高亮显示用法
 	
 //}
-
 
 
 
