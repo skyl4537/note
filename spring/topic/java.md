@@ -2,6 +2,158 @@
 
 
 
+
+
+# Idea
+
+> 使用技巧
+
+- **复制警告或错误信息：** 鼠标光标悬浮在报错的地方，待错误提示出现后，键盘按住 Alt，同时点击鼠标左键，Ctrl+V 到度娘即可。
+- **mvn打包，跳过Test：** 打开右侧标签页"Maven-Projects"，当前项目'Lifecycle'，选中'Test'，点击菜单栏的"小闪电"，此时Test上多了一条横。
+
+> 快捷键
+
+|                    描述                    |          idea          |     eclipse      |
+| :----------------------------------------: | :--------------------: | :--------------: |
+|              抽取变量（方法）              |    Ctrl+Alt+V （M）    | Shift+Alt+L（M） |
+|                 批量重命名                 |        Shift+F6        |   Shift+Alt+R    |
+|            注释单行（选中部分）            | Ctrl+/（Ctrl+Shift+/） |      Ctrl+/      |
+|                  参数提示                  |         Ctrl+P         |                  |
+|              查看类的继承关系              |         Ctrl+H         |      Ctrl+T      |
+|                   定位行                   |         Ctrl+G         |                  |
+|                  整行复制                  |         Ctrl+D         |                  |
+|                  整行删除                  |         Ctrl+X         |      Ctrl+D      |
+|                 大小写转化                 |      Ctrl+Shift+U      |                  |
+|                返回上次修改                |  Ctrl+Shift+BackSpace  |                  |
+|           当前工作空间查找java类           |    Ctrl+Shift+Alt+N    |                  |
+|                 查看类结构                 |         Alt+7          |                  |
+|   跳到下(上)一个选择项（配合Ctrl+F使用）   |     F3（F3+Shift）     |                  |
+| 在全局（当前类）查找方法调用，可配合F3使用 |   F7+Alt（F7+Ctrl）    |    Ctrl+Alt+H    |
+|            上下移动（单行语句）            |    Shift+Alt+↑ / ↓     |    Alt+↑ / ↓     |
+|            上下移动（整个方法）            |    Shift+Ctrl+↑ / ↓    |                  |
+
+> 基本设置
+
+```java
+//黑色主题 --> 界面的字体大小,非代码字体
+Appearance & Behavior - Appearance - Theme(选为Darcula) 
+勾选 Override default fonts by(......) - Name(Mircrosoft Yahei UI) - Size(12)
+	
+//改变代码的字体和大小
+Editor - Colors & Fonts
+//首先,点击 Save As...,自定义一个名为 skyl 的样式
+//然后,选择具体的字体和大小 Primary font(Source Code Pro) - Size(15)
+	
+//缩进采用4个空格,禁止使用tab字符
+Editor - Code Style - java - Tabs and Indents - Use tab character(取消勾选)
+	
+//自动换行
+Editor - Code Style - Java
+右侧标签 Wrapping and Braces, (√) Line breaks 和 (√) Ensure right margin is not exceeded
+	
+//悬浮文档提示
+Editor - General - Show quick documentation on...
+	
+//代码提示忽略大小写
+Editor - General - Code Completion - Case sensitive...(None)
+//代码补全快捷键: Ctrl + Alt + Space
+	
+//编码格式
+Editor - File Encodings - 3个UTF-8
+
+//显示行号等
+Editor - General - Appearance //勾选以下
+	(√)Show line number(行号) + (√)Show right margin(右边线) + (√)Show method sep...(方法分割线)
+
+//自动导包
+Editor - General - Auto Import 
+	Insert imports...(All) + (√)Add unambiguous... + (√)Optimize imports...
+	
+//设置文件和代码的模板
+Editor - File and Code Templates - Includes - 自行添加
+
+//取消单行显示tabs
+Editor - General - Editor Tabs - (X)show tabs in single...
+	
+//自动编译
+Build,Exe... - Compiler - (√)Build project automatically
+	
+//Gradle配置
+Build,Exe... - Build Tools - Gradle - Offline work
+```
+
+
+# JVM
+
+## 栈堆方法区
+
+> 栈的特点
+
+- 方法执行的内存模型。`每个方法被调用都会创建一个栈帧`（存储局部变量、操作数、方法出口等）。
+- `JVM为每个线程创建一个栈`，用于存放该线程执行方法的信息（实际参数、局部变量等）。
+- 栈属于线程私有，不能实现线程间的共享！
+- 栈的存储特性是“先进后出，后进先出”。
+- 栈是由系统自动分配，速度快！栈是一个连续的内存空间（相比于堆）。
+
+> 堆的特点
+
+- 用于存储创建好的对象和数组（数组也是对象）。
+
+- `JVM只有一个堆，被所有线程共享！`
+
+- 堆是一个不连续的内存空间，分配灵活，速度慢!
+
+>方法区（特殊的堆）的特点
+
+- `JVM只有一个方法区，被所有线程共享！`
+- 方法区实际也是堆，只是用于存储类、常量相关的信息！
+- 用来存放程序中永远不变或唯一的内容（类信息{Class对象}、静态变量、字符串常量等）。
+
+```java
+public class Dog {
+    private String name;
+
+    public Dog(String name) {
+        this.name = name;
+    }
+}
+
+public class Student {
+    public static Boolean gender = false;
+    private Integer age;
+    private String name;
+
+    public Dog dog;
+
+    public Student(int age, String name) {
+        this.age = age;
+        this.name = name;
+    }
+
+    public void play() {
+        System.out.println("play with " + this.dog.name);
+    }
+}
+
+public class Test {
+    public static void main(String[] args) { //程序入口
+        Student stu = new Student(18, "王");
+        stu.dog = new Dog("Yello");
+        stu.play();
+    }
+}
+```
+
+![](assets/内存变化-1555330946192.jpg)
+
+> 程序执行过程的内存分析
+
+
+
+
+
+
+
 # Object
 
 ## 基础规约
@@ -16,8 +168,6 @@
 |    protected    |   √    |   √    |   √    |        |
 |     default     |   √    |   √    |        |        |
 |     private     |   √    |        |        |        |
-
-
 
 ## 运算符
 
@@ -148,8 +298,7 @@ public void test() {
 > `+` 在java中两种含义：运算符，字符串连接符。
 
 - 两边都是数值类型时，为运算符，即相加求和。
-- 两边至少有一个为字符串类型时， 则为字符串连接符。
-- 字符串拼接的底层原理是通过 `StringBuilder.append()`方法实现的。
+- 两边至少有一个为字符串类型时， 则为字符串连接符。底层原理通过 `StringBuilder.append()`实现。
 
 
 ## 常用方法
@@ -267,7 +416,7 @@ list.add(new Integer(5));
 
 ## 双括号初始化
 
->使用双括号初始化（double-brace syntax）快速建立并初始化，`简洁但效率低`。
+>使用双括号初始化（double-brace syntax）快速建立并初始化，`简洁但效率低`。原因：
 >
 >1. 双大括号初始化方法生成的.class文件要比常规方法多
 >2. 双大括号初始化方法运行时间要比常规方法长
@@ -344,6 +493,74 @@ List的`contains()`和`remove()`底层调用的都是`equals()`，但是Set却�
    ```
 
 
+## foreach
+
+> 禁止在 foreach 里进行元素的 remove/add 操作。remove 元素请使用 Iterator 方式，如果并发操作，需要对 Iterator 对象加锁。
+
+```java
+public void test() {
+    ArrayList<String> list = new ArrayList<>(Arrays.asList("a", "b", "c"));
+    
+    for (String s : list) {
+        if ("a".equalsIgnoreCase(s)) {
+            list.remove(s); //异常 -> ConcurrentModificationException
+        }
+    }
+    System.out.println(JSON.toJSON(list));
+}
+```
+
+- 增强for循环，其实是Java提供的语法糖，其实现原理是借助Iterator进行元素的遍历。
+- 但是如果在遍历过程中，不通过Iterator，而是`通过集合类的方法对进行 add/remove 操作`。那么在Iterator进行下一次遍历时，会发现有一个元素在自己不知不觉的情况下被删除/添加了，这有可能是发生了并发被其他线程执行的，就会抛出异常，来提示用户可能发生了并发修改，这就是所谓的 `fail-fast机制`。
+
+> **方案1：** 直接使用普通for循环进行操作。因为普通for循环并没有用到 Iterator 的遍历。
+
+```java
+for (int i = 0; i < 1; i++) {
+    if (list.get(i).equals("a")) {
+        list.remove(i);
+    }
+}
+```
+
+> **方案2： ** 直接使用Iterator进行操作。
+
+```java
+Iterator<String> iterator = list.iterator();
+while (iterator.hasNext()) {
+    String next = iterator.next();
+    if ("a".equalsIgnoreCase(next)) {
+    
+    	// list.remove(next); //异常 -> ConcurrentModificationException
+        iterator.remove();
+    }
+}
+```
+> **方案3： ** 使用 Jdk1.8 中提供的 filter 过滤
+
+```java
+list = list.stream().filter(x -> !x.equalsIgnoreCase("a")).collect(Collectors.toList());
+```
+
+> **【并发场景】方案4：** 直接使用 fail-safe 的集合类。这些集合容器在遍历时，`不是直接在集合内容上访问的，而是先复制原有集合内容，在拷贝的集合上进行遍历`。
+
+```java
+ConcurrentLinkedDeque<String> list = new ConcurrentLinkedDeque<>(Arrays.asList("a", "b", "c"));
+for (String s : list) {
+    if (s.equals("a")) {
+        list.remove();
+    }
+}
+```
+
+
+
+
+
+
+
+
+
 ## 常用方法
 
 1. null
@@ -408,33 +625,6 @@ List的`contains()`和`remove()`底层调用的都是`equals()`，但是Set却�
    }
    ```
 
-7. foreach()-add
-
-   ```java
-   //不要在 foreach 循环里进行元素的 remove/add 操作
-   //remove 元素应该使用 Iterator 方式，如果并发操作，需要对 Iterator 对象加锁
-   public void test() {
-       ArrayList<String> list = new ArrayList<>(Arrays.asList("a", "b", "c"));
-
-       // for (String s : list) {
-       //     if ("a".equalsIgnoreCase(s)) {
-       //         list.remove(s); //异常 -> ConcurrentModificationException
-       //     }
-       // }
-
-       Iterator<String> iterator = list.iterator();
-       while (iterator.hasNext()) {
-           String next = iterator.next();
-           if ("a".equalsIgnoreCase(next)) {
-               
-               // list.remove(next); //异常 -> ConcurrentModificationException
-               iterator.remove();
-           }
-       }
-       System.out.println(JSON.toJSON(list));
-   }
-   ```
-
 8. foreach()-keySet
 
    ```java
@@ -478,7 +668,107 @@ List的`contains()`和`remove()`底层调用的都是`equals()`，但是Set却�
    };
    ```
 
-10. 
+9. 
+
+
+# Date
+
+## SimpleDateFormat
+
+> `SimpleDateFormat`并不是一个线程安全的类，在多线程情况下，会出现异常。
+
+```java
+private static final SimpleDateFormat sdf = new SimpleDateFormat("yyyy-MM-dd HH:mm:ss");
+
+public void test() throws InterruptedException {
+    ExecutorService service = Executors.newFixedThreadPool(25);
+    for (int i = 0; i < 20; i++) {
+        service.execute(() -> {
+            try {
+                System.out.println(sdf.parse("2019-04-15 09:45:59"));
+            } catch (ParseException e) {
+                e.printStackTrace();
+            }
+        });
+    }
+    // 等待上述的线程执行完，再关闭线程池。二者配合使用
+    service.shutdown();
+    service.awaitTermination(1, TimeUnit.DAYS);
+}
+```
+
+- `把 SimpleDateFormat 实例定义为静态变量，那么多线程情况下会被多个线程共享。`B线程会读取到A线程的时间，就会出现时间差异和其它各种问题。SimpleDateFormat 和它继承的 DateFormat 类都不是线程安全的。
+
+> **方案1：** 只在需要的时候创建实例，不用static修饰。
+
+```java
+//缺点：加重了创建对象的负担，会频繁地创建和销毁对象，效率较低。
+public static String formatDate(Date date) throws ParseException {
+    SimpleDateFormat sdf = new SimpleDateFormat("yyyy-MM-dd HH:mm:ss");
+    return sdf.format(date);
+}
+
+public static Date parse(String strDate) throws ParseException {
+    SimpleDateFormat sdf = new SimpleDateFormat("yyyy-MM-dd HH:mm:ss");
+    return sdf.parse(strDate);
+}
+```
+
+> **方案2：** synchronized大法好。
+
+```java
+//缺点：并发量大的时候会对性能有影响，线程阻塞。
+private static final SimpleDateFormat sdf = new SimpleDateFormat("yyyy-MM-dd HH:mm:ss");
+
+public static String formatDate(Date date) throws ParseException {
+    synchronized (sdf) {
+        return sdf.format(date);
+    }
+}
+
+public static Date parse(String strDate) throws ParseException {
+    synchronized (sdf) {
+        return sdf.parse(strDate);
+    }
+}
+```
+
+> **【推荐】方案3：** ThreadLocal，确保每个线程单独一个SimpleDateFormat对象。
+
+```java
+private static ThreadLocal<DateFormat> threadLocal = new ThreadLocal<DateFormat>() {
+    @Override
+    protected DateFormat initialValue() {
+        return new SimpleDateFormat("yyyy-MM-dd HH:mm:ss");
+    }
+};
+
+//上式的lambda简化版
+//private static ThreadLocal<DateFormat> threadLocal = ThreadLocal.withInitial(() -> new SimpleDateFormat("yyyy-MM-dd HH:mm:ss"));
+
+public static Date parse(String dateStr) throws ParseException {
+    return threadLocal.get().parse(dateStr);
+}
+
+public static String format(Date date) {
+    return threadLocal.get().format(date);
+}
+```
+
+> **【推荐】方案4：** `基于JDK1.8的 DateTimeFormatter`
+
+```java
+private static final DateTimeFormatter formatter = DateTimeFormatter.ofPattern("yyyy-MM-dd HH:mm:ss");
+
+public static String formatDate2(LocalDateTime date) {
+    return formatter.format(date);
+}
+
+public static LocalDateTime parse2(String dateNow) {
+    return LocalDateTime.parse(dateNow, formatter);
+}
+```
+
 
 
 # 基本概念
@@ -600,7 +890,9 @@ public void test() {
 }
 ```
 
-## OverWrite
+## Method
+
+> OverWrite & OverLoad
 
 - **重写：** 在子类中，出现和父类中一摸一样的方法。
 
@@ -613,7 +905,22 @@ public void test() {
 假设定义了两个只有返回类型不一样的方法： `int add(Object o); boolean add(Object o);`
 当调用者不关心返回值时，写作：`add(obj);`编译器如何区分到底调用的是哪个方法???
 
-## this
+> 方法调用中传递参数时，遵循值传递的原则（传递的都是数据的拷贝）。
+
+- `基本类型传递的是数据值的拷贝。`在方法内对值类型操作不会改变原有值。
+
+- `引用类型传递的是该对象的引用拷贝，但指向同一个对象。`在方法内对引用类型进行重新赋引用，不会改变原有值。但是对原有引用的属性进行操作时，相当于C++中的传址调用，可以改变这个引用的属性值。
+
+  ```java
+  private void doSth(int i, String s, Person p) {
+      i += 1;
+      s += "hello";
+      p = new Person("li", 20);
+      // p.age = 30; //将改变原有引用的属性值
+  }
+  ```
+
+## interface
 
 > this & super
 
@@ -878,6 +1185,10 @@ public void test() {
 	数据增长 -> 当需要增长时,Vector 默认增长一倍, ArrayList 却是 0.5
 
 ##HashMap & Hashtable
+
+
+
+
 
 
 

@@ -21,7 +21,7 @@
 		// The SingletonList is :[Two, Three, Two, Three]
 		System.out.println("The SingletonList is :" + list2);
 
-
+jvm内存可分为三个区域：栈stack，堆heap，方法区method-area（其中，方法区也存在于堆中）。
 
 
 	
@@ -196,7 +196,6 @@
 		5、因为字符串是不可变的,所以在它创建的时候hashcode就被缓存了,不需要重新计算这就使得字符串很适合作为Map中的键,字符串的处理速度要快过其它的键对象这就是HashMap中的键往往都使用字符串
 	 */
 	 
-
 	
 8.java怎么在函数内改变传入的值？
 	1、对于基本类型参数，在方法体内对参数进行重新赋值，并不会改变原有变量的值。
