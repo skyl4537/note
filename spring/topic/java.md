@@ -293,17 +293,16 @@ public void test() {
 ```
 
 **解析：** 每次循环都需要创建一个` StringBuilder对象`（创建对象需要耗费时间和内存），随着循环次数的增大， result 字符串就会越来越长，把 result 中的字符复制到新建的 StringBuilder 中花费的时间也就越长，而且 `StringBuilder(result).append(str).toString();` 会创建一个临时的字符串，随着循环次数的增加，这个操作花费的时间也会越来越长。总之，随着循环变量 i 的增大，每次循环会变得越来越慢。
-## 字符串连接符
-
-> `+` 在java中两种含义：运算符，字符串连接符。
-
-- 两边都是数值类型时，为运算符，即相加求和。
-- 两边至少有一个为字符串类型时， 则为字符串连接符。底层原理通过 `StringBuilder.append()`实现。
-
-
 ## 常用方法
 
-1. **equals()**
+1. **字符串连接符 +**
+
+   - 两边都是数值类型时，为运算符，即相加求和。
+
+
+   - 两边至少有一个为字符串类型时， 则为字符串连接符。底层原理 `StringBuilder.append()`。
+
+2. **equals()**
 
    >**==：** 对于基本数据类型，比较其值； 对于引用数据类型，比较其堆内存地址。
    >
@@ -330,12 +329,28 @@ public void test() {
    }
    ```
 
-4. **reverse**
+5. **reverse**
 
    ```java
    //先转换为 StringBuilder，再调用 StringBuilder.reverse()
    String str = new StringBuilder("asdfghjjkk").reverse().toString();
    ```
+
+6. **intern()**
+
+   ​
+
+7. ​
+
+
+
+
+
+
+
+
+
+
 
 
 # Integer
