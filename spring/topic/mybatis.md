@@ -63,15 +63,15 @@ mybatis.configuration.aggressiveLazyLoading=true //局部设置: 是否不启用
 ```java
 下载dtd文件: "mybatis-3-mapper.dtd"和"mybatis-3-config.dtd"
 打开 eclipse -> windows -> preferences -> xml -> xmlcatalog -> add,依次填写:
-	//mapper.xml 的代码提示
-	location	-> 选择file_system,找到"mybatis-3-mapper.dtd"存放的本地路径
-	key_type	-> URI0
-	key			-> http://mybatis.org/dtd/mybatis-3-mapper.dtd
-	
-	//mybatis-config.xml 的代码提示
-	location	-> 选择file_system,找到"mybatis-3-config.dtd"存放的本地路径
-	key_type	-> URI0
-	key			-> http://mybatis.org/dtd/mybatis-3-config.dtd
+     //mapper.xml 的代码提示
+     location    -> 选择file_system,找到"mybatis-3-mapper.dtd"存放的本地路径
+     key_type    -> URI0
+     key            -> http://mybatis.org/dtd/mybatis-3-mapper.dtd
+     
+     //mybatis-config.xml 的代码提示
+     location    -> 选择file_system,找到"mybatis-3-config.dtd"存放的本地路径
+     key_type    -> URI0
+     key            -> http://mybatis.org/dtd/mybatis-3-config.dtd
 ```
 # 基本使用
 
@@ -107,15 +107,17 @@ mybatis.configuration.aggressiveLazyLoading=true //局部设置: 是否不启用
     id,name,age,address,companyId <!-- sql标签 用于抽取可重用的sql片段 -->
 </sql>
 
-<select id="selById" resultType="com.heiketu.pojo.Users"> 
-    select <include refid="ref"/> from usrs where id = #{id} <!-- include标签 用于引用前者 -->
+<select id="selById" resultType="com.heiketu.pojo.Users">
+    select
+    <include refid="ref" />
+    from usrs where id = #{id} <!-- include标签 用于引用前者 -->
 </select>
 ```
 ## 存储过程
 
 ```xml
 <!-- 使用标签<select/> && statementType="CALLABLE" -->
-<select id="get_park_free_count" resultType="java.util.Map" statementType="CALLABLE">
+<select id="get_park_free_count0" resultType="java.util.Map" statementType="CALLABLE">
     {call get_park_free_count(#{parkId})}
 </select>
 ```
@@ -181,9 +183,8 @@ select order_id id, order_price price, order_no orderNo from orders where order_
 //对于多列返回值，可以使用Map接收，也可以自定义pojo
 Map<String, Object> getMemoAndTypeId(String args);
 
-<select id="getMemoAndTypeId" resultType="java.util.Map">
-	SELECT memo,type_id
-	typeId FROM system_set WHERE mark=#{args}
+<select id="getMemoAndTypeId0" resultType="java.util.Map">
+    SELECT memo,type_id typeId FROM system_set WHERE mark=#{args}
 </select>
 ```
 
@@ -207,7 +208,7 @@ List<Map<String, Object>> getAllPassage();
 Map<String,Flower> listByName(String name);
 
 <select id="listByName" resultType="com.x.Flower">
-		select * from flower where name like #{name}
+    select * from flower where name like #{name}
 </select>
 ```
 ## 自增主键
@@ -217,43 +218,43 @@ Map<String,Flower> listByName(String name);
 ```java
 //是否("useGeneratedKeys")将产生的主键赋值到属性("keyProperty")中
 <insert id="addOne" useGeneratedKeys="true" keyProperty="id">
-	INSERT INTO person VALUES(default, #{age}, #{name})
+    INSERT INTO person VALUES(default, #{age}, #{name})
 </insert>
 ```
 > 入参Map
 
-```java
-<insert id="addOne">
-	<selectKey keyProperty="id" resultType="int" order="AFTER"> 
-		SELECT LAST_INSERT_ID() //order: 相对于insert的执行顺序.(BEFORE|AFTER)
-	</selectKey>
-	INSERT INTO	person (age,name) VALUES(#{age},#{name})
-</insert>
+```xml
+<insert id="addOne"> <!--order: 相对于insert的执行顺序.(BEFORE|AFTER)-->
+    <selectKey keyProperty="id" resultType="int" order="AFTER">
+            SELECT LAST_INSERT_ID()
+    </selectKey>
+        INSERT INTO person (age,name) VALUES(#{age},#{name})
+    </insert>
 ```
 
 > 主键UUID
 
 ```java
 <insert id="addOne">
-	<selectKey keyProperty="id" resultType="String" order="BEFORE">
-		SELECT uuid()
-	</selectKey>
-	INSERT INTO	person (id,age,name) VALUES(#{id},#{age},#{name})
+    <selectKey keyProperty="id" resultType="String" order="BEFORE">
+        SELECT uuid()
+    </selectKey>
+    INSERT INTO    person (id,age,name) VALUES(#{id},#{age},#{name})
 </insert>
 ```
 
 ## 特殊符号
 
-> **#{ }**	安全，预编译处理，防止SQL注入；自动对传入参数添加一个单（双）引号； 可以通过OGNL方式取值： 参数.属性。原理是将sql中的 #{} 替换为 ?，然后调用 PreparedStatement.set() 方法来赋值。
+> **#{ }**    安全，预编译处理，防止SQL注入；自动对传入参数添加一个单（双）引号； 可以通过OGNL方式取值： 参数.属性。原理是将sql中的 #{} 替换为 ?，然后调用 PreparedStatement.set() 方法来赋值。
 
-> **${ }** 	字符串替换，拼接sql串； 需手动添加单（双）引号；也可以通过OGNL方式取值：参数.属性。配合使用`statementType="STATEMENT"`
+> **${ }**     字符串替换，拼接sql串； 需手动添加单（双）引号；也可以通过OGNL方式取值：参数.属性。配合使用`statementType="STATEMENT"`
 
 ```java
 //一般，建议使用#{ }；特殊情况必须要用${ }。如：动态传入字段，表名
 //用 #{} ---> order by 'id,name' ,变为根据字符串排序,与需求不符
 //用 ${} ---> order by id,name ,符合需求
 <select id="get_res_by_field" resultType="map" statementType="STATEMENT">
-	SELECT * FROM person ORDER BY ${field} DESC LIMIT 10
+    SELECT * FROM person ORDER BY ${field} DESC LIMIT 10
 </select>
 ```
 ## 模糊查询
@@ -277,8 +278,8 @@ SELECT * FROM user WHERE name LIKE '%#{name}%' //张 -> "%'张'%" -> 错误
 SELECT * FROM user WHERE name LIKE concat('%', #{username}, '%') //张
 
 <select id="selectLike">
-	<bind name="name" value="'%'+_parameter+'%'" />
-	select * from user where name like #{name} //张
+    <bind name="name" value="'%'+_parameter+'%'" />
+    select * from user where name like #{name} //张
 </select>
 ```
 
@@ -291,16 +292,16 @@ SELECT * FROM user WHERE name LIKE concat('%', #{username}, '%') //张
 
 ```java
 <select id="listByIf" resultType="com.x.bean.Flower">
-	select * from flower /** where true(替换) */
-	<where> 
-		<if test="null!=name and ''!=name">
-			and name like #{name}
-		</if>
-		//@class@method(args)调用类的静态方法 - 详见附表
-		<if test="@org.apache.commons.lang3.math.NumberUtils@isParsable(price)">
-			and price > #{price} //检验是否为数字??? 是则增加为查询条件，否则不增加
-		</if>
-	</where>
+    select * from flower /** where true(替换) */
+    <where> 
+        <if test="null!=name and ''!=name">
+            and name like #{name}
+        </if>
+        //@class@method(args)调用类的静态方法 - 详见附表
+        <if test="@org.apache.commons.lang3.math.NumberUtils@isParsable(price)">
+            and price > #{price} //检验是否为数字??? 是则增加为查询条件，否则不增加
+        </if>
+    </where>
 </select>
 ```
 
@@ -311,18 +312,18 @@ SELECT * FROM user WHERE name LIKE concat('%', #{username}, '%') //张
 
 ```java
 <update id="updateByIf">
-	update flower
-	<set>
-		id=#{id}, //防止<set/>内容为空,不生成 set 关键字
-		
-		<if test="name!=null and name!=''"> //满足条件,则追加到更新条件
-			name=#{name},
-		</if>
-		<if test="price>=0">
-			price=#{price},
-		</if>
-	</set>
-	where id=#{id}
+    update flower
+    <set>
+        id=#{id}, //防止<set/>内容为空,不生成 set 关键字
+        
+        <if test="name!=null and name!=''"> //满足条件,则追加到更新条件
+            name=#{name},
+        </if>
+        <if test="price>=0">
+            price=#{price},
+        </if>
+    </set>
+    where id=#{id}
 </update>
 ```
 
@@ -332,20 +333,20 @@ SELECT * FROM user WHERE name LIKE concat('%', #{username}, '%') //张
 
 ```java
 <select id="listByChoose" resultType="com.x.bean.Flower">
-	select * from flower
-	<where>
-		<choose>
-			<when test="name!=null and name!=''">
-				name like #{name} //if - 先判断,满足即结束,不再去判断elseif
-			</when>
-			<when test="@org.apache.commons.lang3.math.NumberUtils@isParsable(price)">
-				price > #{price} //elseif
-			</when>
-			<otherwise>
-				production like #{production} //else
-			</otherwise>
-		</choose>
-	</where>
+    select * from flower
+    <where>
+        <choose>
+            <when test="name!=null and name!=''">
+                name like #{name} //if - 先判断,满足即结束,不再去判断elseif
+            </when>
+            <when test="@org.apache.commons.lang3.math.NumberUtils@isParsable(price)">
+                price > #{price} //elseif
+            </when>
+            <otherwise>
+                production like #{production} //else
+            </otherwise>
+        </choose>
+    </where>
 </select>
 
 ```
@@ -357,16 +358,16 @@ SELECT * FROM user WHERE name LIKE concat('%', #{username}, '%') //张
 ```java
 List<Passage> listByForeach(List<int> passageIdList);
 
-//collection	-> 要遍历的集合；对于list类型会封装到一个特殊的map中，其key就为list
-//item			-> 集合中的每一个对象
-//separator		-> 每个元素之间的分隔符
-//index			-> 索引。遍历list，index表示索引，item为对应的值；遍历map，index为key，item为map值
-//open-close	-> 遍历所有结果拼接一个开始（结束）的字符
+//collection    -> 要遍历的集合；对于list类型会封装到一个特殊的map中，其key就为list
+//item            -> 集合中的每一个对象
+//separator        -> 每个元素之间的分隔符
+//index            -> 索引。遍历list，index表示索引，item为对应的值；遍历map，index为key，item为map值
+//open-close    -> 遍历所有结果拼接一个开始（结束）的字符
 <select id="listByForeach" resultType="com.x.bean.Passage">
-	select * from Passage where id in
-	<foreach collection="list" item="item" index="index" open="(" close=")" separator=",">
-		#{item} //(1,2,5,7)
-	</foreach>
+    select * from Passage where id in
+    <foreach collection="list" item="item" index="index" open="(" close=")" separator=",">
+        #{item} //(1,2,5,7)
+    </foreach>
 </select>
 ```
 
@@ -377,10 +378,10 @@ List<Passage> listByForeach(List<int> passageIdList);
 boolean saveBatch(List<Flower> list);
 
 <insert id="saveBatch">
-	insert into flower (name, price) values
-	<foreach collection="list" item="item" index="index" separator=",">
-		(#{item.name}, #{item.price})
-	</foreach>
+    insert into flower (name, price) values
+    <foreach collection="list" item="item" index="index" separator=",">
+        (#{item.name}, #{item.price})
+    </foreach>
 </insert>
 ```
 
@@ -392,21 +393,21 @@ boolean saveBatch(List<Flower> list);
 
 ```java
 <dependency>
-	<groupId>com.github.pagehelper</groupId>
-	<artifactId>pagehelper-spring-boot-starter</artifactId>
-	<version>1.2.5</version>
+    <groupId>com.github.pagehelper</groupId>
+    <artifactId>pagehelper-spring-boot-starter</artifactId>
+    <version>1.2.5</version>
 </dependency>
 
 @GetMapping("/person/{pageNum}/{pageSize}")
 public PageInfo<Person> listByPage(@PathVariable int pageNum, @PathVariable int pageSize) {
-	PageHelper.startPage(pageNum, pageSize); //查询之前设置：页码数，页容量
-	List<Person> list = service.listAll();
-	
-	//PageInfo包含了非常全面的分页属性: isFirstPage,hasPreviousPage,prePage,pages,startRow....
-	PageInfo<Person> pageInfo = new PageInfo<>(res, 5);//包含导航页码的PageInfo结果集 - 详见附表
-	int[] nums = pageInfo.getNavigatepageNums();//导航页码
-	
-	return pageInfo;
+    PageHelper.startPage(pageNum, pageSize); //查询之前设置：页码数，页容量
+    List<Person> list = service.listAll();
+    
+    //PageInfo包含了非常全面的分页属性: isFirstPage,hasPreviousPage,prePage,pages,startRow....
+    PageInfo<Person> pageInfo = new PageInfo<>(res, 5);//包含导航页码的PageInfo结果集 - 详见附表
+    int[] nums = pageInfo.getNavigatepageNums();//导航页码
+    
+    return pageInfo;
 }
 ```
 
@@ -422,8 +423,8 @@ map.put("pageStart", pageSize * (pageNum - 1)); //起始行
 List<People> list = service.listPage(map);
 
 <select id="listPage" resultType="com.x.People">
-	select * from people limit #{pageStart}, #{pageSize}
-</select>		
+    select * from people limit #{pageStart}, #{pageSize}
+</select>        
 ```
 
 ## PageHelper
@@ -494,9 +495,9 @@ class Student{
 ```java
 //在SQL中'.'是关键字符,所以在两侧添加反单引号 `teacher.id`
 <select id="listAllStudent" resultType="com.x.pojo.Student">
-	SELECT s.id id, s.name name, t.id `teacher.id`, t.name `teacher.name`
-	FROM student s LEFT JOIN teacher t
-	ON t.id=s.tid LIMIT 5
+    SELECT s.id id, s.name name, t.id `teacher.id`, t.name `teacher.name`
+    FROM student s LEFT JOIN teacher t
+    ON t.id=s.tid LIMIT 5
 </select>
 ```
 
@@ -505,17 +506,17 @@ class Student{
 ```java
 //左外连接(left outer join)：可查询所有的学生信息
 <select id="listAllStudent" resultMap="studentMap">
-	SELECT s.id sid, s.name sname, t.id tid, t.name tname
-	FROM student s LEFT OUTER JOIN teacher t
-	ON s.tid=t.id LIMIT 5
+    SELECT s.id sid, s.name sname, t.id tid, t.name tname
+    FROM student s LEFT OUTER JOIN teacher t
+    ON s.tid=t.id LIMIT 5
 </select>
 
 <resultMap type="com.example.*.bean.Student" id="studentMap">
-	<id column="sid" property="id"/>
-	<result column="sname" property="name"/>
+    <id column="sid" property="id"/>
+    <result column="sname" property="name"/>
 
-	<result column="tid" property="teacher.id"/>
-	<result column="tname" property="teacher.name"/>
+    <result column="tid" property="teacher.id"/>
+    <result column="tname" property="teacher.name"/>
 </resultMap>
 ```
 
@@ -523,21 +524,21 @@ class Student{
 
 ```java
 <select id="listAllStudent" resultMap="studentMap">
-	SELECT s.id sid, s.name sname, t.id tid, t.name tname
-	FROM student s LEFT OUTER JOIN teacher t
-	ON s.tid=t.id LIMIT 5
+    SELECT s.id sid, s.name sname, t.id tid, t.name tname
+    FROM student s LEFT OUTER JOIN teacher t
+    ON s.tid=t.id LIMIT 5
 </select>
 
 <resultMap type="com.example.spring.bean.Student" id="studentMap">
-	<id column="sid" property="id" />
-	<result column="sname" property="name" />
+    <id column="sid" property="id" />
+    <result column="sname" property="name" />
 
-	//<association/>可看做<reslutMap/>
+    //<association/>可看做<reslutMap/>
     //property：Student类中的属性名； javaType：装配后返回的java类型
-	<association property="teacher" javaType="com.example.spring.bean.Teacher">
-		<id column="tid" property="id" />
-		<result column="tname" property="name" />
-	</association>
+    <association property="teacher" javaType="com.example.spring.bean.Teacher">
+        <id column="tid" property="id" />
+        <result column="tname" property="name" />
+    </association>
 </resultMap>
 ```
 
@@ -550,20 +551,20 @@ class Student{
 
 ```java
 <select id="listAll" resultMap="stuMap">
-	select * from student
+    select * from student
 </select>
 
 <resultMap type="com.x.pojo.Student" id="stuMap">
-	// student表的其他列,使用 AutoMapping 自动装配! 但对于二次查询的参数tid,必须显示装配一次
-	<result column="tid" property="tid"/>
-	
-	// association	-> 当property对应的'teacher'是一个对象时使用
-	// property		-> Student类中的属性名
-	// fetchType	-> 是否懒加载; lazy-懒加载,eager-立即加载.
-	// select		-> 通过哪个查询可以查出这个对象的信息
-	// column		-> 把当前表哪个列的值作为参数传递给select
-	// 对于分步查询传参多列,可以使用形式 column="{key1=id, key2=name}"; mybatis底层将参数封装成map
-	<association property="teacher" fetchType="lazy" 
+    // student表的其他列,使用 AutoMapping 自动装配! 但对于二次查询的参数tid,必须显示装配一次
+    <result column="tid" property="tid"/>
+    
+    // association    -> 当property对应的'teacher'是一个对象时使用
+    // property        -> Student类中的属性名
+    // fetchType    -> 是否懒加载; lazy-懒加载,eager-立即加载.
+    // select        -> 通过哪个查询可以查出这个对象的信息
+    // column        -> 把当前表哪个列的值作为参数传递给select
+    // 对于分步查询传参多列,可以使用形式 column="{key1=id, key2=name}"; mybatis底层将参数封装成map
+    <association property="teacher" fetchType="lazy" 
          select="com.x.mapper.TeacherMapper.selById" column="tid"></association>
 </resultMap>
 
@@ -579,7 +580,7 @@ class Teacher{
     private Integer id;
     private String name;
     
-	private List<Student> list; 
+    private List<Student> list; 
 }
 ```
 
@@ -587,21 +588,21 @@ class Teacher{
 
 ```java
 <select id="listAllTeacher" resultMap="teacherMap">
-	SELECT t.id tid, t.name tname, s.id sid, s.name sname
-	FROM teacher t LEFT JOIN student s
-	ON t.id=s.tid LIMIT 10
+    SELECT t.id tid, t.name tname, s.id sid, s.name sname
+    FROM teacher t LEFT JOIN student s
+    ON t.id=s.tid LIMIT 10
 </select>
 
 <resultMap type="com.example.spring.bean.Teacher" id="teacherMap">
-	<id column="tid" property="id" />
-	<result column="tname" property="name" />
+    <id column="tid" property="id" />
+    <result column="tname" property="name" />
 
-	//collection -> 当property是集合类型时使用
-	//ofType     -> 集合的泛型是哪个类
-	<collection property="studentList" ofType="com.example.spring.bean.Student">
-		<id column="sid" property="id" />
-		<result column="sname" property="name" />
-	</collection>
+    //collection -> 当property是集合类型时使用
+    //ofType     -> 集合的泛型是哪个类
+    <collection property="studentList" ofType="com.example.spring.bean.Student">
+        <id column="sid" property="id" />
+        <result column="sname" property="name" />
+    </collection>
 </resultMap>
 ```
 
@@ -609,14 +610,14 @@ class Teacher{
 
 ```java
 <select id="listAllTeacher" resultMap="teacherMap">
-	SELECT id, name FROM teacher
+    SELECT id, name FROM teacher
 </select>
 
 <resultMap type="com.example.spring.bean.Teacher" id="teacherMap">
-	<id column="id" property="id" />
-	<result column="name" property="name" />
+    <id column="id" property="id" />
+    <result column="name" property="name" />
 
-	<collection property="studentList" column="id" 
+    <collection property="studentList" column="id" 
          select="com.example.spring.mapper.StudentMapper.selStuByTid" />
 </resultMap>
 
@@ -630,10 +631,10 @@ class Teacher{
 
 ```java
 @Results(value={ //相当于<resultMap/>
-	@Result(id=true, property="id", column="id"), //相当于<id/>或<result/>, id=true则相当于id
-	@Result(property="name", column="name"),
-	@Result(property="list", column="id", //@Many相当于<collection/>, @One相当于<association/>
-		many=@Many(select="com.x.mapper.StudentMapper.selByTid"))
+    @Result(id=true, property="id", column="id"), //相当于<id/>或<result/>, id=true则相当于id
+    @Result(property="name", column="name"),
+    @Result(property="list", column="id", //@Many相当于<collection/>, @One相当于<association/>
+        many=@Many(select="com.x.mapper.StudentMapper.selByTid"))
 })
 @Select("select * from teacher")
 List<Teacher> selTeacher();
@@ -645,33 +646,33 @@ List<Teacher> selTeacher();
 
 ```java
 <select id="getEmployee" resultMap="employeeMap">
-	select id, name from employee where id =#{id}
+    select id, name from employee where id =#{id}
 </select>
 
 <resultMap id="employeeMap" type="com.x.pojo.Employee">
-	<id property="id" column="id"/>
-	<result property="name" column="name"/>
-	<result property="sex" column="sex"/>
+    <id property="id" column="id"/>
+    <result property="name" column="name"/>
+    <result property="sex" column="sex"/>
 
-	<association property="empCard" column="id" 
+    <association property="empCard" column="id" 
          select="com.x.mapper.EmpCardMapper.selByEmpId"/>
-	<collection property="projectList" column="id" 
+    <collection property="projectList" column="id" 
          select="com.x.mapper.ProjectMapper.listByEmpId"/>
 
-	<discriminator javaType="int" column="sex"> //鉴别器
-		<case value="0" resultMap="femaleEmpMap"/>
-		<case value="1" resultMap="maleEmpMap"/>
-	</discriminator>
+    <discriminator javaType="int" column="sex"> //鉴别器
+        <case value="0" resultMap="femaleEmpMap"/>
+        <case value="1" resultMap="maleEmpMap"/>
+    </discriminator>
 </resultMap>
 
 //不同Employee.sex, 不同Employee.sexList. extends: 等同于java的继承
 <resultMap id="femaleEmpMap" type="com.x.pojo.FemaleEmployee" extends="employeeMap">
-	<association property="sexList" column="id"
+    <association property="sexList" column="id"
          select="com.x.mapper.FemaleEmpMapper.selById"/>
 </resultMap>
 
 <resultMap id="maleEmpMap" type="com.x.pojo.MaleEmployee" extends="employeeMap">
-	<association property="sexList" column="id" 
+    <association property="sexList" column="id" 
          select="com.x.mapper.MaleEmpMapper.selById"/>
 </resultMap>
 ```
@@ -700,11 +701,11 @@ Mybatis的二级缓存与一级缓存其机制相同，默认也是采用`Perpet
 
 >cache标签参数
 
-1. eviction		-> 缓存的回收策略，默认LRU（可选值：LRU，FIFO，SOFT，WEAK）。
-	. flushInterval	-> 缓存失效时间，默认永不失效（单位毫秒）。
-	. size			-> 缓存存放多少个元素，默认1024。
-	. type			-> 指定自定义缓存的全类名（需要实现Cache接口，自定义缓存类）。
-	. readOnly		-> 是否只读，默认false。
+1. eviction        -> 缓存的回收策略，默认LRU（可选值：LRU，FIFO，SOFT，WEAK）。
+    . flushInterval    -> 缓存失效时间，默认永不失效（单位毫秒）。
+    . size            -> 缓存存放多少个元素，默认1024。
+    . type            -> 指定自定义缓存的全类名（需要实现Cache接口，自定义缓存类）。
+    . readOnly        -> 是否只读，默认false。
 
 # 附表
 
@@ -714,20 +715,20 @@ Mybatis的二级缓存与一级缓存其机制相同，默认也是采用`Perpet
 e1 lt(小于) e2; //lte 小于等于; gt 大于; gte 大于等于; eq 等于; neq 不等于
 e1 or(and) e2; e1 in(not in) e2; e1 +(- * / %) e2;  
 !e(非); not e(求反)
-e.method(args)		//调用对象方法
-e.property			//对象属性值
-e1[ e2 ]			//对于List，数组和Map，按索引取值
-@class@method(args)	//调用类的静态方法
-@class@field		//调用类的静态字段值
+e.method(args)        //调用对象方法
+e.property            //对象属性值
+e1[ e2 ]            //对于List，数组和Map，按索引取值
+@class@method(args)    //调用类的静态方法
+@class@field        //调用类的静态字段值
 ```
 ## 转义字符
 
 ```java
 //字符转义
-< > & ' "	//	&lt; &gt; &amp; &apos; &quot;
+< > & ' "    //    &lt; &gt; &amp; &apos; &quot;
 
 //使用<![CDATA[]]>
-< > & ' "	//	<![CDATA[ < ]]> <![CDATA[ > ]]> <![CDATA[ & ]]> ...
+< > & ' "    //    <![CDATA[ < ]]> <![CDATA[ > ]]> <![CDATA[ & ]]> ...
 
 //<![CDATA[]]>和xml转义字符的关系
 (1).对于短字符串<![CDATA[]]>写起来啰嗦，对于长字符串转义字符写起来可读性差。
