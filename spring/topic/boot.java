@@ -1053,6 +1053,8 @@ https://start.spring.io/
 		spring.datasource.driver-class-name=com.mysql.jdbc.Driver
 		spring.datasource.username=***
 		spring.datasource.password=***
+		
+		//0-1		1-10	10-100	100-1000	1-10	10-100	100-1000	1000+
 
 	1.监控druid	//http://localhost:8080/blue/druid/login.html
 		@Configuration

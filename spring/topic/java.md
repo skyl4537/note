@@ -223,7 +223,7 @@ static class C extends A {
 
 ##静态代码块
 
-> 静态代码块 > main方法 > 构造代码块 > 构造函数（F-S{} S-S{} S-M() F{} F() S{} S()）
+> 静态代码块 > main方法 > 构造代码块 > 构造函数
 >
 > 父类静态代码块、子类静态代码块、main、父类构造代码块、父类构造函数、子类构造代码块、子类构造数
 
@@ -267,10 +267,6 @@ static class S extends F {
     }
 }
 ```
-
-- ​
-
-
 
 # Object
 
@@ -757,113 +753,86 @@ for (String s : list) {
 
 ## 常用方法
 
-1. null
+> NULL：高度注意 Map 类集合 K/V 能不能存储 null 值的情况
 
-   > 高度注意 Map 类集合 K/V 能不能存储 null 值的情况
+|       集合类        |      Key      |     Value     |    Super    |     说明     |
+| :-----------------: | :-----------: | :-----------: | :---------: | :----------: |
+|      Hashtable      | 不允许为 null | 不允许为 null | Dictionary  |   线程安全   |
+| `ConcurrentHashMap` | 不允许为 null | 不允许为 null | AbstractMap | `分段锁技术` |
+|       TreeMap       | 不允许为 null | `允许为 null` | AbstractMap |  线程不安全  |
+|      `HashMap`      | `允许为 null` | `允许为 null` | AbstractMap |  线程不安全  |
 
-   |       集合类        |      Key      |     Value     |    Super    |     说明     |
-   | :-----------------: | :-----------: | :-----------: | :---------: | :----------: |
-   |      Hashtable      | 不允许为 null | 不允许为 null | Dictionary  |   线程安全   |
-   | `ConcurrentHashMap` | 不允许为 null | 不允许为 null | AbstractMap | `分段锁技术` |
-   |       TreeMap       | 不允许为 null | `允许为 null` | AbstractMap |  线程不安全  |
-   |      `HashMap`      | `允许为 null` | `允许为 null` | AbstractMap |  线程不安全  |
+> 去重：不应该使用 List.contains() 进行遍历
 
-2. 去重
+对于存储大量不重复元素，应该选用 Set 集合，利用其元素唯一性特点。而不应该选用 List，去使用 List.contains() 进行遍历，对比，去重操作。
 
-   >对于存储大量不重复元素，应该选用 Set 集合，利用其元素唯一性特点。
-   >
-   >而不应该选用 List，去使用 List.contains() 进行遍历，对比，去重操作。
+> 初始化大小：集合初始化时，尽量指定初始值大小。大小应和实际存储元素个数相近，减少扩容次数。
+> <https://www.jianshu.com/p/64f6de3ffcc1>
 
-3. 初始化指定大小
+```java
+List<String> list = new ArrayList<>(5); //默认16，加载因子0.75
+```
 
-   ```java
-   //集合初始化时，尽量指定集合初始值大小。大小应和实际存储元素个数相近，减少扩容次数。
-   List<String> list = new ArrayList<>(5);
-   ```
+> asList()：返回对象是 Arrays 内部类，并没有实现集合的修改方法（add，remove，clear）。
 
-4. asList()
+```java
+List<String> asList = Arrays.asList("a", "b", "c");
+// asList.add("d"); -> UnsupportedOperationException
 
-   ```java
-   //asList() 返回对象是 Arrays 内部类，并没有实现集合的修改方法(add，remove，clear)。
-   public void test() {
-       List<String> asList = Arrays.asList("a", "b", "c");
-       // asList.add("d"); -> UnsupportedOperationException
+ArrayList<String> list = new ArrayList<>(asList); //正解,先转换
+list.add("d");
+```
+> subList()：返回的是 ArrayList 的内部类 SubList，本质是 ArrayList 的一个视图，对于 SubList 子列表的所有操作最终会反映到原列表上。
 
-       ArrayList<String> list = new ArrayList<>(asList); //正解,先转换
-       list.add("d");
-   }
-   ```
+```java
+ArrayList<String> list = new ArrayList<>(Arrays.asList("a", "b", "c"));
+List<String> subList = list.subList(0, 2);
 
-5. subList()
+ArrayList<String> list1 = (ArrayList<String>) subList; //异常：ClassCastException
+```
+> toArray()：**【不推荐】**直接使用 toArray() 无参方法，因为其返回值只能是 Object[]。
 
-   ```java
-   //subList() 返回的是 ArrayList 的内部类 SubList，并不是 ArrayList。
-   //SubList 是 ArrayList 的一个视图，对于 SubList 子列表的所有操作最终会反映到原列表上。
-   public void test() {
-       ArrayList<String> list = new ArrayList<>(Arrays.asList("a", "b", "c"));
-       List<String> subList = list.subList(0, 2);
+```java
+ArrayList<String> list = new ArrayList<>(Arrays.asList("a", "b", "c"));
+String[] array = list.toArray(new String[list.size()]); //推荐
 
-       ArrayList<String> list1 = (ArrayList<String>) subList; //ClassCastException
-   }
-   ```
+Object[] array1 = list.toArray(); //不推荐
+```
+> foreach()：使用 entrySet 遍历Map集合，而不是 keySet 方式进行遍历
 
-6. toArray()
+```java
+Map<String, String> map = new HashMap<String, String>() {{
+    put("k1", "v1");
+    put("k2", "v2");
+}};
 
-   ```java
-   //【不推荐】直接使用 toArray() 无参方法，因为其返回值只能是 Object[]。
-   public void test() {
-       ArrayList<String> list = new ArrayList<>(Arrays.asList("a", "b", "c"));
-       String[] array = list.toArray(new String[list.size()]); //推荐使用
-       
-       Object[] array1 = list.toArray(); //不推荐
-   }
-   ```
+//(1).keySet() 其实遍历了 2 次
+//一次是转为 Iterator 对象，另一次是从Map中取出 key 所对应的 value
+for (String key : map.keySet()) {
+    System.out.println(key + ":" + map.get(key));
+}
 
-8. foreach()-keySet
+//(2).entrySet() 只遍历一次。【推荐使用】
+//遍历1次就把 kV 都放到了 entry 中，效率更高。JDK8的 Map.forEach() 就是这个原理
+for (Map.Entry<String, String> entry : map.entrySet()) {
+    System.out.println(entry.getKey() + ":" + entry.getValue());
+}
 
-   ```java
-   //使用 entrySet 遍历Map集合，而不是 keySet 方式进行遍历
-   public void test() {
-       Map<String, String> map = new HashMap<String, String>() {{
-           put("k1", "v1");
-           put("k2", "v2");
-       }};
+//(3).JDK8 -> Map.forEach()
+map.forEach((k, v) -> System.out.println(k + ":" + v));
+```
+> sort()：JDK7 以上，Comparator 要满足自反性，传递性，对称性。不然 Arrays.sort()，Collections.sort()会报异常 IllegalArgumentException。所以，`对于基本数据类型，要采用其包装类的 Compare(x, y) 进行比较`。
 
-       //(1).keySet() 其实遍历了 2 次
-       //一次是转为 Iterator 对象，另一次是从Map中取出 key 所对应的 value
-       for (String key : map.keySet()) {
-           System.out.println(key + ":" + map.get(key));
-       }
+```java
+new Comparator<Person>() {
+    @Override
+    public int compare(Person o1, Person o2) {
+        //return o1.getAge() > o2.getAge() ? 1 : -1; //没有处理相等的情况
 
-       //(2).entrySet() 只遍历一次。【推荐使用】
-       //遍历1次就把 kV 都放到了 entry 中，效率更高。JDK8的 Map.forEach() 就是这个原理
-       for (Map.Entry<String, String> entry : map.entrySet()) {
-           System.out.println(entry.getKey() + ":" + entry.getValue());
-       }
-
-       //(3).JDK8 -> Map.forEach()
-       map.forEach((k, v) -> System.out.println(k + ":" + v));
-   }
-   ```
-
-9. sort()
-
-   ```java
-   //JDK7 以上，Comparator 要满足自反性，传递性，对称性。
-   //不然 Arrays.sort()，Collections.sort()会报异常 IllegalArgumentException
-   //所以，对于基本数据类型，要采用其包装类的 Compare(x, y) 方法进行比较。
-   new Comparator<Person>() {
-       @Override
-       public int compare(Person o1, Person o2) {
-           //return o1.getAge() > o2.getAge() ? 1 : -1; //没有处理相等的情况
-
-           return Integer.compare(o1.getAge(), o2.getAge()); //推荐使用此方法
-       }
-   };
-   ```
-
-9. 
-
+        return Integer.compare(o1.getAge(), o2.getAge()); //推荐使用
+    }
+};
+```
 
 # Date
 
@@ -891,7 +860,7 @@ public void test() throws InterruptedException {
 }
 ```
 
-- `把 SimpleDateFormat 实例定义为静态变量，那么多线程情况下会被多个线程共享。`B线程会读取到A线程的时间，就会出现时间差异和其它各种问题。SimpleDateFormat 和它继承的 DateFormat 类都不是线程安全的。
+`把 SimpleDateFormat 实例定义为静态变量，在多线程情况下会被多个线程共享。`B线程会读取到A线程的时间，就会出现时间差异和其它各种问题。SimpleDateFormat 和它继承的 DateFormat 类都不是线程安全的。
 
 > **方案1：** 只在需要的时候创建实例，不用static修饰。
 
@@ -938,7 +907,8 @@ private static ThreadLocal<DateFormat> threadLocal = new ThreadLocal<DateFormat>
 };
 
 //上式的lambda简化版
-//private static ThreadLocal<DateFormat> threadLocal = ThreadLocal.withInitial(() -> new SimpleDateFormat("yyyy-MM-dd HH:mm:ss"));
+//private static ThreadLocal<DateFormat> threadLocal = 
+//        ThreadLocal.withInitial(() -> new SimpleDateFormat("yyyy-MM-dd HH:mm:ss"));
 
 public static Date parse(String dateStr) throws ParseException {
     return threadLocal.get().parse(dateStr);
@@ -977,35 +947,25 @@ public static LocalDateTime parse2(String dateNow) {
 
 >静态变量 & 实例变量
 
-- 生命周期    
+**静态变量**：static 修饰，随着类的加载而分配内存空间，随着类的消失而消失。存在于方法区。
 
-  **静态变量** static 修饰，随着类的加载而分配内存空间，随着对象的消失而消失。
+**实例变量**：随着对象的建立而分配内存空间，随着对象的消失而消失。存在于堆内存。
 
-  **实例变量** 随着对象的建立而分配内存空间，随着对象的消失而消失。
+```java
+class Test{
+    static int staticNum = 0;
+    int num = 0;
+    
+    Test(){
+        staticNum++;
+        num++;
 
-- 存放区域
-
-  静态变量-存在于方法区。
-
-  实例变量-存在于堆内存。
-
-  ```java
-  class Test{
-      static int staticNum = 0;
-      int num = 0;
-
-      Test(){
-          staticNum++;
-          num++;
-
-          //对于 staticNum，全局唯一份。每实例化一个Test对象，staticNum 就加1
-          //但是，对于 num，每实例化一个Test对象，就会重新分配一个，所以一直都是1
-          sout(staticNum + " - " + num);
-      }
-  }
-  ```
-
-
+        //对于 staticNum，全局唯一份。每实例化一个Test对象，staticNum 就加1
+        //但是，对于 num，每实例化一个Test对象，就会重新分配一个，所以一直都是1
+        sout(staticNum + " - " + num);
+    }
+}
+```
 
 
 
@@ -1181,7 +1141,7 @@ public void test() {
 
 - `基本类型传递的是数据值的拷贝。`在方法内对值类型操作不会改变原有值。
 
-- `引用类型传递的是该对象的引用拷贝，但指向同一个对象。`在方法内对引用类型进行重新赋引用，不会改变原有值。但是对原有引用的属性进行操作时，相当于C++中的传址调用，可以改变这个引用的属性值。
+- `引用类型传递的是该对象的堆内存地址，即引用拷贝，但指向同一个对象。`在方法内对引用类型进行重新赋引用，不会改变原有值。但是对原有引用的属性进行操作时，可改变这个引用的属性值。
 
   ```java
   private void doSth(int i, String s, Person p) {
@@ -1195,7 +1155,7 @@ public void test() {
 > this & super
 
 - **this：** 子类调用【子类】的同名成员或方法。**super：** 子类调用【父类】的...。
-- 构造函数间调用使用 `this() 或 super(name, age)` 语句，并且该语句只能放在构造函数第一行。
+- 构造函数间调用使用 `this() 或 super(name)` 语句，并且该语句只能放在构造函数第一行。
 
 ```java
 class Outter {
@@ -1215,25 +1175,46 @@ class Outter {
 }
 ```
 
+- 子类通过构造函数进行实例化时，会先调用父类的构造函数。如果没有显示的指明调用哪个父类构造时，`默认调用父类的无参构造`。
+- 对于子类来说，不管是无参构造方法还是有参构造方法，`都会默认调用父类的无参构造方法`；当编译器尝试在子类中往这两个构造方法插入super()方法时，因为父类没有一个默认的无参构造方法，所以编译器报错；
+
+```java
+class Super {
+    private int id;
+
+    public Super(int id) {
+        this.id = id;
+    }
+}
+
+class Sub extends Super {
+    public Sub() { //编译错误
+    }
+
+    public Sub(int id) { //编译错误
+    }
+}
+```
+
 > 抽象类 & 接口
 
 接口`extends`接口， 抽象类`implements`接口， 抽象类`extends`具体类。
 
-抽象类与普通类的区别：不能创建实例对象和允许有 abstract 方法。抽象类中可以有静态的 main() 方法。
+**抽象类与普通类的区别**：不能创建实例和允许有 abstract 方法。抽象类中可以有静态方法。
+
+abstract修饰的类是抽象类，它不能生成对象，它是不完整的，只能作为基类。类可以实现无限个接口，但仅仅能从一个抽象类继承。
+
+java中抽象类中可以有非抽象方法，继承抽象类必须要实现它其中的抽象方法。因此，Dog编译报错
 
 ```java
 abstract class Animal {
     abstract void eat();
 }
-class Dog extends Animal {
+class Dog extends Animal { //编译报错
     public Dog() {
         System.out.println("I am a dog");
     }
 }
-
-//abstract修饰的类是抽象类，它不能生成对象，它是不完整的，只能作为基类。
-//类可以实现无限个接口，但仅仅能从一个抽象类继承。
-//java中抽象类中可以有非抽象方法，继承抽象类必须要实现它其中的抽象方法。因此，Dog编译报错
 ```
 
 
@@ -1716,4 +1697,214 @@ for (int i = 1; i < 13; i++) {
     data[13] = (byte) (data[13] ^ data[i]);
 }
 ```
+
+
+
+
+
+
+
+
+
+# Reflect
+
+##创建对象
+
+> （1）new创建：传统方式，必须预先知道要使用的类；引用类改变，就必须修改源码。
+
+```java
+Person person = new Person();
+```
+
+> （2）Cloneable方式：不推荐
+
+```java
+public class Person implements Cloneable{
+    @Override
+    protected Object clone() throws CloneNotSupportedException {
+        return super.clone();
+    }
+}
+Person clone = (Person) person.clone(); //克隆
+```
+
+> （3）反射方式：动态创建，效率相对低下，耗时是传统方式的3倍
+
+```java
+//先获取 clazz 对象（4种方式，常用1和2），再创建此 clazz 对象所表示的类的一个新实例
+Class<?> clazz = Class.forName("com.example.reflect.Person"); //1
+Class<?> clazz = getClass().getClassLoader().loadClass("com.example.reflect.Person"); //2
+Class<? extends clazz> clazz = new Person().getClass(); //3
+Class<Person> clazz = Person.class; //4
+
+Object instance = clazz.newInstance(); //创建实例
+```
+
+## 构造器
+
+> 所有构造器
+
+```java
+Constructor<?>[] constructors = clazz.getConstructors(); //public-级别的所有构造器
+Constructor<?>[] constructors = clazz.getDeclaredConstructors(); //all
+```
+
+> 无参构造器
+
+```java
+Constructor<?> constructor = clazz.getConstructor();
+Person p = (Person) constructor.newInstance(); //等同于 new Person();
+```
+
+> 有参构造器
+
+```java
+Constructor<?> constructor = clazz.getConstructor(boolean.class);
+Person p8 = (Person) constructor.newInstance(true); //new Person(true);
+```
+
+## 属性
+
+> 所有属性
+
+```java
+public class Person {
+    public static String city = "SX";
+    public boolean gender;
+    protected String name;
+    int age;
+    private boolean young;
+}
+
+Field[] fields = clazz.getFields(); //public-only
+Field[] fields = clazz.getDeclaredFields(); //all
+```
+
+> 具体属性
+
+```java
+Field gender = clazz.getField("gender"); //public boolean gender;
+Field name = clazz.getDeclaredField("name"); //protected String name;
+```
+
+> 属性操作
+
+```java
+Field city = clazz.getDeclaredField("city"); //static -> 不依赖对象,传参 null
+city.set(null, "BJ");
+System.out.println(city.get(null));
+
+Field gender = clazz.getDeclaredField("gender"); //non static --> 依附于对象 p1
+Object p1 = clazz.newInstance(); 
+gender.set(p1, true);
+System.out.println(gender.get(p1));
+
+Field young = clazz.getDeclaredField("young"); //private --> 依附于对象,并暴力访问
+Object p2 = clazz.newInstance();
+young.setAccessible(true); //暴力膜
+young.set(p2, true);
+System.out.println(young.get(p2));
+```
+## 方法
+
+> 所有方法
+
+```java
+Method[] methods = clazz.getMethods(); //同上
+Method[] methods = clazz.getDeclaredMethods();
+```
+> 无参 public static
+
+```java
+Method staticHello = clazz.getMethod("staticHello");
+Object invoke = staticHello.invoke(null); //invoke为返回值; 调用 --> 不依赖对象
+```
+> 无参 private
+
+```java
+Method privateHello = clazz.getDeclaredMethod("privateHello");
+privateHello.setAccessible(true);
+Object p0 = clazz.newInstance();
+System.out.println("privateHello: " + privateHello.invoke(p0)); //依赖对象 + 暴力膜
+```
+> 有参 private
+
+```java
+Method privateHello1 = clazz.getDeclaredMethod("privateHello", String.class, int.class);
+privateHello1.setAccessible(true);
+Object p3 = clazz.newInstance();
+System.out.println("privateHello1: " + privateHello1.invoke(p3, "SSS", 888)); //依赖+暴力膜
+```
+
+## main方法
+
+> 怎样传递参数？ `public static void main(String[] args){}`
+
+按照jdk1.5，整个数组是一个参数； jdk1.4数组中的每一个元素是一个参数。把一个字符串数组作为参数传递到 invoke()，jvm怎么解析？？
+
+jdk1.5肯定没问题，但对于jdk1.4则会将字符串数组打散成一个个字符串作为参数，出现参数个数异常。
+
+**正确做法：** 
+
+1. 将字符串数组转换成Object对象；
+2. 将字符串数组作为Object数组的一个元素
+
+```java
+Class<?> clazz = this.getClass().getClassLoader()
+        .loadClass("com.example.reflect.Person");
+Method helloArray = clazz.getMethod("main", String[].class); //参数类型: String[].class
+
+helloArray.invoke(null, (Object) new String[]{"aaa", "bbb"}); //正确1
+// helloArray.invoke(null, new Object[]{new String[]{"aaa", "bbb"}}); //正确2
+
+// helloArray.invoke(null, new String[]{"aaa", "bbb"}); //错误写法
+```
+
+## 泛型相关
+
+```java
+public Map<Integer, Person> method(Map<String, Person> map, List<Person> list) {
+    return null;
+}
+
+public void doArgs() throws NoSuchMethodException {
+    Method method = getClass().getMethod("method", Map.class, List.class);
+    Type[] types = method.getGenericParameterTypes();
+
+    for (Type paramType : types) {
+        System.out.println("参数-类型: " + paramType);
+
+        if (paramType instanceof ParameterizedType) {
+            Type[] genericTypes = ((ParameterizedType) paramType).getActualTypeArguments();
+            for (Type genericType : genericTypes) {
+                System.out.println("参数-泛型类型：" + genericType);
+            }
+            System.out.println();
+        }
+    }
+
+    Type returnType = method.getGenericReturnType();
+    System.out.println("返回值-类型：" + returnType);
+
+    if (returnType instanceof ParameterizedType) {
+        Type[] genericTypes = ((ParameterizedType) returnType).getActualTypeArguments();
+
+        for (Type genericType : genericTypes) {
+            System.out.println("返回值-泛型类型：" + genericType);
+        }
+    }
+}
+```
+
+
+
+
+
+
+
+
+
+
+
+
 

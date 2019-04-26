@@ -106,6 +106,40 @@ mybatis抽离出数据库的连接，关闭的操作。抽离了sql语句，并�
 
 解决：Mybatis自动将sql执行结果映射至java对象，通过statement中的resultType定义输出结果的类型。
 
+```java
+public void doJDBC() throws ClassNotFoundException, SQLException, IOException {
+    Properties properties = new Properties();
+    InputStream in = getClass().getClassLoader().
+        getResourceAsStream("application.properties");
+    properties.load(in);
+    // [1] 声明连接参数
+    String url = properties.getProperty("spring.datasource.url");
+    String user = properties.getProperty("spring.datasource.username");
+    String password = properties.getProperty("spring.datasource.password");
+    // [2] 注册驱动
+    Class.forName(properties.getProperty("spring.datasource.driverClassName"));
+    // [3] 建立数据库连接, 需要用到驱动管理器
+    Connection conn = DriverManager.getConnection(url, user, password);
+    // [4] 定义SQL语句
+    String sql = "select id, gender, name from student";
+    // [5] 创建sql发送器, 是由连接对象创建的
+    Statement statement = conn.createStatement();
+    // [6] 发送并执行sql语句, 得到结果集
+    ResultSet rs = statement.executeQuery(sql);
+    // [7] 处理结果集
+    while (rs.next()) {
+        int id = rs.getInt(1);// 数据库列索引从1开始
+        String gender = rs.getString("gender");
+        String name = rs.getString(3);
+        System.out.println(id + " - " + gender + " - " + name);
+    }
+    // [8] 关闭资源, 先开的后关
+    rs.close();
+    statement.close();
+    conn.close();
+}
+```
+
 
 
 ##与Hibernate
