@@ -1829,6 +1829,97 @@ JAVA8 实现
 //}
 
 
+//{--------<<<nginx>>>-------------------------------
+http://server.51cto.com/sOS-588810.htm
+
+nginx + keepalived 实现高可用
+
+轻量级的web服务器/反向代理服务器及电子邮件代理服务器。
+特点：内存占用少，并发能力强。
+
+软件负载均衡：
+1.阿里云服务器均衡负载SLB
+2.Nginx+Keepalived
+3.其他软件如LVS(Linux Virtual Server)、haproxy等
+
+nginx日志切分
+使用 crontab 定时任务，注意：备份前关闭服务和备份后开启服务
+
+Nginx配置
+if(条件为: = ~ ~*) return, break, rewrite.
+-f 是否为文件，-d 是否为目录， -e 是否存在
+
+nginx可以对数据进行压缩，对一些图片、html、css、js进行缓存、从而实现动静分离等优化。
+
+
+负载均衡
+	网页访问 http://192.168.5.23:8866/
+	实际返回 http://192.168.8.7:8080/index.html （2/3概率）或 http://192.168.8.7:8090/index.html （1/3概率）
+	
+	#设定负载均衡的服务器列表
+    upstream myapp {   
+		#weigth -> 参数表示权值，权值越高被分配到的几率越大
+		#max_fails -> 有x个请求失败，就表示后端的服务器不可用，默认为1，将其设置为0可以关闭检查
+		#fail_timeout -> 在以后的x时间内nginx不会再把请求发往已检查出标记为不可用的服务器
+		
+        server 192.168.8.7:8080 weight=2 max_fails=2 fail_timeout=30s;   
+        server 192.168.8.7:8090 weight=1 max_fails=2 fail_timeout=30s;   
+    }
+	
+	#当前的Nginx的配置
+    server {
+        listen       8866;
+        server_name  localhost;
+
+        location / {
+            #设置客户端真实ip地址，而不是nginx的ip
+            proxy_set_header X-real-ip $remote_addr;
+			
+			#负载均衡反向代理
+			proxy_pass http://myapp;
+			
+            root   html;
+            index  index.html index.htm;		
+        }
+	}
+
+配置静态资源
+    server {
+        listen       8867;
+        server_name  abc.com;
+		
+		#日志存储位置
+		access_log  logs/abc.com.access.log;
+
+        location / {
+            root   ./abc.com;
+            index  index.html index.htm;
+        }
+		
+		#配置反向代理tomcat服务器：拦截.jsp结尾的请求转向到tomcat
+        location ~ \.jsp$ {
+            #设置客户端真实ip地址
+            proxy_set_header X-real-ip $remote_addr;
+			
+            proxy_pass http://192.168.8.7:8080;
+        }
+		
+		location ~ \.(jpg|png|jpeg|bmp|gif|swf|css)${	 
+			expires 30d;
+			root /nginx-1.4.7;#root:
+			break;
+		}
+    }
+
+	#location / {
+	#	root   abc.com;
+	#	index  index.html index.htm;
+	#}
+
+
+//}
+
+
 //{---------快捷键----
 
 	Ctrl+Shift + Enter,语句完成

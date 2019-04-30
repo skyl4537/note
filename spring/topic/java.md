@@ -31,7 +31,7 @@
 |            注释单行（选中部分）            |   Ctrl+/（Ctrl+Shift+/）    |        Ctrl+/        |
 |                  参数提示                  |           Ctrl+P            |                      |
 |              查看类的继承关系              |           Ctrl+H            |        Ctrl+T        |
-|                   定位行                   |           Ctrl+G            |                      |
+|                   定位行                   |           Ctrl+G            |        Ctrl+L        |
 |            整行复制（整行删除）            |      Ctrl+D（Ctrl+X）       | Ctrl+Alt+↓（Ctrl+D） |
 |                                            |                             |                      |
 |                 大小写转化                 |        Ctrl+Shift+U         |                      |
@@ -246,6 +246,11 @@ static class F {
     F() {
         System.out.print("F() ");
     }
+
+    public static void main(String[] args) {
+        System.out.print("F-M() ");
+        new S(); //F-S{} F-M() S-S{} F{} F() S{} S()
+    }
 }
 
 static class S extends F {
@@ -260,13 +265,34 @@ static class S extends F {
     S() {
         System.out.print("S() ");
     }
+}
+```
 
-    public static void main(String[] args) {
-        System.out.print("S-M() ");
-        new S(); //F-S{} S-S{} S-M() F{} F() S{} S()
+```java
+static class Add {
+    static {
+        int i = 5; //局部变量，不会影响i值。
+    } //执行顺序在静态变量初始化之后（即如果设为非局部变量，则会影响静态变量的值）。
+
+    private static int i, j; 
+
+    public static void main(String[] args) { //i++，先++再使用；++i，先使用再++
+        i--; //输出：-1
+        add();
+        System.out.println(i + " - " + j); //输出：1-0
+        System.out.println(i + j + ++i); //输出：3
+    }
+
+    private static void add() {
+        j = i++ + ++i; //输出：0(0)+0(1)
+        System.out.println(i + " - " + j); //输出：1-0
     }
 }
 ```
+
+
+
+
 
 # Object
 
@@ -700,8 +726,13 @@ public void test() {
 ```
 
 - 增强for循环，其实是Java提供的语法糖，其实现底层原理还是借助 Iterator 实现。
-- **根本原因**：`通过 Iterator 进行集合遍历，但是又通过集合类自身进行 add/remove 操作，就会引发该问题`。
-- 通过集合类进行增删操作后，在 Iterator 进行下一次循环遍历时，会发现有一个元素在自己不知不觉的情况下被添加或删除了，很有可能是发生了并发操作，被其他线程执行的，就会抛出异常，来提示用户可能发生了并发修改，这就是所谓的 `fail-fast机制`。
+- HashMap 不是线程安全的，因此在使用 Iterator 的过程中，如果有其他线程修改了map，那么将抛出ConcurrentModificationException，这就是所谓 fail-fast机制。
+
+> **fail-fast机制**：主要是通过 modCount （修改次数）实现，对HashMap内容的修改都将增加这个值。
+
+在 Iterator  初始化过程中会将这个值赋给迭代器的 expectedModCount。在迭代过程中，判断 modCount 跟 expectedModCount 是否相等，如果不相等就表示已经有其他线程修改了 Map。
+
+注意：modCount 声明为 volatile，保证线程之间修改的可见性。
 
 > **方案1：** 直接使用普通for循环进行操作。因为普通for循环并没有用到 Iterator 的遍历。
 
@@ -1033,7 +1064,7 @@ System.out.println(doTry(1)); //执行try时先将x变为2，之后finally中x�
 ```
 ## for
 
-> for循环括号中的内容分别为初始化、布尔表达式、更新。
+> `for(初始化; 布尔表达式; 更新)` 等同于 `初始化; while(布尔表达式){ 更新; }`
 
 **初始化**：对循环可能要用到的值进行初始化，相当于for循环内部的一个局部变量
 
@@ -1055,7 +1086,7 @@ public void test() {
         print('d');
     }
 }
-//输出结果为：abdcbdcb.（注意最后一个b）
+//输出结果为：a-bdc-bdc-b.（注意最后一个b）
 ```
 
 ```java
