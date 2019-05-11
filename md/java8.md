@@ -6,11 +6,9 @@
 
 ##jdk7弊端
 
-> java8之前 `java.util.Date 和 java.util.Calendar` 的弊端？
+> java8之前 `java.util.Date 和 java.util.Calendar` 的弊端
 
-- 【最重要】都是`线程不安全`。
-- 星期和月份都是从 0 开始计数。
-
+【最重要】都是`线程不安全`。星期和月份都是从 0 开始计数。
 
 ```java
 private static final SimpleDateFormat sdf = new SimpleDateFormat("yyyy-MM-dd HH:mm:ss");
@@ -21,7 +19,6 @@ for (int i = 0; i < 20; i++) {
         try {
             System.out.println(sdf.parse("2019-04-15 09:45:59"));
         } catch (ParseException e) {
-            e.printStackTrace();
         }
     });
 }

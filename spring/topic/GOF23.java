@@ -210,9 +210,9 @@
 	
 #DEMO
 	1.抽象构件角色Component
-		public interface IMan {
-			void doit();
-		}
+public interface IMan {
+	void doit();
+}
 
 	2.具体构件角色ConcreteComponent(真实对象)
 		class Man implements IMan {
@@ -224,102 +224,102 @@
 		}
 
 	3.装饰角色Decorator 
-		class ISuperMan implements IMan {
-			protected IMan man;
+class ISuperMan implements IMan {
+	protected IMan man;
 
-			ISuperMan(IMan man) {
-				this.man = man;
-			}
+	ISuperMan(IMan man) {
+		this.man = man;
+	}
 
-			@Override
-			public void doit() {
-				man.doit();
-			}
-		}
+	@Override
+	public void doit() {
+		man.doit();
+	}
+}
 
 	4.1.具体装饰角色ConcreteDecorator 
-		class SpiderMan extends ISuperMan {
+class SpiderMan extends ISuperMan {
 
-			SpiderMan(IMan man) {
-				super(man);
-			}
+	SpiderMan(IMan man) {
+		super(man);
+	}
 
-			@Override
-			public void doit() {
-				super.doit();
-				System.out.println("fly fly fly...");
-			}
-		}
+	@Override
+	public void doit() {
+		super.doit();
+		System.out.println("fly fly fly...");
+	}
+}
 
 	4.2.具体装饰角色ConcreteDecorator 
-		class IronMan extends ISuperMan {
+class IronMan extends ISuperMan {
 
-			IronMan(IMan man) {
-				super(man);
-			}
+	IronMan(IMan man) {
+		super(man);
+	}
 
-			@Override
-			public void doit() {
-				super.doit();
-				System.out.println("money money money...");
-			}
-		}
+	@Override
+	public void doit() {
+		super.doit();
+		System.out.println("money money money...");
+	}
+}
 		
 	5.TEST
-		@Test
-		public void test() {
-			Man man = new Man();
-			man.doit();
+@Test
+public void test() {
+	Man man = new Man();
+	man.doit();
 
-			SpiderMan spiderMan = new SpiderMan(man);
-			spiderMan.doit();
+	SpiderMan spiderMan = new SpiderMan(man);
+	spiderMan.doit();
 
-			IronMan ironMan = new IronMan(new SpiderMan(new Man()));
-			ironMan.doit();
-		}
+	IronMan ironMan = new IronMan(new SpiderMan(new Man()));
+	ironMan.doit();
+}
 	
 #常见场景
 	(0).Servlet API 中的 HttpServletRequestWrapper 增强了 request 对象的功能
 	(1).IO流实现细节, 举例以 BufferedOutputStream
 	
-	1.抽象构件角色Component 
-		public interface Flushable {
-			
-			void flush() throws IOException;
-		}
-		
-	2.具体构件角色ConcreteComponent(真实对象)
-		public abstract class OutputStream implements Closeable, Flushable {
-			
-			public void flush() throws IOException {
-			}
-		}		
+1.抽象构件角色Component 
+public interface Flushable {
 	
-	3.装饰角色Decorator 
-		public class FilterOutputStream extends OutputStream {
-			protected OutputStream out;
-			
-			public FilterOutputStream(OutputStream out) {
-				this.out = out;
-			}
-			
-			public void flush() throws IOException {
-				out.flush();
-			}
-		}
+	void flush() throws IOException;
+}
+
+2.具体构件角色ConcreteComponent(真实对象)
+public abstract class OutputStream implements Closeable, Flushable {
 	
-	4.具体装饰角色ConcreteDecorator 
-		public class BufferedOutputStream extends FilterOutputStream {
-			
-			public BufferedOutputStream(OutputStream out) {
-				this(out, 8192);
-			}
-			
-			public synchronized void flush() throws IOException {
-				flushBuffer();
-				out.flush();
-			}
-		}
+	public void flush() throws IOException {
+	}
+}		
+
+3.装饰角色Decorator 
+public class FilterOutputStream extends OutputStream {
+	protected OutputStream out;
+	
+	public FilterOutputStream(OutputStream out) {
+		this.out = out;
+	}
+	
+	public void flush() throws IOException {
+		out.flush();
+	}
+}
+
+4.具体装饰角色ConcreteDecorator 
+public class BufferedOutputStream extends FilterOutputStream {
+	
+	public BufferedOutputStream(OutputStream out) {
+		this(out, 8192);
+	}
+	
+	public synchronized void flush() throws IOException {
+		flushBuffer();
+		out.flush();
+	}
+}
 
 //}
 

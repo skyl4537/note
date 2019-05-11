@@ -311,6 +311,35 @@ static class Add {
 
 ## 运算符
 
+> `Math.round(double num);`函数是取整函数，只关注小数点后第一位小数值。
+
+```java
+long l = Math.round(-1.45); //-1
+long l = Math.round(-1.55); //-2 --> 同sql，先绝对值，再四舍五入，最后加符号
+
+double d = Math.ceil(-1.45);  //-1.0
+double d = Math.floor(-1.45); //-2.0 -->同sql，向下取值，即向x轴负方向取值
+
+double d = Math.floor(-10 / -3); //3.0
+double d = Math.floor(-10 % -3); //-1.0 -->同sql，结果符号位和被除数一致。 a%b = a-a/b*b
+```
+
+> 保留两位有效小数（两种方式）
+
+```java
+double val0 = (Math.round(1.1249 * 100)) / 100.0;
+double val1 = (Math.round(1.1250 * 100)) / 100.0;
+System.out.println(val0 + " - " + val1); //1.12 - 1.13
+```
+
+```java
+String val0 = String.format("%.2f", 1.1249);
+String val1 = String.format("%.2f", 1.1250);
+System.out.println(val0 + " - " + val1); //1.12 - 1.13
+```
+
+
+
 > &，&& ---> 都是逻辑与运算符，但后者为短路运算
 
 &， 左边无论真假，右边都要运算
@@ -364,7 +393,6 @@ if (x == 33 && ++y > 0) //y 不会增长
        Arrays.stream(dest).forEach(System.out::println); //b-c
    }
    ```
-
 
 
 # String#
@@ -540,7 +568,228 @@ public void test() {
    输出结果：com/study/s.r - //////////s.ra - /om.study.s.rf
    ```
 
-7. ​
+
+> 特殊空格
+
+平时用键盘输入的空格ASCII值是32，而这个特殊空格的ASCII值为160。
+
+```java
+char char1 = ' '; //普通空格
+char char2 = ' '; //特殊的空格
+System.out.println((int) char1); //ASCII值-32
+System.out.println((int) char2); //ASCII值-160
+```
+
+特殊空格是一个不间断空格(non-breaking space)，本质就是页面上`&nbsp;`所产生的空格，作用就是在页面换行时不被打断。
+
+如果使用普通的空格，在换行时人名就会被打断，导致 Zhang 在第一行末尾，而 Xiaoming 跑到第二行开头。但是，如果使用不间断空格，则可以保持完整的人名在同一行的末尾（word中也有这种空格的使用）。
+
+```java
+页面某一行的末尾是一个人名Zhang Xiaoming //不间断空格
+
+页面某一行的末尾是一个人名Zhang //使用普通空格
+Xiaoming
+```
+
+**注意**：不间断空格有个问题，就是它无法被`trim()`所裁剪，也无法被正则表达式的`\s`所匹配，也无法被StringUtils的`isBlank()`所识别，也就是说，无法像裁剪普通空格那样移除这个不间断空格。
+
+**正确做法**：利用不间断空格的Unicode编码来移除它，其编码为`\u00A0`。
+
+```java
+String str = "abc ";
+String replace = str.replaceAll("\\u00A0", " ").trim();
+System.out.println(str.length() + " - " + replace.length()); //4 - 3
+```
+
+# Interface
+
+> OverWrite & OverLoad：`重载与方法的返回值类型无关`
+
+**重写：** 在子类中，出现和父类中一摸一样的方法。
+
+**重载：** 同一类中，出现多个方法名一样，但参数列表（参数类型+个数+顺序）不一样的方法。
+
+方法包括：  修饰符（可选）， 返回值类型，方法名，参数列表，方法体。
+假设定义了两个只有返回类型不一样的方法： int add(Object o); 和 boolean add(Object o); 当调用者不关心返回值时，写作：`add(obj);`编译器如何区分到底调用的是哪个方法？？
+
+> 方法调用，传递参数遵循值传递原则（传递的都是数据的拷贝）。
+
+- `基本类型传递的是数据值的拷贝。`在方法内对值类型操作不会改变原有值。
+
+- `引用类型传递的是该对象的堆内存地址，即引用拷贝，但指向同一个对象。`所以，在方法内对引用类型进行重新赋引用，不会改变原有值。但是对原有引用的属性进行操作时，可改变这个引用的属性值。
+
+```java
+private void doSth(int i, String s, Person p) {
+    i += 1;
+    s += "hello";
+    p = new Person("li", 20);
+    // p.age = 30; //将改变原有引用的属性值
+}
+```
+
+> this & super
+
+- **this：** 子类调用【子类】的同名成员或方法。**super：** 子类调用【父类】的...。
+- 构造函数间调用使用 `this() 或 super(name)` 语句，并且该语句只能放在构造函数第一行。
+
+```java
+class Outter {
+    int num = 10;
+
+    class Inner {
+        int num = 20;
+
+        void show() {
+            int num = 30;
+
+            System.out.println(num); //30
+            System.out.println(this.num); //20
+            System.out.println(Outter.this.num); //10 --> 切记不能使用 super
+        }
+    }
+}
+```
+
+- 子类通过构造函数进行实例化时，会先调用父类的构造函数。如果没有显示的指明调用哪个父类构造时，`默认调用父类的无参构造`。
+- 对于子类来说，不管是无参构造方法还是有参构造方法，`都会默认调用父类的无参构造方法`；当编译器尝试在子类中往这两个构造方法插入super()方法时，因为父类没有一个默认的无参构造方法，所以编译器报错；
+
+```java
+class Super {
+    private int id;
+
+    public Super(int id) {
+        this.id = id;
+    }
+}
+
+class Sub extends Super {
+    public Sub() { //编译错误
+    }
+
+    public Sub(int id) { //编译错误
+    }
+}
+```
+
+> 抽象类 & 接口
+
+接口`extends`接口， 抽象类`implements`接口， 抽象类`extends`具体类。
+
+**抽象类与普通类的区别**：不能创建实例和允许有 abstract 方法。抽象类中可以有静态方法。
+
+abstract修饰的类是抽象类，它不能生成对象，它是不完整的，只能作为基类。类可以实现无限个接口，但仅仅能从一个抽象类继承。
+
+java中抽象类中可以有非抽象方法，继承抽象类必须要实现它其中的抽象方法。因此，Dog编译报错
+
+```java
+abstract class Animal {
+    abstract void eat();
+}
+class Dog extends Animal { //编译报错
+    public Dog() {
+        System.out.println("I am a dog");
+    }
+}
+```
+
+
+
+
+
+> 方法重写 & final
+
+- final修饰的方法不可以被重写，如果子类对final修饰的方法进行重写则编译报错。
+- private修饰的方法对于子类不可见，同样的方法名同时出现在父类和子类表示新定义的方法，与父类无关。
+- 当方法被覆盖后，调用子类实例的同名方法时会优先调用覆盖的方法，不会再调用父类的方法。
+
+```java
+class Father {
+    private final void run() {
+        System.out.println("father");
+    }
+}
+class Son extends Father {
+    private final void run() {
+        System.out.println("son");
+    }
+}
+
+//父类run()由private、final修饰，因此与子类无关。如果去除private，则子类run()编译错误。
+new Son().run(); //结果输出：son
+```
+
+```java
+public class Parent {
+    private void fun1(){}
+    void fun2(){}
+    protected void fun3(){}
+    public static void fun4(){}
+}
+//A.fun1方法为私有权限，无法被子类继承，因此无法被重写
+//B.fun2方法为包权限，因此在同一个包内继承时，可以重写，但其他包继承无法重写
+//C.fun3方法为子类访问权限，因此无论如何继承，都可以被重写。
+//D.fun4方法虽然是公有的访问权限，但为静态方法，无法被继承，并且子类无法定义同名方法。
+```
+
+
+
+
+
+
+
+> **多态：** 父类的引用指向子类的对象。
+
+```java
+static class Father {
+    public static int staticNum = 6;
+    public int num = 6;
+
+    public static void doStatic() {
+        System.out.println("Father-Static");
+    }
+
+    public void doSth() {
+        System.out.println("Father");
+    }
+}
+
+static class Son extends Father {
+    public static int staticNum = 8;
+    public int num = 8;
+
+    //不能重写 static 方法
+    public static void doStatic() {
+        System.out.println("Son-Static");
+    }
+
+    @Override
+    public void doSth() {
+        System.out.println("Son");
+    }
+
+    public void doSon() {
+        System.out.println("Son-do");
+    }
+}
+
+@Test
+public void test() {
+    Father father = new Son();
+
+    //看左-静态
+    System.out.println(father.staticNum); //6
+    father.doStatic(); //Father-Static
+
+    //看左-实例变量
+    System.out.println(father.num); //6
+
+    //看右-实例方法 --> 重写
+    father.doSth(); //Son
+
+    //类型为 Father 的变量不能直接执行 Son 类的方法 --> 编译看左
+    ((Son) father).doSon(); //Son-do
+}
+```
 
 
 
@@ -616,11 +865,12 @@ Date editTime = new Date();
 
 # Collection
 
+![](assets/collection.png)
+
 ## 数组 & 集合
 
->**数组：** 固定长度（不能动态改变数组的长度），只能放一种类型。
->
->**集合：** 可变长度， 可以存多种类型（在不考虑泛型的前提下）。
+>数组： 固定长度（不能动态改变数组的长度），只能放一种类型。
+>集合： 可变长度， 可以存多种类型（在不考虑泛型的前提下）。
 
 ```java
 List list = new ArrayList();
@@ -655,15 +905,14 @@ List<String> list = new ArrayList<String>() {{
 - 第二层花括号，在匿名内部类中定义了一个 `构造代码块`
 - 通过 new 得到ArrayList的子类的实例化，然后上转型为ArrayList的引用
 - 得到的 list 实际上是ArrayList的子类的引用，但在功能上没有任何改变
-- 相比于常规标准方式进行初始化要简洁许多（但代码可读性相对会差）
+- 相比于常规标准方式进行初始化要简洁许多，但代码可读性相对会差
 
 ## List & Set
 
->**List：** 排列有序（存入和取出的顺序一定相同），元素可重复。
->
->**Set：** 排列无序，元素不可重复。
+>List： 排列有序（存入和取出的顺序一定相同，存在索引），元素可重复。
+>Set： 排列无序，元素不可重复。
 
-List的`contains()`和`remove()`底层调用的都是`equals()`，但是Set却是`hashCode()`和`equals()`。
+List的`contains()`和`remove()`底层调用的都是`equals()`。但Set却是`hashCode()`和`equals()`。
 
 >Set如何保证元素唯一性？？？
 
@@ -673,39 +922,53 @@ List的`contains()`和`remove()`底层调用的都是`equals()`，但是Set却�
 
  在同样的哈希值下顺延（可认为哈希值相同的元素放在一个哈希桶中），也就是哈希一样的存一列。
 
->TreeSet排序是如何进行的呢？？
+>TreeSet排序是如何进行的呢？？`两种比较器同时存在，以集合自身比较器为准`
 
 1. 元素实现接口Comparable
 
-   ```java
-   public class Dog implements Comparable<Dog> {
-       @Override
-       public int compareTo(Dog o) {
-           if (this.name.compareTo(o.getName()) == 0) { //先比较 name,再比较 age
-               return Integer.compare(this.age, o.getAge());
-           } else {
-               return this.name.compareTo(o.getName());
-           }
-       }
-   }
-   ```
+```java
+public class Dog implements Comparable<Dog> {
+    @Override
+    public int compareTo(Dog o) {
+        if (this.name.compareTo(o.getName()) == 0) { //先比较 name,再比较 age
+            return Integer.compare(this.age, o.getAge());
+        } else {
+            return this.name.compareTo(o.getName());
+        }
+    }
+}
+```
 
-2. 集合添加比较器
+2. 集合添加比较器：当元素自身不具备比较性，或具备的比较性不满足要求时，让集合自身具备比较性
 
-   ```java
-   //元素自身不具备比较性，或具备的比较性不满足要求时，需要让 TreeSet 集合自身具备比较性
-   TreeSet<Dog> dogSet = new TreeSet<>(new Comparator<Dog>() {
-       @Override
-       public int compare(Dog o1, Dog o2) {
-           int compare = o1.getName().compareTo(o2.getName()); //先比较 name，再比较 age
-           if (compare == 0) {
-               return Integer.compare(o1.getAge(), o2.getAge());
-           } else {
-               return compare;
-           }
-       }
-   });
-   ```
+```java
+TreeSet<Dog> dogSet = new TreeSet<>(new Comparator<Dog>() {
+    @Override
+    public int compare(Dog o1, Dog o2) {
+        int compare = o1.getName().compareTo(o2.getName()); //先比较 name，再比较 age
+        if (compare == 0) {
+            return Integer.compare(o1.getAge(), o2.getAge());
+        } else {
+            return compare;
+        }
+    }
+});
+```
+
+
+> ArrayList & Vector & LinkedList
+
+同步性：Vector 是同步的（线程安全），ArrayList线程序不安全
+数据增长：当需要增长时，Vector 默认增长一倍，ArrayList 却是 0.5
+
+
+
+## Map
+
+Map 存储的是键值对。Map 集合中 Key 要保证唯一性。
+
+Map 集合没有直接取出元素的方法，而是先将key集合或value集合转成 Set 集合，在通过迭代获取元素。
+
 
 
 ## Iterator
@@ -782,6 +1045,8 @@ for (String s : list) {
 
 
 
+
+
 ## 常用方法
 
 > NULL：高度注意 Map 类集合 K/V 能不能存储 null 值的情况
@@ -829,7 +1094,7 @@ String[] array = list.toArray(new String[list.size()]); //推荐
 
 Object[] array1 = list.toArray(); //不推荐
 ```
-> foreach()：使用 entrySet 遍历Map集合，而不是 keySet 方式进行遍历
+> foreach()：`推荐使用 entrySet 遍历Map集合`，而不是 keySet 方式进行遍历
 
 ```java
 Map<String, String> map = new HashMap<String, String>() {{
@@ -843,7 +1108,7 @@ for (String key : map.keySet()) {
     System.out.println(key + ":" + map.get(key));
 }
 
-//(2).entrySet() 只遍历一次。【推荐使用】
+//(2).entrySet() 只遍历一次。
 //遍历1次就把 kV 都放到了 entry 中，效率更高。JDK8的 Map.forEach() 就是这个原理
 for (Map.Entry<String, String> entry : map.entrySet()) {
     System.out.println(entry.getKey() + ":" + entry.getValue());
@@ -1153,201 +1418,6 @@ public void test() {
 }
 ```
 
-## interface
-
-> OverWrite & OverLoad
-
-- **重写：** 在子类中，出现和父类中一摸一样的方法。
-
-
-- **重载：** 同一类中，出现多个方法名一样，但参数列表（参数类型+个数+顺序）不一样的方法。
-
-> 重载与方法的返回值类型无关。
-
-**方法包括：**  修饰符（可选）， 返回值类型，方法名，参数列表，方法体。
-假设定义了两个只有返回类型不一样的方法： `int add(Object o); boolean add(Object o);`
-当调用者不关心返回值时，写作：`add(obj);`编译器如何区分到底调用的是哪个方法???
-
-> 方法调用中传递参数时，遵循值传递的原则（传递的都是数据的拷贝）。
-
-- `基本类型传递的是数据值的拷贝。`在方法内对值类型操作不会改变原有值。
-
-- `引用类型传递的是该对象的堆内存地址，即引用拷贝，但指向同一个对象。`在方法内对引用类型进行重新赋引用，不会改变原有值。但是对原有引用的属性进行操作时，可改变这个引用的属性值。
-
-  ```java
-  private void doSth(int i, String s, Person p) {
-      i += 1;
-      s += "hello";
-      p = new Person("li", 20);
-      // p.age = 30; //将改变原有引用的属性值
-  }
-  ```
-
-> this & super
-
-- **this：** 子类调用【子类】的同名成员或方法。**super：** 子类调用【父类】的...。
-- 构造函数间调用使用 `this() 或 super(name)` 语句，并且该语句只能放在构造函数第一行。
-
-```java
-class Outter {
-    int num = 10;
-
-    class Inner {
-        int num = 20;
-
-        void show() {
-            int num = 30;
-
-            System.out.println(num); //30
-            System.out.println(this.num); //20
-            System.out.println(Outter.this.num); //10 --> 切记不能使用 super
-        }
-    }
-}
-```
-
-- 子类通过构造函数进行实例化时，会先调用父类的构造函数。如果没有显示的指明调用哪个父类构造时，`默认调用父类的无参构造`。
-- 对于子类来说，不管是无参构造方法还是有参构造方法，`都会默认调用父类的无参构造方法`；当编译器尝试在子类中往这两个构造方法插入super()方法时，因为父类没有一个默认的无参构造方法，所以编译器报错；
-
-```java
-class Super {
-    private int id;
-
-    public Super(int id) {
-        this.id = id;
-    }
-}
-
-class Sub extends Super {
-    public Sub() { //编译错误
-    }
-
-    public Sub(int id) { //编译错误
-    }
-}
-```
-
-> 抽象类 & 接口
-
-接口`extends`接口， 抽象类`implements`接口， 抽象类`extends`具体类。
-
-**抽象类与普通类的区别**：不能创建实例和允许有 abstract 方法。抽象类中可以有静态方法。
-
-abstract修饰的类是抽象类，它不能生成对象，它是不完整的，只能作为基类。类可以实现无限个接口，但仅仅能从一个抽象类继承。
-
-java中抽象类中可以有非抽象方法，继承抽象类必须要实现它其中的抽象方法。因此，Dog编译报错
-
-```java
-abstract class Animal {
-    abstract void eat();
-}
-class Dog extends Animal { //编译报错
-    public Dog() {
-        System.out.println("I am a dog");
-    }
-}
-```
-
-
-
-
-
-> 方法重写 & final
-
-- final修饰的方法不可以被重写，如果子类对final修饰的方法进行重写则编译报错。
-- private修饰的方法对于子类不可见，同样的方法名同时出现在父类和子类表示新定义的方法，与父类无关。
-- 当方法被覆盖后，调用子类实例的同名方法时会优先调用覆盖的方法，不会再调用父类的方法。
-
-```java
-class Father {
-    private final void run() {
-        System.out.println("father");
-    }
-}
-class Son extends Father {
-    private final void run() {
-        System.out.println("son");
-    }
-}
-
-//父类run()由private、final修饰，因此与子类无关。如果去除private，则子类run()编译错误。
-new Son().run(); //结果输出：son
-```
-
-```java
-public class Parent {
-    private void fun1(){}
-    void fun2(){}
-    protected void fun3(){}
-    public static void fun4(){}
-}
-//A.fun1方法为私有权限，无法被子类继承，因此无法被重写
-//B.fun2方法为包权限，因此在同一个包内继承时，可以重写，但其他包继承无法重写
-//C.fun3方法为子类访问权限，因此无论如何继承，都可以被重写。
-//D.fun4方法虽然是公有的访问权限，但为静态方法，无法被继承，并且子类无法定义同名方法。
-```
-
-
-
-
-
-
-
-> **多态：** 父类的引用指向子类的对象。
-
-```java
-static class Father {
-    public static int staticNum = 6;
-    public int num = 6;
-
-    public static void doStatic() {
-        System.out.println("Father-Static");
-    }
-
-    public void doSth() {
-        System.out.println("Father");
-    }
-}
-
-static class Son extends Father {
-    public static int staticNum = 8;
-    public int num = 8;
-
-    //不能重写 static 方法
-    public static void doStatic() {
-        System.out.println("Son-Static");
-    }
-
-    @Override
-    public void doSth() {
-        System.out.println("Son");
-    }
-
-    public void doSon() {
-        System.out.println("Son-do");
-    }
-}
-
-@Test
-public void test() {
-    Father father = new Son();
-
-    //看左-静态
-    System.out.println(father.staticNum); //6
-    father.doStatic(); //Father-Static
-
-    //看左-实例变量
-    System.out.println(father.num); //6
-
-    //看右-实例方法 --> 重写
-    father.doSth(); //Son
-
-    //类型为 Father 的变量不能直接执行 Son 类的方法 --> 编译看左
-    ((Son) father).doSon(); //Son-do
-}
-```
-
-
 
 
 
@@ -1533,10 +1603,6 @@ public void test() {
     
     ConcurrentHashMap的'读取操作没有用到锁定',所以读取操作几乎是完全的并发操作.
     而'写操作锁定的粒度又非常细', 比起之前又更加快速(桶越多,表现越明显). '只有在求size等操作时才需要锁定整个表'
-##ArrayList & Vector & LinkedList
-
-    同步性   -> Vector 是线程安全的(同步), ArrayList 是线程序不安全的
-    数据增长 -> 当需要增长时,Vector 默认增长一倍, ArrayList 却是 0.5
 
 ##HashMap & Hashtable
 
@@ -1550,19 +1616,21 @@ public void test() {
 
 # IO
 
-##IO操作
+##IO流
 
 按流向分为：输入流，输出流。
-按操作数据分为两种：字节流，字符流。
+
+按操作数据分为：字节流 （如音频，图片等），字符流（如文本）。
 
 字节流的抽象基类：InputStream，OutputStream。字符流的抽象基类：Reader，Writer。
 
+> 文件拷贝：字节流 + 字符流
+
 ```java
-//文件拷贝【字节版】
 try (FileInputStream fis = new FileInputStream(srcPath);
      FileOutputStream fos = new FileOutputStream(destPath)) {
     int len;
-    byte[] buf = new byte[1024 * 4]; //字节数组
+    byte[] buf = new byte[1024 * 4]; //字节流
     while (-1 != (len = fis.read(buf))) {
         fos.write(buf, 0, len);
     }
@@ -1572,7 +1640,6 @@ try (FileInputStream fis = new FileInputStream(srcPath);
 ```
 
 ```java
-//文件拷贝【字符版】
 try (BufferedReader br = new BufferedReader(new FileReader(srcPath));
      BufferedWriter bw = new BufferedWriter(new FileWriter(destPath))) {
     String line;
@@ -1587,13 +1654,13 @@ try (BufferedReader br = new BufferedReader(new FileReader(srcPath));
 }
 ```
 
-> 转换流 InputStreamReader()
+> 转换流：字节流转换成字符流 InputStreamReader()
 
 ```java
-BufferedReader br = new BufferedReader(new InputStreamReader(System.in)); //键盘输入是字节流
+br = new BufferedReader(new InputStreamReader(new FileInputStream(filePath)));
 ```
 
-> close(); flush();
+> 区别 close(); flush();
 
 - **close()** `先刷新一次缓冲区，再关闭流对象`，关闭之后，流对象将不可用
 - **flush()** `仅仅刷新缓冲区`（一般写字符时，先写入缓冲区），刷新之后，流对象还可以继续使用
@@ -1601,12 +1668,36 @@ BufferedReader br = new BufferedReader(new InputStreamReader(System.in)); //键�
 > 常用方法
 
 ```java
-boolean Mkdir();    //只用于创建单层目录
-boolean Mkdirs();   //用于创建多层目录
+boolean Mkdir();    //用于创建单层目录
+boolean Mkdirs();   //.......多.....
 
-boolean renameTo(); //重命名抽象路径名表示的文件
+boolean renameTo(); //重命名
+boolean b = new File(src).renameTo(new File(dest)); //重命名-DEMO
 ```
 
+## 字符编码
+
+GBK：占用两个字节，比GB2312编码多了很多汉字，如"镕"字。
+
+UTF-8：是Unicode一种具体的编码实现。是一种变长编码方式，使用1-4个字节进行编码，有利于节约网络流量。
+
+> UTF-8编码规则
+
+```java
+① 对于单字节的符号，字节的第一位设为0，后面7位为这个符号的unicode码。因此对于英语字母，UTF-8编码和ASCII码是相同的。
+
+② 对于n字节的符号（n>1），第一个字节的前n位都设为1，第n+1位设为0，后面字节的前两位一律设为10。剩下的没有提及的二进制位，全部为这个符号的unicode码。
+
+假如有个字符占用3个字节，则：第一个字节以 1110 开始，第二三个字节以 10 开始。
+```
+
+```java
+byte[] bytes = "联通".getBytes("GBK");
+for (byte aByte : bytes) {
+    // 11000001 10101010 11001101 10101000 --> 两个汉字，4个字节
+    System.out.println(Integer.toBinaryString(aByte & 255));
+}
+```
 
 ## Properties
 
@@ -1732,6 +1823,155 @@ for (int i = 1; i < 13; i++) {
 
 
 
+
+# Socket
+
+Socket 就是为网络服务提供的一种机制，网络通信其实就是 Socket 间的通信。通信两端都是 Socket，数据在两个 Socket 间通过 IO 传输。
+
+## InetAddress
+
+```java
+// InetAddress inet = InetAddress.getLocalHost(); //本机
+InetAddress inet = InetAddress.getByName("192.168.8.8"); //指定ip
+
+String name = inet.getHostName(); //主机名
+String ip = inet.getHostAddress(); //IP字符串
+```
+
+## UDP
+
+UDP：面向无连接。数据包一次传输最大64K。不可靠，容易丢包，但是速度快。`例子：发短信`
+
+TCP：需要先通过3次握手建立链接，所以是可靠协议，但效率稍低。传输数据量无限制。`例子：打电话`
+
+>UDP通信
+
+```java
+public static void main(String[] args) throws Exception {
+    ExecutorService pool = Executors.newCachedThreadPool();
+
+    DatagramSocket ds = new DatagramSocket(7001); //通过 DatagramSocket 对象，创建 UDP 服务
+    pool.execute(() -> sendMsg(ds, "192.168.8.7", 8001, "hello", "客户端-发送："));
+    pool.execute(() -> recvMsg(ds, "客户端-接收："));
+
+    DatagramSocket ds1 = new DatagramSocket(8001);
+    pool.execute(() -> sendMsg(ds1, "192.168.8.7", 7001, "world", "服务端-发送："));
+    pool.execute(() -> recvMsg(ds1, "服务端-接收："));
+}
+```
+
+```java
+// 发送消息
+private static void sendMsg(DatagramSocket ds, String ip, int port, String msg, String mark) {
+    byte[] buf = msg.getBytes();
+    try {
+        //发送数据包，数据包内容：数据的字节数组，目标ip，目标端口号
+        ds.send(new DatagramPacket(buf, buf.length, InetAddress.getByName(ip), port));
+        System.out.println(mark + msg);
+    } catch (IOException e) {
+        e.printStackTrace();
+    }
+}
+```
+
+```java
+// 接收消息
+private static void recvMsg(DatagramSocket ds, String mark) {
+    while (true) {
+        try {
+            byte[] buf = new byte[4 * 1024];
+            DatagramPacket dp = new DatagramPacket(buf, buf.length);
+            ds.receive(dp); //接收数据包
+
+            String host = dp.getAddress().getHostName(); //解析数据包
+            int port = dp.getPort();
+            String msg = new String(dp.getData(), 0, dp.getLength());
+
+            System.out.println(mark + host + ":" + port + " - " + msg);
+        } catch (Exception e) {
+            e.printStackTrace();
+        }
+    }
+}
+```
+
+## TCP
+
+> 服务端
+
+```java
+public static void main(String[] args) {
+    ExecutorService pool = Executors.newCachedThreadPool();
+    try (ServerSocket server = new ServerSocket(8100)) {
+
+        while (true) {
+            Socket socket = server.accept(); //阻塞方法，接受客户端请求
+            pool.execute(() -> recvMsg(socket)); //一个客户端一个线程去处理
+        }
+    } catch (IOException e) {
+        e.printStackTrace();
+    }
+}
+
+private static void recvMsg(Socket socket) {
+    try (BufferedReader br = new BufferedReader(
+        new InputStreamReader(socket.getInputStream()));
+         BufferedWriter bw = new BufferedWriter(
+             new OutputStreamWriter(socket.getOutputStream()))) {
+
+        String line;
+        StringBuilder sb = new StringBuilder();
+        while (null != (line = br.readLine())) {
+            sb.append(line);
+        }
+        System.out.println("<- ：" + sb);
+
+        String recv = "java\r\n" + LocalDateTime.now();
+        bw.write(recv);
+        bw.flush();
+        System.out.println("C-> ：" + recv);
+    } catch (IOException e) {
+        e.printStackTrace();
+    }
+}
+```
+
+> 客户端
+
+```java
+public static void main(String[] args) {
+    int nThreads = 2;
+    ExecutorService pool = Executors.newFixedThreadPool(nThreads);
+
+    for (int i = 0; i < nThreads; i++) {
+        int index = i;
+        pool.execute(() -> sendMsg(index));
+    }
+}
+
+private static void sendMsg(int index) {
+    try (Socket socket = new Socket("127.0.0.1", 8100);
+         BufferedReader br = new BufferedReader(
+             new InputStreamReader(socket.getInputStream()));
+         BufferedWriter bw = new BufferedWriter(
+             new OutputStreamWriter(socket.getOutputStream()))) {
+
+        String send = "hello\r\n" + index + "\n";
+        bw.write(send);
+        bw.flush();
+        System.out.println("S->：" + send);
+
+        String line;
+        StringBuilder sb = new StringBuilder();
+        while (null != (line = br.readLine())) {
+            sb.append(line);
+        }
+        System.out.println("S<- ：" + sb);
+    } catch (IOException e) {
+        e.printStackTrace();
+    }
+}
+```
 
 
 
@@ -1936,6 +2176,13 @@ public void doArgs() throws NoSuchMethodException {
 
 
 
+
+
+
+
+
+
+#11
 
 
 

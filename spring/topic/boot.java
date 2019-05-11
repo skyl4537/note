@@ -2447,7 +2447,7 @@ https://github.com/codecentric/spring-boot-admin
 //}
 
 
-//{--------<<<Docker>>>------------------------------
+//{--------<<<Docker>>>------------------------------X
 #ABC
 	能够把应用程序自动部署到容器的开源引擎; 轻量级容器技术!
 	
@@ -2480,133 +2480,133 @@ https://github.com/codecentric/spring-boot-admin
 		newgrp - docker					//切换当前会话到新 group
 
 #CentOS安装
-	$ yum install docker
-	$ systemctl start/restart docker
-	$ docker -v						//docker版本
-	$ systemctl enable docker		//开机启动
+$ yum install docker
+$ systemctl start/restart docker
+$ docker -v						//docker版本
+$ systemctl enable docker		//开机启动
 	
 #相关命令 
 	//http://www.runoob.com/docker/docker-command-manual.html
 	1.状态
-		service docker status(SSR)
-		docker info
+service docker status(SSR)
+docker info
 		
 	2.镜像
-		docker search mysql
-		docker pull mysql:5.6.7
-		/// docker pull registry.docker-cn.com/library/mysql:5.6.7 ---> 官方加速
-		
-		docker images [-q]				//-q: 只显示id
-		docker rmi [-f] IMAGE_ID
-		docker rmi $(docker image -q)	//删除所有
-		
-		docker inspect IMAGE_ID			//相关信息
-		docker tag IMAGE_ID NEW_NAME:NEW_TAG //拷贝重命名
+docker search mysql
+docker pull mysql:5.6.7
+/// docker pull registry.docker-cn.com/library/mysql:5.6.7 ---> 官方加速
+
+docker images [-q]				//-q: 只显示id
+docker rmi [-f] IMAGE_ID
+docker rmi $(docker image -q)	//删除所有
+
+docker inspect IMAGE_ID			//相关信息
+docker tag IMAGE_ID NEW_NAME:NEW_TAG //拷贝重命名
 	
 	3.容器
-		docker ps [-a]				//运行中的容器.(-a: 所有)
-		docker start(SSR) CONTAINER //容器的启动,停止,重启
-		docker rm CONTAINER			//移除容器(停止状态); rm->移除容器; rmi->移除镜像!
-		
-		docker top CONTAINER		//容器内进程
-		docker inspect CONTAINER	//容器相关信息
-		
-		docker logs [-t] [--tail 10] CONTAINER	//容器日志(-t: 显示时间, --tail: 最新10条)
+docker ps [-a]				//运行中的容器.(-a: 所有)
+docker start(SSR) CONTAINER //容器的启动,停止,重启
+docker rm CONTAINER			//移除容器(停止状态); rm->移除容器; rmi->移除镜像!
+
+docker top CONTAINER		//容器内进程
+docker inspect CONTAINER	//容器相关信息
+
+docker logs [-t] [--tail 10] CONTAINER	//容器日志(-t: 显示时间, --tail: 最新10条)
 	
 	4.互动
-		docker exec -it CONTAINER /bin/bash		//进入容器.(exit: 退出)
-		
-		docker cp CONTAINER:SRC_PATH DEST_PATH	//拷出来
-		docker cp DEST_PATH CONTAINER:SRC_PATH	//拷进去
+docker exec -it CONTAINER /bin/bash		//进入容器.(exit: 退出)
+
+docker cp CONTAINER:SRC_PATH DEST_PATH	//拷出来
+docker cp DEST_PATH CONTAINER:SRC_PATH	//拷进去
 	
 #启动容器(docker run)
-	(0).--name ---> 为容器指定一个名称 //--name ES01
-	(1).-d ---> 后台运行容器,并返回容器ID
+(0).--name ---> 为容器指定一个名称 //--name ES01
+(1).-d ---> 后台运行容器,并返回容器ID
+
+(2).-e ---> 设置环境变量  //-e ES_JAVA_OPTS="-Xms256m -Xmx256m"
 	
-	(2).-e ---> 设置环境变量  //-e ES_JAVA_OPTS="-Xms256m -Xmx256m"
-		
-	(3).-p ---> 端口映射,格式为: 主机(宿主):容器 //-p 9200:9200
-	
-	(4).-v ---> 容器启动时,挂载宿主机的目录作为配置文件 //-v /conf/mysql:/etc/mysql/conf.d
-	
-	(5).-it --> 配合 exec 使用,开启一个交互模式的终端	
+(3).-p ---> 端口映射,格式为: 主机(宿主):容器 //-p 9200:9200
+
+(4).-v ---> 容器启动时,挂载宿主机的目录作为配置文件 //-v /conf/mysql:/etc/mysql/conf.d
+
+(5).-it --> 配合 exec 使用,开启一个交互模式的终端	
 	
 #DEMO-RUN
 	0.ES
-		//后台启动ES,指定内存大小,端口号,及自定义名称
-		//ES的web通信使用 9200, 分布式集群的节点间通信使用 9300
-		docker run --name ES01 -d -e ES_JAVA_OPTS="-Xms256m -Xmx256m" -p 9200:9200 -p 9300:9300 4f7e4c61f09d
-		
-		//将 IK 插件解压到宿主机,然后配置docker容器加载宿主机 /plugins 目录.
-		docker run --name ES02 -d -e ES_JAVA_OPTS="-Xms256m -Xmx256m" -p 9201:9200 -p 9301:9300 -v /var/tmp/plugins:/usr/share/elasticsearch/plugins 4f7e4c61f09d
+//后台启动ES,指定内存大小,端口号,及自定义名称
+//ES的web通信使用 9200, 分布式集群的节点间通信使用 9300
+docker run --name ES01 -d -e ES_JAVA_OPTS="-Xms256m -Xmx256m" -p 9200:9200 -p 9300:9300 4f7e4c61f09d
+
+//将 IK 插件解压到宿主机,然后配置docker容器加载宿主机 /plugins 目录.
+docker run --name ES02 -d -e ES_JAVA_OPTS="-Xms256m -Xmx256m" -p 9201:9200 -p 9301:9300 -v /var/tmp/plugins:/usr/share/elasticsearch/plugins 4f7e4c61f09d
 
 	1.tomcat
-		//最后参数 ---> 镜像名:版本号(latest可省)
-		docker run --name tomcat01 -d -p 9090:8080 tomcat:8.5-jre8-alpine
+//最后参数 ---> 镜像名:版本号(latest可省)
+docker run --name tomcat01 -d -p 9090:8080 tomcat:8.5-jre8-alpine
 		
 	2.mysql
-		//指定root密码
-		docker run --name mysql01 -d -p 33066:3306 -e MYSQL_ROOT_PASSWORD=123456 mysql
+//指定root密码
+docker run --name mysql01 -d -p 33066:3306 -e MYSQL_ROOT_PASSWORD=123456 mysql
 
-		//启动,并指定一些配置参数
-		docker run --name mysql02 -d -e MYSQL_ROOT_PASSWORD=123456 mysql:tag --character-set-server=utf8mb4 --collation-server=utf8mb4_unicode_ci
-		
-		//将上述配置参数保存到宿主机文件'/conf/mysql'
-		//启动,指定 docker-mysql 加载宿主机的配置文件. 即可以修改宿主机文件来配置mysql
-		docker run --name mysql02 -d -e MYSQL_ROOT_PASSWORD=123456 mysql:tag -v /conf/mysql:/etc/mysql/conf.d
+//启动,并指定一些配置参数
+docker run --name mysql02 -d -e MYSQL_ROOT_PASSWORD=123456 mysql:tag --character-set-server=utf8mb4 --collation-server=utf8mb4_unicode_ci
+
+//将上述配置参数保存到宿主机文件'/conf/mysql'
+//启动,指定 docker-mysql 加载宿主机的配置文件. 即可以修改宿主机文件来配置mysql
+docker run --name mysql02 -d -e MYSQL_ROOT_PASSWORD=123456 mysql:tag -v /conf/mysql:/etc/mysql/conf.d
 		
 	3.mysql-8.0.4
-		///对于 8.0.4 之后的mysql版本,不能简单的通过 '-e MYSQL_ROOT_PASSWORD=123456' 来指定root密码.
-		docker exec -it 1457d60b0375  /bin/bash //进入mysql所在docker
-		
-		mysql -u root -p //进入docker-mysql
-		
-		ALTER USER 'root'@'%' IDENTIFIED WITH mysql_native_password BY '123456'; //修改root密码
-		
-		exit //执行两次,依次退出 docker-mysql, docker.
+///对于 8.0.4 之后的mysql版本,不能简单的通过 '-e MYSQL_ROOT_PASSWORD=123456' 来指定root密码.
+docker exec -it 1457d60b0375  /bin/bash //进入mysql所在docker
+
+mysql -u root -p //进入docker-mysql
+
+ALTER USER 'root'@'%' IDENTIFIED WITH mysql_native_password BY '123456'; //修改root密码
+
+exit //执行两次,依次退出 docker-mysql, docker.
 	
 #构建镜像
 	1.commit
-		//通过已有的容器,打包成新的镜像
-		// -a: 作者相关; -m: 描述信息; mysql01: 已有容器; skyl/mysql: 新镜像
-		docker commit -a 'skyl' -m 'hello skyl' mysql01 skyl/mysql
-		
-		//使用新镜像
-		docker run --name skyl-mysql -d -e MYSQL_ROOT_PASSWORD=123456 mysql
+//通过已有的容器,打包成新的镜像
+// -a: 作者相关; -m: 描述信息; mysql01: 已有容器; skyl/mysql: 新镜像
+docker commit -a 'skyl' -m 'hello skyl' mysql01 skyl/mysql
+
+//使用新镜像
+docker run --name skyl-mysql -d -e MYSQL_ROOT_PASSWORD=123456 mysql
 		
 	2.build
-		#First Dockerfile				//#   : 注释
-		FROM ubuntu:14.01				//FROM: 基础镜像, 必须写在第一行
-		MAINTAINER skyl 'skyl@qq.com'	//MAI*: 作者相关
-		RUN apt-get update				//RUN : 
-		RUN apt-get install -y nginx
-		EXPOSE 80						//运行该容器所使用的端口
-		
-		//build-构建(dockerfile所在目录)
-		docker build -t 'skyl-nginx' /var/tmp/docker/
+#First Dockerfile				//#   : 注释
+FROM ubuntu:14.01				//FROM: 基础镜像, 必须写在第一行
+MAINTAINER skyl 'skyl@qq.com'	//MAI*: 作者相关
+RUN apt-get update				//RUN : 
+RUN apt-get install -y nginx
+EXPOSE 80						//运行该容器所使用的端口
+
+//build-构建(dockerfile所在目录)
+docker build -t 'skyl-nginx' /var/tmp/docker/
 	
 #镜像加速
-	aliyun加速
-		https://cr.console.aliyun.com/cn-hangzhou/mirrors
-		
-	daocloud加速
-		https://hub.daocloud.io/
-
-	//直接设置 –registry-mirror 参数,仅对当前的命令有效 
-	docker run hello-world --registry-mirror=https://docker.mirrors.ustc.edu.cn
+aliyun加速
+	https://cr.console.aliyun.com/cn-hangzhou/mirrors
 	
-	//修改 /etc/default/docker,加入 DOCKER_OPTS=”镜像地址”,可以有多个 
-	DOCKER_OPTS="--registry-mirror=https://docker.mirrors.ustc.edu.cn"
+daocloud加速
+	https://hub.daocloud.io/
 
-	//支持 systemctl 的系统,通过 sudo systemctl edit docker.service
-	//会生成 etc/systemd/system/docker.service.d/override.conf 覆盖默认的参数,在该文件中加入如下内容
-	[Service] 
-	ExecStart= 
-	ExecStart=/usr/bin/docker -d -H fd:// --registry-mirror=https://docker.mirrors.ustc.edu.cn
-	
-	//新版的 Docker 推荐使用 json 配置文件的方式,默认为 /etc/docker/daemon.json
-	//非默认路径需要修改 dockerd 的 –config-file,在该文件中加入如下内容
-	{"registry-mirrors": ["https://docker.mirrors.ustc.edu.cn"]}		
+//直接设置 –registry-mirror 参数,仅对当前的命令有效 
+docker run hello-world --registry-mirror=https://docker.mirrors.ustc.edu.cn
+
+//修改 /etc/default/docker,加入 DOCKER_OPTS=”镜像地址”,可以有多个 
+DOCKER_OPTS="--registry-mirror=https://docker.mirrors.ustc.edu.cn"
+
+//支持 systemctl 的系统,通过 sudo systemctl edit docker.service
+//会生成 etc/systemd/system/docker.service.d/override.conf 覆盖默认的参数,在该文件中加入如下内容
+[Service] 
+ExecStart= 
+ExecStart=/usr/bin/docker -d -H fd:// --registry-mirror=https://docker.mirrors.ustc.edu.cn
+
+//新版的 Docker 推荐使用 json 配置文件的方式,默认为 /etc/docker/daemon.json
+//非默认路径需要修改 dockerd 的 –config-file,在该文件中加入如下内容
+{"registry-mirrors": ["https://docker.mirrors.ustc.edu.cn"]}		
 		
 //}
 
@@ -4098,19 +4098,19 @@ https://github.com/codecentric/spring-boot-admin
 	
 //}
 	
-//{--------<<<fastjson>>>----------------------------
-	<dependency>
-		<groupId>com.alibaba</groupId>
-		<artifactId>fastjson</artifactId>
-		<version>1.2.47</version>
-	</dependency>
+//{--------<<<fastjson>>>----------------------------X
+<dependency>
+	<groupId>com.alibaba</groupId>
+	<artifactId>fastjson</artifactId>
+	<version>1.2.47</version>
+</dependency>
 
-	// QuoteFieldNames --> 输出key时是否使用双引号,默认为true
-	// WriteMapNullValue --> 是否输出值为null的字段,默认为false
-	// WriteNullListAsEmpty --> List字段如果为null,输出为[],而非null
-	// WriteNullNumberAsZero --> 数值字段如果为null,输出为0,而非null
-	// WriteNullStringAsEmpty --> 字符类型字段如果为null,输出为"",而非null (√)
-	// WriteNullBooleanAsFalse --> Boolean字段如果为null,输出为false,而非null
+// QuoteFieldNames --> 输出key时是否使用双引号,默认为true
+// WriteMapNullValue --> 是否输出值为null的字段,默认为false
+// WriteNullListAsEmpty --> List字段如果为null,输出为[],而非null
+// WriteNullNumberAsZero --> 数值字段如果为null,输出为0,而非null
+// WriteNullStringAsEmpty --> 字符类型字段如果为null,输出为"",而非null (√)
+// WriteNullBooleanAsFalse --> Boolean字段如果为null,输出为false,而非null
 	
 	//list -> JSONString
 	JSON.toJSONString(list, SerializerFeature.WriteNullStringAsEmpty); 
@@ -4121,45 +4121,45 @@ https://github.com/codecentric/spring-boot-admin
 	System.out.println(json.getIntValue("a")); //0
 	
 	//X->String
-	String json = JSON.toJSONString(list / map / bean);
-	String json = JSON.toJSONString(list, true);//args1: json是否格式化(有空格和换行).
+String json = JSON.toJSONString(list / map / bean);
+String json = JSON.toJSONString(list, true);//args1: json是否格式化(有空格和换行).
 	
 	//X->JSON (必须有get/set)
-	JSONObject obj = JSON.parseObject(JSON.toJSONString(person));//javabean
-	JSONObject obj = JSON.parseObject(JSON.toJSONString(map));//map
-	JSONArray array = JSON.parseArray(JSON.toJSONString(list));//list
+JSONObject obj = JSON.parseObject(JSON.toJSONString(person));//javabean
+JSONObject obj = JSON.parseObject(JSON.toJSONString(map));//map
+JSONArray array = JSON.parseArray(JSON.toJSONString(list));//list
 
 	//JSON->X (必须有空构造方法)
-	Person person = JSON.parseObject(json, Person.class);
-	Map map = JSON.parseObject(json, Map.class);
-	List<Person> list = JSON.parseArray(json, Person.class);
+Person person = JSON.parseObject(json, Person.class);
+Map map = JSON.parseObject(json, Map.class);
+List<Person> list = JSON.parseArray(json, Person.class);
 	
 #boot整合
 	//boot2.x默认使用 jacksonJson 解析,现转换为 fastjson
-	@Configuration
-	public class WebMvcConfig extends WebMvcConfigurationSupport {
-		Logger logger = LoggerFactory.getLogger(getClass());
+@Configuration
+public class WebMvcConfig extends WebMvcConfigurationSupport {
+	Logger logger = LoggerFactory.getLogger(getClass());
 
-		//利用fastjson替换掉jackson,且解决中文乱码问题
-		@Override
-		public void configureMessageConverters(List<HttpMessageConverter<?>> converters) {
-			//1.构建了一个消息转换器 converter
-			FastJsonHttpMessageConverter converter = new FastJsonHttpMessageConverter();
+	//利用fastjson替换掉jackson,且解决中文乱码问题
+	@Override
+	public void configureMessageConverters(List<HttpMessageConverter<?>> converters) {
+		//1.构建了一个消息转换器 converter
+		FastJsonHttpMessageConverter converter = new FastJsonHttpMessageConverter();
 
-			//2.添加fastjson配置,如: 是否格式化返回的json数据;设置编码方式
-			FastJsonConfig config = new FastJsonConfig();
+		//2.添加fastjson配置,如: 是否格式化返回的json数据;设置编码方式
+		FastJsonConfig config = new FastJsonConfig();
 
-			config.setSerializerFeatures(SerializerFeature.PrettyFormat);//格式化
+		config.setSerializerFeatures(SerializerFeature.PrettyFormat);//格式化
 
-			List<MediaType> list = new ArrayList<>();//中文乱码
-			list.add(MediaType.APPLICATION_JSON_UTF8);
-			converter.setSupportedMediaTypes(list);
+		List<MediaType> list = new ArrayList<>();//中文乱码
+		list.add(MediaType.APPLICATION_JSON_UTF8);
+		converter.setSupportedMediaTypes(list);
 
-			//3.在消息转换器中添加fastjson配置
-			converter.setFastJsonConfig(config);
-			converters.add(converter);
-		}
+		//3.在消息转换器中添加fastjson配置
+		converter.setFastJsonConfig(config);
+		converters.add(converter);
 	}
+}
 		
 	2.指定日期格式
 		class Demo {
