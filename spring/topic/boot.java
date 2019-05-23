@@ -746,19 +746,19 @@ https://start.spring.io/
 	
 //}
 
-//{--------<<<WebSocket>>>---------------------------
-        <dependency>
-            <groupId>org.springframework.boot</groupId>
-            <artifactId>spring-boot-starter-websocket</artifactId>
-        </dependency>	
+//{--------<<<WebSocket>>>---------------------------X
+<dependency>
+	<groupId>org.springframework.boot</groupId>
+	<artifactId>spring-boot-starter-websocket</artifactId>
+</dependency>	
 	
 #ABC
-	B/S结构的软件项目中有时客户端需要实时的获得服务器消息,但默认HTTP协议只支持 '请求响应模式'. 
-	对于这种需求可以通过 polling, Long-polling, 长连接, Flash-Socket, HTML5中定义的WebSocket 完成.
-	
-	HTTP模式可以简化Web服务器,减少服务器的负担,加快响应速度,
-	因为服务器不需要与客户端长时间建立一个通信链接.
-	但不容易直接完成实时的消息推送功能(如聊天室,后台信息提示,实时更新数据等).
+B/S结构的软件项目中有时客户端需要实时的获得服务器消息，但默认HTTP协议只支持 '请求响应模式'。 
+对于这种需求可以通过 polling， Long-polling， 长连接， Flash-Socket， HTML5中定义的WebSocket 完成。
+
+HTTP模式可以简化Web服务器，减少服务器的负担，加快响应速度，
+因为服务器不需要与客户端长时间建立一个通信链接。
+但不容易直接完成实时的消息推送功能(如聊天室，后台信息提示，实时更新数据等)。
 
 #Socket简介
 	Socket 又称'套接字',应用程序通过 Socket 向网络发出请求或者应答网络请求.
@@ -4170,13 +4170,13 @@ public class WebMvcConfig extends WebMvcConfigurationSupport {
 
 //}
 
-//{--------<<<HttpClient>>>--------------------------
+//{--------<<<HttpClient>>>--------------------------X
 #pom.xml
         //<!-- HttpClient -->
-        <dependency>
-            <groupId>org.apache.httpcomponents</groupId>
-            <artifactId>httpclient</artifactId>
-        </dependency>
+		<dependency>
+			<groupId>org.apache.httpcomponents</groupId>
+			<artifactId>httpclient</artifactId>
+		</dependency>
 
 #GET/POST区别
 	超链接<a/>	---> ///只能用 GET 提交HTTP请求

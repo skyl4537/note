@@ -1,8 +1,239 @@
 [TOC]
 
+# ali规约
+
+>  建表规约
+```sql
+
+```
+```sql
+
+```
+```sql
+
+```
+```sql
+
+```
+```sql
+
+```
+```sql
+
+```
+```sql
+
+```
+```sql
+
+```
+```sql
+
+```
+```sql
+
+```
+```sql
+
+```
+```sql
+
+```
+```sql
+
+```
 
 
-# 相关概念
+```sql
+"1.强制" 表达是与否概念的字段，必须使用 is_xxx 的方式命名，数据类型是 unsigned tinyint（1表示是，0表示否），此规则同样适用于 odps 建表。-- 说明：任何字段如果为非负数，必须是 unsigned。
+
+"2.强制" 表名、字段名必须使用小写字母或数字；禁止出现数字开头，禁止两个下划线中间只出现数字。数据库字段名的修改代价很大， 因为无法进行预发布，所以字段名称需要慎重考虑。
+-- 正例： getter_admin，task_config，level3_name
+-- 反例： GetterAdmin，taskConfig，level_3_name
+
+"3.强制" 表名不使用复数名词。-- 说明：表名应该仅仅表示表里面的实体内容，不应该表示实体数量，对应于 DO 类名也是单数形式，符合表达习惯。
+
+"4.强制" 禁用保留字，如 desc、range、match、delayed等，请参考 MySQL 官方保留字。
+
+"5.强制" 唯一索引名为 uk_字段名； 普通索引名则为 idx_字段名。-- 说明：uk_ 即 unique key；idx_ 即 index 的简称。
+
+
+```
+
+
+
+
+
+
+
+##SQL规约
+```sql
+
+```
+```sql
+
+```
+```sql
+
+```
+```sql
+
+```
+```sql
+
+```
+```sql
+
+```
+```sql
+
+```
+```sql
+
+```
+```sql
+
+```
+```sql
+
+```
+```sql
+
+```
+
+
+```sql
+'1.强制' 不要使用 COUNT(列名) 或 COUNT(常量) 来替代 COUNT(*)。 COUNT(*)就是 SQL92 定义的标准统计行数的语法，跟数据库无关，跟 NULL 和非 NULL 无关。
+-- 说明：COUNT(*) 会统计值为 NULL 的行，而 COUNT(列名) 不会统计此列为 NULL 值的行。
+
+'2.强制' COUNT(DISTINCT col) 计算该列除 NULL 之外的不重复数量。
+-- 例子：SELECT COUNT(DISTINCT gender) FROM student;
+-- 注意：COUNT(DISTINCT col1, col2)如果其中一列全为 NULL，那么即使另一列有不同的值，也返回为 0。
+
+'3.强制' 当某一列的值全是 NULL 时， COUNT(col)的返回结果为 0，但SUM(col)的返回结果为NULL，因此使用 SUM()时需注意 NPE 问题。
+-- 正例：避免 SUM 的 NPE 问题： SELECT IF(ISNULL(SUM(g)) ,0, SUM(g)) FROM table;
+
+'4.强制' 使用 ISNULL() 来判断是否为 NULL 值。 -- 注意： NULL 与任何值的直接比较都为 NULL。
+-- (1) NULL<>NULL 的返回结果是 NULL，而不是 false。
+-- (2) NULL=NULL 的返回结果是 NULL，而不是 true。
+-- (3) NULL<>1 的返回结果是 NULL，而不是 true 。
+
+'5.强制' 在代码中写分页查询逻辑时，若总条数 count 为 0 应直接返回，避免执行后面的分页语句。
+
+"6.强制" 不得使用外键与级联，一切外键概念必须在应用层解决。
+-- 说明：（概念解释）学生表中的 student_id 是主键，那么成绩表中的 student_id 则为外键。如果更新学生表中的 student_id，同时触发成绩表中的 student_id 更新，则为级联更新。外键与级联更新适用于单机低并发，不适合分布式、高并发集群；级联更新是强阻塞，存在数据库更新风暴的风险；外键影响数据库的插入速度。
+
+'7.强制' 禁止使用存储过程，存储过程难以调试和扩展，更没有移植性。
+
+"8.强制" 数据订正时，删除和修改记录时，要先 select，避免出现误删除，确认无误才能执行更新语句。
+
+'9.推荐' IN操作能避免则避免，实在避免不了，需要仔细评估 IN 后边的集合元素数量，控制在 1000之内。
+
+'10.参考'如果有全球化需要，所有的字符存储与表示，均以 utf-8 编码，那么字符计数方法注意：
+-- SELECT LENGTH("轻松工作")； 返回为 12
+-- SELECT CHARACTER_LENGTH("轻松工作")； 返回为 4
+-- 如果要使用表情，那么使用 utfmb4 来进行存储，注意它与 utf-8 编码的区别
+
+'11.参考'TRUNCATE TABLE 比 DELETE 速度快，且使用的系统和事务日志资源少，但 TRUNCATE 无事务且不触发 trigger，有可能造成事故，故不建议在开发代码中使用此语句。
+-- 说明： TRUNCATE TABLE 在功能上与不带 WHERE 子句的 DELETE 语句相同。
+```
+
+> 7.【强制】禁止使用存储过程，存储过程难以调试和扩展，更没有移植性。
+
+```sql
+调试：线上调试一般就是打日志，在应用层，日志可以在任何一步打，但是存储过程的话，日志没法跟踪详细的执行过程。
+
+扩展：譬如你的 产品购买流程 要增加一个动作，这时候就要修改存储过程到db里，你这时候要直接操作db，而在大公司，直接操作db只能有dba来进行，其他都要审批后使用公司自己开发的工作来进行，且只能是简单的crud。
+
+移植：你用mysql写的存储过程，到了sql-server不一定能直接用。但是在应用层的话，程序里的crud的基础sql基本上通用的，修改下连接串一般就ok了。
+```
+
+```sql
+-- 存储过程的优点（适合处理场景固定的复杂事务，不要求并发性）：
+1.效率高。
+    (1).与数据库服务的通信次数少；
+    (2).可以直接编译成物理计划，少了parse和查询优化步骤；有些数据库会做得更激进，对过程做JIT；
+    (3).发生不可串行化冲突时，事务可以直接在数据库服务端重新执行；
+    (4).许多优化都是基于存储过程（近来的许多并发控制的paper都假设事务在存储过程里执行）。
+2.极大的简化开发。
+    很多逻辑，用JAVA写要写好多代码，而在存储过程里可能几行很简单的SQL就搞定了；上一条的(3)，也有同样的效果。写JAVA代码处理回滚，不仅要做很多处理，也很容易犯错，因事务不可串行化导致的数据bug往往很难发现。
+```
+
+```sql
+-- 存储过程的缺点：
+1.并不是所有开发人员都熟悉怎么使用存储过程，包括像怎么用SQL表示各种复杂逻辑，怎么调试存储过程。
+2.SQL是标准的，但存储过程以及控制逻辑，都是各家数据库自已的方言，不可移植到其它数据库。
+3.存储过程也是代码，但却和代码分离开了，存储在数据库里。版本控制困难，进而造成从开发，测试，到上线整个流程的复杂度增加。
+4.写JAVA代码的人和DBA通常是两波人，引来许多管理上的问题，如，数据库权限，两边人员打乒乓球。
+5.工具支持不完善，不好调试（这点取决于用什么数据库）。
+```
+
+
+
+
+
+## ORM规约
+
+> 1，2，4，5，6，8，9，11
+
+```sql
+'1.强制' 在表查询中，一律不要使用 * 作为查询的字段列表，需要哪些字段必须明确写明。
+-- 说明：(1).增加查询分析器解析成本。(2).增减字段容易与 resultMap 配置不一致。
+```
+```sql
+'2.强制' POJO 类 boolean属性不能加 is，而数据库字段必须加 is_，要求在 resultMap中进行字段与属性的映射。
+-- 说明：参见定义 POJO 类以及数据库字段定义规定，在 sql.xml 增加映射，是必须的。
+```
+```sql
+'3.强制' 不要用 resultClass 当返回参数，即使所有类属性名与数据库字段一一对应，也需要定义；反过来，每一个表也必然有一个与之对应。
+-- 说明：配置映射关系，使字段与 DO 类解耦，方便维护。
+```
+```sql
+'4.强制' xml 配置中参数注意使用：#{}，#param# 不要使用${}，此种方式容易出现 SQL 注入。
+```
+```sql
+'5.强制' iBATIS 自带的 queryForList(String statementName, int start, int size) 不推荐使用。
+-- 说明：其实现方式是在数据库取到 statementName 对应的 SQL 语句的所有记录，再通过 subList 取 start, size 的子集合，线上因为这个原因曾经出现过 OOM。
+
+-- 正例：在 sqlmap.xml 中引入 #start#, #size#
+Map<String, Object> map = new HashMap<String, Object>();
+map.put("start", start);
+map.put("size", size);
+```
+```sql
+'6.强制' 不允许直接拿 HashMap 与 Hashtable 作为查询结果集的输出。
+-- 反例： 某同学为避免写一个<resultMap>，直接使用 HashMap 来接收数据库返回结果，结果出现异常是把 bigint 转成 long 值，而线上由于数据库版本不一致，，解析成 BigInteger，导致线上问题。
+```
+```sql
+'7.强制' 更新数据表记录时，必须同时更新记录对应的 gmt_modified 字段值为当前时间。（gmt 格林威治时间）
+```
+```sql
+'8.推荐' 不要写一个大而全的数据更新接口，传入为 POJO 类，不管是不是自己的目标更新字段，都进行 update table set c1=value1,c2=value2,c3=value3; 这是不对的。执行 SQL时，尽量不要更新无改动的字段，一是易出错； 二是效率低； 三是 binlog 增加存储。
+```
+```sql
+'9.参考' @Transactional 事务不要滥用。事务会影响数据库的 QPS，另外使用事务的地方需要考虑各方面的回滚方案，包括缓存回滚、搜索引擎回滚、消息补偿、统计修正等。
+```
+```sql
+'10.参考' <isEqual>中的 compareValue 是与属性值对比的常量，一般是数字，表示相等时带上此条件；<isNotEmpty>表示不为空且不为 null 时执行； <isNotNull>表示不为 null 值时执行。
+```
+```sql
+'11.强制' Service/DAO 层方法命名规约
+-- 获取单个对象的方法用 get 做前缀。
+-- ...多............ list .....
+-- ..统计值.......... count ....
+-- 插入.............. save(推荐)或 insert ...
+-- 删除.............. remove(推荐)或 delete ...
+-- 修改.............. update ...
+```
+```sql
+
+```
+
+
+
+
+
+# 基础相关
 
 ##基础概念
 
@@ -14,18 +245,17 @@ SQL：Structure-Query-Language，结构化查询语言，与数据库通信
 
 > 基础语法
 
-不区分大小写。建议关键字大写，表名和列名小写。每条命令使用分号结尾。
+不区分大小写。建议关键字大写，表名和列名小写。每条命令使用分号结尾。单引号和双引号都可以表示字符串。
 
+mysql的字段名、表名通常不需要加任何引号，如果非要加上引号，必须加反引号。
 
-
-
-##基础配置
+mysql的别名可不加引号，如果加，单引号和双引号以及反引号都可以。别名含有特殊字符，则必须使用双引号。
 
 > linux环境mysql日志配置在`my.cnf 或 mysql.cnf`
 
-```java
-find / -name my.cnf(mysql.cnf) //查找这两个文件所在位置
-log-error=/var/log/mysql.log   //在上述两个文件中配置
+```sql
+find / -name my.cnf(mysql.cnf) --> 查找这两个文件所在位置
+log-error=/var/log/mysql.log   --> 在上述两个文件中配置
 ```
 
 > 远程登录
@@ -35,8 +265,6 @@ log-error=/var/log/mysql.log   //在上述两个文件中配置
 -- 赋予用户名 MAO，密码 MIAOMIAO 的用户可以在任意设备上操作所有数据库表的权限
 GRANT ALL PRIVILEGES ON *.* TO MAO@'%' IDENTIFIED BY 'MIAOMIAO' WITH GRANT OPTION;
 ```
-
-
 
 > 完全卸载
 
@@ -95,10 +323,6 @@ Enable root access from remote machines: 是否允许root用户在其它的机�
 Create An Anonymous Account: 新建一个匿名用户，只可连接，不可操作，包括查询. (否)
 ```
 
-
-
-
-
 ##查询顺序
 
 
@@ -140,9 +364,87 @@ Create An Anonymous Account: 新建一个匿名用户，只可连接，不可操
 
 五种子句严格顺序：`where → group by → having → order by → limit`
 
-# 基础命令
+## 数据类型
 
-##DDL定义
+> 日期类型
+
+```sql
+datetime：占用8个字节，表示范围 '1000-01-01 00:00:00.000000' to '9999-12-31 23:59:59.999999'
+timestamp：占用4个字节，表示范围 '1970-01-01 00:00:01.000000' to '2038-01-19 03:14:07.999999'
+
+如果存进去的是NULL, timestamp会自动储存当前时间，而 datetime会储存 NULL。
+
+timestamp 容易受mysql版本 和 数据库所在时区的影响。
+
+总结： timestamp类型适合用来记录数据的最后修改时间，因为只要更改了记录中其他字段的值， timestamp字段的值都会被自动更新。（如果需要可以设置 timestamp不自动更新）
+```
+
+```sql
+-- 保存毫秒值
+无论 datetime 还是 timestamp：数据长度一栏选择 3，不然不保留毫秒值。'2019-5-17 20:09:10.456'
+```
+
+
+
+## 约束相关
+
+> 约束：一种限制，用于限制表中的数据，为了保证表中数据的准确性和可靠性。
+
+```sql
+NOT NULL-- 非空约束，保证该字段的值不能为空。姓名
+DEFAULT -- 默认约束，保证该字段有默认值。性别
+
+PRIMARY KEY -- 主键约束，保证该字段的值具有唯一性，且非空。学号
+UNIQUE      -- 唯一约束，只保证该字段的值具有唯一性，可为空。如座位号
+
+CHECK       -- 检查约束，但mysql不支持。如性别只能写男女，年龄只能写1-200等。
+FOREIGN KEY -- 外键约束，表中该字段的值必须来自主表的关联列的值。
+```
+```sql
+SHOW INDEX FROM `coupon`;
+SHOW KEYS FROM `coupon`; -- 查看索引
+
+ALTER TABLE `coupon` DROP index 索引名; -- 删除索引
+
+ALTER TABLE `coupon` ADD key (索引名); -- 新增 普通索引
+ALTER TABLE `coupon` ADD primary key 索引名; -- 新增 主键索引
+ALTER TABLE `coupon` ADD UNIQUE key (索引名); -- 新增 唯一索引
+```
+
+> 主键 & 唯一
+
+```sql
+主键 -- 每个表中只能有一个，值必须保证唯一性，且不能为 null。
+唯一 -- .......可以有多个，.............，但可以为 null（最多只能有一行 null）。
+
+对于 组合主键 或 组合唯一，二者都支持，但不推荐使用。
+组合主键 和 组合唯一 的唯一性：如id，name，只有两条数据的id，name都相同才报错，即不满足唯一性。
+```
+
+> 外键约束
+
+```sql
+1.外键要求在'从表'上进行设置
+2.从表的外键类型和主表的关联列的'类型'要求一致或兼容，名字不一定要一样
+3.主表的关联列必须是一个 key（主键或唯一键）
+```
+
+> 标识列：又称为自增长列，含义：可以不用手动的插入值，系统提供默认的序列值
+
+```sql
+1.标识列必须和主键搭配吗？ -- 不一定，但要求是一个key（也可以是unique）
+2.一个表可以有几个标识列？ -- 至多一个！
+3.标识列的类型只能是'数值型'
+4.标识列可以通过 SET auto_increment_increment=3;设置步长；另外可以通过 手动插入值，设置起始值
+```
+
+
+
+
+
+
+
+# 基础命令
 
 > 登陆命令
 
@@ -165,12 +467,14 @@ SELECT ROW_COUNT(); -- 返回受影响的行数
 - DQL：Data-Query-Language，数据查询语言。              如，select
 - TCL：Transaction-Control-Language，事务控制语言。 如，commit，rollback    
 
-> DDL（定义）
+##DDL定义
+
+> CREATE
 
 ```sql
 -- CREATE TABLE 表名(字段 类型 约束 COMMENT 列注释, ...) COMMENT 表注释
 
-DROP TABLE IF EXISTS flower;
+DROP TABLE IF EXISTS flower; -- 先删除
 CREATE TABLE flower(
     id INT(10)  PRIMARY KEY auto_increment COMMENT '编号', -- 主键自增，字段注释
     name VARCHAR(30) NOT NULL COMMENT '花名',
@@ -179,28 +483,44 @@ CREATE TABLE flower(
 ) COMMENT '花花'
 
 DESC flower; -- DESC 查看表的详细信息
-
-ALTER TABLE tbName ADD 列名 列类型 [列参数] [NOT NULL DEFAULT]; --增加列
-ALTER TABLE tbName CHANGE 旧列名 新列名 列类型 [列参数] [NOT NULL DEFAULT] --修改列
-
-ALTER TABLE tbName DROP 列名; --删除列
-ALTER TABLE tbName DROP 主键列; --删除主键
-
-TRUNCATE tbName; --清空表
 ```
 
-> 索引相关
+> DROP
 
 ```sql
-SHOW INDEX FROM `coupon`;
-SHOW KEYS FROM `coupon`; -- 查看索引
-
-ALTER TABLE `coupon` DROP index 索引名; -- 删除
-
-ALTER TABLE `coupon` ADD key (索引名); -- 新增 普通索引
-ALTER TABLE `coupon` ADD primary key 索引名; -- 新增 主键索引
-ALTER TABLE `coupon` ADD UNIQUE key (索引名); -- 新增 唯一索引
+DROP TABLE IF EXISTS flower; --删除表
 ```
+
+> ALTER：ALTER TABLE tbName `ADD|CHANGE|MODIFY|DROP` COLUMN 列名 [ 列类型 约束]
+
+```sql
+ALTER TABLE tbName ADD COLUMN 列名 列类型 [列参数] [NOT NULL DEFAULT]; --增加列
+
+ALTER TABLE tbName CHANGE COLUMN 旧列名 新列名 列类型 [列参数] --修改列名（注意，新列的类型）
+
+ALTER TABLE tbName MODIFY COLUMN 列名 新列类型 [列参数] --修改列类型
+
+ALTER TABLE tbName DROP COLUMN 列名; --删除列
+
+ALTER TABLE tbName RENAME TO tbNames; -- 修改表名
+```
+
+> LIKE：表的复制
+
+```sql
+CREATE TABLE flower2 LIKE flower; -- 仅复制表的整体结构
+
+CREATE TABLE flower3
+SELECT * FROM flower; -- 复制表的整体结构 + 数据
+
+CREATE TABLE flower4
+SELECT id,name FROM flower WHERE 0; -- 仅赋值表的部分结构（id，name两列）
+
+CREATE TABLE flower3
+SELECT id,name FROM flower WHERE name='太阳花'; -- 复制表的部分结构 + 数据
+```
+
+
 
 ##DML操作
 
@@ -240,10 +560,91 @@ SELECT '向日葵',(SELECT 1.0*5),'大理'; -- 2.子查询
 > UPDATE
 
 ```sql
--- 修改语句
 UPDATE flower
 SET price=5.3,production='云南'
-WHERE name LIKE '%向日葵%'; -- 必须添加条件，否则全表修改
+WHERE name LIKE '%向日葵%'; -- -- 修改字段值，必须添加条件，否则全表修改
+```
+
+> Delete
+
+```sql
+DELETE FROM flower WHERE id=3; --单表删除
+```
+
+```sql
+DELETE b,bo -- 删除张无忌及其女友信息。若只删除张无忌，则 DELETE bo。多表删除
+FROM beauty b JOIN boys bo ON bo.bid=b.boy_id
+WHERE bo.bname='张无忌';
+```
+
+```sql
+DELETE FROM flower;    -- 清空表1
+TRUNCATE TABLE flower; -- 清空表2
+
+-- DELETE 可以加 WHERE 过滤条件，TRUNCATE 不可以。
+-- DELETE 可以roll back回滚。TRUNCATE 速度更快，不可恢复，清空后释放内存。
+-- DELETE 删除有返回值。TRUNCATE 删除没有。
+
+-- DELETE 清空表后，添加新的数据时自增列接着自增。TRUNCATE 则是从1开始重新计数。
+```
+
+## TCL事务
+
+> Transaction Control Language 事务控制语言
+
+事务是由单独单元的一个或多个SQL语句组成，在这个单元中，每个MySQL语句是相互依赖的。而整个单独单元作为一个不可分割的整体，如果单元中某条SQL语句一旦执行失败或产生错误，整个单元将会回滚。
+
+> 存储引擎
+
+```sql
+show engines; -- 查看当前数据库支持的存储引擎。其中，innodb 支持事务，myisam memory不支持。
+```
+
+> 事务的ACID属性
+
+```sql
+-- 原子性（Atomicity）
+事务不可再分，要么都执行成功，要么都执行失败。
+
+-- 一致性（Consistency）
+事务执行会使数据从一个一致性状态变换到另外一个一致性状态（转账之前和之后，金钱总额不变）。
+
+-- 隔离性（Isolation）
+一个事务的执行不收其他事务的干扰，具体和设置的事务隔离级别有关。包括读未提交（Read uncommitted）、读提交（read committed）、可重复读（repeatable read）和串行化（Serializable）。
+
+-- 持久性（Durability）
+一个事务一旦提交，则会永久的改变数据库中的数据，不能撤销。比如，删除一条数据。
+```
+
+> 事务的创建
+
+```sql
+-- 隐式事务：事务没有明显的开启和关闭标识。例如 INSERT,UPDATE,DELETE
+SHOW VARIABLES LIKE 'autocommit'; -- 查看'自动提交'功能是否开启
+```
+
+```sql
+-- 显示事务：必须先设置 自动提交 功能为禁用状态。
+SET autocommit=0; --关闭'自动提交'，只针对当前会话起作用。所以每条事务都要以这条语句开始。
+START TRANSACTION; --可选语句。
+
+-- 编写一组事务语句
+UPDATE trans SET fmoney=fmoney-700 WHERE fname='小李';
+UPDATE trans SET fmoney=fmoney+700 WHERE fname='老王';
+
+COMMIT; -- 提交事务
+-- ROLLBACK; --回滚事务，与提交事务，二选一
+```
+
+> 数据库的隔离级别
+
+```sql
+多个并行事务访问数据库中相同的数据时, 如果没有采取必要的隔离机制, 就会导致各种并发问题:
+'1.脏读 - 2更新1读2回滚'：对于两个事务 T1 和 T2，T1读取了已经被 T2 更新但还没有被提交的字段。之后，若 T2 回滚，T1 读取的内容就是临时且无效的。
+
+'2.不可重复读 - 1读2提交1读'：对于两个事务 T1 和 T2, T1 读取了一个字段，然后 T2 更新了该字段。之后，T1 再次读取同一个字段, 值就不同了。
+
+'3.幻读 - 1读2新增1读'：对于两个事务T1 和 T2，T1 从一个表中读取了一个字段, 然后 T2 在该表中插入了一些新的行。之后，如果 T1 再次读取同一个表，就会多出几行。
 ```
 
 
@@ -308,35 +709,14 @@ SELECT * FROM student WHERE `name` IS NULL; -- IS NULL
 
 > ANY 和 ALL
 
-- ANY：和子查询返回的`某一值`比较。`>ANY() 相当于 >MIN()`
+- ANY：和子查询返回的`某一值`比较。``
 
 
-- ALL：和子查询返回的`所有值`比较。`>ALL() 相当于 >MAX()`
+- ALL：和子查询返回的`所有值`比较。``
 
-```sql
--- 查询其他部门中比job_id为"IT_PROG"任一工资低的员工信息
 
--- 普通方式：比任一工资低 等同于 比最高工资低，先查出"IT_PROG"中的最高工资。
-SELECT *
-FROM employees
-WHERE job_id<>'IT_PROG'
-AND salary<(
-    SELECT MAX(salary) --最高工资
-    FROM employees
-    WHERE job_id='IT_PROG'
-);
-```
 
-```sql
-SELECT *
-FROM employees
-WHERE job_id<>'IT_PROG'
-AND salary < ANY( -- 任一都低，即 <ANY()。使用关键字 ANY
-    SELECT DISTINCT salary
-    FROM employees
-    WHERE job_id='IT_PROG'
-);
-```
+
 
 
 
@@ -452,7 +832,7 @@ double d = Math.floor(-1.455); //-2.0 -->同sql
 
 ```sql
 SELECT LENGTH('测试') AS length;			-- 6 --> 以'字节'为单位（汉字：utf-8占3字节，GBK占2）
-SELECT CHAR_LENGTH('测试') AS charLength;	-- 2 --> ..'字符'.....【推荐】
+SELECT CHAR_LENGTH('测试') AS charLength;	-- 2 --> '字符'【推荐】。VARCHAR(10)，10指的是字符。
 
 SELECT CONCAT('aaa', 'vvv') con; -- 字符串拼接
 
@@ -470,7 +850,7 @@ SELECT SUBSTRING_INDEX('192.168.5.120', '.', 2) AS subIndex;  -- 192.168 --> 截
 SELECT SUBSTRING_INDEX('192.168.5.120', '.', -2) AS subIndex; -- 5.120   --> ...........后
 SELECT SUBSTRING_INDEX('192.168.5.120', '..', 2) AS subIndex; -- 192.168.5.120 -> 无返回所有
 
-SELECT REPLACE('192.168.5.120','.','') INTO @repStr; -- 1921685120 --> 替换
+SELECT REPLACE('192.168.5.120','.','') INTO @repStr; -- 1921685120 --> 替换所有
 
 SELECT UCASE("runoob") AS uCase; -- RUNOOB
 SELECT LCASE("RUNOOB") AS lCase; -- runoob --> 大小写转换
@@ -589,8 +969,6 @@ ORDER BY count ASC; -- 查询哪个部门的员工数大于2 --> HAVING
 
 ## 子查询
 
-出现在其他语句中的select语句，称为子查询或内查询。
-
 > FROM后面：子查询结果作为一张虚拟表使用，必须为虚拟表起别名。
 
 ```sql
@@ -664,14 +1042,31 @@ WHERE EXISTS(
 );
 ```
 
+> any，in，some，all 分别是子查询关键词之一
+
+```sql
+-- any，all关键字必须与一个比较操作符一起使用。
+
+-- any：和子查询结果中的任一数值进行比较。
+-- all：..............所有..........
+
+NOT IN 等同于'<>all'。IN 等同于'=any'。
+
+>ANY() 相当于'>MIN()'。>ALL() 相当于'>MAX()'。
+```
+
+```sql
+select s1 from t1 where s1 <>any (select s1 from t2);
+select s1 from t1 where s1 <>some (select s1 from t2); -- 表t1中有部分s1与t2表中的s1不相等
+```
+
+
+
 ## 分页查询
 
 > LIMIT offset, size：起始索引从0开始，`offset=(page-1)*size`
 
 
-
-
-#连接查询
 
 ## 连接查询92
 
@@ -871,6 +1266,87 @@ SELECT e.employee_id,d.department_id
 FROM employees e
 CROSS JOIN departments d; -- 交叉连接 a*b
 ```
+
+
+
+
+
+# 相关优化
+
+<https://mp.weixin.qq.com/s/NnaecffGc6-FgbEpjp4t7w>
+
+
+
+
+
+
+
+
+
+#函数原理
+
+##常用函数
+
+```sql
+IFNULL(v1,v2) -- 如果 v1 的值不为 NULL，则返回 v1，否则返回 v2。
+
+SELECT IFNULL(null,'Hello Word'); -- Hello Word
+```
+
+```sql
+ISNULL(expr) -- 判断表达式是否为 NULL，true则返回1，false返回0。
+
+SELECT ISNULL('a'); -- 1
+```
+
+```sql
+IF(expr,v1,v2) -- 如果表达式 expr 成立，返回结果 v1；否则，返回结果 v2。
+
+SELECT IF(1 > 0,'正确','错误'); -- 正确
+```
+## 函数原理
+
+> IN语句内部原理（数据量 A >> B）。如果确定且有限的集合时，可以使用 IN（0，1，2）
+
+```sql
+-- IN 只执行一次，它查出B表中的所有id字段并缓存起来。之后，检查A表的id是否与B表中的id相等，如果相等则将A表的记录加入结果集中，直到遍历完A表的所有记录。
+SELECT * FROM A WHERE id in (SELECT id FROM B);
+```
+
+```java
+List resultSet = {};
+Array A = (select * from A);
+Array B = (select id from B); //首先执行内层子查询，再执行外层查询, 总共执行两个查询
+
+for (int i = 0; i < A.length; i++) {
+    for (int j = 0; j < B.length; j++) {
+        if (A[i].id == B[j].id) { //在内存中比较是否包含
+            resultSet.add(A[i]);
+            break;
+        }
+    }
+}
+return resultSet;
+```
+
+> EXISTS语句内部原理（数据量 B>A）
+
+```sql
+-- EXISTS 每次循环一下外表都要查询一下内表，即使外表数量很少，但是每循环一次外表都要去查询一个大表，这样的效率是不高的，除非子查询走索引，最好走覆盖索引。
+-- EXISTS 会执行 A.length 次，它并不缓存 exists() 结果集，因为 exists() 结果集的内容并不重要，重要的是其内查询语句的结果集空或者非空，空则返回false，非空则返回true。
+SELECT * FROM A WHERE EXISTS (SELECT 1 FROM B WHERE A.id=B.id);
+```
+```java
+List resultSet = {};
+Array A = (select * from A);
+
+for (int i = 0; i < A.length; i++) {
+    if (exists(A[i].id) {  //执行 select 1 from B where B.id=A.id 是否有记录返回
+        resultSet.add(A[i]);
+    }
+}
+```
+
 
 
 
@@ -1082,55 +1558,37 @@ SET FOREIGN_KEY_CHECKS = 1;
 
 ![](assets/sql0.png)
 
-##练习01-10
+## 练习01-10
 
-> 1.查询"生物"课程比"物理"课程成绩高的所有学生的学号
+> 2.查询"生物"课程比"物理"课程成绩高的所有学生的学号
 
 ```sql
--- 获取所有有生物课程的人（学号，成绩） - 临时表
--- 获取所有有物理课程的人（学号，成绩） - 临时表
--- 根据【学号】连接两个临时表，再进行筛选
-SELECT a.student_id,a.num sw,b.num wl
+-- 分别查询选修"生物"和"物理"学生成绩的临时表
+-- 再根据【学号】连接两个临时表，再进行筛选
+
+SELECT SW.student_id,SW.num sw_num,WL.num wl_num
 FROM
-(SELECT student_id,num FROM score sc LEFT JOIN course c ON c.cid=sc.course_id WHERE c.cname='生物') a
+(SELECT student_id,num FROM score sc JOIN course c ON c.cid=sc.course_id WHERE c.cname='生物') SW
 LEFT JOIN
-(SELECT student_id,num FROM score sc LEFT JOIN course c ON c.cid=sc.course_id WHERE c.cname='物理') b
-ON a.student_id=b.student_id
-WHERE a.num>b.num;
+(SELECT student_id,num FROM score sc JOIN course c ON c.cid=sc.course_id WHERE c.cname='物理') WL
+ON WL.student_id=SW.student_id
+WHERE SW.num>IF(ISNULL(WL.num),0,WL.num); 
 ```
 
-> 2.查询平均成绩大于60分的同学的学号和平均成绩
-
-```sql
-SELECT student_id, AVG(num) avg
-FROM score
-GROUP BY student_id
-HAVING avg>60;
-```
-
-> 3.查询所有同学的学号、姓名、选课数、总成绩
+> 4.查询所有同学的学号、姓名、选课数、总成绩
 
 ```sql
 -- 不能使用 COUNT(*)，当前行只要有一列不为NULL，就会增加1。应该针对具体某一行进行统计
-SELECT s.sid,s.sname,COUNT(sc.course_id) count, SUM(sc.num) sum
-FROM student s
-LEFT JOIN score sc 
-ON sc.student_id=s.sid
+
+SELECT s.sid,s.sname,COUNT(sc.course_id) cnt_course,SUM(IFNULL(sc.num,0)) sum_num
+FROM student s LEFT JOIN score sc ON sc.student_id=s.sid
 GROUP BY s.sid;
 ```
 
-> 4.查询姓"李"的老师的个数
+> 6.查询没学过"李平老师"老师课的同学的学号、姓名
 
 ```sql
-SELECT COUNT(tid) count
-FROM teacher
-WHERE tname LIKE '李%';
-```
-
-> 5.查询没学过"李平老师"老师课的同学的学号、姓名
-
-```sql
--- 1."李平老师"所有的课程id
+-- 1."李平老师"所有课程id
 -- 2.学过课程①的学生id
 -- 3.对②进行取反
 
@@ -1147,37 +1605,64 @@ WHERE sid NOT IN(
 );
 ```
 
-> 6.查询学过"001"并且也学过编号"002"课程的同学的学号，姓名
+> *7.查询学过"001"并且也学过编号"002"课程的同学的学号，姓名
 
 ```sql
 -- 先查到既选择001又选择002课程的所有同学
 -- 根据学生进行分组，如果学生数量等于2表示，两门均已选择
 
-
+SELECT s.sid,s.sname
+FROM
+(SELECT student_id,course_id FROM score WHERE course_id BETWEEN 1 AND 2) AS A
+LEFT JOIN student AS s ON s.sid=A.student_id
+GROUP BY s.sid
+HAVING COUNT(A.course_id)>1;
 ```
 
-> 7.查询学过"叶平"老师所教的所有课的同学的学号，姓名
-
 ```sql
+-- 分别查出选了 001和002 的学生
+-- 然后将上两张临时表取交集，以学生id作为关联
 
+SELECT DISTINCT A.student_id AS sid,student.sname AS sname -- 非最优解
+FROM
+(SELECT student_id,course_id FROM score WHERE course_id='001') AS A
+JOIN
+(SELECT student_id,course_id FROM score WHERE course_id='002') AS B
+ON A.student_id=B.student_id
+LEFT JOIN student ON student.sid=A.student_id;
 ```
 
-> 8.查询课程编号"002"的成绩比课程编号"001"课程低的所有同学的学号，姓名
+> *8.查询学过"李平老师"老师所教的所有课的同学的学号，姓名
 
 ```sql
--- 分步查询
-SELECT sid,sname
-FROM student
-WHERE sid IN(
-    SELECT A.student_id FROM
-    (SELECT student_id,num num002 -- 1.查询课程编号002的成绩
-        FROM score sc JOIN course c ON c.cid=sc.course_id WHERE cid='002') A
-    JOIN
-    (SELECT student_id,num num001 -- 2.查询课程编号001的成绩
-        FROM score sc JOIN course c ON c.cid=sc.course_id WHERE cid='001') B
-    ON B.student_id=A.student_id
-    WHERE num002<num001
-);
+-- 先查询李平老师所有课程id
+-- 查询学过课程①的所有学生
+-- 注意是学过李平老师的所有课程，所以对②以学生id进行分组处理，筛选选课数=李平老师所有课程数
+
+SELECT DISTINCT student_id,sname
+FROM score LEFT JOIN student ON student.sid=score.student_id
+WHERE course_id IN(
+    SELECT c.cid AS cid
+    FROM course AS c JOIN teacher AS t ON t.tid=c.teacher_id WHERE t.tname='李平老师'
+    ) AS A GROUP BY student_id
+    HAVING COUNT(course_id)=(
+        SELECT COUNT(1) FROM course AS c JOIN teacher AS t ON t.tid=c.teacher_id 
+        WHERE t.tname='李平老师'
+    );
+```
+
+> *9.查询课程编号"002"的成绩比课程编号"001"课程低的所有同学的学号，姓名
+
+```sql
+SELECT A.student_id
+FROM
+(SELECT student_id,num FROM score JOIN course ON course.cid=score.course_id
+    WHERE cid='002') AS A
+JOIN
+(SELECT student_id,num FROM score JOIN course ON course.cid=score.course_id
+    WHERE cid='001') AS B
+ON B.student_id=A.student_id
+WHERE A.num<B.num;
 ```
 
 ```sql
@@ -1191,7 +1676,7 @@ WHERE(
 );
 ```
 
-> 9.查询有课程成绩小于60分的同学的学号，姓名
+> 10.查询有课程成绩小于60分的同学的学号，姓名
 
 ```sql
 SELECT DISTINCT student_id,s.sname
@@ -1201,47 +1686,36 @@ WHERE num<60;
 ```
 
 ```sql
--- 关联查询的另一种形式
-SELECT DISTINCT student_id,sname
-FROM score sc, student s 
-WHERE s.sid=sc.student_id AND num<60;
-```
-
-```sql
--- 子查询1。表关联的效率要高于子查询，因为子查询走的是笛卡尔积
+-- 子查询。子查询的效率 < 关联查询，因为子查询走的是笛卡尔积
 SELECT sid,sname FROM student WHERE sid IN
 (SELECT DISTINCT student_id FROM score WHERE num<60);
 ```
 
-```sql
--- 子查询2
-SELECT sid,sname FROM student WHERE sid IN
-(SELECT student_id FROM score WHERE num<60 GROUP BY student_id);
-```
+##练习11-20
 
-> 10.查询没有学全所有课的同学的学号，姓名
+> 11.查询没有学全所有课的同学的学号，姓名
 
 ```sql
 --1.先查询所有课程数目
---2.查询每个同学的课程数目，<① 的即为所求
+--2.查询选修的课程数目 <① 的学生id
 
-SELECT student_id,sname,COUNT(course_id) cnt
-FROM score sc JOIN student s ON s.sid=sc.student_id
-GROUP BY student_id
+SELECT s.sid,sname,COUNT(sc.course_id) cnt
+FROM student s LEFT JOIN score sc ON sc.student_id=s.sid
+GROUP BY s.sid
 HAVING cnt<(
     SELECT COUNT(*)
     FROM course
 );
 ```
 
-##练习11-20
-
-> 11.查询至少有一门课与学号为"001"的同学所学相同的同学的学号和姓名
+> 12.查询至少有一门课与学号为"001"的同学所学相同的同学的学号和姓名
+>
+> 13.查询至少学过学号为"001"同学所选课程中任意一门课的其他同学学号和姓名
 
 ```sql
 -- 0.至少学过一门，使用关键字 ANY 或者 IN。
 -- 1.学号“001”所有课程号
--- 2.查出所有学过课程①的学生id，排除"001"。
+-- 2.查出所有学过课程①的学生id，并排除"001"。
 
 SELECT DISTINCT s.sid,s.sname -- ②
 FROM student s JOIN score sc ON sc.student_id=s.sid
@@ -1253,13 +1727,7 @@ WHERE s.sid<>'001' AND sc.course_id IN(
 );
 ```
 
-> 12.查询至少学过学号为"001"同学所选课程中任意一门课的其他同学学号和姓名
-
-```sql
--- 同上
-```
-
-> 13.查询和"002"号的同学学习的课程完全相同的其他同学学号和姓名
+> **14.查询和"002"号的同学学习的课程完全相同的其他同学学号和姓名
 
 ```sql
 -- 1.查出002学过的课程id
@@ -1281,7 +1749,7 @@ GROUP BY student_id
 HAVING COUNT(course_id)=(SELECT COUNT(course_id) FROM score WHERE student_id='002');
 ```
 
-> 14.查询学习"李平老师"老师课的Score表记录
+> 15.查询学习"李平老师"老师课的Score表记录
 
 ```sql
 SELECT *
@@ -1293,14 +1761,21 @@ WHERE course_id IN(
 );
 ```
 
-> 15.向SC表中插入一些记录：①没有上过编号"002"课程的同学学号；②插入"002"号课程的平均成绩
+```sql
+SELECT sc.* --连表查询
+FROM score sc JOIN course c ON c.cid=sc.course_id
+RIGHT JOIN teacher t ON t.tid=c.teacher_id
+WHERE t.tname='李平老师';
+```
+
+> 16.向SC表中插入一些记录：①没有上过编号"002"课程的同学学号；②插入"002"号课程的平均成绩
 
 ```sql
 -- 学过002的学生id，再取反
 -- 查出002课程的平均成绩
 
 INSERT INTO score(student_id, course_id, num)
-SELECT sid,'002',(SELECT AVG(num) FROM score WHERE course_id='002' GROUP BY course_id) avg
+SELECT sid,'002',(SELECT AVG(num) FROM score WHERE course_id='002') avg_num
 FROM student
 WHERE sid NOT IN(
     SELECT student_id
@@ -1334,7 +1809,72 @@ FROM score
 GROUP BY course_id;
 ```
 
-> 
+> *18.按各科平均成绩从低到高和及格率的百分数从高到低顺序
+
+```sql
+-- 难点在于 统计及格人数，使用 CASE WHEN...THEN...
+SELECT course_id,AVG(num) avg,
+    SUM(CASE WHEN score.num<60 THEN 0 ELSE 1 END)/COUNT(1)*100 percent
+FROM score
+GROUP BY course_id
+ORDER BY avg ASC, percent DESC;
+```
+
+> 19.课程平均分从高到低显示（显示任课老师）
+
+```sql
+SELECT AVG(num) avg,c.cid,t.tname
+FROM score sc
+JOIN course c ON c.cid=sc.course_id 
+JOIN teacher t ON t.tid=c.teacher_id
+GROUP BY sc.course_id
+ORDER BY avg DESC;
+```
+
+> *20.查询各科成绩前三名的记录（不考虑成绩并列情况） 
+
+```sql
+-- 各科成绩
+SELECT c.cid AS 课程ID,c.cname AS 课程,
+(SELECT num FROM score AS s WHERE s.course_id=c.cid GROUP BY num ORDER BY num DESC LIMIT 0,1) AS 第一, 
+(SELECT num FROM score AS s WHERE s.course_id=c.cid GROUP BY num ORDER BY num DESC LIMIT 1,1) AS 第二, 
+(SELECT num FROM score AS s WHERE s.course_id=c.cid GROUP BY num ORDER BY num DESC LIMIT 2,1) AS 第三 
+FROM course c;
+```
+
+##练习21-30
+
+> 32.查询选修"杨艳"老师所授课程的学生中，成绩最高的学生姓名及其成绩
+
+```sql
+
+```
+
+> 34.查询不同课程但成绩相同的学生的学号.课程号.学生成绩
+
+```sql
+
+```
+
+> 35.查询每门课程成绩最好的前两名
+
+```sql
+
+```
+
+> 37.查询全部学生都选修的课程的课程号和课程名
+
+```sql
+
+```
+
+> 38.查询没学过"叶平"老师讲授的任一门课程的学生姓名
+
+```sql
+
+```
+
+> 39.查询两门以上不及格课程的同学的学号及其平均成绩
 
 ```sql
 
@@ -1352,94 +1892,65 @@ GROUP BY course_id;
 
 ```
 
-> 
+> 查询选修“李平老师”所授课程的学生中，成绩最高的学生姓名及其成绩
+
+```sql
+SELECT s.sid,s.sname,sc.num
+FROM score sc JOIN student s ON s.sid=sc.student_id
+WHERE num=(
+SELECT MAX(num)
+FROM score sc LEFT JOIN course c ON c.cid=sc.course_id LEFT JOIN teacher t ON t.tid=c.teacher_id
+WHERE t.tname='李平老师'
+);
+```
+
+> 查询不同课程但成绩相同的学生的学号.课程号.学生成绩；
 
 ```sql
 
 ```
 
-> 
+> 查询每门课程成绩最好的前两名
 
 ```sql
-
+SELECT cid AS 课程ID,cname AS 课程, 
+(SELECT num FROM score AS s WHERE s.course_id=c.cid GROUP BY num ORDER BY num DESC LIMIT 0,1) AS 第一, 
+(SELECT num FROM score AS s WHERE s.course_id=c.cid GROUP BY num ORDER BY num DESC LIMIT 1,1) AS 第二 
+FROM course AS c ---？？？
 ```
 
-> 
+> 查询全部学生都选修的课程的课程号和课程名
 
 ```sql
-
+SELECT course_id,COUNT(1) cnt
+FROM score
+GROUP BY course_id
+HAVING cnt=(
+    SELECT COUNT(1)
+    FROM student
+);
 ```
 
-> 
+> 查询没学过"叶平"老师讲授的任一门课程的学生姓名
 
 ```sql
-
+SELECT student.sid,student.sname
+FROM student s
+WHERE s.sid NOT IN 
+    (SELECT DISTINCT student_id FROM score WHERE course_id IN
+        (SELECT cid FROM course LEFT JOIN teacher ON course.teacher_id=teacher.tid 
+        WHERE teacher.tname="李平老师")
+    );
 ```
 
-> 
+> 查询两门以上不及格课程的同学的学号及其平均成绩
 
 ```sql
-
-```
-
-> 
-
-```sql
-
-```
-
-> 
-
-```sql
-
-```
-
-> 
-
-```sql
-
-```
-
-> 
-
-```sql
-
-```
-
-> 
-
-```sql
-
-```
-
-> 
-
-```sql
-
-```
-
-> 
-
-```sql
-
-```
-
-> 
-
-```sql
-
-```
-
-> 
-
-```sql
-
-```
-
-> 
-
-```sql
-
+SELECT student_id, AVG(num) avg_num,
+SUM((CASE WHEN num<60 THEN 1 ELSE 0 END)) sum_60
+FROM score
+GROUP BY student_id
+HAVING sum_60>1;
 ```
 
 > 
@@ -2147,35 +2658,15 @@ GROUP BY course_id;
 
 21.查询各科成绩前三名的记录:(不考虑成绩并列情况) 
 
-22.查询每门课程被选修的学生数；
 
-23.查询出只选修了一门课程的全部学生的学号和姓名；
-
-24.查询男生.女生的人数；
-
-25.查询姓"张"的学生名单；
-
-26.查询同名同姓学生名单，并统计同名人数；
-
-27.查询每门课程的平均成绩，结果按平均成绩升序排列，平均成绩相同时，按课程号降序排列；
-
-28.查询平均成绩大于85的所有学生的学号.姓名和平均成绩；
-
-29.查询课程名称为"数学"，且分数低于60的学生姓名和分数；
-
-30.查询课程编号为003且课程成绩在80分以上的学生的学号和姓名； 
-
-31.求选了课程的学生人数
 
 32.查询选修"杨艳"老师所授课程的学生中，成绩最高的学生姓名及其成绩；
 
-33.查询各个课程及相应的选修人数；
 
 34.查询不同课程但成绩相同的学生的学号.课程号.学生成绩；
 
 35.查询每门课程成绩最好的前两名；
 
-36.检索至少选修两门课程的学生学号；
 
 37.查询全部学生都选修的课程的课程号和课程名；
 
@@ -2183,9 +2674,8 @@ GROUP BY course_id;
 
 39.查询两门以上不及格课程的同学的学号及其平均成绩；
 
-40.检索"004"课程分数小于60，按分数降序排列的同学学号；
 
-41.删除"002"同学的"001"课程的成绩；
+
 ```
 
 
