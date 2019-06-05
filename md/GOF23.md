@@ -2,9 +2,190 @@
 
 
 
-#单例Singleton
+# 单例Singleton
 
+GoF23：Group of Four，四个人提出的23中设计模式。
 
+## 基础概念
+
+解决一个类在内存中只存在一个对象的问题（适用于实例化需要较多资源的对象）。
+
+> 常见场景
+
+```java
+在Spring中，每个Bean默认就是单例的，这样做的优点是Spring容器可以管理
+在Spring MVC框架/struts1框架中，控制器对象也是单例
+```
+
+```java
+Windows的Task-Manager（任务管理器）和Recycle-Bin（回收站）。在整个系统运行过程中，仅维护一个实例
+操作系统的文件系统,也是大的单例模式实现的具体例子,一个操作系统只能有一个文件系统
+
+项目中读取配置文件的类。没必要每次使用配置文件数据，每次 new 一个对象去读取。
+
+网站的计数器，一般也是采用单例模式实现，否则难以同步
+
+应用程序的日志应用，一般都何用单例模式实现，这一般是由于共享的日志文件一直处于打开状态，因为只能有一个实例去操作，否则内容不好追加。
+
+数据库连接池的设计一般也是采用单例模式，因为数据库连接是一种数据库资源
+
+Application 也是单例的典型应用（Servlet编程中会涉及到）
+在servlet编程中,每个Servlet也是单例
+
+```
+> 各种方式对比
+
+    饿汉式  --->  线程安全，调用效率高。不能'延时加载'
+    懒汉式  --->  线程安全，但效率不高。可以'延时加载'
+    
+    双重检测锁 -> 饿汉式是方法锁，此方法是局部锁。
+    静态内部类 -> 线程安全，调用效率高，可以'延时加载'!
+    
+    枚举实现  -> 线程安全，调用效率高，不能'延时加载'
+             -> 枚举本身就是单例模式，由 JVM 从根本上提供保障！避免通过反射和反序列化的漏洞！
+> 场景选择
+
+```java
+占用资源少，不要 延时加载: //枚举式    > 饿汉式
+占用资源大，需要 延时加载: //静态内部类 > 懒汉式
+```
+## 五种方式
+
+> 通用套路
+
+```java
+(1).私有构造函数：避免其他类实例化该类对象
+(2).提供私有的静态属性：存储对象的地址
+(3).提供公共的静态方法：获取静态属性②
+```
+> 饿汉式
+
+```java
+public class Singleton {
+    private Singleton() {}
+
+    private static Singleton instance = new Singleton();
+
+    //(a).static 变量会在类装载时初始化，此时也不会涉及多个线程访问该对象的问题。
+    //(b).虚拟机保证只会装载一次该类，肯定也不会发生并发访问的问题。
+    //综上两点：可以省略关键字 synchronized
+    public static /*synchronized*/ Singleton newInstance() {
+        return instance;
+    }
+}
+```
+> 懒汉式
+
+```java
+public class Singleton {
+    private Singleton() {}
+
+    //延迟加载 --> 假如 newInstance() 从不调用，则也不会实例化对象，有效避免了资源的浪费
+    private static Singleton instance;
+
+    //懒汉式 ---> 对于多线程访问容易出问题，加上同步锁
+    public static synchronized Singleton newInstance() {
+        if (null == instance) {
+            instance = new Singleton();
+        }
+        return instance;
+    }
+}
+```
+> 双重检测锁
+
+```java
+public class Singleton {
+    private Singleton() {}
+
+    private static volatile Singleton instance; //必须有关键字: volatile
+
+    public static Singleton newInstance() {
+        if (null == instance) { //避免不必要的同步，已经存在对象
+            synchronized (Singleton.class) { //静态方法的同步锁一般选为当前类的 class
+                if (null == instance) {
+                    instance = new Singleton();
+                }
+            }
+        }
+        return instance;
+    }
+}
+```
+```java
+//volatile：没有此关键字，将导致其他线程可能访问到一个没有初始化的对象
+创建对象 new 过程可以拆分为3步：1.开辟空间；2.初始化对象信息；3.返回对象的地址给引用
+假如 new 过程是耗时操作，可能发生 <指令重排>，即先执行 1，3，在执行 2
+这将造成，线程-A 还在执行 new 的第 2 步，而线程-B已经拿到对象的引用，此时线程-B拿到的就是一个空的对象
+```
+
+> 静态内部类
+
+```java
+public class Singleton {
+    private Singleton() {}
+
+    //外部类没有 static 属性，则不会像饿汉式那样立即加载对象
+    //只有真正调用 newInstance()，才会加载静态内部类，加载类时是线程安全的
+    //static final instance，保证了内存中只有这样一个实例存在，而且只能被赋值一次，从而保证了线程安全性
+    //兼备了并发高效调用和延迟加载的优势！
+    private static class SingletonInner {
+        private static final Singleton instance = new Singleton();
+    }
+
+    public static Singleton newInstance() {
+        return SingletonInner.instance;
+    }
+}
+```
+> 枚举实现
+
+```java
+public enum Singleton {
+    INSTANCE;
+
+    public void doSth() { }
+}
+```
+## 方式比对
+
+> 反射破解
+
+```java
+@Test
+public void test() throws Exception {
+    Singleton instance0 = Singleton.newInstance();
+    Singleton instance1 = Singleton.newInstance();
+    System.out.println(instance0 == instance1); //true
+
+    Class<?> clazz = Class.forName("com.example.spring.test.Singleton");
+    Constructor<?> constructor = clazz.getDeclaredConstructor(); //无参构造
+    constructor.setAccessible(true); //必要
+    Object instance2 = constructor.newInstance();
+    System.out.println(instance2 == instance0); //false -> 通过反射破解（不包括枚举）
+}
+```
+> 效率测试
+
+```java
+long start = System.currentTimeMillis();
+int nThread = 10;
+
+//同步辅助类，它允许一个或多个线程一直等待，直到其他线程的操作执行完后再执行
+CountDownLatch count = new CountDownLatch(nThread);
+for (int i = 0; i < nThread; i++) {
+    new Thread(() -> {
+        for (int j = 0; j < 10000; j++) {
+            Singleton instance = Singleton.newInstance();
+        }
+
+        count.countDown(); //每当一个线程完成了自己的任务后，计数器的值就会减 1
+    }).start();
+}
+
+count.await(); // main线程阻塞，直到 count 减到0，才继续向下执行
+System.out.println("耗时：" + (System.currentTimeMillis() - start));
+```
 
 
 
@@ -77,7 +258,9 @@ public class BufferedWriter extend Writer{ //装饰类自身还是 Writer 的子
 1. Servlet API 中的 `ServletRequestWrapper` 增强了 ServletRequest 对象的功能。
 2. IO流的实现细节，举例：`BufferedOutputStream`
 
-![](assets/Decorator.png)
+![](assets/gof0.jpg)
+
+![](assets/gof1.png)
 
 > 1.抽象组件（Component）：需要装饰的抽象对象（接口或抽象父类）。`OutputStream`
 
@@ -140,7 +323,7 @@ public class BufferedOutputStream extends FilterOutputStream {
 
 2、违背了设计原则：开闭原则，对扩展开放，对修改关闭。并且为增加功能把每个方法都修改，也不便于维护。
 
-3、违背了设计原则：单一职责，每个方法除了要完成自身的功能，还要计算耗时等；每一个方法引起它变化的原因就有多种。
+3、违背了设计原则：单一职责，每个方法除了要完成自身的功能，还要计算耗时等。
 
 4、违背了设计原则：依赖倒转，抽象不应该依赖细节，两者都该依赖抽象。在Test类中，Test与Math都是细节。
 
@@ -178,6 +361,10 @@ class MyMath {
 
 > 代理模式的核心角色
 
+![](assets/gof2.png)
+
+![](assets/gof3.png)
+
 抽象角色：定义代理角色和真实角色的公共对外方法。
 
 真实角色：实现抽象角色，定义真实角色所要实现的业务逻辑，供代理角色调用（关注真正的业务逻辑！）。
@@ -186,13 +373,13 @@ class MyMath {
 
 
 ```java
-interface IMyMath { //抽象角色
+interface IProxy { //抽象角色
     int add(int num1, int num2);
 }
 ```
 
 ```java
-class MyMath implements IMyMath { //真实角色
+class RealObject implements IProxy { //真实角色
 
     @Override
     public int add(int num1, int num2) {
@@ -202,11 +389,11 @@ class MyMath implements IMyMath { //真实角色
 ```
 
 ```java
-class MyMathProxy implements IMyMath { //代理角色
-    MyMath myMath;
+class ProxyObject implements IProxy { //代理角色
+    IProxy proxy;
     
-    public MyMathProxy(MyMath myMath) {
-        this.myMath = myMath;
+    public ProxyObject(IProxy proxy) {
+        this.proxy = proxy;
     }
 
     @Override
@@ -214,7 +401,7 @@ class MyMathProxy implements IMyMath { //代理角色
         System.out.println("add() 参数: " + num1 + " - " + num2);
 
         long l = System.currentTimeMillis();
-        int res = myMath.add(num1, num2);
+        int res = proxy.add(num1, num2);
         System.out.println("add() 耗时: " + (System.currentTimeMillis() - l));
         return res;
     }

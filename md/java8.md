@@ -94,7 +94,7 @@ boolean before = plusDays.isBefore(ldt); //false
 boolean leapYear = LocalDate.now().isLeapYear();
 ```
 
-## DateTimeFormatter
+## DateTimeFor...
 
 > 日期格式化，线程安全。
 
@@ -199,6 +199,68 @@ interface I {
 
 
 
+
+
+
+## Optional
+
+Optional<T> 是一个容器类，代表一个值存在或不存在。原来用 null 表示一个值不存在，现在 Optional 可以更好的表达这个概念，并且可以避免空指针异常。`Optional应该只用于返回类型，而不是参数，也不是字段。`
+
+> 常用方法
+
+```java
+Optional.of(obj); //参数不能为null，否则 NPE
+Optional.empty(); //空实例
+
+Optional.ofNullable(obj); //obj不为 null，创建实例；否则创建空实例。【常用】
+```
+
+```java
+Dog dog = optional.orElse(null); //有则返回，无则为 null
+Dog dog = optional.orElseGet(() -> new Dog(5, "yellow")); //...无则创建
+Dog dog = optional.orElseThrow(() -> new RuntimeException("NPE")); //...无则抛异常
+
+optional.ifPresent(x -> System.out.println(x.getName())); //有则打印
+```
+
+```java
+public<U> Optional<U> map(Function<? super T, ? extends U> mapper)
+
+public T orElse(T other)
+public T orElseGet(Supplier<? extends T> other)
+public void ifPresent(Consumer<? super T> consumer)
+
+public Optional<T> filter(Predicate<? super T> predicate)
+public<U> Optional<U> flatMap(Function<? super T, Optional<U>> mapper)
+public <X extends Throwable> T orElseThrow(Supplier<? extends X> exceptioSupplier) throws X
+```
+> 优雅判 null
+
+```java
+public String getDogName0(Person person) throws IllegalArgumentException { //繁琐
+    if (null != person) {
+        Person.Pet pet = person.getPet();
+        if (null != pet) {
+            Person.Pet.Dog dog = pet.getDog();
+            if (null != dog) {
+                return dog.getName();
+            }
+        }
+    }
+    throw new IllegalArgumentException("param isn't available.");
+}
+```
+
+```java
+public String getDogName1(Person person) throws IllegalArgumentException { //优雅
+    return Optional.ofNullable(person)
+            .map(x -> x.getPet())
+            .map(x -> x.getDog())
+            .map(x -> x.getName())
+            // .orElse("Unknown") //以上都为null，则设置默认值 或 抛出异常
+            .orElseThrow(() -> new IllegalArgumentException("param isn't available."));
+}
+```
 
 
 

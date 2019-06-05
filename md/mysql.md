@@ -369,14 +369,14 @@ Create An Anonymous Account: 新建一个匿名用户，只可连接，不可操
 > 日期类型
 
 ```sql
-datetime：占用8个字节，表示范围 '1000-01-01 00:00:00.000000' to '9999-12-31 23:59:59.999999'
 timestamp：占用4个字节，表示范围 '1970-01-01 00:00:01.000000' to '2038-01-19 03:14:07.999999'
+datetime：占用8个字节，表示范围 '1000-01-01 00:00:00.000000' to '9999-12-31 23:59:59.999999'
 
 如果存进去的是NULL, timestamp会自动储存当前时间，而 datetime会储存 NULL。
 
 timestamp 容易受mysql版本 和 数据库所在时区的影响。
 
-总结： timestamp类型适合用来记录数据的最后修改时间，因为只要更改了记录中其他字段的值， timestamp字段的值都会被自动更新。（如果需要可以设置 timestamp不自动更新）
+总结： timestamp类型适合用来记录数据的最后修改时间，因为只要更改了记录中其他字段的值， timestamp字段的值都会被自动更新。（如果需要，可以设置 timestamp不自动更新）
 ```
 
 ```sql
@@ -610,7 +610,7 @@ show engines; -- 查看当前数据库支持的存储引擎。其中，innodb �
 事务执行会使数据从一个一致性状态变换到另外一个一致性状态（转账之前和之后，金钱总额不变）。
 
 -- 隔离性（Isolation）
-一个事务的执行不收其他事务的干扰，具体和设置的事务隔离级别有关。包括读未提交（Read uncommitted）、读提交（read committed）、可重复读（repeatable read）和串行化（Serializable）。
+一个事务的执行不受其他事务的干扰，具体和设置的事务隔离级别有关。包括读未提交（Read uncommitted）、读提交（read committed）、可重复读（repeatable read）和串行化（Serializable）。
 
 -- 持久性（Durability）
 一个事务一旦提交，则会永久的改变数据库中的数据，不能撤销。比如，删除一条数据。
@@ -636,16 +636,145 @@ COMMIT; -- 提交事务
 -- ROLLBACK; --回滚事务，与提交事务，二选一
 ```
 
-> 数据库的隔离级别
+> 事务的隔离级别
+
+多个并行事务访问数据库中相同的数据时，如果没有采取必要的隔离机制，就会导致各种并发问题：
 
 ```sql
-多个并行事务访问数据库中相同的数据时, 如果没有采取必要的隔离机制, 就会导致各种并发问题:
-'1.脏读 - 2更新1读2回滚'：对于两个事务 T1 和 T2，T1读取了已经被 T2 更新但还没有被提交的字段。之后，若 T2 回滚，T1 读取的内容就是临时且无效的。
+'1.脏读（更新） - 2更新1读2回滚'：对于两个事务 T1 和 T2，T1读取了已经被 T2 更新但还没有被提交的字段。之后，若 T2 回滚，T1 读取的内容就是临时且无效的。
 
 '2.不可重复读 - 1读2提交1读'：对于两个事务 T1 和 T2, T1 读取了一个字段，然后 T2 更新了该字段。之后，T1 再次读取同一个字段, 值就不同了。
 
-'3.幻读 - 1读2新增1读'：对于两个事务T1 和 T2，T1 从一个表中读取了一个字段, 然后 T2 在该表中插入了一些新的行。之后，如果 T1 再次读取同一个表，就会多出几行。
+'3.幻读（插入） - 1读2插入1读'：对于两个事务T1 和 T2，T1 从一个表中读取了2行数据, 然后 T2 在该表中插入了一些新的行。之后，如果 T1 再次读取同一个表，就会多出几行。
 ```
+
+```sql
+SELECT @@tx_isolation; -- 查看当前的隔离级别。默认是：可重复读（repeatable read）
+
+SET transaction isolation level repeatable read; -- 设置隔离级别，仅对当前连接起效
+SET global transaction isolation level read committed; -- 设置全局的隔离级别
+
+读未提交（Read uncommitted）  -- 以上 ③ 种问题都可能发生。
+读提交（read committed）      --可以避免 脏读。
+可重复读（repeatable read）   -- ...... 脏读 + 不可重复读。（默认）
+串行化（Serializable）        -- 以上 ③ 个问题都可以避免。但效率低，推荐使用默认
+```
+
+## 存储过程
+
+一组预先编译好的sql语句集合，可以理解成批处理语句。
+
+```sql
+-- 优点
+封装并隐藏复杂的商业逻辑，简化sql操作，并提高代码的重用性。
+减少编译次数，只编译一次
+减少和数据库服务器的连接次数，提高了效率
+
+-- 缺点
+切换到其他厂商的数据库系统时，需要重写原有的存储过程。
+存储过程的性能调校与撰写，受限于各种数据库系统。
+```
+
+>查看：存储过程详细的定义信息
+
+```sql
+SHOW CREATE PROCEDURE 数据库.存储过程名;
+```
+
+> 修改：只能改变存储过程的特征（注释和权限），不能修改过程的参数以及过程体。
+
+```sql
+ALTER {PROCEDURE | FUNCTION}……
+```
+
+> 删除：删除后再创建，可以修改存储过程的参数和过程体。
+
+```sql
+DROP PROCEDURE [IF EXISTS] db_name.sp_name;
+```
+
+> 创建：过程体只有一句话，BEGIN END可以省略
+
+```sql
+-- 参数模式：IN（只能做输入），OUT（只能做输出），INOUT（既能...又能...），
+CREATE PROCEDURE sp_test(参数模式 参数名 参数类型...)
+BEGIN
+  -- 存储过程体（一组合法的sql语句）
+END
+```
+
+```sql
+DROP PROCEDURE IF EXISTS test0430.login; -- 有则删除
+
+CREATE PROCEDURE login(IN login_name VARCHAR(20), IN login_pwd VARCHAR(15))
+BEGIN
+    DECLARE cnt INT DEFAULT 0; -- 变量声明
+    DECLARE res VARCHAR(10) DEFAULT '';
+
+    SELECT COUNT(*) INTO cnt -- 变量赋值
+    FROM student s
+    WHERE s.sname=login_name AND s.sid=login_pwd;
+
+    IF cnt>0 THEN
+		SET res='登陆成功'; -- if-then-else 语句
+    ELSE
+        SET res='登录失败'; -- 变量使用
+    END IF;
+		SELECT res;
+END
+```
+
+> 4种变量
+
+```sql
+用户变量：以"@"开始，形式为"@变量名"。跟mysql客户端绑定，设置的变量，只对当前用户使用的客户端生效
+
+全局变量：定义时，以如下两种形式出现，set GLOBAL 变量名  或者  set @@global.变量名 对所有客户端生效。只有具有super权限才可以设置全局变量
+
+会话变量：只对连接的客户端有效。
+
+局部变量：作用范围在 begin到 end语句块之间。在该语句块里设置的变量。 declare语句专门用于定义局部变量。set语句是设置不同类型的变量，包括会话变量和全局变量
+```
+
+```sql
+-- 变量包括：局部变量和用户变量。用户变量包括：会话变量和全局变量。
+
+局部变量 与 用户变量：
+1.用户变量是以"@"开头的。局部变量没有这个符号。
+2.定义方式不同。用户变量使用 set语句，局部变量使用 declare语句定义 
+3.作用范围。局部变量只在 begin-end语句块之间有效，出了范围就失效。
+
+用户定义的变量就叫用户变量。这样理解的话，会话变量和全局变量都可以是用户定义的变量。只是他们是对当前客户端生效，还是对所有客户端生效的区别了。所以，用户变量包括了会话变量和全局变量
+```
+
+> 条件语句：注意每个结束符号 ;
+
+```sql
+IF cnt>0 THEN
+    SET res='登陆成功'; -- if-then-else 语句
+ELSE
+    SET res='登录失败';
+END IF;
+```
+
+```sql
+CASE cnt
+WHEN 0 THEN
+SET res='登录失败'; --case语句
+ELSE
+SET res='登录失败';
+END CASE;
+```
+
+```sql
+WHILE var<6 DO
+SET res=res+1; --while语句
+END WHILE;
+```
+
+
+
+
 
 
 
@@ -742,13 +871,13 @@ SELECT
 ```sql
 -- 利用三目函数 IF(e1, e2, e3)
 SELECT IF((SELECT memo FROM passage_set WHERE mark="park_number") IS NULL,
-	(SELECT memo FROM system_set WHERE mark="park_number"),
-	(SELECT memo FROM passage_set WHERE mark="park_number")) memo
+    (SELECT memo FROM system_set WHERE mark="park_number"),
+    (SELECT memo FROM passage_set WHERE mark="park_number")) memo
 ```
 ```sql
 -- 利用函数 IFNULL(e1, e2) 
 SELECT IFNULL ((SELECT memo FROM passage_set WHERE mark="park_number"),
-	(SELECT memo FROM system_set WHERE mark="park_number")) memo
+    (SELECT memo FROM system_set WHERE mark="park_number")) memo
 ```
 
 > IS NULL 或 IS NOT NULL
@@ -831,8 +960,8 @@ double d = Math.floor(-1.455); //-2.0 -->同sql
 > 字符串命令（`SUBSTR() 方法是 SUBSTRING() 的简写，索引从1开始`）
 
 ```sql
-SELECT LENGTH('测试') AS length;			-- 6 --> 以'字节'为单位（汉字：utf-8占3字节，GBK占2）
-SELECT CHAR_LENGTH('测试') AS charLength;	-- 2 --> '字符'【推荐】。VARCHAR(10)，10指的是字符。
+SELECT LENGTH('测试') AS length;            -- 6 --> 以'字节'为单位（汉字：utf-8占3字节，GBK占2）
+SELECT CHAR_LENGTH('测试') AS charLength;    -- 2 --> '字符'【推荐】。VARCHAR(10)，10指的是字符。
 
 SELECT CONCAT('aaa', 'vvv') con; -- 字符串拼接
 
@@ -876,14 +1005,14 @@ FROM employees;
 
 SELECT YEAR('2019-4-23 20:41:20') y; -- 2019 -->截取年份
 
--- DATE(); 提取字符串中的日期部分. SELECT DATE("2019-01-11 14:38:11") AS Date		
+-- DATE(); 提取字符串中的日期部分. SELECT DATE("2019-01-11 14:38:11") AS Date        
 -- EXTRACT(); 提取字符串的各时间部分.
 SET @now=NOW();
 SELECT EXTRACT(YEAR FROM @now) AS nowYear, -- 2019
-	   EXTRACT(HOUR FROM @now) AS nowHour; -- 14
+       EXTRACT(HOUR FROM @now) AS nowHour; -- 14
 
 -- DATE_ADD() / DATE_SUB(); 给定日期添加(减少)指定的时间间隔
-SELECT DATE_ADD(@now, INTERVAL 1 DAY);	-- 1天后的NOW.(-1表示1天前)
+SELECT DATE_ADD(@now, INTERVAL 1 DAY);    -- 1天后的NOW.(-1表示1天前)
 
 -- DATEDIFF(); 两个日期之间的天数
 SELECT DATEDIFF('2008-12-30','2008-12-31') AS DiffDate -- -1

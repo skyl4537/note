@@ -4,106 +4,7 @@
 
 
 
-# Idea
 
-> 使用技巧
-
-- **复制警告或错误信息：** 鼠标光标悬浮在报错的地方，待错误提示出现后，键盘按住 Alt，同时点击鼠标左键，Ctrl+V 到度娘即可。
-- **mvn打包，跳过Test：** 打开右侧标签页"Maven-Projects"，当前项目'Lifecycle'，选中'Test'，点击菜单栏的"小闪电"，此时Test上多了一条横。
-
-> 快捷键
-
-|                    描述                    |            idea             |       eclipse        |
-| :----------------------------------------: | :-------------------------: | :------------------: |
-|                  main方法                  |            psvm             |  main（Alt+/补全）   |
-|                 输出控制台                 |            sout             |         syso         |
-|               for普通 / 增强               |         fori / iter         |   for（Alt+/选择）   |
-|                 try/catch                  |         Ctrl+Alt+T          |          *           |
-|            自动生成Get/实现方法            |         Alt+Insert          |          *           |
-|                                            |                             |                      |
-|              抽取变量（方法）              |      Ctrl+Alt+V （M）       |   Shift+Alt+L（M）   |
-|                   格式化                   |         Ctrl+Alt+L          |     Ctrl+Shift+F     |
-|               代码提示/补全                |       Ctrl+Alt+Space        |        Alt+/         |
-|                  导包优化                  |         Ctrl+Alt+O          |     Ctrl+Shift+O     |
-|                                            |                             |                      |
-|        上下移动单行语句（整个方法）        | Shift+Alt+↑（Shift+Ctrl+↑） |      Alt+↑（）       |
-|                 批量重命名                 |          Shift+F6           |     Shift+Alt+R      |
-|            注释单行（选中部分）            |   Ctrl+/（Ctrl+Shift+/）    |        Ctrl+/        |
-|                  参数提示                  |           Ctrl+P            |                      |
-|              查看类的继承关系              |           Ctrl+H            |        Ctrl+T        |
-|                   定位行                   |           Ctrl+G            |        Ctrl+L        |
-|            整行复制（整行删除）            |      Ctrl+D（Ctrl+X）       | Ctrl+Alt+↓（Ctrl+D） |
-|                                            |                             |                      |
-|                 大小写转化                 |        Ctrl+Shift+U         |                      |
-|                返回上次修改                |    Ctrl+Shift+BackSpace     |                      |
-|           当前工作空间查找java类           |      Ctrl+Shift+Alt+N       |                      |
-|                 查看类结构                 |            Alt+7            |                      |
-|   跳到下(上)一个选择项（配合Ctrl+F使用）   |       F3（Shift+F3）        |                      |
-| 在全局（当前类）查找方法调用，可配合F3使用 |      Alt+F7（Ctrl+F7）      |      Ctrl+Alt+H      |
-|             折叠（展开）代码块             |   Shift+Ctrl+减号（加号）   | Shift+Ctrl+/（*号）  |
-|                                            |                             |                      |
-|        调试：跳到下一步（进入代码）        |          F8（F7）           |       F6（*）        |
-
-> 基本设置
-
-```java
-//黑色主题 --> 界面的字体大小,非代码字体
-Appearance & Behavior - Appearance - Theme(选为Darcula) 
-勾选 Override default fonts by(......) - Name(Mircrosoft Yahei UI) - Size(12)
-    
-//改变代码的字体和大小
-Editor - Colors & Fonts
-//首先,点击 Save As...,自定义一个名为 skyl 的样式
-//然后,选择具体的字体和大小 Primary font(Source Code Pro) - Size(15)
-    
-//缩进采用4个空格,禁止使用tab字符
-Editor - Code Style - java - Tabs and Indents - Use tab character(取消勾选)
-    
-//自动换行
-Editor - Code Style - Java
-右侧标签 Wrapping and Braces, (√) Line breaks 和 (√) Ensure right margin is not exceeded
-    
-//悬浮文档提示
-Editor - General - Show quick documentation on...
-    
-//代码提示忽略大小写
-Editor - General - Code Completion - Case sensitive...(None)
-//代码补全快捷键: Ctrl + Alt + Space
-    
-//编码格式
-Editor - File Encodings - 3个UTF-8
-
-//显示行号等
-Editor - General - Appearance //勾选以下
-    (√)Show line number(行号) + (√)Show right margin(右边线) + (√)Show method sep...(方法分割线)
-
-//自动导包
-Editor - General - Auto Import 
-    Insert imports...(All) + (√)Add unambiguous... + (√)Optimize imports...
-    
-//设置文件和代码的模板
-Editor - File and Code Templates - Includes - 自行添加
-
-//取消单行显示tabs
-Editor - General - Editor Tabs - (X)show tabs in single...
-    
-//自动编译
-Build,Exe... - Compiler - (√)Build project automatically
-    
-//Gradle配置
-Build,Exe... - Build Tools - Gradle - Offline work
-```
-
-> 版本相关：Alpha，Beta，SNAPSHOT，Release，GA
-
-```java
-'Alpha': 内部测试版。一般不向外部发布，会有很多Bug。一般只有测试人员使用。
-'Beta': 测试版。这个阶段的版本会一直加入新的功能，在Alpha版之后推出。
-'RC(Release Candidate)': 候选版本。不会再加入新的功能，主要着重于除错。
-'SNAPSHOT': 不稳定，尚处于开发中的版本。
-
-'GA(General Availability)': 正式发布版本。在国外都是用GA来说明'Release'版本的。
-```
 # JVM
 
 ## 栈堆方法区
@@ -402,24 +303,24 @@ if (x < 1 && ++y > 0) //y 不会增长
     b.内部的结构：如下所示
     
 interface MyInterface {
-	//java7 -> 只能声明全局常量(public static final,可省略不写)和抽象方法(public abstract)
-	public static final int STATIC_NUM = 7;
+    //java7 -> 只能声明全局常量(public static final,可省略不写)和抽象方法(public abstract)
+    public static final int STATIC_NUM = 7;
 
-	void method();
+    void method();
 
-	//java8 -> 声明 静态方法 和 默认方法
-	static void staticMethod() {
-		System.out.println("java8-静态方法");
-	}
+    //java8 -> 声明 静态方法 和 默认方法
+    static void staticMethod() {
+        System.out.println("java8-静态方法");
+    }
 
-	default void defaultMethod() {
-		System.out.println("java8-默认方法");
-	}
+    default void defaultMethod() {
+        System.out.println("java8-默认方法");
+    }
 
-	//java9 -> 声明 私有方法（静态和非静态两种）
-	private static void privateMethod() {
-		System.out.println("java9-私有方法"); //将冗余代码提取到通用的私有方法中
-	}
+    //java9 -> 声明 私有方法（静态和非静态两种）
+    private static void privateMethod() {
+        System.out.println("java9-私有方法"); //将冗余代码提取到通用的私有方法中
+    }
 }
 ```
 
@@ -563,20 +464,7 @@ public void test() {
 }
 ```
 
-> 方法调用，传递参数遵循值传递原则（`传递的是值或引用的拷贝`）。
 
-- 基本类型传递的是数据值的拷贝。在方法内对值类型操作不会改变原有值。
-
-- 引用类型传递的是该对象的堆内存地址，即引用拷贝，但指向同一个对象。所以，在方法内对引用类型进行重新赋引用，不会改变原有值。但是对原有引用的属性进行操作时，可改变这个引用的属性值。
-
-```java
-private void doSth(int i, String s, Person p) {
-    i += 1;
-    s += "hello";
-    p = new Person("li", 20);
-    // p.age = 30; //将改变原有引用的属性值
-}
-```
 
 >多态原理
 
@@ -588,15 +476,157 @@ private void doSth(int i, String s, Person p) {
 
 
 
-#6.异常机制
 
 
+# 2.基础阶段
 
+## Integer
 
+> 基本数据类型：三大类，八小种。引用类型：类，接口，数组。
 
 ```java
-//异常信息应该包括两类信息：案发现场信息和异常堆栈信息。如果不处理，那么往上抛。
-logger.error(各类参数或者对象 toString + "_" + e.getMessage(), e);
+布尔类型： boolean （1bit，1位）
+字符类型： char （1byte，8位，[-128, 127]）
+数值类型-整型： byte （1byte）， short （2byte）， int （4byte）, long （8byte） 
+数值类型-浮点型： float （4byte）， double （8byte）
+```
+
+> 装箱 & 拆箱
+
+```java
+Integer i0 = new Integer(3);
+Integer i1 = Integer.valueOf(3); //装箱：基本类型 --> 包装类
+
+int num0 = i0.intValue(); //拆箱：包装类 --> 基本类型
+
+Integer i = 4; //自动装箱：相当于Integer i = Integer.valueOf(4);
+
+//自动拆箱：等号右边，将i对象转成基本数值 i.intValue() + 5;
+//加法运算完成后，再次装箱，把基本数值转成对象
+i = i + 5;
+```
+
+> 使用标准
+
+- 所有 POJO 类属性必须使用`包装数据类型`，并且`不要设定默认值`。不设初值是提醒使用者在使用时必须自己显式地进行赋值。任何 `NPE（NullPointerExceptionrn） `问题，或入库检查，都由使用者来保证。
+- RPC 方法的返回值和参数必须使用`包装数据类型`。
+- 所有的局部变量 【推荐】 使用`基本数据类型`。
+
+```java
+//【反例】设定默认值，会在更新其它字段时，附带更新此字段，导致创建时间被修改成当前时间
+Date editTime = new Date();
+```
+```
+【反例】某业务的交易报表上显示成交总额涨跌情况，即正负 x%，x 为基本数据类型。
+调用的RPC 服务，调用不成功时，返回的是默认值，页面显示：0%，这是不合理的，应该显示成中划线-。
+所以包装数据类型的 null 值，能够表示额外的信息，如：远程调用失败，异常退出
+```
+
+>`【强制】`所有的相同类型的包装类对象之间值的比较，全部使用 equals()。
+
+```java
+Integer m = 128, n = 128;
+System.out.println(m.equals(n)); //true --> 对比【值】
+System.out.println(m == n); //false     -->  对比【内存地址】
+
+Integer m1 = 127, n1 = 127;
+System.out.println(m1.equals(n1)); //true
+System.out.println(m1 == n1); //true
+
+【Integer的缓存策略】jvm启动时，预先创建 [-128,127] 之间整数的 Integer 实例，然后保存到缓存数组 
+IntegerCache。以后再创建此区间整数的包装类实例时，直接从缓存取，不会再 new 新对象，即使用同一个对象。
+```
+
+
+##method
+
+
+
+
+
+> 方法调用，参数传递遵循值传递原则（`传递的是值或引用的拷贝，不改变原有值`）。
+
+- 基本类型传递的是数据值的拷贝。在方法内对值类型操作不会改变原有值。
+
+- 引用类型传递的是该对象的堆内存地址，即引用拷贝，但指向同一个对象。所以，在方法内对引用类型进行重新赋引用，不会改变原有值。但是对原有引用的属性进行操作时，可改变这个引用的属性值。
+
+```java
+private void doSth(int i, String s, Person p) {
+    i += 1;
+    s += "hello";
+    p = new Person("li", 20);
+    // p.age = 30; //将改变原有引用的属性值，其他则不会改变原有值
+}
+```
+
+
+##final
+
+>final，finally，finalize
+
+```java
+'final-类'：不可被继承，即 final 类没有子类。 final 类中的所有方法默认全是final方法。
+
+'final-方法'：不能被重写。其中 private 和 static 方法默认就是 final
+
+'final-变量'：即常量。值类型，不能修改其值；引用类型，不能修改其对应的堆内存地址，即不能重新再赋值。
+```
+
+```java
+'finally'：异常处理的一部分，代码肯定会被执行，常用于释放资源。
+
+'finalize'：Object类的一个方法，用于垃圾回收。
+```
+
+>字符串一经创建就不可改变 `final String`。以下代码，原始的 String对象 中的内容到底变了没有？
+
+```java
+String str = "Hello";
+str = str + "world!";
+
+没有改变。这段代码中，str 原始指向 "Hello"，对 str 进行了 + 操作运算之后，str 不再指向 "hello"，
+而是指向 "Hello world!"，但字符串 "hello" 依然存在于内存之中，只是 str 这个引用变量不再指向它
+```
+
+> final修饰变量
+
+final 修饰值类型（基本数据类型）的变量，那么这个变量的值就定了，不能变了。
+
+final 修饰引用类型的变量，那么该变量存的是一个内存地址，该地址就不能变了。但是，该内存地址所指向的那个对象还是可以变的。就像你记住了人家的门牌号，但你不能管人家家里人员数量。
+
+```java
+public void doFinal(final int i, final StringBuilder sb) {
+    // i = i + 1; //编译报错，因为final修饰的基本类型 --> 值不能变
+    // sb = new StringBuilder(); //同上，修饰引用类型 --> 堆内存地址不能变,即引用不能变
+
+    sb.append("java"); //编译通过 -> 引用变量所指向的对象中的内容，可以改变
+}
+```
+
+
+> 为什么内部线程中引用外部对象要加final修饰符呢
+
+```java
+被内部线程引用的外部对象受到外部线程作用域的制约，有其特定的生命周期。
+当外部对象在外部线程中生命周期已经结束，而内部线程中还在持续使用，怎样解决问题？'内部线程变量要访问一个已不存在的外部变量？'在外部变量前添加 final 修饰符，其实内部线程使用的这个变量就是外部变量的一个'复制品'，即使外部变量生命周期已经结束，内部复制品依然可用。
+```
+
+
+
+##finally
+
+> try 中的 return 语句和 finally 代码块执行的先后顺序？
+
+```java
+int num = 5;
+try {
+    // int _res = num;
+    // return _res;
+    return num + 1; //这一语句 等价为 上面两行语句，所以在 finally 块中对 num 进行操作将不起作用
+} finally {
+    num = num + 2; //6
+    // return num + 2; //7 --> 若 finally 块中也有 return 语句，则以 finally 为主，即返回 7
+}
 ```
 
 
@@ -605,35 +635,112 @@ logger.error(各类参数或者对象 toString + "_" + e.getMessage(), e);
 
 
 
-#String
-
-## 不可变性
-
-> final String
-
-final类不可被继承，如LocalDateTime，StringBuilder（非线程安全），StringBuffer，Integer等。
-
-**
-
-一个String对象一旦在内存（堆）中被创建出来，它就无法被修改。特别要注意的是，**String类的所有方法都没有改变字符串本身的值，都是返回了一个新的String对象**。
-
-- `高效性-缓存HashCode` 字符串的不可变能保证其 hashcode 永远保持一致，不需要重新计算。这就使得字符串很适合作为 Map 中的 Key，字符串的处理速度要快过其它的键对象。
-- `安全性` String被广泛的使用在其他Java类中充当参数。比如网络连接、打开文件等操作。如果字符串可变，那么类似操作可能导致安全问题。因为某个方法在调用连接操作的时候，他认为会连接到某台机器，但是实际上并没有（其他引用同一String对象的值修改会导致该连接中的字符串内容被修改）。可变的字符串也可能导致反射的安全问题，因为他的参数也是字符串。
-- `不可变对象天生就是线程安全的` 因为不可变对象不能被改变，所以他们可以自由地在多个线程之间共享。不需要任何同步处理。**final对象不一定是不可变对象**。
-
-> 字符串常量池
-
-字符串常量池用来存储String对象，共享使用，提高效率。由于`final String`，一经创建就不可改变，因此不用担心String对象共享而带来程序的混乱。
-
-**常量池中的"对象"**是在编译期确定，在类被加载时创建，如果类加载时，该字符串常量在常量池中已存在，那就跳过，不会重新创建一个。
-
-**堆中的对象**是在运行期才确定，在代码执行到new的时候创建的。
-
-> “对象是不可变的”与“对象的引用是不可变的”之间并不相等。
 
 
 
-> `new String("Hollis");` 如果只需要创建一个字符串，可直接使用双引号的方式，如果你需要在堆中创建一个新的对象，你可以选择构造函数的方式。
+
+
+
+## Exception
+
+![](assets/exception.png)
+
+>Exception 和 Error 都继承自 `Throwable` 类。是异常处理机制的基本组成类型。
+
+```java
+Error：一般指与虚拟机相关的问题，程序本身无法恢复，建议程序终止。常见：'系统崩溃，内存溢出等'。
+Exception：是程序正常运行中，可以预料的意外情况，应该捕获并进行相应的处理。
+```
+
+>Exception分类： RuntimeException（运行时异常）和 CheckedException（受检查异常，即编译器异常）。
+
+```java
+'RuntimeException''：是 RuntimeException 类及其子类，编译时能通过，在运行时出现，出现后程序直接终止。
+
+（1）NullPointerException，（2）ClassCastException，（3）ArithmaticException（除数为0），
+（4）ArrayIndexOutOfBoundsException（数组下标越界），（5）NumberFormatException（数字格式化）
+
+Arrays.asList("a", "b").add("c"); //java.lang.UnsupportedOperationException
+
+list.forEach(x -> {if("b".equals(x)){ list.add("c"); }}); //ConcurrentModificationException
+```
+
+```java
+'CheckedException'：是 RuntimeException 以外的异常，类型上都属于Exception类及其子类（'不是具体的类'）。编译时直接报错，必须使用 try-catch 进行异常捕获，或使用 throws 语句声明抛出。
+
+（1）IOException，（2）InterruptedException，（3）SQLException
+```
+
+```java
+try {
+    //throw new NullPointerException("NPE"); //try 抛出的异常被 catch 捕获
+    throw new IOException("IOE");
+} catch (RuntimeException e0) {
+    System.out.println("RuntimeException：" + e0.getMessage());
+} catch (Exception e1) {
+    System.out.println("Exception：" + e1.getMessage());
+}
+
+//结果分别输出: RuntimeException：NPE 和 Exception：IOE
+//原因是 NPE 与 RuntimeE 之间的继承关系比 Exception 近，就近捕获原则。
+```
+> throws & throw
+
+```java
+throws：通常被应用在'声明方法时'，用来指定可能抛出的异常。多个异常使用逗号隔开。
+throw：通常用在'方法体中'，并且抛出一个异常对象。程序在执行到 throw 语句时立即停止，它后面的语句都不执行。
+
+//throw 抛出异常后，如果想在方法调用处捕获并处理该异常，则需要用 throws 在方法声明中指明要抛出的异常。
+int str2int(String str) throws NumberFormatException {
+    if (str == null) {
+        throw new NumberFormatException("null");
+    }
+    return Integer.parseInt(str);
+}
+```
+
+> 自定义异常 一般继承`RuntimeException`，待证 ？？？
+
+
+
+
+
+
+
+
+# String
+
+## 基础概念
+
+> 不可变性
+
+字符串对象一旦在内存（堆）中创建，就无法修改。注意：
+
+- `String类的所有方法都没有改变字符串本身的值，而是返回了一个新的String对象。`
+
+
+- `对象不可变 与 对象的引用不可变 并不相等。`
+
+
+- `final类不一定线程安全，如StringBuilder。`
+
+字符串对象保存在字符串常量池。常量池中的对象是在**编译期确定**，在类被加载时创建。如果类加载时，该字符串常量在常量池中已存在，那就跳过，不会重新创建一个。与之相反，堆中的对象是在**运行期才确定**，在代码执行到new的时候创建的。
+
+```java
+//常见 final 类
+LocalDateTime，StringBuilder（非线程安全），StringBuffer，Integer等。
+```
+
+```java
+//不可变性的应用
+'高效性'： 字符串的不可变能保证其 hashcode 永远保持一致，不需要重新计算。这就使得字符串很适合作为 Map 中的 Key，字符串的处理速度要快过其它的键对象。
+
+'安全性'： String被广泛的使用在其他Java类中充当参数。比如网络连接、打开文件等操作。如果字符串可变，那么类似操作可能导致安全问题。
+
+'线程安全'： 因为不可变对象不能被改变，所以他们可以自由地在多个线程之间共享。不需要任何同步处理。
+```
+
+> 创建字符串，可直接使用双引号的方式。如需在堆中创建一个新的对象，可以选择构造函数的方式。
 
 ```java
 String s1 = new String("Hollis");
@@ -641,9 +748,11 @@ String s2 = new String("Hollis");
 System.out.println(s1 == s2); //false
 ```
 
-![](assets/newString0.webp)
+![](assets/string0.webp)
 
-> `intern()`两个作用：①.将字符串字面量放入常量池（如果池没有的话）②.返回这个常量的引用。
+## 常用方法
+
+> `intern()`：①.将字符串字面量放入常量池（如果池没有的话）②.返回这个常量的引用。
 
 ```java
 String s1 = "Hollis"; 
@@ -652,21 +761,30 @@ String s3 = new String("Hollis").intern();
 
 System.out.println(s1 == s2); //false
 System.out.println(s1 == s3); //true
+
+可以简单的理解 s1 和 s3 做的事情是一样的。
+都是定义一个字符串对象，然后将其字符串字面量保存在常量池中，并把这个字面量的引用返回给定义好的对象引用。
+
+对于s3，在不调 intern()情况，s3指向的是JVM在堆中创建的那个对象的引用的（如图中的s2）。
+但是当执行了 intern()方法时，s3将指向字符串常量池中的那个字符串常量。
 ```
 
-- 可以简单的理解`s1 和 s3 做的事情是一样的`。都是定义一个字符串对象，然后将其字符串字面量保存在常量池中，并把这个字面量的引用返回给定义好的对象引用。
-- 对于`s3`，在不调`intern()`情况，s3指向的是JVM在堆中创建的那个对象的引用的（如图中的s2）。但是当执行了`intern()`方法时，s3将指向字符串常量池中的那个字符串常量。
+![](assets/string1.webp)
 
-![](assets/newString1.webp)
+> 两个问题
 
-> **Q1：** `String s = new String("hollis");`定义了几个对象。
->
-> **Q2：** 如何理解`String`的`intern()`方法？
+- **Q1：** `String s = new String("hollis");`定义了几个对象。
 
-- **A1：** 若常量池中已经存在"hollis"，则直接引用，也就是只会创建一个对象。如果常量池中不存在"hollis"，则先创建"hollis"后引用，也就是有两个。
-- **A2：** 当一个String实例调用intern()方法时，JVM会查找常量池中是否有相同Unicode的字符串常量，如果有，则返回其的引用；如果没有，则在常量池中增加一个Unicode等于str的字符串，并返回它的引用。
-- `new String()` 所谓的 --> 如果有的话就直接引用，指的是Java堆中创建的String对象中包含的字符串字面量直接引用字符串池中的字面量对象。也就是说，`还是要在堆里面创建对象的`。
-- 而 `intern()` 中说的 --> 如果有的话就直接返回其引用，指的是会把字面量对象的引用直接返回给定义的对象。这个过程是`不会在Java堆中再创建一个String对象的`。
+
+- **Q2：** 如何理解`String`的`intern()`方法？
+
+```java
+A1： 若常量池中已经存在"hollis"，则直接引用，也就是只会创建一个对象。如果常量池中不存在，则先创建"hollis"后引用，也就是有两个。
+A2： 当一个String实例调用 intern()方法时，JVM会查找常量池中是否有相同Unicode的字符串常量，如果有，则返回其的引用，如果没有，则在常量池中增加一个Unicode等于str的字符串，并返回它的引用。
+
+new String() 所谓的'如果有的话就直接引用'，指的是Java堆中创建的String对象中包含的字符串字面量，直接引用字符串池中的字面量对象。也就是说，还是要在堆里面创建对象的。
+而 intern() 中说的'如果有的话就直接返回其引用'，指的是会把字面量对象的引用直接返回给定义的对象。这个过程是不会在Java堆中再创建一个String对象的。
+```
 
 > 常见测试
 
@@ -689,20 +807,19 @@ public void test() {
 
 - `s1` 先在常量池中查找是否存在"abc"（使用 equals() 确定）， 存在则让 s1 指向这个值，没有则新建。
 - `s2` 同上
-- `s3` 其中，String s3 只是定义了一个名为 s3 的String类型变量，并没有创建对象。new String() 才是真正的在堆空间上创建一个字符串对象，然后将 s3 指向新建对象的堆内存地址，所以 s1 == s3 比较结果为false。
+- `s3` 其中，String s3 只是定义了一个名为 s3 的String类型变量，并没有创建对象。new String() 才是真正的在堆空间上创建一个字符串对象，然后将 s3 指向新建对象的堆内存地址，所以 s1 == s3 比较结果为false。s1保存在字符串常量池，而 s3 保存在堆内存中。
 - `s4` 先在常量池中创建 2 个字符串对象，再将 s4 指向已有的 "abc"。
 - `String s6 = s5 + "c";` 和 `String s4 = "ab" + "c";` 的区别： 对于字符串常量相加的表达式，不是等到运行期才去进行加法运算处理，而是在编译期直接将其编译成一个这些常量相连的结果。因此，`String s4 = "ab" + "c";`可转化为`String s4 = "abc";`，但s6并不是字符串常量相加，不能转化。
 
+> StringBuilder
 
-##StringBuilder
-
-> 内部拥有一个数组用来存放字符串内容。当进行字符串拼接时，直接在数组中加入新内容，并自动维护数组的扩容，不会产生中间字符串。
+StringBuilder 内部拥有一个数组用来存放字符串内容。当进行字符串拼接时，直接在数组中加入新内容，并自动维护数组的扩容，不会产生中间字符串。
 
 |     类型      |    安全    |                            特点                            |
 | :-----------: | :--------: | :--------------------------------------------------------: |
 |    String     | `线程安全` | 直接进行字符串拼接，会产生大量中间字符串，并且时间消耗长。 |
 | StringBuffer  |  线程安全  |                   支持同步锁，性能稍差。                   |
-| StringBuilder | 线程不安全 |         单线程进行大量字符串操作时，推荐使用(√)。          |
+| StringBuilder | 线程不安全 |        单线程进行大量字符串操作时，推荐使用（√）。         |
 
 ```java
 public void test() {
@@ -716,10 +833,14 @@ public void test() {
         //res = new StringBuilder(res).append(str).toString();
     }
 }
+
+//每次循环都需要创建一个 StringBuilder 对象（创建对象需要耗费时间和内存）。
+//随着循环次数的增大，res字符串也就越长，把res中的字符复制到新建的 StringBuilder 中花费的时间也就越长。
+//而且 StringBuilder(res).append(str).toString(); 会创建一个临时的字符串，随着循环次数的增加，
+//这个操作花费的时间也会越来越长。总之，随着循环变量 i 的增大，每次循环会变得越来越慢。
 ```
 
-**解析：** 每次循环都需要创建一个` StringBuilder对象`（创建对象需要耗费时间和内存），随着循环次数的增大， res 字符串就会越来越长，把 res 中的字符复制到新建的 StringBuilder 中花费的时间也就越长，而且 `StringBuilder(res).append(str).toString();` 会创建一个临时的字符串，随着循环次数的增加，这个操作花费的时间也会越来越长。总之，随着循环变量 i 的增大，每次循环会变得越来越慢。
-## 常用方法
+## 其他API
 
 > 字符串连接符 `+`
 
@@ -730,7 +851,14 @@ public void test() {
 
 ==： 对于基本数据类型，比较其值； 对于引用数据类型，比较其堆内存地址。
 
-equals()： Object中默认调用`==`，根据需求重写此方法。`String类重写为：比较字符串内容。`
+equals()： Object中默认调用`==`，根据需求重写此方法。String类重写为：比较字符串内容。
+
+> switch中的String：`switch只支持 int 和 枚举类型`
+
+```java
+'char, byte, short, int, Character, Byte, Short, Integer, String, or an enum'
+都可以隐式转换成int类型。其中，jdk1.7之后支持的 String，底层原理采用的是：先进行 hashCode() 比较，再进行 equals()比较（可能出现hash值碰撞）。 不支持 boolean 类型。
+```
 
 >length()
 
@@ -743,12 +871,14 @@ public void test() {
 }
 ```
 
-> split()：字符串切割，需检查最后一个分隔符后有无内容，否则可能抛 IndexOutOfBoundsException
+> split()
 
 ```java
 public void test() {
     String str = "a,b,c,,";
     String[] ary = str.split(",");
+    
+    //字符串切割，需检查最后一个分隔符后有无内容，否则可能抛 IndexOutOfBoundsException
     System.out.println(ary.length); //预期大于 3，结果是 3
 }
 ```
@@ -758,7 +888,8 @@ public void test() {
 //方式1：借用StringBuilder
 String str = "我是中华人民共和国公民";
 StringBuilder reverse = new StringBuilder(str).reverse();
-
+```
+```java
 //方式2：for循环
 char[] chars = str.toCharArray();
 StringBuilder sb = new StringBuilder();
@@ -766,23 +897,26 @@ for (int i = chars.length - 1; i >= 0; i--) {
     sb.append(chars[i]);
 }
 ```
+
 > replace()，replaceAll()，replaceFirst()
 
 `replace()`：参数是 char 和 CharSequence，即支持字符和字符串的替换。
 
-`replaceAll()`：参数是 regex，即基于正则表达式的替换。如 replaceAll(".", "*"); 是把字符串中所有字符转换成星号，`"."`在正则表达式中表示所有字符。
+`replaceAll()`：参数是 regex，即基于正则表达式的替换。
 
 `replaceFirst()`：参数也是 regex，但不同的是只替换第一个，即基于正则替换第一个满足条件的。
 
+```java
+str.replaceAll(".", "*"); //把字符串中所有字符转换成星号，"."在正则表达式中表示所有字符。
+```
+
 > 特殊空格1
 
-平时用键盘输入的空格ASCII值是32，而这个特殊空格的ASCII值为160。
-
 ```java
-char char1 = ' '; //普通空格
-char char2 = ' '; //特殊的空格
-System.out.println((int) char1); //ASCII值-32
-System.out.println((int) char2); //ASCII值-160
+char char1 = ' '; //普通空格，ASCII值是32
+char char2 = ' '; //特殊的空格，ASCII值为160
+System.out.println((int) char1); //32
+System.out.println((int) char2); //160
 ```
 
 特殊空格是一个不间断空格(non-breaking space)，本质就是页面上`&nbsp;`所产生的空格，作用就是在页面换行时不被打断。
@@ -817,67 +951,6 @@ String replace = str.replace((char) 12288, ' ').trim();
 System.out.println(str.length() + " - " + replace.length()); //4 - 3
 ```
 
-
-
-# Integer
-
-## 基础概念
-
-> 基本数据类型：三大类，八小种。引用类型：类，接口，数组。
-
-```java
-布尔类型： boolean （1bit，1位）
-字符类型： char （1byte，8位，[-128, 127]）
-数值类型-整型： byte （1byte）， short （2byte）， int （4byte）, long （8byte） 
-数值类型-浮点型： float （4byte）， double （8byte）
-```
-
-> 装箱 & 拆箱
-
-```java
-public void test() {
-    Integer i0 = new Integer(3);
-    Integer i1 = Integer.valueOf(3); //装箱: 基本类型 -> 包装类
-
-    int num0 = i0.intValue(); //拆箱: 包装类 -> 基本类型
-
-    //自动装箱： 相当于Integer i = Integer.valueOf(4);
-    Integer i = 4;
-
-    //自动拆箱： 等号右边，将i对象转成基本数值 i.intValue() + 5;
-    //加法运算完成后,再次装箱,把基本数值转成对象
-    i = i + 5;
-}
-```
-
-> 使用标准
-
-- 所有 POJO 类属性必须使用`包装数据类型`，并且`不要设定默认值`。不设初值是提醒使用者在使用时必须自己显式地进行赋值。任何 `NPE（NullPointerExceptionrn） `问题，或入库检查，都由使用者来保证。
-- RPC 方法的返回值和参数必须使用`包装数据类型`。
-- 所有的局部变量 【推荐】 使用`基本数据类型`。
-
-```java
-//【反例】设定默认值，会在更新其它字段时，附带更新此字段，导致创建时间被修改成当前时间
-Date editTime = new Date();
-
-//反例：某业务的交易报表上显示成交总额涨跌情况，即正负 x%，x 为基本数据类型，调用的RPC 服务，调用不成功时，返回的是默认值，页面显示：0%，这是不合理的，应该显示成中划线-。所以包装数据类型的 null 值，能够表示额外的信息，如：远程调用失败，异常退出
-```
-## 常用方法
-
->【强制】`所有的相同类型的包装类对象之间值的比较，全部使用 equals()。i0.equals(i1)`
-
-```java
-//【说明】对于 Integer 对象，取值区间在 [-128, 127]，会复用已有对象，可直接使用 == 进行比较。
-//       但区间之外的取值，都会在堆上产生，并不会复用已有对象，推荐使用 equals() 进行判断。
-
-Integer m = 128, n = 128;
-System.out.println(m.equals(n)); //true -> 判断两个变量或实例所指向的内存空间的【值】是不是相同
-System.out.println(m == n); //false ->  判断两个变量或实例是不是指向同一个【内存空间】
-
-Integer m1 = 127, n1 = 127;
-System.out.println(m1.equals(n1)); //true
-System.out.println(m1 == n1); //true
-```
 
 
 # Collection
@@ -1353,67 +1426,9 @@ class Test{
 
 
 
-## final
-
->区别 final & finally & finalize
-
-- **final：**`修饰类`，不能被继承。`修饰方法`，不能被重写。`修饰变量`，对于值类型，不能修改其值；对于引用类型，不能修改其对应的堆内存地址，即不能重新再赋值。
 
 
 
-- **finally：**异常处理的一部分，代码肯定会被执行，常用于释放资源。
-
-
-
-- **finalize：**Object类的一个方法，用于垃圾回收。
-
-
->final 修饰变量时，是引用不能变，还是引用的对象不能变？`引用变量不能变`，引用变量所指向的对象中的内容还是可以改变的。
-
-final 修饰基本数据类型的变量，那么这个变量的值就定了，不能变了。
-
-final 修饰的引用类型的变量，那么该变量存的是一个内存地址，该地址就不能变了。但是，该内存地址所指向的那个对象还是可以变的。就像你记住了人家的门牌号，但你不能管人家家里人员数量。
-
-```java
-public void doFinal(final int i, final StringBuilder sb) {
-    // i = i + 1; //编译报错,因为final修饰的基本类型 --> 值不能变
-    // sb = new StringBuilder(); //同上,修饰引用类型 --> 堆内存地址不能变,即引用不能变
-
-    sb.append("java"); //编译通过 -> 引用变量所指向的对象中的内容，可以改变
-}
-```
-
->final String，字符串一经创建就不可改变。以下代码，原始的 String对象 中的内容到底变了没有？
-
-```java
-String str = "Hello";
-str = str + "world!";
-
-//没有改变。这段代码中，str 原始指向 "Hello"，对 str 进行了 + 操作运算之后，str 不再指向 "hello"，
-//而是指向 "Hello world!"，但字符串 "hello" 依然存在于内存之中，只是 str 这个引用变量不再指向它
-```
-
-
-
-##finally
-
-> try 中的 return 语句和 finally 代码块执行的先后顺序？
-
-- **return：** 可当作终止语句来用，经常用来跳出当前方法，并返回一个值给调用方法。
-- **finally：** 无论 try 执行 return，break，甚至抛出异常，finally都会执行。finally 代码块常用于释放资源。
-- 当try中有return，存在finally时，会先执行return之后的语句但不返回，执行完finally中的语句再return，如果finally语句中也有return，会直接通过finally的return语句返回。
-
-```java
-private int doTry(int x) {
-    try {
-        return ++x;
-    } finally {
-        return x++;
-    }
-}
-
-System.out.println(doTry(1)); //执行try时先将x变为2，之后finally中x变为3，最终返回3
-```
 ## for
 
 > `for(初始化; 布尔表达式; 更新)` 等同于 `初始化; while(布尔表达式){ 更新; }`
@@ -1585,59 +1600,21 @@ Double oD = 2;
 
 
 
-## Exception##
-
->Exception 和 Error 都继承自 `Throwable` 类。是异常处理机制的基本组成类型。
-
-- **Error：** 一般是指与虚拟机相关的问题，遇到这种问题，仅靠程序本身无法恢复，建议让程序终止。常见：系     统崩溃，内存溢出等。
-- **Exception：** 是程序正常运行中，可以预料的意外情况，应该捕获并进行相应的处理。
-
->**Exception分类：** 受检查异常（Checked Exception）和 运行时异常（Runtime Exception）。
-
-- **受检查异常：** 是`RuntimeException`以外的异常，类型上都属于`Exception`类及其子类。编译时直接报错，必须使用 try-catch 进行异常捕获，或使用 throws 语句声明抛出。常见：`IOException`，`SQLException`。
-- **运行时异常：** 是`RuntimeException`类及其子类异常。编译时能通过，在运行时出现，出现后程序直接终止。常见：`NullPointerException `，`ClassCastException`，`ArithmaticException `（除数为0），`ArrayIndexOutOfBoundsException `（数组下标越界）。
-
-> 自定义异常 一般继承`RuntimeException`，待证 ？？？
-
-
-
-> 其中，`NullPointerException extends RuntimeException extends Exception`，结果如何？
-
-```java
-try {
-    throw new NullPointerException("空指针异常"); //try 代码块中也可以抛出异常
-} catch (RuntimeException e0) {
-    System.out.println("RuntimeException");
-} catch (Exception e) {
-    System.out.println("Exception");
-}
-
-//结果输出: RuntimeException
-```
 
 
 
 
 
 
-> throws & throw
 
-- **throws：** 通常被应用在声明方法时，用来指定可能抛出的异常。多个异常可以使用逗号隔开。
-- **throw：**  通常用在方法体中，并且抛出一个异常对象。程序在执行到 throw 语句时立即停止，它后面的语句都不执行。
 
-```java
-//throw 抛出异常后，如果想在方法调用处捕获并处理该异常，则需要用 throws 在方法声明中指明要抛出的异常。
-private int string2int(String str, int def) throws NumberFormatException {
-    if (!StringUtils.isEmpty(str)) {
-        try {
-            def = Integer.parseInt(str);
-        } catch (NumberFormatException e) {
-            throw new NumberFormatException("非法字符串");
-        }
-    }
-    return def;
-}
-```
+
+
+
+
+
+
+
 
 
 
@@ -1779,20 +1756,20 @@ for (byte aByte : bytes) {
 
 ## File
 
-> `file.getPath()`，`file.getAbsolutePath()`，`getCanonicalPath()`
+> file.getPath()，getAbsolutePath()，`getCanonicalPath() 推荐`
 
 ```java
 File file = new File("..\\test1.txt");
 
-//(1).返回定义时的路径，可能是相对路径，也可能是绝对路径，这个取决于定义时用的是相对路径还是绝对路径。
-//    如果定义时用的是绝对路径，那么使用getPath()返回的结果跟用getAbsolutePath()返回的结果一样
-System.out.println(file.getPath());// ..\test1.txt
+//返回定义时的路径，可能是相对路径，也可能是绝对路径，这个取决于定义时用的是相对路径还是绝对路径。
+//如果定义时用的是绝对路径，那么结果跟getAbsolutePath()一样
+file.getPath();// ..\test1.txt
 
-//(2).返回的是定义时的路径对应的相对路径，但不会处理"."和".."的情况
-System.out.println(file.getAbsolutePath());// F:\sp_project\spring\..\test1.txt
+//返回的是定义时的路径对应的相对路径，但不会处理"."和".."的情况
+file.getAbsolutePath();// F:\sp_project\spring\..\test1.txt
 
-//(3).返回的是规范化的绝对路径，相当于将getAbsolutePath()中的"."和".."解析成对应的正确的路径
-System.out.println(file.getCanonicalPath());// F:\sp_project\test1.txt
+//返回的是规范化的绝对路径，相当于将getAbsolutePath()中的"."和".."解析成对应的正确的路径
+file.getCanonicalPath();// F:\sp_project\test1.txt
 ```
 
 > 常用方法
@@ -1846,12 +1823,12 @@ public static byte[] int2Bytes(int value, int len) {
 
 ```java
 public static int bytes2Int(byte[] bytes) {
-	byte[] dest = new byte[4];
-	System.arraycopy(bytes, 0, dest, 4 - bytes.length, bytes.length);
-	return (dest[0] & 0xFF) << 24
-			| ((dest[1] & 0xFF) << 16)
-			| ((dest[2] & 0xFF) << 8)
-			| (dest[3] & 0xFF << 0);
+    byte[] dest = new byte[4];
+    System.arraycopy(bytes, 0, dest, 4 - bytes.length, bytes.length);
+    return (dest[0] & 0xFF) << 24
+            | ((dest[1] & 0xFF) << 16)
+            | ((dest[2] & 0xFF) << 8)
+            | (dest[3] & 0xFF << 0);
 }
 
 ```
@@ -1860,13 +1837,13 @@ public static int bytes2Int(byte[] bytes) {
 
 ```java
 public static byte[] int2Bytes(int value, int len) {
-	if (len > 4 || len <= 0) throw new RuntimeException("int 最大长度4个字节");
-	
-	byte[] bytes = new byte[len];
-	for (int i = 0; i < len; i++) {
-		bytes[i] = (byte) ((value >> 8 * i) & 0xFF);
-	}
-	return bytes;
+    if (len > 4 || len <= 0) throw new RuntimeException("int 最大长度4个字节");
+    
+    byte[] bytes = new byte[len];
+    for (int i = 0; i < len; i++) {
+        bytes[i] = (byte) ((value >> 8 * i) & 0xFF);
+    }
+    return bytes;
 }
 
 ```
@@ -1874,10 +1851,10 @@ public static byte[] int2Bytes(int value, int len) {
 ```java
 //offset: 从数组的第offset位开始
 public static int bytes2Int(byte[] bytes, int offset) {
-	return (bytes[offset + 0] & 0xFF)
-			| ((bytes[offset + 1] & 0xFF) << 8)
-			| ((bytes[offset + 2] & 0xFF) << 16)
-			| ((bytes[offset + 3] & 0xFF) << 24);
+    return (bytes[offset + 0] & 0xFF)
+            | ((bytes[offset + 1] & 0xFF) << 8)
+            | ((bytes[offset + 2] & 0xFF) << 16)
+            | ((bytes[offset + 3] & 0xFF) << 24);
 }
 
 ```
@@ -1886,13 +1863,13 @@ public static int bytes2Int(byte[] bytes, int offset) {
 
 ```java
 public static String int2Hex(int value) {
-	return Integer.toHexString(value);
+    return Integer.toHexString(value);
 }
 ```
 
 ```java
 private static int hex2Int(String hexString) {
-	return Integer.parseInt(hexString, 16);
+    return Integer.parseInt(hexString, 16);
 }
 ```
 
@@ -1900,11 +1877,11 @@ private static int hex2Int(String hexString) {
 
 ```java
 public static String string2Hex(String value) {
-	StringBuilder hexString = new StringBuilder();
-	for (char aChar : value.toCharArray()) {
-		hexString.append(Integer.toHexString(aChar));
-	}
-	return hexString.toString();
+    StringBuilder hexString = new StringBuilder();
+    for (char aChar : value.toCharArray()) {
+        hexString.append(Integer.toHexString(aChar));
+    }
+    return hexString.toString();
 }
 ```
 
@@ -1985,18 +1962,18 @@ Socket 就是为网络服务提供的一种机制，网络通信其实就是 Soc
 > 网络模型
 
 ```sql
-OSI七层模型		TCP/IP四层模型
+OSI七层模型        TCP/IP四层模型
 ------------------------------------
 应用层
-表示层			应用层 ---> http/https FTP
+表示层            应用层 ---> http/https FTP
 会话层
 -------------------------------------
-传输层			传输层 ----> TCP/UDP
+传输层            传输层 ----> TCP/UDP
 -------------------------------------
-网络层			网际层 ----> IP协议
+网络层            网际层 ----> IP协议
 --------------------------------------
 数据链路层
-物理层			主机至网络层
+物理层            主机至网络层
 --------------------------------------
 ```
 

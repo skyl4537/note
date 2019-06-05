@@ -2,203 +2,343 @@
 
 
 
+# Config
 
+> properties
 
-# Docker
+```properties
+#server.port=8090
+#server.servlet.context-path=/demo
 
-## 基础概念
+spring.application.name=amqp-publisher
 
-能够把应用程序自动部署到容器的开源引擎，轻量级容器技术！
+spring.datasource.driverClassName=com.mysql.cj.jdbc.Driver
+spring.datasource.type=com.alibaba.druid.pool.DruidDataSource
+spring.datasource.url=jdbc:mysql://192.168.8.7:33306/test0329?useSSL=false&allowMultiQueries=true&serverTimezone=GMT%2B8
+spring.datasource.username=bluecardsoft
+spring.datasource.password=#$%_BC13439677375
 
-简化程序：将软件做好配置依赖 --> 编译成镜像 --> 镜像发布 --> 其他使用者就可以直接使用这个镜像。
+#(1).引用配置变量(无则使用默认值 spring)
+info.msg=hello ${server.servlet.context-path : /spring}
 
-简化部署：传统做法先安装（包管理工具或者源码包编译），再配置和运行。Docker模式为复制镜像，然后运行。
+#(2).随机值；微服务中不需要记录 ip:prot，所以可随机指定端口
+info.random=${random.int[1000,9999]}
+
+#动态web修改 context-path -> 项目右键 -> properties -> 搜索web -> 修改 Web Project Settings
+```
+
+> yaml
+
+```yaml
+k:(空格)v #表示一对键值对(空格必须有),其中属性和值大小写敏感
+
+#1.数组(List/Set)的标准写法：
+pets: 
+ - cat
+ - dog
+
+#行内写法：
+pets: [cat,dog,pig]
+
+#2.随机数 
+${random.int}; ${random.int(10)}; ${random.int(10,100)}
+
+#3.引用配置变量
+person.age = ${random.int}
+person.last_name = 张三${person.age:18}
+
+#4.转义
+spring:
+ datasource:
+  url: jdbc:mysql://192.168.8.7:33306/test0329?useSSL=false&allowMultiQueries=true
+  username: bluecardsoft
+  password: "#$%_BC13439677375" #""双引号里的内容不会转义符，''单括号则会
+  driver-class-name: com.mysql.jdbc.Driver
+  type: com.alibaba.druid.pool.DruidDataSource
+```
+
+> 加载顺序（先后）
 
 ```java
-主机(Host)		->	安装了Docker程序的机器(Docker直接安装在操作系统之上)
-客户端(Client)    ->  命令行
-仓库(Registry)	->	用来保存各种打包好的软件镜像
-镜像(Images)	    ->	软件打包好的镜像，放在docker仓库中
-容器(Container)	->	运行中的这个镜像称为容器，容器启动是非常快速的！
+– classpath:/            //路径src/main/resources
+– classpath:/config/
+– file:./                //当前项目的根路径，与pom同级（jar包同级目录）。
+– file:./config/
+
+//优先级别: 低--->高. 高优先级覆盖低优先级.
+//加载顺序: 先--->后. (由里到外). 后加载的覆盖先加载的. [互补配置]
 ```
-> Ubuntu安装
+```java
+0.以上是开发时配置文件的位置—对于打成jar包
+    由于 classpath 会被打成jar包; 而 file 则不会,所以应该把配置文件放到jar包同级目录.
+    //jar包同级 '/config/*.yml' 优先级最高, jar包内部默认位置的 '*.yml' 优先级最低!
 
-```shell
-$ uname -r							#内核版本必须是3.10及以上
-$ apt-get install docker.io			#安装Docker -(可能存在权限错误,使用时添加 sudo 前缀)
-$ service docker status/start		#启动服务和守护进程
-$ docker -v							#检测是否安装成功
-$ ln -sf /usr/bin/docker.io /usr/local/bin/docker	#创建软连接-(方便使用docker命令)
+1.配置外部log
+    //在配置文件中指定log位置.(内部或外部yml都可以)
+    //推荐外部 -> logback的 scan 和 scanPeriod 两个属性保证了 热部署,即改即生效!!!
+    logging.config=file:./config/logback-spring.xml
 ```
-```shell
-#权限问题：permission denied. Are you trying to connect to a TLS-enabled daemon without TLS?
-#注意: 默认情况,执行 docker 都需要运行 sudo 命令. 如何免去 sudo?
+> 读取配置
 
-sudo groupadd docker			#如果还没有 docker group 就添加一个
-sudo gpasswd -a ${USER} docker	#将用户加入该 group 内.然后退出并重新登录就生效啦
-sudo service docker restart		#重启 docker 服务
-newgrp - docker					#切换当前会话到新 group
+```xml
+<dependency>
+    <groupId>org.springframework.boot</groupId>
+    <artifactId>spring-boot-configuration-processor</artifactId>
+    <optional>true</optional>
+</dependency>
 ```
+```properties
+voice.in=欢迎光临
 
-> CentOS安装
-
-```shell
-$ yum install docker
-$ systemctl start/restart docker
-$ docker -v						#docker版本
-$ systemctl enable docker		#开机启动
+info.enabled=false
+info.remote-address=192.168.1.1
+info.security.username=user
+info.security.password=pwd
+info.security.roles=USER,ADMIN
 ```
+```java
+//1.批量读取，将配置文件转成javabean
 
-## 相关指令
+//@PropertySource: 加载指定的配置文件
+//value: 设置需要加载的属性文件,可以一次性加载多个. (默认参数)
+//encoding: 编码格式,默认""
+//ignoreResourceNotFound: 当指定的配置文件不存在是否报错,默认 false
+//name: 在Springboot的环境中必须唯一. 默认"class path resource [config/my.properties]"
 
-> 状态相关
+//@Value: 用于读取单个属性值
 
-```shell
-service docker status（Start-Stop-Restart）
-docker info
-```
+//@ConfigurationProperties: 用于批量读取属性值
+//prefix: 属性前缀,通过 'prefix+字段名' 匹配属性
+//ignoreUnknownFields: 是否忽略未知的字段
+//ignoreInvalidFields: 是否忽略验证失败(类型转换异常)的字段
+//-----------<<<<<<一定要有GET/SET方法>>>>--------------------
 
-> 镜像相关
+@Data// lombok插件，自动生成 GET/SET
+@Component
+@ConfigurationProperties(/* prefix = "info", */ ignoreUnknownFields = true, ignoreInvalidFields = true)
+@PropertySource(value = { "file:./my.properties",
+                         "classpath:my.properties" }, encoding = "utf-8", ignoreResourceNotFound = false, name = "my.properties")
+public class MyProperties {
+    public Voice voice; //voice开头
+    public Info info; //info开头
 
-```shell
-docker search mysql
-docker pull mysql:5.6.7
-#docker pull registry.docker-cn.com/library/mysql:5.6.7 ---> 官方加速
+    @Data
+    public static class Voice {
+        public String in;
+    }
 
-docker images [-q]				#-q: 只显示id
-docker rmi [-f] IMAGE_ID
-docker rmi $(docker image -q)	#删除所有
+    @Data
+    private static class Info {
+        private boolean enabled;
+        private InetAddress remoteAddress;// 下划线语法,驼峰语法等都能匹配属性
+        private Security security;
+    }
 
-docker inspect IMAGE_ID			#相关信息
-docker tag IMAGE_ID NEW_NAME:NEW_TAG #拷贝重命名
-```
+    @Data
+    private static class Security {
+        private String username;
+        private String password;
+        private List<String> roles = new ArrayList<>(Collections.singleton("USER"));
+    }
+}
 
-> 容器相关
-
-```shell
-docker ps [-a]				     #运行中的容器（-a: 所有）
-docker start(SSR) CONTAINER_NAME #容器的启动，停止，重启
-docker rm CONTAINER_NAME         #移除容器（停止状态） rm -> 移除容器; rmi -> 移除镜像！
-
-docker top CONTAINER_NAME      #容器内进程
-docker inspect CONTAINER_NAME #容器相关信息
-
-docker logs [-t] [--tail 10] CONTAINER_NAME	#容器日志(-t: 显示时间, --tail: 最新10条)
-```
-
-> 互动相关
-
-```shell
-docker exec -it CONTAINER_NAME /bin/bash    #进入容器.(exit: 退出)
-
-docker cp CONTAINER_NAME:SRC_PATH DEST_PATH #拷出来
-docker cp DEST_PATH CONTAINER_NAME:SRC_PATH #拷进去
-```
-
-## 配置容器
-
-```shell
---name #为容器指定一个名称：--name ES01
--d     #后台运行容器，并返回容器ID
--e     #设置环境变量：-e ES_JAVA_OPTS="-Xms256m -Xmx256m"	
--p     #端口映射（宿主机:容器） -p 9200:9200
-
--it    #配合 exec 使用，开启一个交互模式的终端
--v     #挂载宿主机的目录作为配置文件（宿主机目录:容器目录）：-v /conf/mysql:/etc/mysql/conf.d
-```
-
-> elasticsearch
-
-```shell
-#后台启动 elasticsearch，指定内存大小，端口号，及名称，web通信使用 9200，分布式集群的节点间通信使用 9300
-docker run --name ES01 -d -e ES_JAVA_OPTS="-Xms256m -Xmx256m" -p 9200:9200 -p 9300:9300 4f7e4c61f09d
-
-#将 IK 插件解压到宿主机，然后配置docker容器加载宿主机 /plugins 目录
-docker run --name ES02 -d -e ES_JAVA_OPTS="-Xms256m -Xmx256m" -p 9201:9200 -p 9301:9300 -v /var/tmp/plugins:/usr/share/elasticsearch/plugins 4f7e4c61f09d
-```
-
-> tomcat
-
-```shell
-#tomcat：最后一个参数是 镜像名:版本号(latest可省)
-docker run --name tomcat01 -d -p 9090:8080 tomcat:8.5-jre8-alpine
+//通过 @Autowired 方式取值 MyProperties
+logger.info("MyProperties--res: {}", JSON.toJSON(myProperties));
+{
+    "info": {
+        "enabled": false,
+        "remoteAddress": "192.168.1.1",
+        "security": {
+            "password": "pwd",
+            "roles": [
+                "USER",
+                "ADMIN"
+            ],
+            "username": "user"
+        }
+    },
+    "voice": {
+        "in": "欢迎光临"
+    }
+}
 ```
 
-> mysql
+```java
+//2.单个读取
 
-```shell
-#mysql的root密码
-docker run --name mysql01 -d -p 33066:3306 -e MYSQL_ROOT_PASSWORD=123456 mysql
+@Value("${info.enabled}") //(1). @Value
+public String infoEnabled;
 
-#配置mysql参数
-docker run --name mysql02 -d -e MYSQL_ROOT_PASSWORD=123456 mysql:tag --character-set-server=utf8mb4 --collation-server=utf8mb4_unicode_ci
+@Autowired //(2). Environment
+Environment env;
 
-#将上述配置参数保存到宿主机文件'/conf/mysql'，启动加载宿主机的配置文件。
-#即以后可通过修改宿主机的配置文件来配置mysql
-docker run --name mysql02 -d -e MYSQL_ROOT_PASSWORD=123456 mysql:tag -v /conf/mysql:/etc/mysql/conf.d
+String pwd = env.getProperty("spring.mail.password");
 ```
 
-```shell
-#对于 mysql-8.0.4 之后版本，不能简单的通过 '-e MYSQL_ROOT_PASSWORD=123456' 来指定root密码
-docker exec -it 1457d60b0375  /bin/bash #进入mysql所在docker
+```java
+//3.通过IO读取
 
-mysql -u root -p //进入docker-mysql
+// 默认从此类所在包下读取,path需要添加前缀"/"
+// InputStream in = getClass().getResourceAsStream("/my.properties");
 
-ALTER USER 'root'@'%' IDENTIFIED WITH mysql_native_password BY '123456'; #修改root密码
-
-exit #执行两次，依次退出 docker-mysql 和 docker。
+// 默认从ClassPath下读取,path不需要添加前缀
+InputStream in = getClass().getClassLoader().getResourceAsStream("my.properties");
+Properties properties = new Properties();
+properties.load(new InputStreamReader(in, "UTF-8")); //U8方式读取
+properties.forEach((key, value) -> log.info(key + " - " + value));
 ```
 
-## 构建镜像
+>`@Value("#{}")与@Value("${}")的区别`
 
-> commit：通过已有的容器，打包成新的镜像
+```java
+//(1).@Value("#{}") -> 通过SpEl表达式获取: 常量; bean属性值; 调用bean的某个方法    
+@Value("#{1}")
+private int number; // 获取数字1
 
-```shell
-#-a：作者相关，-m：描述信息，mysql01：已有容器，skyl/mysql：新镜像
-docker commit -a 'skyl' -m 'hello skyl' mysql01 skyl/mysql
+@Value("#{'Spring Expression Language'}") // 获取字符串常量
+private String language;
 
-#使用新镜像
-docker run --name skyl-mysql -d -e MYSQL_ROOT_PASSWORD=123456 mysql
+@Value("#{info.remoteAddress}") // 获取bean的属性
+InetAddress address;
+```
+```java
+//(2).@Value("${}") -> 获取属性文件中定义的属性值    
+@Value("${info.enabled:}")
+public String enabled; //获取配置属性,默认空字符串
+```
+```java
+//(3).总结
+${ property : default_value }
+#{ obj.property? : default_value } //二者取默认值时,语法不同(多个?)
+#{ '${}' } //二者可以结合使用,注意单引号!~! 但不能反过来,如: ${ '#{}' }
+```
+>@PostConstruct
+
+
+
+>多环境切换，不同环境加载不同配置，`profile特性`
+
+```java
+//以下文件与 application.yml 存放在同级目录下。其中，前者配置特殊信息；后者配置公用信息。二者相互补充
+application-dev.yml     ->    开发环境
+application-test.yml    ->    测试环境 
+application-prod.yml    ->    生产环境
+```
+    0.激活profile特性的三种方法.
+    (1).在默认配置文件中激活: spring.profiles.active=dev
+    (2).(略)命令行: java -jar demo.jar --spring.profiles.active=dev
+    (3).(略)虚拟机参数(VM argumments): -Dspring.profiles.active=dev
+```xml
+<!--1.log的profile特性-->
+<springProfile name="dev"> //<!-- 控制台 * 测试环境 -->
+    <root level="info">
+        <appender-ref ref="console" />
+    </root>
+</springProfile>
+
+<springProfile name="prod"> //<!-- 控制台 * 生产环境 -->
+    <root level="warn">
+        <appender-ref ref="console" />
+    </root>
+</springProfile>
+```
+# Actuator
+
+```xml
+<dependency>
+    <groupId>org.springframework.boot</groupId>
+    <artifactId>spring-boot-starter-actuator</artifactId>
+</dependency>
 ```
 
-> build：从0开始构建，先创建 dockerfile
+> 各个端点endpoint
 
-```shell
-#First Dockerfile				##为注释
-FROM ubuntu:14.01				#FROM：基础镜像，必须写在第一行
-MAINTAINER skyl 'skyl@qq.com'	#MAI*: 作者相关
-RUN apt-get update				
-RUN apt-get install -y nginx
-EXPOSE 80						#运行该容器所使用的端口
+```properties
+auditevents        --    审计事件
+beans            --    应用程序上下文里全部的Bean,以及它们的关系
+health            --    报告应用程序的健康指标,这些值由 HealthIndicator 的实现类提供
+conditions        --    自动配置报告,记录哪些自动配置条件通过了,哪些没通过
+configprops        --    描述配置属性(包含默认值)如何注入Bean
+info            --    显示配置文件中以 'info' 打头的属性
+threaddump        --    获取线程活动的快照
+scheduledtasks    --    定时任务
+httptrace        --    跟踪 HTTP 请求-响应交换的情况
+mappings        --    描述全部的URI路径，以及它们和控制器(包含Actuator端点)的映射关系
+(*)metrics        --    报告各种应用程序度量信息,比如内存用量和HTTP请求计数.
+(*)loggers        --    显示和修改应用程序中的loggers配置
+(*)env            --    获取全部环境属性
+```
+> Spring Boot2.x 所有端点访问路径都移到了/actuator
 
-#build-构建(dockerfile所在目录)
-docker build -t 'skyl-nginx' /var/tmp/docker/
+```properties
+#默认只暴露两个端点: health 和 info
+management.endpoints.web.exposure.include=* //暴露所有
+management.endpoints.web.exposure.exclude=env //不暴露: env
+    
+http://localhost:8090/demo/actuator        --> 返回所有已暴露的端点
+http://localhost:8090/demo/actuator/health --> 访问health端点
 ```
 
-## 镜像加速
+```properties
+#以上，端点带(*)表示当前路径只能获取目录信息,详情信息得需要进一步访问获取. 如，获取系统cpu个数:
+http://localhost:8090/demo/actuator/metrics/system.cpu.count
 
-```shell
-#aliyun加速
-https://cr.console.aliyun.com/cn-hangzhou/mirrors
-	
-#daocloud加速
-https://hub.daocloud.io/
+#所有模块的日志级别
+http://127.0.0.1:8090/demo/actuator/loggers
+#具体模块的日志级别
+http://127.0.0.1:8090/demo/actuator/loggers/com.example.controller
 
-#直接设置 –registry-mirror 参数,仅对当前的命令有效 
-docker run hello-world --registry-mirror=https://docker.mirrors.ustc.edu.cn
+#发送 POST 请求到以上路径，动态修改以上模块的日志级别为 DEBUG，成功状态码为 '204'
+POST - 请求体: {"configuredLevel": "DEBUG"} - Content-Type: application/json
+```
 
-#修改 /etc/default/docker，加入 DOCKER_OPTS=”镜像地址”，可以有多个
-DOCKER_OPTS="--registry-mirror=https://docker.mirrors.ustc.edu.cn"
+> 定制端点endpoint
 
-#支持 systemctl 的系统,通过 sudo systemctl edit docker.service
-#会生成 etc/systemd/system/docker.service.d/override.conf 覆盖默认的参数,在该文件中加入如下内容
-[Service] 
-ExecStart= 
-ExecStart=/usr/bin/docker -d -H fd:// --registry-mirror=https://docker.mirrors.ustc.edu.cn
+```properties
+#若要恢复 1.x 方式(即用 /health 代替 /actuator/health), 设置以下属性:
+management.endpoints.web.base-path=/
+```
 
-#新版的 Docker 推荐使用 json 配置文件的方式,默认为 /etc/docker/daemon.json
-#非默认路径需要修改 dockerd 的 –config-file,在该文件中加入如下内容
-{"registry-mirrors": ["https://docker.mirrors.ustc.edu.cn"]}		
+```properties
+#开启应用的远程关闭功能.【post请求】
+management.endpoint.shutdown.enabled=true 
+```
+
+```properties
+management.server.port=8091
+#只有在设置了 management.server.port 时才有效 (可选)
+management.server.servlet.context-path=/management
+#管理端的基本路径 (可选)
+management.endpoints.web.base-path=/application
+
+#设置了以上三项，则访问 health 端点路径
+http://localhost:8091/demo/management/application/health
+```
+
+```properties
+#关闭端点 - health
+management.endpoint.health.enabled=false
+
+#默认，只显示health部分信息，开启显示全部信息
+management.endpoint.health.show-details=always
+```
+
+```properties
+#配置文件加入以下内容，可在端口info看到, 访问 http://192.168.8.7:8090/demo/actuator/info
+info.myinfo.port=9527
+```
+
+> 端点 Beans
+
+```java
+druid: { //Spring应用程序上下文中的Bean名称或ID
+    aliases: [ ], //
+    scope: "singleton", //Bean的作用域.(通常是单例,这也是默认作用域)
+    type: "com.alibaba.druid.pool.DruidDataSource", //Bean的Java类型
+        //.class文件的物理位置,通常是一个URL,指向构建出的JAR文件.会随着应用程序的构建和运行方式发生变化
+    resource: "class path resource [com/example/demo/config/DruidConfig.class]", 
+    dependencies: [ ] //当前Bean注入的Bean ID列表
+},
 ```
 
 
