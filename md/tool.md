@@ -6,36 +6,72 @@
 
 ## 相关插件
 
->MybatisPlugin（idea插件）
+>`MybatisPlugin`
 
 ```
 安装方式：Settings -> Plugins -> Intall Plugin from disk -> 选择压缩包即可
 ```
 
-> MavenRunHelper（idea插件）
+> `MavenRunHelper`
 
 ```
 maven插件，可右键启动、打包、测试mvn项目
 ```
 
-> Alibaba Java Coding Guidelines-1.0.6（idea插件）
+> `Alibaba Java Coding Guidelines-1.0.6`
 
 ```
 ali开发手册的插件版，约束开发习惯
 ```
 
+> `lombok`：简化POJO的getter/setter/toString；异常处理；I/O流的关闭操作等等
 
-
-
-
-
-
-> JSON-Handle（Chrome插件）
+```xml
+<dependency>
+    <groupId>org.projectlombok</groupId>
+    <artifactId>lombok</artifactId>
+    <scope>provided</scope> <!-- 只在编译阶段生效，不需要打入包中 -->
+    <optional>true</optional> <!--默认false。当A依赖B，B依赖 lombok 并设为true，若A没有显式的引入lombok，则A不依赖lombok-->
+</dependency>
+```
 
 ```java
-浏览器输入：'chrome://extensions/' 将下载后的文件拖入浏览器即可
+//eclipse-安装
+下载: https://projectlombok.org/download
+将 lombok.jar 放在eclipse安装目录下，与 eclipse/sts.ini 同级
+当前目录打开cmder，使用命令: "java -jar ./lombok.jar"，弹框选择 Install/Update
+成功标识: sts.ini最后一行：-javaagent:F:\sts-bundle\sts-3.9.3.RELEASE\lombok.jar
 ```
-> cmder（cmd升级版）http://cmder.net/
+
+```java
+//idea-安装
+下载: https://github.com/mplushnikov/lombok-intellij-plugin/releases
+Settings-Plugins-'install from disk'，选择下载的*.zip，即可安装成功 
+```
+
+```java
+//常用注解
+@Slf4j: 生成slf4j注解式logger
+@NonNull: 调用字段的setter方法时,传参为null，则报空指针异常。
+@Data: 组合注解，包含 @Getter; @Setter; @ToString, @EqualsAndHashCode; 无参构造函数.
+
+@Accessors: 定制化@Getter与@Setter
+//(chain = true): 链式编写setter方法,如 Person hua = new Person().setName("HUA").setAge(18);
+//(fluent  = true): 流式编写setter方法,如 Person wang = new Person().name("WANG").age(18);
+
+@SneakyThrows(*.class): 
+//用在'方法'上，可将方法中的代码用 try-catch 语句包裹起来
+//捕获异常并在 catch 中用 Lombok.sneakyThrow(e) 把异常抛出
+```
+
+
+
+
+
+
+
+
+> `cmder`（cmd升级版）http://cmder.net/
 
 ```java
 mini与full版：差别在于有没有内建 msysgit 工具
@@ -43,13 +79,19 @@ mini与full版：差别在于有没有内建 msysgit 工具
 右键菜单：'配置系统环境变量,然后使用系统cmd执行命令: Cmder.exe /register ALL'
 中文乱码：'settings -> Environment -> 添加: set LANG=zh_CN.UTF-8'
 ```
-> Advanced_Rest_Client_Chrome（Chrome插件）
+
+> `JSON-Handle`（Chrome插件）
+
+```java
+浏览器输入：'chrome://extensions/' 将下载后的文件拖入浏览器即可
+```
+> `Advanced_Rest_Client_Chrome`（Chrome插件）
 
 ```
 用于调试 http请求，类似 postman
 ```
 
->OneTab_v1.18（Chrome插件）
+>`OneTab_v1.18`（Chrome插件）
 
 ```
 将已打开的 chrome 网页，保存成类书签形式，以便后续阅读，减少内存
@@ -1484,7 +1526,9 @@ List<String> lines = FileUtils.readLines(file, "UTF-8"); //读取文件
 ```
 
 ```java
-Collection<File> files = FileUtils.listFiles(dir, null, true); //迭代遍历目录
+FileUtils.listFiles(dir, null, true); //迭代遍历目录
+
+FileUtils.listFiles(dir, EmptyFileFilter.NOT_EMPTY, null); //过滤非空文件，不过滤目录
 ```
 
 
@@ -1493,20 +1537,16 @@ FileUtils.copyFile(src, dest); //拷贝文件
 ```
 
 ```java
-try {
-    URLCodec urlCodec = new URLCodec();
-    String url = "http://192.168.5.25:8080/webpark/image/20190518/" +
-        urlCodec.encode("十二pass.log", "UTF-8"); //url中文 进行编码和解码
-    String dest = "C:\\Users\\BlueCard\\Desktop";
+URLCodec urlCodec = new URLCodec();
+String url = "http://192.168.5.25:8080/webpark/image/20190518/" +
+    urlCodec.encode("十二pass.log", "UTF-8"); //url中文 进行编码和解码
+String dest = "C:\\Users\\BlueCard\\Desktop";
 
-    URL httpUrl = new URL(url);
-    String fileName = urlCodec.decode(FilenameUtils.getName(httpUrl.getFile()), "UTF-8");
+URL httpUrl = new URL(url);
+String fileName = urlCodec.decode(FilenameUtils.getName(httpUrl.getFile()), "UTF-8");
 
-    //下载URL资源，注意设置超时时间,单位毫秒
-    FileUtils.copyURLToFile(httpUrl, new File(dest, fileName), 5 * 1000, 5 * 1000);
-} catch (IOException | DecoderException e) {
-    e.printStackTrace();
-}
+//下载URL资源，注意设置超时时间,单位毫秒
+FileUtils.copyURLToFile(httpUrl, new File(dest, fileName), 5 * 1000, 5 * 1000);
 ```
 
 > FilenameUtils
@@ -1623,6 +1663,86 @@ int[] insert = ArrayUtils.insert(3, array, 0, 69); //在 index 为3的位置添�
 ```java
 ArrayUtils.reverse(array); //数组反转
 ```
+
+
+
+# SonarQube
+
+国外版ali开发手册。代码质量管理平台，可以快速的定位代码中潜在的或者明显的错误
+
+## 下载配置
+
+```properties
+#其中汉化包plugins拷入 F:\sonarqube-7.3\extensions\plugins
+server: https://www.sonarqube.org/downloads/
+plugins: https://github.com/SonarQubeCommunity/sonar-l10n-zh/releases
+client(可省): https://docs.sonarqube.org/display/SCAN/Analyzing+with+SonarQube+Scanner
+```
+```properties
+#编辑配置文件：F:\sonarqube-7.3\conf\sonar.properties
+#其中，数据库默认使用内置H2，推荐使用mysql。新建mysql数据库'sonarqube'
+sonar.web.host=0.0.0.0
+sonar.web.port=9000
+sonar.login=admin
+sonar.password=admin
+sonar.jdbc.username=bluecardsoft
+sonar.jdbc.password=#$%_BC13439677375
+sonar.jdbc.url=jdbc:mysql://192.168.8.7:33306/sonarqube?useUnicode=true&characterEncoding=utf8&rewriteBatchedStatements=true&useConfigs=maxPerformance&useSSL=false
+#sonar.web.context=/your_prefix  //非必须，若要在访问sonarqube时加上统一前缀则配置此项
+```
+```properties
+#启动服务
+启动脚本: "F:\sonarqube-7.3\bin\windows-x86-64\StartSonar.bat"
+cmd验证: 屏幕最后出现"xxx SonarQube is up"
+web验证: 默认用户名密码admin，连接 http://localhost:9000
+
+停止服务: 命令行Ctrl+C 或 kill端口'netstat -aon | findstr 9000 ===> taskkill -f /pid xxx'
+异常日志: "F:\sonarqube-7.3\logs\sonar.log"
+```
+```properties
+#分析项目
+项目-->分析新项目-->新建令牌(admin)-->待测项目的pom同级目录执行以下命令
+mvn sonar:sonar \
+  -Dsonar.host.url=http://localhost:9000 \
+  -Dsonar.login=ea23d2ae8d458cf020f8028b7f2b32fca909c83f
+```
+
+## idea插件
+
+```java
+解压安装包，将'SonarLint'文件夹拷贝至'idea安装目录/plugins'
+idea->settings->plugins->Install plugin from disk，选中'sonarlint-intellij-4.0.0.2916.jar'
+
+重启idea，完成安装。以下进行配置sona：
+idea->File-->Settings-->Other Settings-->SonarLint General Settings
+```
+```java
+//配置Client（可省）
+配环境变量: name=SONAR_HOME, value=F:\sonar-scanner-3.2.0.1227-windows
+path前添加: %SONAR_HOME%\bin
+cmd验证: 'sonar-scanner -v'
+
+//在分析项目demo的根目录下新建文件 F:\sp_project\demo\sonar-project.properties
+sonar.projectKey=TGB-demo
+sonar.projectName=demo
+sonar.projectVersion=1.0
+sonar.sources=src
+sonar.language=java
+sonar.sourceEncoding=UTF-8
+sonar.java.binaries=F:/sp_project/demo/target/classes
+
+切换到分析项目demo根目录 "F:\sp_project\demo", 
+使用命令分析项目: 'F:\sonar-scanner-3.2.0.1227-windows\bin\sonar-scanner.bat'
+打开web,查看分析结果: http://localhost:9000/
+```
+
+##常见问题
+
+```properties
+https://blog.csdn.net/happyzwh/article/details/77991095
+https://www.jianshu.com/p/b50f01eeba4d
+```
+
 
 
 
@@ -1829,13 +1949,14 @@ ExecStart=/usr/bin/docker -d -H fd:// --registry-mirror=https://docker.mirrors.u
 
 执行速度：Kafka > RabbitMQ > ActiveMQ。安全性则相反。
 
-##功能作用
+##相关概念
 
->流量削峰（秒杀服务）
+>应用场景1：流量削峰（秒杀服务）
 
     服务器接收用户请求后，首先写入消息队列，依次处理。
+    
     假如消息队列长度超过最大数量，则直接抛弃用户请求或跳转到错误页面
-> 同步变异步
+> 应用场景1：同步变异步，扩展解耦能力
 
 ```java
 //(1).原始过程：用户下单 到 生成订单，总共花费 60ms，同步过程，强耦合。
@@ -1863,14 +1984,12 @@ public void sendSms(String mobile) {
     rabbitTemplate.convertAndSend("spring.sms", object);
 }
 ```
-## 核心概念
-
 ![](assets/RabbitMQ0.jpg)
 
 > 核心概念
 
 ```java
-'Queue'：消息队列，用于存储消息。多个消费者可以订阅同一个Queue，这时Queue中的消息会被平均分摊给多个消费者进行处理，而不是每个消费者都收到所有的消息并处理。 
+'Queue'：消息队列，用于存储消息。多个消费者订阅同一个Queue，消息会被平均分摊给多个消费者进行处理，而不是每个消费者都收到所有的消息并处理。 
 //一个消息可投入一个或多个队列
 //消息一直在队列里面，等待消费者连接到这个队列将其取走
 ```
@@ -2006,11 +2125,8 @@ binding key 并不是在所有情况下都生效，它依赖于Exchange Type，�
 (1).消息消费端。添加 try-catch 异常捕获
 (2).添加配置。开启异常重试，添加最大重试次数，默认3
 
-spring.rabbitmq.template.retry.enabled=true
-spring.rabbitmq.template.retry.max-attempts=3 //发送端
-
-spring.rabbitmq.listener.direct.retry.max-attempts=3
-spring.rabbitmq.listener.simple.retry.enabled=true //接收端
+spring.rabbitmq.listener.simple.retry.enabled=true
+spring.rabbitmq.listener.simple.retry.max-attempts=3
 ```
 
 ## boot整合
@@ -2019,9 +2135,40 @@ spring.rabbitmq.listener.simple.retry.enabled=true //接收端
 
 ```java
 // 4369：erlang发现；5672：client通信；15672：UI管理界面；25672：server间内部通信    
-docker run --name rabbitmq01 -d -p 5671:5671 -p 5672:5672 -p 4369:4369 -p 15671:15671 -p 15672:15672 -p 25672:25672 rabbitmq 
+docker run --name rabbitmq04 -d -p 7671:5671 -p 7672:5672 -p 7369:4369 -p 17671:15671 -p 17672:15672 -p 27672:25672 -p 17674:15674 rabbitmq:3.6-management-alpine
 
 UI管理页面,默认用户名密码: guest。 http://localhost:15672/ 
+```
+
+```shell
+#docker 里的 RabbitMQ 相关目录
+docker exec -it rabbit /bin/bash
+
+配置文件目录：/etc/rabbitmq
+数据存储目录：/var/lib/rabbitmq
+日志目录：/var/log/rabbitmq
+```
+
+> 添加用户
+
+```shell
+#获得容器的bash
+docker exec -it rabbitmq01 /bin/bash
+
+#查看已有用户
+rabbitmqctl list_users
+
+#添加用户
+rabbitmqctl add_user admin 123456
+
+#赋权，访问vhost的权限
+rabbitmqctl set_permissions -p "/" admin ".*" ".*" ".*"
+
+#查看是否成功赋予vhost权限
+rabbitmqctl list_permissions -p /
+
+#赋予 administrator 权限
+rabbitmqctl set_user_tags admin administrator
 ```
 
 > js连接RabbitMq通过stomp实现消息实时推送
@@ -2029,6 +2176,9 @@ UI管理页面,默认用户名密码: guest。 http://localhost:15672/
 ```shell
 #获得容器的bash
 docker exec -it rabbitmq01 /bin/bash
+
+#查看已启动了哪些RabbitMQ插件
+rabbitmq-plugins list
 
 #手动开启 MQTT 插件
 rabbitmq-plugins enable rabbitmq_mqtt
@@ -2042,6 +2192,20 @@ docker restart rabbitmq01
 #打开 RabbitMq的主页 OverView，会发现 Ports and contexts 多了2个端
 http/web-stomp  ::  15674
 stomp           ::  61613
+
+#赋予 guest 用户远程登录权限，修改 docker 里的 /etc/rabbitmq/rabbitmq.config
+[
+        { rabbit, [
+                { loopback_users, ["guest"] }, #增加"guest"用户
+                { tcp_listeners, [ 5672 ] },
+                { ssl_listeners, [ ] },
+                { hipe_compile, false }
+        ] },
+        { rabbitmq_management, [ { listener, [
+                { port, 15672 },
+                { ssl, false }
+        ] } ] }
+].
 ```
 
 ![](assets/RabbitMQ4.jpg)
@@ -2098,7 +2262,7 @@ amqpAdmin.deleteQueue("queue.admin.0"); //移除
 amqpAdmin.declareExchange(new FanoutExchange("exchange.admin", true, true)); //交换器
 
 /**
- * @param destination 目的地
+ * @param destination 目的地，队列名
  * @param destinationType 目的地类型（可选值 QUEUE,EXCHANGE）
  * @param exchange 交换器
  * @param routingKey 路由键

@@ -117,26 +117,44 @@ long epochMilli = instant.toEpochMilli();//毫秒值，时间戳
 long epochSecond = instant.getEpochSecond();//秒值
 ```
 
-## Duration
+## ChronoUnit
 
 > Duration，Period：分别表示时间间隔的两个维度，`前者用时分秒，后者用年月日`。
+>
+> Duration：表示两个时间之间相隔的时分秒。
 
 ```java
-LocalDateTime now = LocalDateTime.now();
-LocalDateTime plusDays = now.plusDays(3);
-Duration between = Duration.between(now, plusDays);
-long hours = between.toHours(); //间隔-小时
-long seconds = between.getSeconds(); //间隔-秒
+LocalDateTime begin = LocalDateTime.of(2017, 12, 31, 10, 0, 0);
+LocalDateTime end = LocalDateTime.now();
+
+Duration duration = Duration.between(begin, end);
+System.out.println(duration); //PT12514H45M34.598S
 ```
+
+>Period：表示两个日期之间相隔的X年X月X日，`不能转化为具体的多少天`。
 
 ```java
-LocalDate now = LocalDate.now();
-LocalDate plusDays = now.plusDays(3);
-Period period = Period.between(now, plusDays);
-int years = period.getYears(); //间隔-年
+LocalDate begin = LocalDate.of(2017, 12, 31);
+LocalDate end = LocalDate.now();
+
+Period between = Period.between(begin, end);
+System.out.println(between); //P1Y5M5D
+System.out.printf("%d年%d月%d日", between.getYears(), between.getMonths(), between.getDays()); //1年5月5日
 ```
 
-## TemporalAdjuster
+> ChronoUnit：计算两个日期或时间相隔的`具体天数，月数，甚至秒数`。
+
+```java
+LocalDateTime begin = LocalDateTime.of(2017, 12, 31, 10, 0, 0);
+LocalDateTime end = LocalDateTime.now();
+
+long days = ChronoUnit.DAYS.between(begin, end);
+long months = ChronoUnit.MONTHS.between(begin, end);
+long seconds = ChronoUnit.SECONDS.between(begin, end); //对于相隔秒数，必须使用 LocalDateTime
+System.out.println(days + " - " + months + " - " + seconds); //521 - 17 - 45029290
+```
+
+##TemporalAd...
 
 > 时间校正器。提供了日期操纵的接口，如：将日期调整到"下个周末"。TemporalAdjusters 是系统提供的接口实现类。`类似 Excutor，Excutors`
 

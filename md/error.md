@@ -88,6 +88,26 @@ public class A {
 一般来说就是：jar包冲突，版本问题、两个相同的jar包
 ```
 
+>Unable to find a @SpringBootConfiguration, you need to use @ContextConfiguration or @SpringBootTest(classes=...) with your test
+
+```java
+//两种可能性
+1.程序入口类忘了添加：SpringBootApplication注解
+
+2.程序入口类的包名和测试类所在包名不一致。例如：
+    主类： com.example.application.Application.java
+    测试类： com.example.test.JpaTest.java
+```
+
+```java
+//解决方案
+1.给主类添加注解 @SpringBootApplication 
+
+2.将入口类和测试类所在包调整为一致即可。例如，
+    将主类调整为：com.example.Application.java
+    或者，在测试类的注解后面添加启动类的类名  @SpringBootTest(classes = Application.class)
+```
+
 
 
 

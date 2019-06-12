@@ -2,14 +2,86 @@
 
 
 
+# BOOT2.0
+
+> 匹配带后缀url访问：http://192.168.8.7:8090/spring/test.do，其中 .do 可以省略
+
+```java
+@Configuration
+public class MyWebMvcConfigurer implements WebMvcConfigurer {
+    @Override
+    public void configurePathMatch(PathMatchConfigurer configurer) {
+        //boot2.x默认将'/test'和'/test.do'作为2个url
+        configurer.setUseRegisteredSuffixPatternMatch(true); //true，统一以上两个url
+    }
+}
+```
+```java
+@Bean
+public ServletRegistrationBean servletRegistrationBean(DispatcherServlet dispatcherServlet) {
+    ServletRegistrationBean<DispatcherServlet> bean = new ServletRegistrationBean<>(dispatcherServlet);
+    
+    bean.addUrlMappings("*.do"); //拦截'.do'结尾的url
+    return bean;
+}
+```
+>shell脚本启动
+
+```shell
+#!/bin/bash
+PID=$(lsof -t -i:8090)
+
+if [ $PID ]
+then
+    kill -9 $PID
+    echo "kill -9 port 8090 PID: $PID"
+else
+    echo "8090 NO PID!"
+fi
+
+cd /var/tmp
+chmod 777 demo.jar
+nohup jdk1.8.0_191/bin/java -jar demo.jar >/dev/null 2>&1 &
+echo "start OK!~!"
+```
+>linux服务启动
+
+```xml
+<plugin>
+    <groupId>org.springframework.boot</groupId>
+    <artifactId>spring-boot-maven-plugin</artifactId>
+    <configuration>
+        <executable>true</executable> <!--可执行，必不可少。将导致jar包不可修改？（快压修改）-->
+    </configuration>
+</plugin>
+```
+```shell
+#将jar包部署到linux，并赋予可执行权限
+chmod +x /var/tmp/blue/demo.jar
+
+#将jar包软连接到 /etc/init.d 目录。其中，/etc/init.d/demo 结尾 demo 为该服务的别名
+ln -s /var/tmp/blue/demo.jar /etc/init.d/demo
+
+#通过linux服务命令形式 启动/关闭/重启/查询 该服务
+service demo start|stop|restart|status
+
+#该服务日志默认的存储路径： /var/log/demo.log
+#使用自定义 *.conf 更改默认配置，jar包同路径下新建配置文件 demo.conf
+JAVA_HOME=/usr/jdk1.7.0_79/bin
+JAVA_OPTS=-Xmx1024M
+LOG_FOLDER=/var/tmp/blue/logs/ #该目录必须存在，配置日志目录
+```
+
+
 # Config
 
 > properties
 
 ```properties
-#server.port=8090
-#server.servlet.context-path=/demo
+server.port=8090
+server.servlet.context-path=/demo
 
+#主要用于是spring-cloud项目
 spring.application.name=amqp-publisher
 
 spring.datasource.driverClassName=com.mysql.cj.jdbc.Driver
@@ -30,7 +102,7 @@ info.random=${random.int[1000,9999]}
 > yaml
 
 ```yaml
-k:(空格)v #表示一对键值对(空格必须有),其中属性和值大小写敏感
+k:(空格)v #表示一对键值对(空格必须有)，其中属性和值大小写敏感
 
 #1.数组(List/Set)的标准写法：
 pets: 
@@ -57,7 +129,7 @@ spring:
   type: com.alibaba.druid.pool.DruidDataSource
 ```
 
-> 加载顺序（先后）
+> 加载顺序：配置文件应该放置在jar包同级的 /config/*.yml
 
 ```java
 – classpath:/            //路径src/main/resources
@@ -69,16 +141,44 @@ spring:
 //加载顺序: 先--->后. (由里到外). 后加载的覆盖先加载的. [互补配置]
 ```
 ```java
-0.以上是开发时配置文件的位置—对于打成jar包
-    由于 classpath 会被打成jar包; 而 file 则不会,所以应该把配置文件放到jar包同级目录.
-    //jar包同级 '/config/*.yml' 优先级最高, jar包内部默认位置的 '*.yml' 优先级最低!
+0.以上是开发时配置文件的位置，对于打成jar包：由于 classpath 会被打成jar包，而 file 目录不会，所以应该把配置文件放到jar包同级目录。
+    //jar包同级 '/config/*.yml' 优先级最高，jar包内部默认位置的 '*.yml' 优先级最低！
 
 1.配置外部log
-    //在配置文件中指定log位置.(内部或外部yml都可以)
-    //推荐外部 -> logback的 scan 和 scanPeriod 两个属性保证了 热部署,即改即生效!!!
+    //在配置文件中指定log位置（内部或外部yml都可以）。
+    //推荐外部 -> logback的 scan 和 scanPeriod 两个属性保证了 热部署，即改即生效！
     logging.config=file:./config/logback-spring.xml
 ```
-> 读取配置
+>不同环境加载不同配置，`profile特性`
+
+```java
+//以下文件与 application.yml 存放在同级目录下。其中，前者配置特殊信息；后者配置公用信息。二者相互补充
+application-dev.yml     ->    开发环境
+application-test.yml    ->    测试环境 
+application-prod.yml    ->    生产环境
+```
+```properties
+#激活profile特性的三种方法.
+(1).在默认配置文件中激活: spring.profiles.active=dev
+(2).(略)命令行: java -jar demo.jar --spring.profiles.active=dev
+(3).(略)虚拟机参数(VM argumments): -Dspring.profiles.active=dev
+```
+```xml
+<!--log的profile特性-->
+<springProfile name="dev"> //<!-- 控制台 * 测试环境 -->
+    <root level="info">
+        <appender-ref ref="console" />
+    </root>
+</springProfile>
+
+<springProfile name="prod"> //<!-- 控制台 * 生产环境 -->
+    <root level="warn">
+        <appender-ref ref="console" />
+    </root>
+</springProfile>
+```
+
+#读取配置
 
 ```xml
 <dependency>
@@ -96,19 +196,17 @@ info.security.username=user
 info.security.password=pwd
 info.security.roles=USER,ADMIN
 ```
+>（1）批量读取，将配置文件转成javabean
+
 ```java
-//1.批量读取，将配置文件转成javabean
-
 //@PropertySource: 加载指定的配置文件
-//value: 设置需要加载的属性文件,可以一次性加载多个. (默认参数)
-//encoding: 编码格式,默认""
-//ignoreResourceNotFound: 当指定的配置文件不存在是否报错,默认 false
-//name: 在Springboot的环境中必须唯一. 默认"class path resource [config/my.properties]"
-
-//@Value: 用于读取单个属性值
+//value: 设置需要加载的属性文件，可以一次性加载多个（默认参数）。
+//encoding: 编码格式，默认""
+//ignoreResourceNotFound: 当指定的配置文件不存在是否报错，默认 false
+//name: 在Springboot的环境中必须唯一。默认"class path resource [config/my.properties]"
 
 //@ConfigurationProperties: 用于批量读取属性值
-//prefix: 属性前缀,通过 'prefix+字段名' 匹配属性
+//prefix: 属性前缀，通过 'prefix+字段名' 匹配属性，默认''
 //ignoreUnknownFields: 是否忽略未知的字段
 //ignoreInvalidFields: 是否忽略验证失败(类型转换异常)的字段
 //-----------<<<<<<一定要有GET/SET方法>>>>--------------------
@@ -116,8 +214,8 @@ info.security.roles=USER,ADMIN
 @Data// lombok插件，自动生成 GET/SET
 @Component
 @ConfigurationProperties(/* prefix = "info", */ ignoreUnknownFields = true, ignoreInvalidFields = true)
-@PropertySource(value = { "file:./my.properties",
-                         "classpath:my.properties" }, encoding = "utf-8", ignoreResourceNotFound = false, name = "my.properties")
+@PropertySource(value = { "file:./my.properties", "classpath:my.properties" }, 
+                encoding = "utf-8", ignoreResourceNotFound = false, name = "my.properties")
 public class MyProperties {
     public Voice voice; //voice开头
     public Info info; //info开头
@@ -130,7 +228,8 @@ public class MyProperties {
     @Data
     private static class Info {
         private boolean enabled;
-        private InetAddress remoteAddress;// 下划线语法,驼峰语法等都能匹配属性
+        private InetAddress remoteAddress;// 下划线语法，驼峰语法等都能匹配属性
+        
         private Security security;
     }
 
@@ -163,9 +262,9 @@ logger.info("MyProperties--res: {}", JSON.toJSON(myProperties));
 }
 ```
 
-```java
-//2.单个读取
+> （2）单个属性读取，两种方式：@value 和 env
 
+```java
 @Value("${info.enabled}") //(1). @Value
 public String infoEnabled;
 
@@ -175,9 +274,9 @@ Environment env;
 String pwd = env.getProperty("spring.mail.password");
 ```
 
-```java
-//3.通过IO读取
+> （3）通过IO读取
 
+```java
 // 默认从此类所在包下读取,path需要添加前缀"/"
 // InputStream in = getClass().getResourceAsStream("/my.properties");
 
@@ -216,32 +315,145 @@ ${ property : default_value }
 
 
 
->多环境切换，不同环境加载不同配置，`profile特性`
+# 常用接口
+
+>CommandLineRunner：用于在应用初始化完成后执行代码（可使用任何依赖），这段代码在整个应用生命周期内只会执行一次。
 
 ```java
-//以下文件与 application.yml 存放在同级目录下。其中，前者配置特殊信息；后者配置公用信息。二者相互补充
-application-dev.yml     ->    开发环境
-application-test.yml    ->    测试环境 
-application-prod.yml    ->    生产环境
+//使用方式1：配合 @Component
+@Component
+public class ApplicationStartupRunner implements CommandLineRunner { }
 ```
-    0.激活profile特性的三种方法.
-    (1).在默认配置文件中激活: spring.profiles.active=dev
-    (2).(略)命令行: java -jar demo.jar --spring.profiles.active=dev
-    (3).(略)虚拟机参数(VM argumments): -Dspring.profiles.active=dev
-```xml
-<!--1.log的profile特性-->
-<springProfile name="dev"> //<!-- 控制台 * 测试环境 -->
-    <root level="info">
-        <appender-ref ref="console" />
-    </root>
-</springProfile>
+```java
+//使用方式2：配合 @SpringBootApplication
+@SpringBootApplication
+public class SpringBootWebApplication implements CommandLineRunner { }
+```
+```java
+//使用方式3：声明一个实现了 CommandLineRunner 接口的Bean
+public class ApplicationStartupRunner implements CommandLineRunner { }
 
-<springProfile name="prod"> //<!-- 控制台 * 生产环境 -->
-    <root level="warn">
-        <appender-ref ref="console" />
-    </root>
-</springProfile>
+@SpringBootApplication
+public class SpringBootWebApplication {
+    @Bean
+    public ApplicationStartupRunner schedulerRunner() {
+        return new ApplicationStartupRunner();
+    }
+    ... ...
+}
 ```
+
+```java
+//两个注意点：
+（1）.如果实现类的 run(String… args)方法内抛出异常，会直接导致应用启动失败。所以，一定要记得将危险的代码放在 try-catch 代码块里。
+
+（2）.对于多个实现类，使用 @Order(value=n) 设置它们的执行顺序。n越小，越先执行。
+```
+
+>SpringBootServletInitializer：使用外置的tomcat启动时，项目启动类继承该类，并复写configure()方法。`待证`
+
+```java
+@SpringBootApplication
+public class MyApplication extends SpringBootServletInitializer {
+
+    public static void main(String[] args) {
+        SpringApplication.run(MyApplication.class, args);
+    }
+
+    @Override
+    protected SpringApplicationBuilder configure(SpringApplicationBuilder builder) {
+        return super.configure(builder);
+    }
+}
+```
+
+
+
+
+
+
+
+
+# 热部署
+
+> （0）`DevTools`工具：重新部署
+
+```xml
+<!-- DevTools -->
+<dependency>
+    <groupId>org.springframework.boot</groupId>
+    <artifactId>spring-boot-devtools</artifactId>
+    <optional>true</optional> //<!-- 依赖只在当前项目生效，不会传递到子项目中 -->
+</dependency>
+```
+> （1）SpringLoader插件：只对 java 代码生效，对页面更改无能为力
+
+```xml
+<build>
+    <plugins>
+        <plugin>
+            <groupId>org.springframework.boot</groupId>
+            <artifactId>spring-boot-maven-plugin</artifactId>
+            <dependencies>
+                <dependency>
+                    <groupId>org.springframework</groupId>
+                    <artifactId>springloaded</artifactId>
+                    <version>1.2.5.RELEASE</version>
+                </dependency>
+            </dependencies>
+        </plugin>
+    </plugins>
+</build>
+```
+```java
+//使用maven命令启动项目：其中，maven插件起作用，必须使用maven命令进行启动
+//缺点：mvn插件形式的热部署程序是在系统后台以进程的形式来运行。需要手动关闭该进程(java.exe *32)
+Run As... --> mvn build... ---> Main --> Goals填写: spring-boot:run
+```
+>（2）项目中直接使用 springloader 的jar包
+
+```java
+Run Configuration... --> Arguments --> VM argumments填写: -javaagent:.\lib\springloaded-1.2.5.RELEASE.jar -noverify
+```
+
+
+
+
+
+
+
+
+# junit
+
+```xml
+<dependency>
+    <groupId>org.springframework.boot</groupId>
+    <artifactId>spring-boot-starter-test</artifactId>
+    <scope>test</scope> <!-- 添加 junit 环境的 jar 包 -->
+</dependency>
+```
+```java
+@RunWith(SpringRunner.class) //junit 与 spring 进行整合，也可用 SpringJUnit4ClassRunner.class
+@SpringBootTest//(classes = {SpringMain.class}) //加载项目启动类，可省
+public class HelloServiceTest {
+
+    @Autowired
+    private HelloService helloService;
+
+    @Test
+    public void test() {
+        helloService.hello();
+    }
+}
+```
+
+
+
+
+
+
+
+
 # Actuator
 
 ```xml
@@ -341,21 +553,60 @@ druid: { //Spring应用程序上下文中的Bean名称或ID
 },
 ```
 
+#Admin
 
+https://github.com/codecentric/spring-boot-admin
 
+SpringBoot-Admin 用于监控BOOT项目，基于 Actuator 的可视化 WEB UI
 
+> 客户端（被监控者）
 
+```xml
+<dependency>
+    <groupId>de.codecentric</groupId>
+    <artifactId>spring-boot-admin-starter-client</artifactId>
+    <version>2.1.3</version>
+</dependency>
+<dependency>
+    <groupId>org.springframework.boot</groupId>
+    <artifactId>spring-boot-starter-security</artifactId>
+</dependency>
+```
+```properties
+#actuator
+management.endpoints.web.exposure.include=*
 
+#admin服务端
+spring.boot.admin.client.url=http://localhost:9090/hello
+```
+```java
+@Configuration
+public /*static*/ class SecurityPermitAllConfig extends WebSecurityConfigurerAdapter {
+    @Override
+    protected void configure(HttpSecurity http) throws Exception {
+        http.authorizeRequests() //Security权限，授权的固定格式
+            .anyRequest().permitAll() //所有请求，所有权限都可以访问
+            .and().csrf().disable(); //固定写法：使 csrf()拦截失效
+    }
+}
+```
+>服务端
 
-
-
-
-
-
-
-
-
-
+```xml
+<dependency>
+    <groupId>de.codecentric</groupId>
+    <artifactId>spring-boot-admin-starter-server</artifactId>
+    <version>2.1.3</version>
+</dependency>
+<dependency>
+    <groupId>org.springframework.boot</groupId>
+    <artifactId>spring-boot-starter-web</artifactId>
+</dependency>
+```
+```java
+//全局注解
+@EnableAdminServer
+```
 
 
 

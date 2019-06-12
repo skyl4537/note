@@ -20,7 +20,7 @@ https://start.spring.io/
     
 //}
     
-//{--------<<<2.x注意点>>>---------------------------
+//{--------<<<2.x注意点>>>---------------------------X
 #不重新打包的前提下,修改配置文件
     1.打包直接执行
         <plugin>
@@ -57,7 +57,7 @@ https://start.spring.io/
 
 //}
 
-//{--------<<<启动>>>--------------------------------
+//{--------<<<启动>>>--------------------------------X
 #两种启动
     1.脚本启动
         #!/bin/bash
@@ -1611,7 +1611,7 @@ HTTP模式可以简化Web服务器，减少服务器的负担，加快响应速�
 //}
 
 
-//{--------<<<Config>>>------------------------------
+//{--------<<<Config>>>------------------------------X
 #properties默认
     server.port=8090
     server.servlet.context-path=/demo
@@ -1822,7 +1822,7 @@ HTTP模式可以简化Web服务器，减少服务器的负担，加快响应速�
 
 //}
 
-//{--------<<<热部署>>>------------------------------
+//{--------<<<热部署>>>------------------------------X
 #插件 SpringLoader(两种方式)
     //缺点: 只对 java 代码生效, 对页面更改无能为力.
     
@@ -2059,7 +2059,7 @@ HTTP模式可以简化Web服务器，减少服务器的负担，加快响应速�
 
 //}
     
-//{--------<<<lombok>>>------------------------------
+//{--------<<<lombok>>>------------------------------X
     ///减少很多重复代码的书写. 比如:getter/setter/toString等
     <dependency>
         <groupId>org.projectlombok</groupId>
@@ -2096,14 +2096,14 @@ HTTP模式可以简化Web服务器，减少服务器的负担，加快响应速�
     
 //}    
 
-//{--------<<<junit>>>-------------------------------
+//{--------<<<junit>>>-------------------------------X
 #单元测试 junit
     1.pom.xml
         // <!-- 添加 junit 环境的 jar 包 -->
         <dependency>
             <groupId>org.springframework.boot</groupId>
             <artifactId>spring-boot-starter-test</artifactId>
-            <scope>test</scope>
+            <scope>test</scope> 
         </dependency>
         
     2.测试DEMO        
@@ -2122,7 +2122,7 @@ HTTP模式可以简化Web服务器，减少服务器的负担，加快响应速�
 
 //}
 
-//{--------<<<DEBUG>>>-------------------------------
+//{--------<<<DEBUG>>>-------------------------------X
 #开启DEBUG
     debug=true //配置文件中添加
     
@@ -2154,47 +2154,47 @@ HTTP模式可以简化Web服务器，减少服务器的负担，加快响应速�
 //}
 
 
-//{--------<<<SonarQube>>>---------------------------
+//{--------<<<SonarQube>>>---------------------------X
     '代码质量管理平台,可以快速的定位代码中潜在的或者明显的错误'
     
 #下载配置
     0.下载解压
-        //其中汉化包plugins拷入 F:\sonarqube-7.3\extensions\plugins
-        server: https://www.sonarqube.org/downloads/
-        plugins: https://github.com/SonarQubeCommunity/sonar-l10n-zh/releases
-        client(可省): https://docs.sonarqube.org/display/SCAN/Analyzing+with+SonarQube+Scanner
+    //其中汉化包plugins拷入 F:\sonarqube-7.3\extensions\plugins
+    server: https://www.sonarqube.org/downloads/
+    plugins: https://github.com/SonarQubeCommunity/sonar-l10n-zh/releases
+    client(可省): https://docs.sonarqube.org/display/SCAN/Analyzing+with+SonarQube+Scanner
     
-    1.配置文件  F:\sonarqube-7.3\conf\sonar.properties
-        //其中,数据库默认使用内置H2,推荐使用mysql. 新建mysql数据库'sonarqube'
-        sonar.web.host=0.0.0.0
-        sonar.web.port=9000
-        sonar.login=admin
-        sonar.password=admin
-        sonar.jdbc.username=bluecardsoft
-        sonar.jdbc.password=#$%_BC13439677375
-        sonar.jdbc.url=jdbc:mysql://192.168.8.7:33306/sonarqube?useUnicode=true&characterEncoding=utf8&rewriteBatchedStatements=true&useConfigs=maxPerformance&useSSL=false
-        #sonar.web.context=/your_prefix  //非必须,若要在访问sonarqube时加上统一前缀则配置此项
+1.配置文件  F:\sonarqube-7.3\conf\sonar.properties
+    //其中,数据库默认使用内置H2,推荐使用mysql. 新建mysql数据库'sonarqube'
+    sonar.web.host=0.0.0.0
+    sonar.web.port=9000
+    sonar.login=admin
+    sonar.password=admin
+    sonar.jdbc.username=bluecardsoft
+    sonar.jdbc.password=#$%_BC13439677375
+    sonar.jdbc.url=jdbc:mysql://192.168.8.7:33306/sonarqube?useUnicode=true&characterEncoding=utf8&rewriteBatchedStatements=true&useConfigs=maxPerformance&useSSL=false
+    #sonar.web.context=/your_prefix  //非必须,若要在访问sonarqube时加上统一前缀则配置此项
 
     2.启动服务
-        启动脚本: "F:\sonarqube-7.3\bin\windows-x86-64\StartSonar.bat"
-        cmd验证: 屏幕最后出现"xxx SonarQube is up"
-        web验证: 默认用户名密码admin, 连接 http://localhost:9000
-        
-        停止服务: 命令行Ctrl+C 或 kill端口'netstat -aon | findstr 9000 ===> taskkill -f /pid xxx'
-        异常日志: "F:\sonarqube-7.3\logs\sonar.log"
+    启动脚本: "F:\sonarqube-7.3\bin\windows-x86-64\StartSonar.bat"
+    cmd验证: 屏幕最后出现"xxx SonarQube is up"
+    web验证: 默认用户名密码admin, 连接 http://localhost:9000
+    
+    停止服务: 命令行Ctrl+C 或 kill端口'netstat -aon | findstr 9000 ===> taskkill -f /pid xxx'
+    异常日志: "F:\sonarqube-7.3\logs\sonar.log"
     
     3.分析项目
-        项目-->分析新项目-->新建令牌(admin)-->待测项目的pom同级目录执行以下命令
-        mvn sonar:sonar \
-          -Dsonar.host.url=http://localhost:9000 \
-          -Dsonar.login=ea23d2ae8d458cf020f8028b7f2b32fca909c83f    
+    项目-->分析新项目-->新建令牌(admin)-->待测项目的pom同级目录执行以下命令
+    mvn sonar:sonar \
+      -Dsonar.host.url=http://localhost:9000 \
+      -Dsonar.login=ea23d2ae8d458cf020f8028b7f2b32fca909c83f    
     
     4.idea插件
-        解压安装包,将'SonarLint'文件夹拷贝至'idea安装目录/plugins'
-        idea->settings->plugins->Install plugin from disk,选中'sonarlint-intellij-4.0.0.2916.jar'
-        
-        //重启idea,完成安装. 以下进行配置sona:
-        idea->File-->Settings-->Other Settings-->SonarLint General Settings
+    解压安装包,将'SonarLint'文件夹拷贝至'idea安装目录/plugins'
+    idea->settings->plugins->Install plugin from disk,选中'sonarlint-intellij-4.0.0.2916.jar'
+    
+    //重启idea,完成安装. 以下进行配置sona:
+    idea->File-->Settings-->Other Settings-->SonarLint General Settings
     
     10.配置Client /*可省*/
         配环境变量: name=SONAR_HOME, value=F:\sonar-scanner-3.2.0.1227-windows
@@ -2395,7 +2395,7 @@ HTTP模式可以简化Web服务器，减少服务器的负担，加快响应速�
 
 //}
 
-//{--------<<<Admin>>>-------------------------------
+//{--------<<<Admin>>>-------------------------------X
 https://github.com/codecentric/spring-boot-admin
 #SpringBoot-Admin 用于监控BOOT项目,基于 Actuator 的可视化 WEB UI
 

@@ -110,6 +110,65 @@ rpm –e RPM包名 –nodeps   #解除依赖，强制删除
 9.软件帮助 yum –help 或者 man yum
 ```
 
+> nano编辑器
+
+```shell
+yum -y install nano #安装
+nano 路径+文件名     #新建/打开
+
+退出: Ctrl+x （y确认）   保存修改: Ctrl+o    取消返回: Ctrl+c
+剪贴/删除整行: Ctrl+k    复制整行: Alt+6        粘贴: Ctrl+U 
+```
+> linux 定时任务 crontab
+
+```shell
+rpm -qa | grep crontab #检查是否安装（rpm: Red-Hat Package Manager）
+
+sudo /etc/init.d/cron start(stop/restart) #命令形式-启动
+sudo service cron start(stop/restart)     #服务形式-启动
+
+crontab -l(e/r)    #列出（编辑/删除）当前用户的定时任务
+
+/var/log/cron.log  #centOS日志的存储位置，对于ubuntu: http://www.cnblogs.com/nieqibest/p/9353927.html
+```
+```shell
+#分 时 日 月 周 (user可省) cmd
+m h dom mon dow (user)  command
+
+* * * * * cmd           #每分钟执行一次任务  
+0 * * * * cmd           #每小时的0点执行一次任务，如6:00; 10:00
+6,10 * 2 * * cmd        #每个月2号，每小时的6分和10分执行一次任务
+*/3,*/5 * * * * cmd     #每隔3分钟或5分钟执行一次任务，比如10:03, 10:05, 10:06 
+0 23-7/2,8 * * * cmd    #晚上11点到早上8点之间每2个小时和早上8点 
+20 3 * * * (xxx; yyy)   #每天早晨3点20分执行用户目录下的两个指令（每个指令以;分隔）
+0 11 4 * mon-wed /etc/init.d/smb restart  #每月的4号与每周1到周3的11点重启smb 
+```
+```shell
+#"%"是特殊字符（换行），所以命令中必须对其进行转义（\%）
+*/2 * * * * echo $(date '+\%Y-\%m-\%d \%H:\%M:\%S')  >> file 
+```
+
+```shell
+#!/bin/bash
+DATE=$(date '+%Y-%m-%d %H:%M:%S') #'%'对于 crontab 是关键字，而对于 shell 脚本则不是，即不需要转义
+LSOF=$(lsof -p $(lsof -t +D /var/lib/webpark/logs/device) |wc -l)
+CLOSE=$(netstat -anp |grep java |grep CLOSE |wc -l) #执行结果赋值给变量
+
+cd /var/lib/webpark/logs/sm/file
+echo $DATE '---' $LSOF >> lsof
+echo $DATE '---' $CLOSE > close
+grep -d skip -n 'Init---args' ../_* > ztj
+```
+> windows 定时任务
+
+```java
+'右键'计算机 -> 管理 -> 系统工具 -> 任务计划程序 -> '右侧'创建任务 ->
+    常规 -> '填写'名称
+    触发器 -> 新建 -> 每天 -> 开始 2019-6-11 20:10:23
+    操作 -> 新建 -> 操作 -> '可选择'启动程序 -> 浏览 -> 选择'*.bat文件'
+```
+
+
 
 
 ## 组合命令
