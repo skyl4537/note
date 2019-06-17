@@ -260,6 +260,166 @@ Build,Exe... - Build Tools - Gradle - Offline work
 
 包名统一使用小写，点分隔符之间有且仅有一个自然语义的英语单词。**包名统一使用单数形式**，但是类名如果有复数含义，**类名可以使用复数形式**。`com.example.spring.util.CommonUtils`
 
+## 常用包
+
+> apache
+
+```xml
+<!-- 该版本完全支持 Java5 的特性，如泛型和可变参数。该版本无法兼容以前的版本，简化很多平时经常要用到的写法，如判断字符串是否为空等等 -->
+<dependency>
+    <groupId>org.apache.commons</groupId>
+    <artifactId>commons-lang3</artifactId>
+    <version>3.8.1</version>
+</dependency>
+
+<!-- IO工具类，文件操作及字符串比较功能 -->
+<dependency>
+    <groupId>org.apache.commons</groupId>
+    <artifactId>commons-io</artifactId>
+    <version>1.3.2</version>
+</dependency>
+
+<!-- 对象池的实现，显著的提升了性能和可伸缩性，特别是在高并发加载的情况下 -->
+<dependency>
+    <groupId>org.apache.commons</groupId>
+    <artifactId>commons-pool2</artifactId>
+    <version>2.4.2</version>
+</dependency>
+
+<!-- email -->
+<dependency>
+    <groupId>org.apache.commons</groupId>
+    <artifactId>commons-email</artifactId>
+    <version>1.4</version>
+</dependency>
+<!-- spring-boot email -->
+<dependency>
+    <groupId>org.springframework.boot</groupId>
+    <artifactId>spring-boot-starter-mail</artifactId>
+</dependency>
+```
+
+> Spring
+
+```xml
+<!-- 为Spring核心提供了大量扩展。可以找到使用 Spring ApplicationContext 特性时所需的全部类，JDNI所需的全部类,
+     UI模板引擎（Templating），如 Velocity、FreeMarker、JasperReports, 以及校验 Validation 方面的相关类 -->
+<dependency>
+    <groupId>org.springframework</groupId>
+    <artifactId>spring-context</artifactId>
+    <version>4.3.3.RELEASE</version>
+</dependency>
+
+<!-- 含支持UI模版(Velocity,FreeMarker,JasperReports),邮件服务,脚本服务(JRuby),缓存Cache(EHCache),
+         任务计划Scheduling(uartz)方面的类. 外部依赖spring-context, (spring-jdbc, Velocity, FreeMarker,
+         JasperReports, BSH, Groovy, JRuby, Quartz, EHCache) -->
+<dependency>
+    <groupId>org.springframework</groupId>
+    <artifactId>spring-context-support</artifactId>
+    <version>4.3.3.RELEASE</version>
+</dependency>
+
+<!-- spring测试框架,需要配合 junit 进行使用创建单元测试. spring测试所需包: sring的相关组件,spring-test,junit -->
+<dependency>
+    <groupId>org.springframework</groupId>
+    <artifactId>spring-test</artifactId>
+    <version>4.3.3.RELEASE</version>
+</dependency>
+
+<!-- 包含Spring 框架基本的核心工具类. Spring 其它组件要都要使用到这个包里的类，是其它组件的基本核心.
+         也可以在自己的应用系统中使用这些工具类.外部依赖Commons-logging,Log4J -->
+<dependency>
+    <groupId>org.springframework</groupId>
+    <artifactId>spring-core</artifactId>
+    <version>4.3.3.RELEASE</version>
+</dependency>
+
+<!-- 所有应用都要用到的,它包含访问配置文件,创建和管理bean 以及 进行(IoC/DI)操作相关的所有类.
+         如果应用只需基本的IoC/DI 支持，引入spring-core.jar 及spring-beans.jar 文件就可以了. 外部依赖spring-core，(CGLIB)。 -->
+<dependency>
+    <groupId>org.springframework</groupId>
+    <artifactId>spring-beans</artifactId>
+    <version>4.3.3.RELEASE</version>
+</dependency>
+
+<!-- https://mvnrepository.com/artifact/org.springframework/spring-web
+         包含Web 应用开发时，用到Spring 框架时所需的核心类，包括自动载入Web Application Context
+         特性的类、Struts  与JSF 集成类、文件上传的支持类、Filter 类和大量工具辅助类。
+         外部依赖spring-context, Servlet API, (JSP API, JSTL, Commons FileUpload, COS)。 -->
+<dependency>
+    <groupId>org.springframework</groupId>
+    <artifactId>spring-web</artifactId>
+    <version>4.3.3.RELEASE</version>
+</dependency>
+
+<!-- https://mvnrepository.com/artifact/org.springframework/spring-webmvc
+          包含Spring MVC 框架相关的所有类。包括框架的Servlets，Web MVC框架，控制器和视图支持。
+          当然，如果你的应用使用了独立的MVC
+          框架，则无需这个JAR 文件里的任何类。
+          外部依赖spring-web, (spring-support，Tiles，iText，POI)。 -->
+<dependency>
+    <groupId>org.springframework</groupId>
+    <artifactId>spring-webmvc</artifactId>
+    <version>4.3.3.RELEASE</version>
+</dependency>
+
+<!-- https://mvnrepository.com/artifact/org.springframework/spring-jdbc
+         包含对Spring 对JDBC 数据访问进行封装的所有类。 外部依赖spring-beans，spring-dao。 -->
+<dependency>
+    <groupId>org.springframework</groupId>
+    <artifactId>spring-jdbc</artifactId>
+    <version>4.3.3.RELEASE</version>
+</dependency>
+
+<!-- https://mvnrepository.com/artifact/org.springframework/spring-aop
+         AOP（Aspect Oriented Programming），即面向切面编程（也叫面向方面编程，面向方法编程）。
+         其主要作用是，在不修改源代码的情况下给某个或者一组操作添加额外的功能。像日志记录，事务处理，
+         权限控制等功能，都可以用AOP来“优雅”地实现，使这些额外功能和真正的业务逻辑分离开来，
+         软件的结构将更加清晰。AOP是OOP的一个强有力的补充。 -->
+<dependency>
+    <groupId>org.springframework</groupId>
+    <artifactId>spring-aop</artifactId>
+    <version>4.3.3.RELEASE</version>
+</dependency>
+
+<!-- https://mvnrepository.com/artifact/org.springframework/spring-tx 事物控制 -->
+<dependency>
+    <groupId>org.springframework</groupId>
+    <artifactId>spring-tx</artifactId>
+    <version>4.3.3.RELEASE</version>
+</dependency>
+
+<!-- https://mvnrepository.com/artifact/org.springframework/spring-orm
+        包含Spring对DAO特性集进行了扩展，使其支持 iBATIS、JDO、OJB、TopLink， 因为Hibernate已经独立成包了，
+        现在不包含在这个包里了。这个jar文件里大部分的类都要
+        依赖spring-dao.jar里的类，用这个包时你需要同时包含spring-dao.jar包。 -->
+<dependency>
+    <groupId>org.springframework</groupId>
+    <artifactId>spring-orm</artifactId>
+    <version>4.3.3.RELEASE</version>
+</dependency>
+<dependency>
+    <groupId>org.springframework</groupId>
+    <artifactId>spring-aspects</artifactId>
+    <version>4.3.3.RELEASE</version>
+</dependency>
+
+<!--https://mvnrepository.com/artifact/org.springframework/spring-expression
+    SPEL表达式支持:
+    一、基本表达式：字面量表达式、关系，逻辑与算数运算表达式、字符串连接及截取表达式、
+       三目运算及Elivis表达式、正则表达式、括号优先级表达式；
+    二、类相关表达式：类类型表达式、类实例化、instanceof表达式、变量定义及引用、赋值表达式、
+       自定义函数、对象属性存取及安全导航表达式、对象方法调用、Bean引用；
+    三、集合相关表达式：内联List、内联数组、集合，字典访问、列表，字典，数组修改、集合投影、
+       集合选择；不支持多维内联数组初始化；不支持内联字典定义；
+    四、其他表达式：模板表达式。
+    注：SpEL表达式中的关键字是不区分大小写的。-->
+<dependency>
+    <groupId>org.springframework</groupId>
+    <artifactId>spring-expression</artifactId>
+    <version>4.3.3.RELEASE</version>
+</dependency>
+```
 ##A001
 
 > 
@@ -811,7 +971,344 @@ log4j.appender.CTRL_ERROR.layout.ConversionPattern=%d{HH:mm:ss.SSS} [%5p] [%t] -
 
 
 
+#Maven
 
+**约定 > 配置 > 编码 ==》** 能用配置解决的问题就不编码，能基于约定的就不进行配置
+
+## 基本概念
+
+>什么是构建???
+
+```java
+构建并不是创建，创建一个工程并不等于构建一个项目。
+
+构建是以 Java源码，框架配置文件，JSP页面，html，图片...等静态资源作为'原材料'去'生产'出一个可以运行的项目的'过程'。
+```
+
+>pom文件（Project Object Model，项目对象模型）
+
+```java
+将Java工程'project'的相关信息封装为对象'object'，作为便于操作和管理的模型'model'，Maven工程的核心配置。
+```
+
+>仓库种类
+
+```java
+本地仓库：本机电脑上的 Maven 仓库
+私服仓库：架设在本地局域网内的 Maven 仓库，直连中央仓库
+中央仓库：架设在 Internet 上，为全世界所有 Maven 工程服务
+```
+
+>mvn命令：与项目构建相关的命令，必须切换到 pom.xml 同级目录
+
+```shell
+mvn clean         #删除以前的编译结果,为重新编译做准备
+mvn compile       #编译主程序
+mvn test-compile  #编译测试程序
+mvn test          #执行测试
+mvn package       #打包
+mvn install       #将打包的结果(jar/war)安装到本地仓库中
+mvn site          #生成站点
+```
+
+>依赖的范围
+
+```shell
+compile  #主程序(√); 测试程序(√); 打包(√); 部署(√); 如: spring-core
+provied  #主程序(√); 测试程序(√); 打包(x); 部署(x); 如: servlet-api(tomcat提供)
+test     #主程序(x); 测试程序(√); 打包(x); 部署(X); 如: junit
+runtime  #主程序(x); 测试程序(√); 打包(√); 部署(√); 如: mysql-connector-java
+```
+
+>依赖的传递：A依赖B，B依赖C，A能否使用C呢？
+
+```java
+'非compile'范围的依赖不能传递，必须在有需要的工程中单独加入
+```
+
+>依赖的排除
+
+```xml
+<dependency>
+    <groupId>org.springframework.boot</groupId>
+    <artifactId>spring-boot-starter-web</artifactId>
+    <exclusions>
+        <exclusion>
+            <artifactId>spring-boot-starter-logging</artifactId> <!--排除'sp默认logback包'-->
+            <groupId>org.springframework.boot</groupId>
+        </exclusion>
+    </exclusions>
+</dependency>
+```
+
+>版本号统一声明
+
+```xml
+<properties>
+    <activemq.version>5.15.4</activemq.version> <!--声明-->
+</properties>
+
+<dependency>
+    <groupId>org.apache.activemq</groupId>
+    <artifactId>activemq-amqp</artifactId>
+    <version>${activemq.version}</version> <!--使用-->
+</dependency>
+```
+
+##下载配置
+
+https://maven.apache.org/download.cgi 配置环境变量，cmd命令验证'mvn -version'
+
+>eclipse使用mvn
+
+```
+本地mvn：window - preferences - maven - installations - add - External - 本地maven路径
+
+mvn仓库: window - preferences - maven - user_settings - add Global_Settings 和 User_Settings 都选择本地mvn的"settings.xml"文件
+```
+
+> 配置mvn：配置文件 settings.xml
+
+```xml
+<!--配置本地仓库-->
+<localRepository>D:\apache-maven-3.3.9-repo</localRepository>
+
+<!--配置阿里云镜像加速下载-->
+<mirror> 
+    <id>alimaven</id>
+    <name>aliyun maven</name> 
+    <url>http://maven.aliyun.com/nexus/content/groups/public/</url> 
+    <mirrorOf>central</mirrorOf> 
+</mirror>
+
+<!--配置下载jar包源码和文档-->
+<!--相应jar包或整个项目，右键'Maven->Download_Sources/javaDoc'，即可下载-->
+<profile>  
+    <id>downloadSources</id>
+    <properties>  
+        <downloadSources>true</downloadSources>  
+        <downloadJavadocs>true</downloadJavadocs>             
+    </properties>  
+</profile>
+
+<!--配置mvn私服-->
+<profile>  
+    <id>nexus</id>  
+    <repositories> //<!--私服库地址-->
+        <repository>  
+            <id>central</id>
+            <url>http://192.168.102.20:8081/nexus/content/groups/public</url>  
+            <releases><enabled>true</enabled></releases>  
+            <snapshots><enabled>true</enabled></snapshots>  
+        </repository>  
+    </repositories>  
+    <pluginRepositories> //<!--插件库地址-->
+        <pluginRepository>  
+            <id>central</id>  
+            <url>http://maven.com:8081/nexus/content/groups/public</url>  
+            <releases><enabled>true</enabled></releases>  
+            <snapshots><enabled>true</enabled></snapshots>  
+        </pluginRepository>  
+    </pluginRepositories>  
+</profile>
+```
+
+>配置nexus的阿里云仓库
+
+```xml
+以用户名 "admin" 密码 "admin123"，登陆 http://localhost:8081/nexus
+
+主界面 -> Add... -> Proxy Repository
+Repository ID: aliyun
+Repository Name: Aliyun Repository
+Remote Storage Location: http://maven.aliyun.com/nexus/content/groups/public/
+
+选中仓库组"Public Repositories" -> Configuration 
+把"Aliyun Repository"从右侧移到左侧, 并拖到"Central"上边
+这样,就可以优先访问阿里云仓库了.
+```
+
+>加入第三方jar
+
+```xml
+<!--（1）配置mvn-->
+<server>
+    <id>thirdparty</id>
+    <username>admin</username>
+    <password>admin123</password>
+</server>
+
+<!--（2）使用cmd命令将第三方包加入私服-->
+<!--其中，-DgroupId="随意指定"; -DartifactId="第三方jar包名"; -Dversion="版本号"; -Dfile="jar所在本地路径"; -Durl="私服路径"-->
+mvn deploy:deploy-file -DgroupId=com.bluecard -DartifactId=wxpay-sdk-0.0.3 -Dversion=0.0.3 -Dpackaging=jar -Dfile=G:\wxpay-sdk-0.0.3.jar -Durl=http://192.168.102.20:8081/nexus/content/repositories/thirdparty/ -DrepositoryId=thirdparty
+
+<!--项目pom.xml添加引用-->
+<dependency>
+    <groupId>com.bluecard</groupId> <!--同上文 -DgroupId-->
+    <artifactId>wxpay-sdk-0.0.3</artifactId> <!--同上文 -DartifactId-->
+    <version>0.0.3</version> <!--同上文 -Dversion-->
+</dependency>
+```
+
+##三种关系
+
+>依赖关系
+
+        使用标签<dependency>把另一个项目的 jar 引入到当前项目
+        自动下载另一个项目所依赖的其他项目
+>继承关系
+
+```xml
+<!--pom类型表示逻辑父项目，只要一个项目有子项目，则它必须是 pom 类型-->
+<!--父项目必须是 pom 类型，如果子项目(jar/war)还是其他项目的父项目，子项目也必须是 pom 类型-->
+
+<!--(1)继承-父项目：pom.xml 中看不到有哪些子项目（只在逻辑上具有父子关系）-->
+
+<!--(2)继承-子项目：出现<parent>标签，GV标签同父项目，即可省-->
+<parent>
+    <groupId>com.example</groupId>
+    <artifactId>parent</artifactId>
+    <version>0.0.1-SNAPSHOT</version>
+</parent>
+
+<!-- <groupId>com.example</groupId> --> 可省
+<artifactId>child</artifactId>
+<!-- <version>0.0.1-SNAPSHOT</version> --> 可省
+```
+> 聚合关系（多模块模式，分布式项目推荐）
+
+```xml
+<!--前提是继承关系，父项目会把子项目包含到父项目中-->
+<!--新建聚合项目的子项目时，点击父项目右键新建 "Maven Module"，而不是 "maven project"-->
+
+<!--(1)聚合-父项目：可在 pom.xml 中查看所有子项目-->
+<groupId>com.example</groupId>
+<artifact>parent-module</artifact>
+<version>1.0.0-SNAPSHOT</version>
+<packaging>pom</packaging> <!--打包方式必须是 pom 类型-->
+<name>My Parent Module</name>
+<modules>
+    <module>child-module-1</module>
+    <module>child-module-2</module>
+</modules>
+
+<!--(2)聚合-子项目：可在 pom.xml 中查看父项目-->
+<parent>
+    <groupId>com.example</groupId>
+    <artifactId>parent-module</artifactId>
+    <version>0.0.1-SNAPSHOT</version>
+</parent>
+<artifactId>child-module-1</artifactId>
+```
+> 继承和聚合的意义和区别
+
+    意义: 统一管理各个子项目的依赖版本.（子项目GV默认继承自父项目）
+    区别: (1).聚合项目 可在父项目的 pom.xml 中查看所有子项目.
+         (2).'继承'必须得先install父项目，再install子项目； '聚合'则可以直接install子项目
+
+> 依赖管理：将父项目中的<dependencies>和<plugin>，用<dependencyManagement>和<pluginManagement>管理起来。
+
+```xml
+<!--(1).父项目中，声明所有可能用到的jar； 再使用<properties>抽取版本,方便集中管理-->
+<properties>
+    <spring-version>4.1.6.RELEASE</spring-version> <!--自定义标签-->
+</properties>
+
+<dependencyManagement>
+    <dependencies>
+        <dependency>
+            <groupId>org.springframework</groupId>
+            <artifactId>spring-webmvc</artifactId>
+            <version>${spring-version}</version> <!--引用自定义标签-->
+        </dependency>
+    </dependencies>
+</dependencyManagement>
+
+<!--(2)子项目中，也不是立即引用，也得写GAV，不过<Version>继承自父项目，即可省-->
+<dependencies>
+    <dependency>
+        <groupId>org.springframework</groupId>
+        <artifactId>spring-webmvc</artifactId>
+    </dependency>
+</dependencies>
+```
+## 使用相关
+
+> 资源拷贝插件
+
+```xml
+<!--mvn默认只把 src/main/resources 里的非java文件编译到classes中-->
+<!--如果希望 src/main/java 下的文件（如mapper.xml）也被编辑到 classes 中，在 pom.xml 中配置-->
+<resources>
+    <resource>
+        <directory>src/main/java</directory>
+    </resource>
+    <resource>
+        <directory>src/main/resources</directory>
+    </resource>
+</resources>
+```
+
+>新建war项目
+
+```xml
+<!--(1)创建 maven project 时，packaging 选择 war-->
+<!--(2)在 webapp 文件夹下新建"META-INF"和"WEB-INF/web.xml"-->
+<!--(3)在 pom.xml 中添加 javaEE 相关的三个 jar-->
+<dependency>
+    <groupId>javax.servlet</groupId>
+    <artifactId>javax.servlet-api</artifactId>
+    <version>3.0.1</version>
+    <scope>provided</scope> <!--依赖的范围，这个必须是provided，因为 tomcat 中自带此jar包-->
+</dependency>
+<dependency>
+    <groupId>javax.servlet.jsp</groupId>
+    <artifactId>jsp-api</artifactId>
+    <version>2.2</version>
+    <scope>provided</scope>
+</dependency>
+<dependency>
+    <groupId>jstl</groupId>
+    <artifactId>jstl</artifactId>
+    <version>1.2</version>
+</dependency>
+    
+<!--(4)使用 tomcat 插件，而非本地tomcat。可实现不同项目发布到不同的tomcat，端口号不能相同.-->
+<plugin>
+    <groupId>org.apache.tomcat.maven</groupId>
+    <artifactId>tomcat7-maven-plugin</artifactId>
+    <version>2.2</version>
+    <configuration>
+        <!--本地启动时项目的端口号; 热部署到远程服务器则不起作用，以远程tomcat端口号为准-->
+        <port>8099</port> 
+
+        <!--项目发布到 tomcat 后的名称，只写'/'则名称为 ROOT-->
+        <!--测试tomcat http://localhost:8080/ 其访问的是tomcat的 ROOT 项目-->
+        <path>/hello</path>
+    </configuration>
+</plugin>
+    
+<!--(5)项目启动: 右键项目 -> run as -> maven build -> Goals中输入 "clean tomcat7:run"-->
+```
+
+> 远程部署
+
+```xml
+(1).修改 tomcat/conf/tomcat-users.xml 添加角色，然后重启tomcat
+    <role rolename="manager-gui"/> //图形界面角色
+    <role rolename="manager-script"/> //脚本角色
+    <user username="tomcat" password="tomcat" roles="manager-gui,manager-script"/>
+
+(2).在 pom.xml 中 tomcat 插件的<configuration>里配置
+    </configuration>
+        //...
+        <username>tomcat</username>
+        <password>tomcat</password>
+        <url>http://192.168.8.8:8080/manager/text</url>
+    </configuration>
+
+(3).右键项目--> run as --> maven build(以前写过,选择第二个) -->输入 tomcat7:deploy(第一次发布); tomcat7:redeploy(非第一次发布).
+```
 
 # WebSocket
 
@@ -1770,25 +2267,35 @@ $ uname -r                     #内核版本必须是3.10及以上
 $ apt-get install docker.io    #安装Docker -(可能存在权限错误,使用时添加 sudo 前缀)
 $ service docker status/start  #启动服务和守护进程
 $ docker -v                    #检测是否安装成功
-$ ln -sf /usr/bin/docker.io /usr/local/bin/docker #创建软连接-(方便使用docker命令)
+$ ln -sf /usr/bin/docker.io /usr/local/bin/docker #创建软连接（方便使用docker命令）
 ```
 ```shell
 #权限问题：permission denied. Are you trying to connect to a TLS-enabled daemon without TLS?
 #注意: 默认情况,执行 docker 都需要运行 sudo 命令. 如何免去 sudo?
 
-sudo groupadd docker            #如果还没有 docker group 就添加一个
-sudo gpasswd -a ${USER} docker  #将用户加入该 group 内.然后退出并重新登录就生效啦
-sudo service docker restart     #重启 docker 服务
-newgrp - docker                 #切换当前会话到新 group
+$ sudo groupadd docker            #如果还没有 docker group 就添加一个
+$ sudo gpasswd -a ${USER} docker  #将用户加入该 group 内.然后退出并重新登录就生效啦
+$ sudo service docker restart     #重启 docker 服务
+$ newgrp - docker                 #切换当前会话到新 group
 ```
 
-> CentOS安装
+> CentOS6.9安装
 
 ```shell
+$ cat /etc/issue    #查看发行版信息：CentOS release 6.9 (Final)
+$ cat /proc/version #查看正在运行的内核版本：...Red Hat 4.4.7-18...
+$ uname -r          #docker要求内核版本3.10以上
+
 $ yum install docker
 $ systemctl start/restart docker
 $ docker -v                #docker版本
 $ systemctl enable docker  #开机启动
+```
+
+```shell
+#可能出现问题：Segmentation Fault or Critical Error encountered. Dumping core and aborting.
+yum list installed |grep docker #找到安装的docker
+yum -y remove docker.x86_64     #然后进行卸载后重新安装
 ```
 
 ## 相关指令
@@ -1807,11 +2314,11 @@ docker search mysql
 docker pull mysql:5.6.7
 #docker pull registry.docker-cn.com/library/mysql:5.6.7 ---> 官方加速
 
-docker images [-q]                #-q: 只显示id
+docker images [-q]                   #-q: 只显示id
 docker rmi [-f] IMAGE_ID
-docker rmi $(docker image -q)    #删除所有
+docker rmi $(docker image -q)        #删除所有
 
-docker inspect IMAGE_ID            #相关信息
+docker inspect IMAGE_ID              #相关信息
 docker tag IMAGE_ID NEW_NAME:NEW_TAG #拷贝重命名
 ```
 
@@ -1823,10 +2330,13 @@ docker ps [-a]                    #运行中的容器（-a: 所有）
 docker start(SSR) CONTAINER_NAME  #容器的启动，停止，重启
 docker rm CONTAINER_NAME          #移除容器（停止状态） rm -> 移除容器; rmi -> 移除镜像！
 
-docker top CONTAINER_NAME      #容器内进程
-docker inspect CONTAINER_NAME  #容器相关信息
+docker top CONTAINER_NAME         #容器内进程
+docker inspect CONTAINER_NAME     #容器相关信息
 
 docker logs [-t] [--tail 10] CONTAINER_NAME    #容器日志(-t: 显示时间, --tail: 最新10条)
+
+#动态的更新一个或多个容器的配置
+docker update --restart=always mysql #更新容器mysql的配置，改为开机自启
 ```
 
 > 互动相关
@@ -1848,6 +2358,11 @@ docker cp DEST_PATH CONTAINER_NAME:SRC_PATH #拷进去
 
 -it    #配合 exec 使用，开启一个交互模式的终端
 -v     #挂载宿主机的目录作为配置文件（宿主机目录:容器目录）：-v /conf/mysql:/etc/mysql/conf.d
+
+--restart #三种重启策略：
+          #no：容器退出时，不重启容器
+          #on-failure n：重新启动容器的最大次数n
+          #always：无论退出状态是如何，都重启容器。如若开机自启时，配置此项
 ```
 
 > elasticsearch
@@ -2131,18 +2646,23 @@ spring.rabbitmq.listener.simple.retry.max-attempts=3
 
 ## boot整合
 
-> docker启动：必须下载 management 的版本才能有管理界面
+> docker启动
 
-```java
-// 4369：erlang发现；5672：client通信；15672：UI管理界面；25672：server间内部通信    
-docker run --name rabbitmq04 -d -p 7671:5671 -p 7672:5672 -p 7369:4369 -p 17671:15671 -p 17672:15672 -p 27672:25672 -p 17674:15674 rabbitmq:3.6-management-alpine
+```shell
+#4369：erlang发现；5672：client通信；15672：UI管理界面；25672：server间内部通信    
+docker run --name rabbitmq -d -p 5671:5671 -p 5672:5672 -p 4369:4369 -p 15671:15671 -p 15672:15672 -p 25672:25672 -p 15674:15674 rabbitmq
 
-UI管理页面,默认用户名密码: guest。 http://localhost:15672/ 
+#开启 UI管理页面
+docker exec -it rabbitmq /bin/bash
+rabbitmq-plugins enable rabbitmq_management
+
+#登陆UI，默认用户名 密码都是: guest
+http://localhost:15672/ 
 ```
 
 ```shell
 #docker 里的 RabbitMQ 相关目录
-docker exec -it rabbit /bin/bash
+docker exec -it rabbitmq /bin/bash
 
 配置文件目录：/etc/rabbitmq
 数据存储目录：/var/lib/rabbitmq
@@ -2153,7 +2673,7 @@ docker exec -it rabbit /bin/bash
 
 ```shell
 #获得容器的bash
-docker exec -it rabbitmq01 /bin/bash
+docker exec -it rabbitmq /bin/bash
 
 #查看已有用户
 rabbitmqctl list_users
@@ -2171,14 +2691,17 @@ rabbitmqctl list_permissions -p /
 rabbitmqctl set_user_tags admin administrator
 ```
 
-> js连接RabbitMq通过stomp实现消息实时推送
+> 配置权限：js连接RabbitMq通过stomp实现消息实时推送
 
 ```shell
 #获得容器的bash
-docker exec -it rabbitmq01 /bin/bash
+docker exec -it rabbitmq /bin/bash
 
 #查看已启动了哪些RabbitMQ插件
 rabbitmq-plugins list
+
+#开启 rabbitmq 的图形化界面
+rabbitmq-plugins enable rabbitmq_management
 
 #手动开启 MQTT 插件
 rabbitmq-plugins enable rabbitmq_mqtt
@@ -2187,13 +2710,14 @@ rabbitmq-plugins enable rabbitmq_mqtt
 rabbitmq-plugins enable rabbitmq_management rabbitmq_web_stomp rabbitmq_stomp rabbitmq_web_stomp_examples
 
 #重启RabbitMQ（可选）
-docker restart rabbitmq01
+docker restart rabbitmq
 
 #打开 RabbitMq的主页 OverView，会发现 Ports and contexts 多了2个端
 http/web-stomp  ::  15674
 stomp           ::  61613
 
-#赋予 guest 用户远程登录权限，修改 docker 里的 /etc/rabbitmq/rabbitmq.config
+#赋予 guest 用户远程登录权限
+#（1）对于低版本，修改docker里的 /etc/rabbitmq/rabbitmq.config
 [
         { rabbit, [
                 { loopback_users, ["guest"] }, #增加"guest"用户
@@ -2206,6 +2730,8 @@ stomp           ::  61613
                 { ssl, false }
         ] } ] }
 ].
+#（2）对于高版本，修改 /etc/rabbitmq/rabbitmq.conf
+loopback_users.guest = false #false：远程访问；true：本地访问
 ```
 
 ![](assets/RabbitMQ4.jpg)
@@ -2238,18 +2764,59 @@ public class AMQPConfig {
     }
 }
 ```
+> 队列相关属性
+
+```java
+Map<String, Object> args = new HashMap<>();
+//控制queue被自动删除前可以处于未使用状态的时间。单位毫秒，不能为0
+//队列中就算有还未消费的msg，也会删除。服务器启动后，持久化的queue的超时时间将重新计算。
+//未使用：queue上没有任何consumer, queue 没有被重新声明，并且在过期时间段内为调用过 basic.get 命令
+//常用于：RPC-style 的回复 queue,其中许多queue会被创建出来，但是却从未被使用
+args.put("x-expires", 10 * 60 * 1000);
+
+//queue中 msg 被丢弃前能够存活的时间，对于已发送给 consumer 的 msg 不失效，单位毫秒，可以为0
+//设为0，则表示 msg 在到达 queue 之后，但尚未被立即投递到 consumer 的情况下，判定为过期
+//注意：当一个 msg 被路由到多个queue中时，其可以在不同的时间死掉，或者出现有的queue中 msg 不死掉的情况
+args.put("x-message-ttl", 60 * 1000);
+
+//队列最大长度，超过最大长度后面的消息会顶替前面的消息
+args.put("x-max-length", 5);
+
+//队列最大容量，作用同上，但这个是靠队列大小（bytes）来达到限制
+args.put("x-max-length-bytes", 5);
+
+//声明优先级队列。该参数应该是一个整数，表示队列应该支持的最大优先级
+//建议使用1到10之间。目前使用更多的优先级将消耗更多的资源（Erlang进程）
+//设置该参数同时设置死信队列时，或造成已过期的低优先级消息会在未过期的高优先级消息后面执行。 
+//该参数会造成额外的CPU消耗。
+args.put("x-max-priority", 5);
+
+//先将消息保存到磁盘上，不放在内存中，当消费者开始消费的时候才加载到内存中
+//取值范围：default 和 lazy
+args.put("x-queue-mode", "lazy");
+
+//延迟结束后指向交换机（死信收容交换机）
+args.put("x-dead-letter-exchange", "exchange.dead");
+//延迟结束后指向队列（死信收容队列），可直接设置queue name也可以设置routing-key
+args.put("x-dead-letter-routing-key", "queue.dead");
+amqpAdmin.declareQueue(new Queue("queue.args", true, false, false, args)); //创建queue
+```
+
 >代码创建和删除，及发送消息
 
 ```java
 /**
  * @param name       队列名称
  * @param durable    是否持久化，即 rabbitmq 重启是否还存在？ 默认 true
- * @param exclusive  排他性。true: queue的conn断了，队列就被删除,包括里面的消息。默认 false
+ * @param exclusive  是否排外及私有private。
+ *                   true：私有队列，其他通道channel不能访问，强制访问抛异常。并且该channel的conn断开后，队列将自动删除
+ *                         包括里面的msg，默认 false
+ *                   false：非排外及私有，可以使用两个消费者同时访问同一个队列，没有任何问题，
  * @param autoDelete 当所有消费客户端连接断开后，是否自动删除队列？ 默认 false
  */
 Map<String, Object> args = new HashMap<>();
 args.put("x-max-length", 5); //队列长度
-args.put("x-expires", 1800000); //自动过期，30min
+args.put("x-expires", 30*60*1000); //queue自动过期，30min
 amqpAdmin.declareQueue(new Queue("queue.direct.0", true, false, false, args)); //创建
 
 amqpAdmin.deleteQueue("queue.admin.0"); //移除

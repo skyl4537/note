@@ -110,11 +110,43 @@ rpm –e RPM包名 –nodeps   #解除依赖，强制删除
 9.软件帮助 yum –help 或者 man yum
 ```
 
+> 升级内核，docker要求内核在3.10以上
+
+```shell
+$ cat /etc/issue    #查看发行版信息：CentOS release 6.9 (Final)
+$ uname -r  #查看当前内核版本
+
+#（1）导入public-key
+rpm --import https://www.elrepo.org/RPM-GPG-KEY-elrepo.org
+
+#（2.1）为 CentOS-6 或 RHEL-6，SL-6安装ELRepo
+rpm -Uvh http://www.elrepo.org/elrepo-release-6-8.el6.elrepo.noarch.rpm
+
+#（2.2）为 CentOS-7 或 RHEL-7，SL-7安装ELRepo：
+rpm -Uvh http://www.elrepo.org/elrepo-release-7.0-3.el7.elrepo.noarch.rpm (external link)
+
+#（3.1）长期支持版本（更稳定）：kernel-lt
+yum --enablerepo=elrepo-kernel install kernel-lt -y 
+
+#（3.2）主线最新版本：kernel-ml
+yum --enablerepo=elrepo-kernel install kernel-ml -y
+
+#（4）修改文件 /etc/grub.conf，将 default 值改为0
+#boot=/dev/vda
+default=0
+timeout=5
+
+#（5）重启服务器，重启之后执行 uname -r 查看最新内核
+reboot 或 shutdown -r now
+```
+
+
+
 > nano编辑器
 
 ```shell
 yum -y install nano #安装
-nano 路径+文件名     #新建/打开
+nano 路径+文件名      #新建/打开
 
 退出: Ctrl+x （y确认）   保存修改: Ctrl+o    取消返回: Ctrl+c
 剪贴/删除整行: Ctrl+k    复制整行: Alt+6        粘贴: Ctrl+U 
@@ -148,8 +180,10 @@ m h dom mon dow (user)  command
 */2 * * * * echo $(date '+\%Y-\%m-\%d \%H:\%M:\%S')  >> file 
 ```
 
+> Linux定时脚本
+
 ```shell
-#!/bin/bash
+#!/bin/bash 
 DATE=$(date '+%Y-%m-%d %H:%M:%S') #'%'对于 crontab 是关键字，而对于 shell 脚本则不是，即不需要转义
 LSOF=$(lsof -p $(lsof -t +D /var/lib/webpark/logs/device) |wc -l)
 CLOSE=$(netstat -anp |grep java |grep CLOSE |wc -l) #执行结果赋值给变量
@@ -193,6 +227,29 @@ nohup command > myout.file 2>&1 &
 
 /dev/null 2>&1 #将产生的所有信息丢弃
 ```
+
+> SpringBoot项目启动脚本
+
+```shell
+#!/bin/bash
+PID=$(lsof -t -i:8090) #查看8090端口程序的pid
+
+#-gt greaterthan,大于; -lt lessthan,小于; -eq equal,等于; -a and,且; -o or,或
+if [ $PID ]
+then
+	echo "8090 PID: $PID"
+	kill -9 $PID
+else
+	echo "8090 NO PID!"
+fi
+
+cd /var/tmp
+chmod 777 demo.jar
+nohup jdk1.8.0_181/bin/java -jar demo.jar >/dev/null 2>&1 &  #赋权，并以后台启动
+echo "start OK!~!"
+```
+
+
 
 
 
@@ -256,9 +313,15 @@ find . -name 'sm*' #（递归）查找当前目录下名为 sm* 的文件及文�
 #-t: 以最后修改时间降序排列（先新后旧）
 #-F: 在文件名称后加一符号（如，可执行文档加'*',目录则加'/'）
 #-r: 以相反次序显示（原以英文字母次序）
-```
-```shell
+
 ls -lh s*    #列出目录下所有名称 s 开头的文件和文件夹
+```
+## mkdir
+
+>创建目录
+
+```shell
+
 ```
 
 ## lsof
@@ -342,14 +405,16 @@ ps -ef | grep 33306 | grep -v grep | awk '{print($2)}' #mysql的pid。（-v 反�
 #-d: 使用数字作为后缀
 #-b: 指定每多少字节切成一个小文件
 #-l <行数> / -<行数>: 指定每多少行切成一个小文件
-```
-```shell
+
 split -5 test.log       #切割文件每个5行
 split -l 5 test.log     #同上
 
 split -b 100k test.log  #切割文件每个100KB
 
 split -b 100k test.log test -d #切割文件并指定前缀为test，后缀为从00开始的数字
+```
+```shell
+
 ```
 
 ## sort
@@ -364,12 +429,14 @@ split -b 100k test.log test -d #切割文件并指定前缀为test，后缀为�
 #-k: 以哪个区间 (field) 来进行排序
 #-t<分隔符>: 指定分隔符，默认的分隔符为空白字符和非空白字符之间的空字符
 #+<起始栏位>-<结束栏位>: 以指定的栏位来排序，范围由起始栏位到结束栏位的前一栏位
-```
-```shell
+
 sort (-r) file #以默认的方式将文本文件的第一列以 ASCII码的次序排列，并将结果输出到标准输出
 
 ls -l | sort -n -k 5       #以默认的空格 分割为例，按照第5列的数值大小进行排序
 sort -t $'\t' -k 2.7 file  #以 TAB 分割为列，对第2列的第7个字符进行排序
+```
+```shell
+
 ```
 
 ## uniq
@@ -381,9 +448,11 @@ sort -t $'\t' -k 2.7 file  #以 TAB 分割为列，对第2列的第7个字符进
 #-d: 仅显示重复出现的行列
 #-w<字符位置>: 指定要比较的字符
 #-u: 仅显示出一次的行列
+
+sort file | uniq -c | sort -r
 ```
 ```shell
-sort file | uniq -c | sort -r
+
 ```
 
 
@@ -391,6 +460,56 @@ sort file | uniq -c | sort -r
 # 文件相关
 
 ##touch
+
+> 新建空文件，或修改文件的时间属性（ls -l 查看文件的时间属性）
+
+```shell
+touch file   #新建空文件file
+```
+
+>清空文件的③种方式
+
+```shell
+ > file            #使用重定向方法
+true > file        #使用true命令重定向清空文件
+echo -n "" > file  #要加上"-n"参数，默认情况下会有"\n"，即有个空行
+```
+##echo
+
+> 显示普通字符串，或转义字符。" "会将内容转义，' '不会转义，原样输出
+
+```shell
+echo "$(date)"   #输出当前时间
+echo '$(date)'   #输出 $(date)
+
+echo $(date '+%Y-%m-%d %H:%M:%S') #输出时间格式化
+
+echo a b c | awk '{print $1,$3}'  #查看一行的 第一列 和 第三列
+```
+>显示变量，或执行结果。shell中引用执行结果，有两种表达方式：'date' 和 $(date)，后者适用于嵌套情况
+
+```shell
+#查看文件句柄数（1）
+echo $(lsof -p $(lsof -t +D /var/lib/webpark/logs/device) |wc -l) #执行结果
+
+#查看文件句柄数（1）
+echo $(date) '---' $(lsof -p $(lsof -t -i:8080|sed -n '1p') |wc -l) >> /file
+
+#查看close_wait
+#!/bin/bash
+DATE=$(date '+%Y-%m-%d %H:%M:%S')
+CLOSE=$(netstat -anp |grep java |grep CLOSE |wc -l)
+
+echo $DATE '---' $CLOSE >> close #变量
+```
+
+> 是否显示换行。
+
+```shell
+#!/bin/sh
+echo -n "OK!" #-n表示不换行，即只输出一行
+echo "It is a test"
+```
 
 
 
@@ -411,16 +530,46 @@ sort file | uniq -c | sort -r
 #-d：复制时保留链接。这里所说的链接相当于Windows系统中的快捷方式。
 #-p：除复制文件的内容外，还把修改时间和访问权限也复制到新文件中。
 #-l：不复制文件，只是生成链接文件。
-```
 
-
-
-> 测试DEMO
-
-```shell
-cp test.log ./tmp #复制单个文件
-
+cp test.log ./tmp   #单个复制
 cp –rf ./test ./tmp #批量复制
 ```
 
+##mv
+
+> 对文件或目录，进行移动或重命名
+
+```shell
+#-i: 提示，若指定目录已有同名文件，则先询问是否覆盖旧文件;
+#-f: 不提示，在mv操作要覆盖某已有的目标文件时不给任何指示;
+
+mv /a.txt /b.txt       #前后两目录一致，指定新文件名 --> 重命名
+mv /a.txt /test/c.txt  #.......不...，指定新文件名 --> 移动 + 重命名
+
+mv /a.txt /test/       #.......不...，【没有】指定新文件名 --> 移动
+
+mv /student/* .       #批量移动到当前目录
+```
+##mkdir
+
+> 创建目录及子目录
+
+```shell
+#-p：如果上级目录没有创建，即创建输入路径上的所有目录
+
+mkdir a b c      #一次性创建多个目录
+mkdir -p /a/c/v  #创建多层目录
+```
+
+##rm
+
+> 删除文件或目录
+
+```shell
+#-i：删除前逐一询问确认。
+#-f：强制删除，即使原档案属性设为唯读，亦直接删除，无需逐一确认。
+#-r：迭代删除，将目录及以下之档案亦逐一删除。
+
+rm -rf /var/log   #递归 + 强制 删除
+```
 

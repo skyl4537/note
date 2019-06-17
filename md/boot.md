@@ -1,8 +1,113 @@
 [TOC]
 
+#BOOT常用
+
+> 常用pom
+
+```xml
+<dependencies>
+    <dependency>
+        <groupId>com.alibaba</groupId>
+        <artifactId>fastjson</artifactId>
+        <version>1.2.47</version>
+    </dependency>
+    <dependency>
+        <groupId>org.projectlombok</groupId>
+        <artifactId>lombok</artifactId>
+        <scope>provided</scope>
+        <optional>true</optional>
+    </dependency>
+
+    <!-- Mybatis 启动器 -->
+    <dependency>
+        <groupId>org.mybatis.spring.boot</groupId>
+        <artifactId>mybatis-spring-boot-starter</artifactId>
+        <version>1.3.2</version>
+    </dependency>
+    <!-- mysql 数据库驱动 -->
+    <dependency>
+        <groupId>mysql</groupId>
+        <artifactId>mysql-connector-java</artifactId>
+    </dependency>
+    <!-- druid 数据库连接池 -->
+    <dependency>
+        <groupId>com.alibaba</groupId>
+        <artifactId>druid</artifactId>
+        <version>1.1.17</version>
+    </dependency>
+
+    <dependency>
+        <groupId>org.springframework.boot</groupId>
+        <artifactId>spring-boot-starter-web</artifactId>
+    </dependency>
+    <dependency>
+        <groupId>org.springframework.boot</groupId>
+        <artifactId>spring-boot-devtools</artifactId>
+        <scope>runtime</scope>
+        <optional>true</optional>
+    </dependency>
+    <dependency>
+        <groupId>org.springframework.boot</groupId>
+        <artifactId>spring-boot-starter-test</artifactId>
+        <scope>test</scope>
+    </dependency>
+</dependencies>
+
+<build>
+    <plugins>
+        <plugin>
+            <groupId>org.springframework.boot</groupId>
+            <artifactId>spring-boot-maven-plugin</artifactId>
+        </plugin>
+    </plugins>
+    <resources> <!--资源拷贝，针对mybatis的xml-->
+        <resource>
+            <directory>src/main/java</directory>
+        </resource>
+        <resource>
+            <directory>src/main/resources</directory>
+        </resource>
+    </resources>
+</build>
+```
+
+> 常用properties
+
+```properties
+server.port=8090
+server.servlet.context-path=/publisher
+#spring.profiles.active=dev
+
+#springcloud项目使用
+#spring.application.name=amqp-publisher
+
+spring.datasource.driverClassName=com.mysql.cj.jdbc.Driver
+spring.datasource.type=com.alibaba.druid.pool.DruidDataSource
+spring.datasource.url=jdbc:mysql://127.0.0.1:33306/webpark?useSSL=false&serverTimezone=GMT%2B8
+spring.datasource.username=bluecardsoft
+spring.datasource.password=#$%_BC13439677375
+
+#xml路径
+mybatis.mapper-locations=classpath*:com/example/amqp_publisher/mapper/sqlxml/*.xml
+#驼峰命名
+mybatis.configuration.map-underscore-to-camel-case=true
+
+spring.thymeleaf.cache=false
+```
+
 
 
 # BOOT2.0
+
+> 
+
+```
+
+```
+
+
+
+
 
 > 匹配带后缀url访问：http://192.168.8.7:8090/spring/test.do，其中 .do 可以省略
 
@@ -71,7 +176,6 @@ JAVA_HOME=/usr/jdk1.7.0_79/bin
 JAVA_OPTS=-Xmx1024M
 LOG_FOLDER=/var/tmp/blue/logs/ #该目录必须存在，配置日志目录
 ```
-
 
 # Config
 

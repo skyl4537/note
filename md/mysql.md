@@ -193,7 +193,7 @@
 ```
 ```sql
 '5.强制' iBATIS 自带的 queryForList(String statementName, int start, int size) 不推荐使用。
--- 说明：其实现方式是在数据库取到 statementName 对应的 SQL 语句的所有记录，再通过 subList 取 start, size 的子集合，线上因为这个原因曾经出现过 OOM。
+-- 说明：此方法在数据库取到 statementName 对应的SQL语句的所有记录，再通过 subList 取 start,size 的子集合，线上因为这个原因曾经出现过 OOM
 
 -- 正例：在 sqlmap.xml 中引入 #start#, #size#
 Map<String, Object> map = new HashMap<String, Object>();
@@ -208,14 +208,17 @@ map.put("size", size);
 '7.强制' 更新数据表记录时，必须同时更新记录对应的 gmt_modified 字段值为当前时间。（gmt 格林威治时间）
 ```
 ```sql
-'8.推荐' 不要写一个大而全的数据更新接口，传入为 POJO 类，不管是不是自己的目标更新字段，都进行 update table set c1=value1, c2=value2, c3=value3; 这是不对的。
+'8.推荐' 不要写一个大而全的数据更新接口，传入为 POJO 类，不管是不是自己的目标更新字段，
+都进行 update table set c1=value1, c2=value2, c3=value3; 这是不对的。
 执行 SQL时，尽量不要更新无改动的字段，一是易出错； 二是效率低； 三是 binlog 增加存储。
 ```
 ```sql
-'9.参考' @Transactional 事务不要滥用。事务会影响数据库的 QPS，另外使用事务的地方需要考虑各方面的回滚方案，包括缓存回滚、搜索引擎回滚、消息补偿、统计修正等。
+'9.参考' @Transactional 事务不要滥用。事务会影响数据库的 QPS。
+另外使用事务的地方需要考虑各方面的回滚方案，包括缓存回滚、搜索引擎回滚、消息补偿、统计修正等。
 ```
 ```sql
-'10.参考' <isEqual>中的 compareValue 是与属性值对比的常量，一般是数字，表示相等时带上此条件；<isNotEmpty>表示不为空且不为 null 时执行； <isNotNull>表示不为 null 值时执行。
+'10.参考' <isEqual>中的 compareValue 是与属性值对比的常量，一般是数字，表示相等时带上此条件；
+<isNotEmpty>表示不为空且不为 null 时执行； <isNotNull>表示不为 null 值时执行。
 ```
 ```sql
 '11.强制' Service/DAO 层方法命名规约
@@ -663,11 +666,11 @@ SET global transaction isolation level read committed; -- 设置全局的隔离�
 
 ## 存储过程
 
-一组预先编译好的sql语句集合，可以理解成批处理语句。
+> 一组预先编译好的sql语句集合，可以理解成批处理语句。
 
 ```sql
 -- 优点
-封装并隐藏复杂的商业逻辑，简化sql操作，并提高代码的重用性。
+封装并隐藏复杂的业务逻辑，简化sql操作，并提高代码的重用性。
 减少编译次数，只编译一次
 减少和数据库服务器的连接次数，提高了效率
 
@@ -694,7 +697,7 @@ ALTER {PROCEDURE | FUNCTION}……
 DROP PROCEDURE [IF EXISTS] db_name.sp_name;
 ```
 
-> 创建：过程体只有一句话，BEGIN END可以省略
+> 创建：当过程体只有一句话时，BEGIN END可以省略
 
 ```sql
 -- 参数模式：IN（只能做输入），OUT（只能做输出），INOUT（既能...又能...），
@@ -704,10 +707,12 @@ BEGIN
 END
 ```
 
-```sql
-DROP PROCEDURE IF EXISTS test0430.login; -- 有则删除
+> DEMO-01：参数模式 IN
 
-CREATE PROCEDURE login(IN login_name VARCHAR(20), IN login_pwd VARCHAR(15))
+```sql
+DROP PROCEDURE IF EXISTS test0430.sp_login; -- 有则删除
+
+CREATE PROCEDURE sp_login(IN login_name VARCHAR(20), IN login_pwd VARCHAR(15))
 BEGIN
     DECLARE cnt INT DEFAULT 0; -- 变量声明
     DECLARE res VARCHAR(10) DEFAULT '';
@@ -721,65 +726,189 @@ BEGIN
     ELSE
         SET res='登录失败'; -- 变量使用
     END IF;
-		SELECT res;
+    
+	SELECT res;
 END
 ```
 
-> 4种变量
+> DEMO-02：参数模式 OUT
 
 ```sql
-用户变量：以"@"开始，形式为"@变量名"。跟mysql客户端绑定，设置的变量，只对当前用户使用的客户端生效
+DROP PROCEDURE IF EXISTS get_student_info_by_id;
 
-全局变量：定义时，以如下两种形式出现，set GLOBAL 变量名  或者  set @@global.变量名 对所有客户端生效。只有具有super权限才可以设置全局变量
+CREATE PROCEDURE get_student_info_by_id(IN p_id INT,OUT p_name VARCHAR(20),OUT p_gender VARCHAR(2))
+BEGIN
+    SELECT sname,gender INTO p_name,p_gender
+    FROM student WHERE sid=p_id;
+END
 
-会话变量：只对连接的客户端有效。
+SET @sname='', @gender=''; -- 声明时必须指定默认值（也可以省略声明过程，直接使用用户变量）。
 
-局部变量：作用范围在 begin到 end语句块之间。在该语句块里设置的变量。 declare语句专门用于定义局部变量。set语句是设置不同类型的变量，包括会话变量和全局变量
+CALL get_student_info_by_id(5,@sname,@gender);
+SELECT @sname,@gender;
+```
+
+> DEMO-03：参数模式 INOUT
+
+```sql
+DROP PROCEDURE IF EXISTS double_self;
+
+CREATE PROCEDURE double_self(INOUT p_a INT,INOUT p_b INT)
+BEGIN
+    SET p_a=p_a*2;
+    SET p_b=p_b*2;
+END
+
+SET @a=3, @b=5; -- 对于 INOUT，必须先声明并赋值
+
+CALL double_self(@a, @b);
+SELECT @a,@b;
+```
+
+
+
+> 变量分类：局部变量和用户变量。用户变量包括：会话变量和全局变量。
+
+```sql
+'局部变量'：作用范围在 begin到 end语句块之间。在该语句块里设置的变量。
+
+'用户变量'：以"@"开始，形式为"@变量名"。跟mysql客户端绑定，设置的变量，只对当前用户使用的客户端生效
+
+'全局变量'：定义时，以如下两种形式出现，set GLOBAL 变量名 或者 set @@global.变量名 对所有客户端生效。只有具有super权限才可以设置
+
+'会话变量'：只对连接的客户端有效。
 ```
 
 ```sql
--- 变量包括：局部变量和用户变量。用户变量包括：会话变量和全局变量。
-
-局部变量 与 用户变量：
+-- 局部变量 与 用户变量：
 1.用户变量是以"@"开头的。局部变量没有这个符号。
-2.定义方式不同。用户变量使用 set语句，局部变量使用 declare语句定义 
+2.定义方式不同。 -- 用户变量使用 set语句，局部变量使用 declare语句定义 
 3.作用范围。局部变量只在 begin-end语句块之间有效，出了范围就失效。
 
 用户定义的变量就叫用户变量。这样理解的话，会话变量和全局变量都可以是用户定义的变量。只是他们是对当前客户端生效，还是对所有客户端生效的区别了。所以，用户变量包括了会话变量和全局变量
 ```
 
-> 条件语句：注意每个结束符号 ;
+## 函数
+
+>函数：存储着一系列sql语句，调用函数就是一次性执行这些语句。所以函数可以降低语句重复。
 
 ```sql
-IF cnt>0 THEN
-    SET res='登陆成功'; -- if-then-else 语句
-ELSE
-    SET res='登录失败';
-END IF;
+-- 【区别】存储过程
+函数：    返回值 - 有且仅有一个，'不允许返回一个结果集'。函数强调返回值，所以函数不允许返回多个值的情况，即使是查询语句。
+存储过程： 返回值 - 有0个或者多个。
+
+函数：    适合做处理数据，并返回一个结果。
+存储过程： 适用于批量插入，或批量更新等
+```
+
+> 函数创建
+
+```sql
+CREATE FUNCTION 函数名([参数列表]) RETURNS 数据类型 -- 参数列表的格式是： 变量名 数据类型
+BEGIN
+    SQL语句;
+    RETURN 值;
+END;
 ```
 
 ```sql
-CASE cnt
-WHEN 0 THEN
-SET res='登录失败'; --case语句
+-- 定义有参函数
+create function fun_test(name varchar(15)) returns int
+begin 
+    declare c int default 0; --定义局部变量
+    select id from class where cname=name into c; --局部变量赋值
+    return c;
+end;
+
+-- 调用函数
+select fun_test("python");
+```
+
+> 查看
+
+```sql
+show create function 函数名; --查看指定函数
+
+show function status [like 'pattern']; --查看所有函数
+```
+
+> 修改：只能修改一些如 comment 的选项，不能修改内部的sql语句和参数列表。
+
+```sql
+alter function 函数名 选项；
+```
+
+> 删除
+
+```sql
+drop function 函数名;
+```
+
+## 执行结构
+
+代码执行结构：多条sql语句的执行顺序。主要用于触发器、存储过程和函数等存储多条sql语句中。
+
+> 顺序结构：默认结构，即从上到下依次执行sql语句
+
+>分支结构：依据一定条件选择执行路径，会依据给定的条件来选择执行那些sql语句
+
+```sql
+if 条件 then -- if中的条件基本可以参照select语句的while子句的条件。什么in \ not in \ = \ != 等都可以用。
+    sql语句
+[elseif 条件 then
+    sql语句]
+[else
+    sql语句]
+end if;
+```
+
+```sql
+create procedure pro_test(in a char(1))
+begin
+    if a in('a','b') then
+        select 1; -- 注意每个结束符号 ;
+    else 
+        select 2;
+    end if;
+end;
+
+call pro_test('5'); -- 执行
+```
+
+```sql
+CASE cnt WHEN 0 THEN -- case when语句
+    SET res='登录失败';
 ELSE
-SET res='登录失败';
+    SET res='登录失败';
 END CASE;
 ```
 
+> 循环结构：在程序中需要反复执行某个功能而设置的一种程序结构。mysql中循环结构用于循环多次运行同一sql语句。
+
 ```sql
-WHILE var<6 DO
-SET res=res+1; --while语句
-END WHILE;
+CREATE PROCEDURE pro_while(IN p_count INT)
+BEGIN
+    DECLARE i INT DEFAULT 0;
+    WHILE i<p_count DO
+        INSERT INTO student(s_name,s_pwd) VALUES(CONCAT('john',i),'123');
+        SET i=i+1; -- 循环体内 ++
+    END WHILE;
+END;
 ```
 
-
-
-
-
-
-
-
+```sql
+--LEAVE相当于 break; ITERATE相当于 continue
+CREATE PROCEDURE pro_while(IN p_count INT)
+BEGIN
+    DECLARE i INT DEFAULT 0;
+    a:WHILE i<p_count DO
+        INSERT INTO student(s_name,s_pwd) VALUES(CONCAT('john',i),'123');
+        IF i>20 THEN LEAVE a; -- 添加 leave 语句，跳出循环
+        END IF;
+        SET i=i+1;
+    END WHILE;
+END;
+```
 
 # 查询命令
 

@@ -107,19 +107,19 @@
     df -lh
     du -h --max-depth=1 /var/lib/webpark/logs | sort -nr
     
-#echo: ""会将内容转义; ''不会转义,原样输出
-    echo "$(date)"            //输出当前时间
-    echo '$(date)'            //输出 $(date)
+// #echo: ""会将内容转义; ''不会转义,原样输出
+    // echo "$(date)"            //输出当前时间
+    // echo '$(date)'            //输出 $(date)
     
-    echo $(date '+%Y-%m-%d %H:%M:%S')    //输出时间格式化
+    // echo $(date '+%Y-%m-%d %H:%M:%S')    //输出时间格式化
 
-    echo a b c | awk '{print $1,$3}'    //查看一行的第一和第三列
+    // echo a b c | awk '{print $1,$3}'    //查看一行的第一和第三列
     
-    //执行结果两种表达方式: `date`  $(date) ,后者适用于嵌套情况
-    echo $(lsof -p $(lsof -t +D /var/lib/webpark/logs/device) |wc -l)
+    // //执行结果两种表达方式: `date`  $(date) ,后者适用于嵌套情况
+    // echo $(lsof -p $(lsof -t +D /var/lib/webpark/logs/device) |wc -l)
     
-    //,如: $(lsof -p $(lsof -t -i:8080|sed -n '1p') |wc -l)
-    echo $(date) '---' $(lsof -p $(lsof -t -i:8080|sed -n '1p') |wc -l) >> /file
+    // //,如: $(lsof -p $(lsof -t -i:8080|sed -n '1p') |wc -l)
+    // echo $(date) '---' $(lsof -p $(lsof -t -i:8080|sed -n '1p') |wc -l) >> /file
     
 // #split: 切割文件
     // #-d: 使用数字作为后缀
@@ -229,15 +229,15 @@
 //{--------<<<常用指令>>>--------------------------------
 '常用命令': http://www.runoob.com/w3cnote/linux-useful-command.html
 
-#touch 新建空文件,或修改文件的时间属性.(ls -l 查看文件的时间属性)
-    touch file        //新建空文件file
+// #touch 新建空文件,或修改文件的时间属性.(ls -l 查看文件的时间属性)
+    // touch file        //新建空文件file
     
 
     
-#清空文件
-    (1).  > file                //使用重定向方法
-    (2). true > file            //使用true命令重定向清空文件
-    (3). echo -n "" > file    //要加上"-n"参数,默认情况下会有"\n",即有个空行
+// #清空文件
+    // (1).  > file                //使用重定向方法
+    // (2). true > file            //使用true命令重定向清空文件
+    // (3). echo -n "" > file    //要加上"-n"参数,默认情况下会有"\n",即有个空行
     
     
 
@@ -512,29 +512,29 @@ awk是一种处理文本文件的语言,是一个强大的文本分析工具.
     
     -r    //递归操作目录(recursion)
 
-#ls 用于显示指定工作目录下的内容
-    [root@linux]# ls -lh
-    total 4.9G //总计大小
-    drwxrwxrwx 3 parkmanager root 4.0K  1月 25 17:12 dir
-    |    1   | 2  |    3    |   4  | 5  |      6     |   7  |
-    |档案属性|连接|  拥有者 | 分组 |大小|  修改日期  |文件名|
+// #ls 用于显示指定工作目录下的内容
+    // [root@linux]# ls -lh
+    // total 4.9G //总计大小
+    // drwxrwxrwx 3 parkmanager root 4.0K  1月 25 17:12 dir
+    // |    1   | 2  |    3    |   4  | 5  |      6     |   7  |
+    // |档案属性|连接|  拥有者 | 分组 |大小|  修改日期  |文件名|
     
-#mkdir 创建目录
-    mkdir -p ./test/test01/test02 //-p: 创建多层目录
+// #mkdir 创建目录
+    // mkdir -p ./test/test01/test02 //-p: 创建多层目录
 
-#rm 删除文件或目录
-    rm -rf /var/log            //递归+强制-删除
+// #rm 删除文件或目录
+    // rm -rf /var/log            //递归+强制-删除
 
 // #cp 复制文件或目录    
     // cp –rf ./test ./newtest    //批量复制
 
-#mv    移动,或重命名
-    mv /a.txt /b.txt        //两目录一致, 指定新文件名 --> 重命名
-    mv /a.txt /test/c.txt     //.....不..., 指定新文件名 --> 移动+重命名
+// #mv    移动,或重命名
+    // mv /a.txt /b.txt        //两目录一致, 指定新文件名 --> 重命名
+    // mv /a.txt /test/c.txt     //.....不..., 指定新文件名 --> 移动+重命名
     
-    mv /a.txt /test/        //.....不..., [没]指定新文件名 --> 移动
+    // mv /a.txt /test/        //.....不..., [没]指定新文件名 --> 移动
     
-    mv /student/_* .         //批量移动
+    // mv /student/_* .         //批量移动
     
 #zip 压缩和解压(unzip)
     #-q: 不显示压缩过程信息

@@ -245,37 +245,58 @@ public void doJDBC() throws ClassNotFoundException, SQLException, IOException {
 <dependency>
     <groupId>com.alibaba</groupId>
     <artifactId>druid</artifactId>
+    <version>1.1.17</version>
 </dependency>
 ```
 > 必要设置
 
-```java
+```properties
 spring.datasource.driverClassName=com.mysql.cj.jdbc.Driver
 spring.datasource.type=com.alibaba.druid.pool.DruidDataSource
 spring.datasource.url=jdbc:mysql://192.168.8.7:33306/test0329?useSSL=false&allowMultiQueries=true&serverTimezone=GMT%2B8
-spring.datasource.username=root
-spring.datasource.password=123456
+spring.datasource.username=bluecardsoft
+spring.datasource.password=#$%_BC13439677375
 
-mybatis.mapper-locations=classpath*:com/example/demo/mapper/sqlxml/_*.xml //xml路径
-//mybatis.config-location=mybatis.xml //相关xml配置 <-> 与上不能同时使用
+#xml路径
+mybatis.mapper-locations=classpath*:com/example/demo/mapper/sqlxml/_*.xml
+#相关xml配置 <-> 与上不能同时使用
+//mybatis.config-location=mybatis.xml
 
-//全局注解; 可省去每个Mapper文件上的 @Mapper
-@MapperScan(value = "com.example.*.mapper") 
+#全局注解; 可省去每个Mapper文件上的 @Mapper
+@MapperScan(value = "com.example.*.mapper")
 
-//【不推荐】注解版xml; 直接在java文件写sql,省去对应的xml文件
+#【不推荐】注解版xml; 直接在java文件写sql,省去对应的xml文件
 @Select("SELECT sname FROM student WHERE sid=#{id}")
 String getNameById(int id);
 ```
 > 非必要设置
 
-```java
-mybatis.configuration.mapUnderscoreToCamelCase=true //驼峰命名
-mybatis.configuration.callSettersOnNulls=true //数据库返回为null，也调用映射对象的setter方法
+```properties
+#驼峰命名
+mybatis.configuration.map-underscore-to-camel-case=true
+#数据库返回为null，也调用映射对象的setter方法
+mybatis.configuration.call-setters-on-nulls=true
 
-mybatis.configuration.lazyLoadingEnabled=true //全局设置：是否启用延迟加载
-mybatis.configuration.aggressiveLazyLoading=true //局部设置：是否不启用延迟加载
+#全局设置：是否启用延迟加载
+mybatis.configuration.lazy-loading-enabled=true
+#局部设置：是否不启用延迟加载
+mybatis.configuration.aggressive-lazy-loading=true
 ```
-##xml代码提示
+>资源拷贝插件
+
+```xml
+<!-- mvn默认只把 src/main/resources 里的非java文件编译到classes中 -->
+<!-- 如果希望 src/main/java 下的文件（如mapper.xml）也编辑到 classes 中，在pom.xml中配置，与<plugins/>节点同级 -->
+<resources>
+    <resource>
+        <directory>src/main/java</directory>
+    </resource>
+    <resource>
+        <directory>src/main/resources</directory>
+    </resource>
+</resources>
+```
+##xml提示
 
 ```java
 下载dtd文件: "mybatis-3-mapper.dtd"和"mybatis-3-config.dtd"
@@ -471,16 +492,17 @@ List<Map<String, Object>> getAllPassage();
 </select>
 ```
 
-> 回参Map
+> 回参Map：`对于有驼峰命名的key，必须将数据表中的字段使用别名`
 
 ```java
-//其中，key为某一列name，value为每一行封装成的 pojo 或 Map。如：
-//{"喇叭花":{"name":"喇叭花","id":1},"牵牛花":{"name":"牵牛花","id":2}... ...}
-@MapKey("name")
-Map<String,Flower> listByName(String name);
+//其中，key为某一列name，value为每一行封装成的 pojo 或 Map。
+如：{"喇叭花":{"flowerName":"喇叭花","flowerId":1},"牵牛花":{"flowerName":"牵牛花","flowerId":2}... ...}
+
+@MapKey("flowerName") //这里的‘flowerName’表示的是javabean中的属性名，而非数据库中的字段名。所以xml中的 flower_name 必须改别名。切记！
+Map<String, Flower> listByName(String flowerName);
 
 <select id="listByName" resultType="com.x.Flower">
-    select * from flower where name like #{name}
+    select flower_id,flower_name flowerName from flower where flower_name like #{flowerName}
 </select>
 ```
 ## 自增主键
