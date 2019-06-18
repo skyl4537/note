@@ -462,57 +462,57 @@
 //}
 
 //{--------<<<上传下载>>>-----------------------------------------------------------------
-#文件上传
-    0.流程步骤
-        (1).<form>表单: POST + enctype="multipart/form-data"
-        (2).文件上传域(<file>)必须要有name属性: <input type='file' name="file">
-        (2).后台使用 MultipartFile 接收文件资源
+// #文件上传
+    // 0.流程步骤
+        // (1).<form>表单: POST + enctype="multipart/form-data"
+        // (2).文件上传域(<file>)必须要有name属性: <input type='file' name="file">
+        // (2).后台使用 MultipartFile 接收文件资源
     
-    1.单文件上传
-        <form action="/upload" method="post" enctype="multipart/form-data">
-            File0: <input type="file" name="file"><br>
-            //File1: <input type="file" name="file"><br> //多文件上传
-            Desc: <input type="text" name="desc"><br>
-            <input type="submit" value="提交">
-        </form>
+    // 1.单文件上传
+        // <form action="/upload" method="post" enctype="multipart/form-data">
+            // File0: <input type="file" name="file"><br>
+            // //File1: <input type="file" name="file"><br> //多文件上传
+            // Desc: <input type="text" name="desc"><br>
+            // <input type="submit" value="提交">
+        // </form>
         
-        @ResponseBody
-        @PostMapping("/upload")
-        public String upload(@RequestParam("file") MultipartFile file, @RequestParam("desc") String desc) {
-            //<form>表单中文件name, 文件名字, 文件大小
-            System.out.println(file.getName() + " - " + file.getOriginalFilename() + " - " + file.getSize());
-            file.transferTo(new File(getUploadDir(), file.getOriginalFilename())); //文件另存
-        }
+        // @ResponseBody
+        // @PostMapping("/upload")
+        // public String upload(@RequestParam("file") MultipartFile file, @RequestParam("desc") String desc) {
+            // //<form>表单中文件name, 文件名字, 文件大小
+            // System.out.println(file.getName() + " - " + file.getOriginalFilename() + " - " + file.getSize());
+            // file.transferTo(new File(getUploadDir(), file.getOriginalFilename())); //文件另存
+        // }
         
-        public File getUploadDir() throws FileNotFoundException {
-            File dir = new File(ResourceUtils.getURL("").getPath(), "/upload"); //项目根目录下
-            if (!dir.exists()) {
-                dir.mkdirs(); //创建当前及父目录.(区别于 mkdir())
-            }
-            return dir;
-        }
+        // public File getUploadDir() throws FileNotFoundException {
+            // File dir = new File(ResourceUtils.getURL("").getPath(), "/upload"); //项目根目录下
+            // if (!dir.exists()) {
+                // dir.mkdirs(); //创建当前及父目录.(区别于 mkdir())
+            // }
+            // return dir;
+        // }
     
-    2.多文件上传
-        @PostMapping("/uploads")
-        public void batchUplocad(@RequestParam("file") List<MultipartFile> files,
-                                 @RequestParam("desc") List<String> descs) {
-            files.forEach(x -> x.transferTo(getUploadDir(), x.getOriginalFilename())); //文件另存 
-            descs.forEach(log::info); //文件描述
-        }
+    // 2.多文件上传
+        // @PostMapping("/uploads")
+        // public void batchUplocad(@RequestParam("file") List<MultipartFile> files,
+                                 // @RequestParam("desc") List<String> descs) {
+            // files.forEach(x -> x.transferTo(getUploadDir(), x.getOriginalFilename())); //文件另存 
+            // descs.forEach(log::info); //文件描述
+        // }
         
-    3.配置上传文件的大小
-        spring.servlet.multipart.max-file-size=10MB //单个上传文件的大小
-        spring.servlet.multipart.max-request-size=20MB //一次请求上传文件的总容量
+    // 3.配置上传文件的大小
+        // spring.servlet.multipart.max-file-size=10MB //单个上传文件的大小
+        // spring.servlet.multipart.max-request-size=20MB //一次请求上传文件的总容量
         
-        @Bean //或者,代码配置
-        MultipartConfigElement multipartConfigElement() {
-            MultipartConfigFactory factory = new MultipartConfigFactory();
-            factory.setMaxFileSize("10MB");//单个文件
-            factory.setMaxRequestSize("20MB");//一次请求多个文件
-            return factory.createMultipartConfig();
-        }
+        // @Bean //或者,代码配置
+        // MultipartConfigElement multipartConfigElement() {
+            // MultipartConfigFactory factory = new MultipartConfigFactory();
+            // factory.setMaxFileSize("10MB");//单个文件
+            // factory.setMaxRequestSize("20MB");//一次请求多个文件
+            // return factory.createMultipartConfig();
+        // }
         
-    4.
+    // 4.
         
 #文件下载 -> 一般都借助于以下两个 header 达到效果:
     1.Content—Type

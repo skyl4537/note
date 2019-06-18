@@ -210,6 +210,9 @@ grep -d skip -n 'Init---args' ../_* > ztj
 >`nohup java -jar springboot.jar > /dev/null 2>&1 &` 后台启动java项目
 
 ```shell
+nohup java -jar blue.jar > ./logs/blue.log 2>&1 &               #输出日志
+nohup java -jar blue.jar > ./logs/blue.log >/dev/null 2>&1 &    #不再输出日志
+
 nohup：该命令可以在 '退出帐户/关闭终端' 之后继续运行相应的进程。默认情况，该作业的所有输出都被重定向到一个名为'nohup.out'的文件中
 ```
 ```shell
@@ -247,6 +250,27 @@ cd /var/tmp
 chmod 777 demo.jar
 nohup jdk1.8.0_181/bin/java -jar demo.jar >/dev/null 2>&1 &  #赋权，并以后台启动
 echo "start OK!~!"
+```
+
+>kill -9 \`lsof -t -i:8090\`
+
+```shell
+kill -9 `lsof -i:8090 | awk '{print $2}' | sed -n '2p'`         #等同于上面命令
+
+（1）用``表示，引用命令的执行结果
+（2）awk '{print $2}' #表示输出第二列内容
+（3）sed -n '2p'      #表示输出第二行
+（4）nohup cmd &      #表示后台执行命令cmd。nohup是不挂起的意思(no hang up)，它保证在退出帐户之后继续运行相应的进程
+（5）/dev/null        #表示文件黑洞，起到'禁止输出'功能
+
+cmd > /dev/null 2>&1 #屏蔽指令的 stdout 和 stderr
+
+#一般情况下，每个 Unix/Linux 命令运行时都会打开三个文件:
+（a）标准输入文件(stdin): stdin的文件描述符为0, Unix程序默认从stdin读取数据。
+（b）标准输出文件(stdout): stdout 的文件描述符为1, Unix程序默认向stdout输出数据。
+（c）标准错误文件(stderr): stderr的文件描述符为2, Unix程序会向stderr流中写入错误信息。
+
+# 2>&1 -> 表示stderr的输出方式同stdout，都是禁止输出
 ```
 
 
@@ -572,4 +596,93 @@ mkdir -p /a/c/v  #创建多层目录
 
 rm -rf /var/log   #递归 + 强制 删除
 ```
+
+##tail
+
+> 默认显示末尾10行，如给定多个文件，则在显示时，每个文件前加一个文件名标题。如未指定文件或文件名为'-'，则读取标准输入
+
+```shell
+#-n<N>或——line=<N>: 文件尾部的 N 行内容
+#-f: 动态显示文件最新的追加内容 (适合查看日志)
+#-s<秒数>或——sleep-interal=<秒数>: 与'-f'选项连用,指定监视文件变化的间隔秒数
+
+#-c<N>或——bytes=<N>: 文件尾部的N个字节内容
+#--pid=<进程号>:与'-f'选项连用，当指定的进程号的进程终止后，自动退出tail命令
+
+tail -n 5 file    #最后5行内容
+tail -n +5 file   #第5行至末尾（包含第5行）
+
+tail -f -n 3 file #循环查看文件的最后 3 行内容
+
+tail -c 10 file   #最后 10 个字符
+```
+
+
+
+
+
+#其他命令
+
+##df
+
+>显示系统的磁盘使用情况
+
+```shell
+#-l: 列出文件结构
+#-h: 以人类可读的格式显示大小
+
+df -lh          #当前linux系统所有目录的磁盘使用情况
+df -lh --total  #增加统计信息
+
+df -lh /var/lib/webpark/logs/sm  #查看指定目录所属挂载点，及挂载点的磁盘使用情况
+```
+
+##du
+
+>显示指定的目录或文件所占用的磁盘空间
+
+```shell
+#--max-depth=<目录层数>: 超过指定层数的目录后,予以忽略
+
+df -lh
+du -h --max-depth=1 /var/lib/webpark/logs | sort -nr  #相结合使用,查看磁盘情况
+```
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
 

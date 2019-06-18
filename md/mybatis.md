@@ -990,35 +990,52 @@ List<Teacher> selTeacher();
 
 ## 一级缓存
 
-`MyBatis` 默认是开启一级缓存的。`MyBatis`会在一次会话中，一个`SqlSession`对象中创建一个本地缓存(local cache)，对于每一次查询，都会尝试根据查询的条件去本地缓存中查找是否在缓存中，如果在缓存中，就直接从缓存中取出，然后返回给用户；否则，从数据库读取数据，将查询结果存入缓存并返回给用户。
+>MyBatis 默认开启一级缓存。一级缓存的作用域为一个SqlSession。
 
-Mybatis首先去缓存中查询结果集，如果没有则查询数据库，如果有则从缓存取出返回结果集就不走数据库。Mybatis内部存储缓存使用HashMap，key为hashCode+sqlId+Sql语句。value为从查询出来映射生成的java对象。
+```sql
+MyBatis会在一次会话中，一个SqlSession对象中创建一个本地缓存(local cache)，
+对于每一次查询，都会尝试根据查询的条件去本地缓存中查找是否在缓存中，
+如果在缓存中，就直接从缓存中取出，然后返回给用户；否则，从数据库读取数据，将查询结果存入缓存并返回给用户。
 
-一级缓存的作用域为一个`SqlSession`，
+Mybatis内部存储缓存使用HashMap，key为 'hashCode+sqlId+Sql' 语句。value为从查询出来映射生成的java对象。
+```
 
 ## 二级缓存
 
-默认情况下，查出的数据先放在一级缓存中。只有当 `sqlSession.commit() 或 close()`，一级缓存数据才会转移到二级缓存中。
+>默认情况下，查出的数据先放在一级缓存中。只有当 `sqlSession.commit() 或 close()`，一级缓存数据才会转移到二级缓存中。
 
-Mybatis的二级缓存即查询缓存，它的作用域是一个mapper的`NameSpace`，即在同一个NameSpace中查询sql可以从缓存中获取数据。二级缓存是可以跨SqlSession的，也是一个`内存级别的缓存`。
+```
+Mybatis的二级缓存即查询缓存，它的作用域是一个mapper的NameSpace，即在同一个NameSpace中查询sql可以从缓存中获取数据。
+
+二级缓存是可以跨SqlSession的，也是一个内存级别的缓存。
+```
 
 > 缓存设置
 
-- ```java
-  mybatis.configuration.cache-enabled=true //默认开启
-  ```
+```properties
+#（1）默认开启
+mybatis.configuration.cache-enabled=true
+```
 
-- 实体类POJO实现序列化接口 `implements Serializable（<cache/>设置 readOnly="true"，则可省）`。
+```java
+（2）实体类POJO实现序列化接口 implements Serializable。（<cache/>设置 readOnly="true"，则可省）
+```
 
-- xml 新增标签： `<cache eviction="LRU" flushInterval="60000" size="1024" readOnly="true"/>`
+```xml
+（3）<cache eviction="LRU" flushInterval="60000" size="1024" readOnly="true"/> <!--mapper.xml 新增-->
+```
 
 >cache标签参数
 
-1. . eviction            -> 缓存的回收策略，默认LRU（可选值：LRU，FIFO，SOFT，WEAK）。
-    . flushInterval    -> 缓存失效时间，默认永不失效（单位毫秒）。
-    . size                  -> 缓存存放多少个元素，默认1024。
-    . type                 -> 指定自定义缓存的全类名（需要实现Cache接口，自定义缓存类）。
-    . readOnly         -> 是否只读，默认false。
+```
+eviction       -> 缓存的回收策略，默认LRU（可选值：LRU，FIFO，SOFT，WEAK）
+flushInterval  -> 缓存失效时间，默认永不失效（单位毫秒）
+size           -> 缓存存放多少个元素，默认1024
+type           -> 指定自定义缓存的全类名（需要实现Cache接口，自定义缓存类）
+readOnly       -> 是否只读，默认false。
+```
+
+
 
 # 附表
 
@@ -1046,7 +1063,7 @@ e1[ e2 ]              //对于List，数组和Map，按索引取值
 < > & ' "        -> <![CDATA[ < ]]> <![CDATA[ > ]]> <![CDATA[ & ]]> ...
 ```
 
-<![CDATA[]]>和xml转义字符的关系：
+> <![CDATA[]]>和xml转义字符的关系：
 
 ```xml
 (1).对于短字符串<![CDATA[]]>写起来啰嗦，对于长字符串转义字符写起来可读性差。
@@ -1054,7 +1071,7 @@ e1[ e2 ]              //对于List，数组和Map，按索引取值
 (3).<![CDATA[]]>不适用所有情况，转义字符可以。
 ```
 
-<![CDATA[]]>不适合情况：
+> <![CDATA[]]>不适合情况：
 
 ```java
 (1).此部分不能再包含"]]>"

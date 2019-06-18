@@ -103,7 +103,7 @@ https://start.spring.io/
 
 //}
 
-//{--------<<<login>>>-------------------------------
+//{--------<<<login>>>-------------------------------X
 #webjars -> 将前端资源(js,css等)打成jar包,使用Maven统一管理. http://www.webjars.org/
         <dependency>
             <groupId>org.webjars</groupId>
@@ -206,53 +206,53 @@ https://start.spring.io/
         }
     }
     
-#静态资源映射
-        classpath:/public/
-        classpath:/resources/
-        classpath:/static/
-        classpath:/META-INFO/resouces/
+// #静态资源映射
+        // classpath:/public/
+        // classpath:/resources/
+        // classpath:/static/
+        // classpath:/META-INFO/resouces/
         
-    0.默认存放在以上目录的资源都可以直接访问
-        classpath:/static/a.html        ---> http://127.0.0.1:8090/demo/a.html
-        classpath:/static/abc/c.html    ---> http://127.0.0.1:8090/demo/abc/c.html
-        classpath:/static/img/sql.png    ---> http://127.0.0.1:8090/demo/img/sql.png
+    // 0.默认存放在以上目录的资源都可以直接访问
+        // classpath:/static/a.html        ---> http://127.0.0.1:8090/demo/a.html
+        // classpath:/static/abc/c.html    ---> http://127.0.0.1:8090/demo/abc/c.html
+        // classpath:/static/img/sql.png    ---> http://127.0.0.1:8090/demo/img/sql.png
         
-    1.自定义静态资源目录//代码版
-        classpath:/log/demo.log            ---> http://127.0.0.1:8090/demo/logs/demo.log
-        jar包同级目录/logs/test.log        ---> http://127.0.0.1:8090/demo/logs/test.log
+    // 1.自定义静态资源目录//代码版
+        // classpath:/log/demo.log            ---> http://127.0.0.1:8090/demo/logs/demo.log
+        // jar包同级目录/logs/test.log        ---> http://127.0.0.1:8090/demo/logs/test.log
         
-        @Configuration
-        public class MyWebMvcConfigurer implements WebMvcConfigurer {
-            @Override
-            public void addResourceHandlers(ResourceHandlerRegistry registry) {
-                //url访问: x/logs/demo.log --> 类路径/resources/log/demo.log (或) war包所在目录/logs/demo.log
-                registry.addResourceHandler("/logs/**")
-                        .addResourceLocations("classpath:/log/", "file:logs/");
-            }
-        }
+        // @Configuration
+        // public class MyWebMvcConfigurer implements WebMvcConfigurer {
+            // @Override
+            // public void addResourceHandlers(ResourceHandlerRegistry registry) {
+                // //url访问: x/logs/demo.log --> 类路径/resources/log/demo.log (或) war包所在目录/logs/demo.log
+                // registry.addResourceHandler("/logs/**")
+                        // .addResourceLocations("classpath:/log/", "file:logs/");
+            // }
+        // }
         
-    3.自定义静态资源目录//配置文件版
-        spring.mvc.static-path-pattern=/logs/**
-        spring.resources.static-locations=classpath:/log/,file:logs/
-        //此配置会覆盖boot默认配置,即导致不能再访问 /static; /public/, /resources/等目录资源
+    // 3.自定义静态资源目录//配置文件版
+        // spring.mvc.static-path-pattern=/logs/**
+        // spring.resources.static-locations=classpath:/log/,file:logs/
+        // //此配置会覆盖boot默认配置,即导致不能再访问 /static; /public/, /resources/等目录资源
 
 //}
 
-//{--------<<<restful>>>-----------------------------
+//{--------<<<restful>>>-----------------------------X
 #restful是对于同一个服务器资源的一组不同的操作,包括: GET/POST/PUT/DELETE/PATCH/HEAD/OPTIONS
     
-    1.http请求的安全和幂等
-        安全 -> 请求不会影响资源的状态. 只读的请求: GET,HEAD,OPTIONS
-        幂等 -> 多次相同的请求,目的一致.
-                
-        GET /emp/list --> 只读请求,不改变资源状态. //安全,幂等.
+1.http请求的安全和幂等
+安全 -> 请求不会影响资源的状态. 只读的请求: GET,HEAD,OPTIONS
+幂等 -> 多次相同的请求,目的一致.
         
-        PUT /emp/5    --> 多次请求都是将id为 5 的员工姓名修改成'wang'. //不安全,幂等.
-        
-        POST /emp     --> 多次请求会新增多条相同的数据. //不安全,不幂等.
-        
-        DELETE /emp/5 --> 多次请求目的都是删除id为 5 的员工. //不安全,幂等.
-        ///注意: 第一次成功删除,第二次及以后,虽资源已不存在,但也得返回 200 OK,不能返回 404.
+GET /emp/list --> 只读请求,不改变资源状态. //安全,幂等.
+
+PUT /emp/5    --> 多次请求都是将id为 5 的员工姓名修改成'wang'. //不安全,幂等.
+
+POST /emp     --> 多次请求会新增多条相同的数据. //不安全,不幂等.
+
+DELETE /emp/5 --> 多次请求目的都是删除id为 5 的员工. //不安全,幂等.
+///注意: 第一次成功删除,第二次及以后,虽资源已不存在,但也得返回 200 OK,不能返回 404.
         
 
 
@@ -440,7 +440,7 @@ https://start.spring.io/
 //}
 
     
-//{--------<<<thymeleaf>>>---------------------------
+//{--------<<<thymeleaf>>>---------------------------X
     模板引擎:'将后台数据 填充 到前台模板的表达式中!' //thymeleaf; freemarker; jsp; velocity;
 
 #sts代码提示

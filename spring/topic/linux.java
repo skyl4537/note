@@ -19,27 +19,27 @@
 //}
 
 //{--------<<<单一指令>>>--------------------------------
- kill -9 `lsof -t -i:8090`
-    #kill -9 `lsof -i:8090 | awk '{print $2}' | sed -n '2p'`        //等同于上面命令
-    #nohup java -jar blue.jar > ./logs/blue.log >/dev/null 2>&1 &    //不再输出日志
-    nohup java -jar blue.jar > ./logs/blue.log 2>&1 &                //输出日志
+ // kill -9 `lsof -t -i:8090`
+    // #kill -9 `lsof -i:8090 | awk '{print $2}' | sed -n '2p'`        //等同于上面命令
+    // #nohup java -jar blue.jar > ./logs/blue.log >/dev/null 2>&1 &    //不再输出日志
+    // nohup java -jar blue.jar > ./logs/blue.log 2>&1 &                //输出日志
 
-    1). `` -> 引用其命令的执行结果
-    2). awk '{print $2}' -> 输出第二列内容
-    3). sed -n '2p' -> 输出第二行
-    4). nohup command & -> &为后台执行的意思; nohup是不挂起的意思(no hang up),它保证在退出帐户之后继续运行相应的进程.
-    5). /dev/null 文件 -> 看作'黑洞'
-        #非常等价于一个只写文件. 所有写入它的内容都会永远丢失. 而尝试从它那儿读取内容则什么也读不到. 
-        #但 /dev/null 文件非常有用,将命令的输出重定向到它,会起到"禁止输出"的效果。
+    // 1). `` -> 引用其命令的执行结果
+    // 2). awk '{print $2}' -> 输出第二列内容
+    // 3). sed -n '2p' -> 输出第二行
+    // 4). nohup command & -> &为后台执行的意思; nohup是不挂起的意思(no hang up),它保证在退出帐户之后继续运行相应的进程.
+    // 5). /dev/null 文件 -> 看作'黑洞'
+        // #非常等价于一个只写文件. 所有写入它的内容都会永远丢失. 而尝试从它那儿读取内容则什么也读不到. 
+        // #但 /dev/null 文件非常有用,将命令的输出重定向到它,会起到"禁止输出"的效果。
 
-        #如果希望屏蔽 stdout 和 stderr,可以这样写:
-        command > /dev/null 2>&1
+        // #如果希望屏蔽 stdout 和 stderr,可以这样写:
+        // command > /dev/null 2>&1
         
-        #一般情况下,每个 Unix/Linux 命令运行时都会打开三个文件:
-        a).标准输入文件(stdin): stdin的文件描述符为0, Unix程序默认从stdin读取数据。
-        b).标准输出文件(stdout): stdout 的文件描述符为1, Unix程序默认向stdout输出数据。
-        c).标准错误文件(stderr): stderr的文件描述符为2, Unix程序会向stderr流中写入错误信息。
-        # 2>&1 -> 表示stderr的输出方式同stdout, 都是禁止输出
+        // #一般情况下,每个 Unix/Linux 命令运行时都会打开三个文件:
+        // a).标准输入文件(stdin): stdin的文件描述符为0, Unix程序默认从stdin读取数据。
+        // b).标准输出文件(stdout): stdout 的文件描述符为1, Unix程序默认向stdout输出数据。
+        // c).标准错误文件(stderr): stderr的文件描述符为2, Unix程序会向stderr流中写入错误信息。
+        // # 2>&1 -> 表示stderr的输出方式同stdout, 都是禁止输出
     
 // #lsof: list open files -> 列出当前系统打开的文件. 安装 -> yum install lsof
     // #默认: 没有选项, 列出所有活跃进程打开的所有文件
@@ -82,30 +82,30 @@
 
     
     
-#tail: 默认显示指定文件的末尾10行; 如给定多个文件,则在显示时,每个文件前加一个文件名标题. 如未指定文件或文件名为'-',则读取标准输入
-    #-c<N>或——bytes=<N>: 文件尾部的N个字节内容
-    #-n<N>或——line=<N>: 文件尾部的 N 行内容.
-    #-f: 动态显示文件最新的追加内容 (适合查看日志)
-    #-s<秒数>或——sleep-interal=<秒数>: 与'-f'选项连用,指定监视文件变化的间隔秒数
-    #--pid=<进程号>:与'-f'选项连用,当指定的进程号的进程终止后,自动退出tail命令
+// #tail: 默认显示指定文件的末尾10行; 如给定多个文件,则在显示时,每个文件前加一个文件名标题. 如未指定文件或文件名为'-',则读取标准输入
+    // #-c<N>或——bytes=<N>: 文件尾部的N个字节内容
+    // #-n<N>或——line=<N>: 文件尾部的 N 行内容.
+    // #-f: 动态显示文件最新的追加内容 (适合查看日志)
+    // #-s<秒数>或——sleep-interal=<秒数>: 与'-f'选项连用,指定监视文件变化的间隔秒数
+    // #--pid=<进程号>:与'-f'选项连用,当指定的进程号的进程终止后,自动退出tail命令
 
-    tail -n 5 file    //最后5行内容
-    tail -n +5 file    //第5行至末尾(包含第5行)    
+    // tail -n 5 file    //最后5行内容
+    // tail -n +5 file    //第5行至末尾(包含第5行)    
     
-    tail -f -n 3 file    //循环查看文件的最后三行内容
+    // tail -f -n 3 file    //循环查看文件的最后三行内容
     
-    tail -c 10 file    //最后10个字符    
+    // tail -c 10 file    //最后10个字符    
     
 
 
     
     
-#du: 显示指定的目录或文件所占用的磁盘空间
-    #--max-depth=<目录层数>: 超过指定层数的目录后,予以忽略
+// #du: 显示指定的目录或文件所占用的磁盘空间
+    // #--max-depth=<目录层数>: 超过指定层数的目录后,予以忽略
 
-    # 相结合使用,查看磁盘情况
-    df -lh
-    du -h --max-depth=1 /var/lib/webpark/logs | sort -nr
+    // # 相结合使用,查看磁盘情况
+    // df -lh
+    // du -h --max-depth=1 /var/lib/webpark/logs | sort -nr
     
 // #echo: ""会将内容转义; ''不会转义,原样输出
     // echo "$(date)"            //输出当前时间
@@ -609,15 +609,15 @@ awk是一种处理文本文件的语言,是一个强大的文本分析工具.
     
     ln –s src dest ---> 只在指定的位置上生成一个文件的镜像,不会占用磁盘空间,类似'快捷方式'
     
-#df 显示系统的磁盘使用情况
-    #-l: 列出文件结构
-    #-h: 以人类可读的格式显示大小
+// #df 显示系统的磁盘使用情况
+    // #-l: 列出文件结构
+    // #-h: 以人类可读的格式显示大小
     
-    df -lh                //当前linux系统所有目录的磁盘使用情况
-    df -lh --total        //增加统计信息
+    // df -lh                //当前linux系统所有目录的磁盘使用情况
+    // df -lh --total        //增加统计信息
 
-    //查看指定目录所属挂载点,及挂载点的磁盘使用情况
-    df -lh /var/lib/webpark/logs/sm
+    // //查看指定目录所属挂载点,及挂载点的磁盘使用情况
+    // df -lh /var/lib/webpark/logs/sm
 
 #date 详见SHELL-格式化
     date '+%Y-%m-%d %H:%M:%S'    //格式化输出当前时间

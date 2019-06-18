@@ -103,11 +103,16 @@ mini与full版：差别在于有没有内建 msysgit 工具
 
 ## 常见问题
 
+>`如何在单个窗口打开多个Maven工程啊？`
+
+```
+随便新建一个文件夹，然后将工程都扔进去，使用IDEA打开这个文件夹。
+```
 >复制警告或错误信息
 
 ```
-1).鼠标光标悬浮在报错的地方，待错误提示出现后，键盘按住 Alt，同时点击鼠标左键，Ctrl+V 到度娘即可。
-2).直接在界面的底部右键copy，错误信息显示在底部。
+(1).鼠标光标悬浮在报错的地方，待错误提示出现后，键盘按住 Alt，同时点击鼠标左键，Ctrl+V 到度娘即可。
+(2).直接在界面的底部右键copy，错误信息显示在底部。
 ```
 
 > mvn打包时，跳过Test
@@ -115,6 +120,69 @@ mini与full版：差别在于有没有内建 msysgit 工具
 ```java
 打开右侧"Maven-Projects"，当前项目'Lifecycle'，选中'Test'，点击菜单栏的"小闪电"，此时Test上多了一条横。
 ```
+
+
+
+## 默认配置
+
+>当前项目配置 VS 默认配置
+
+```
+当前配置：顶部导航栏 -> File -> Settings / ProjectStructs
+
+默认配置：顶部导航栏 -> File -> Other Settings -> Default Settings /Project Structs
+```
+
+> （默认配置）JDK
+
+```
+顶部工具栏 File -> Other Settins -> Default Project Structure -> SDKs -> JDK
+```
+
+> （默认配置）Maven
+
+```java
+顶部工具栏 File -> Other Settings -> Default Settings -> Build & Tools -> Maven
+
+mvn命令：右侧工具栏 Maven -> 点击展开某工程或模块 ->快速执行Maven命令。
+        clean：清空； compile：编译； package：打包； install：发布到仓库
+```
+
+> （默认配置）版本控制Git/Svn
+
+```
+顶部工具栏 File -> Other Settings -> Default Settings -> Version Control -> Git
+```
+
+>（默认配置）自动导包和智能移除 
+
+```
+顶部工具栏 File -> Other Settings -> Default Settings -> Auto Import
+    （√）add unambiguous...自动导入依赖
+    （√）Optimize from... 优化导入和智能删除无关依赖
+```
+
+> （当前项目配置）Tomcat Server
+
+```
+顶部工具栏 File -> Settings -> Deployment -> Application Servers -> Tomcat Server，选择 Tomcat 的根目录
+```
+
+> 其他配置
+
+```
+自动编译：File -> Other Settings -> Default Settings -> Build... -> Compiler -> （√）Build project auto...
+
+取消大小写敏感：File | Settings | Editor | General | Code Completion | Case Sensitive Completion = None
+
+调整字体大小：打开配置，搜索Font，然后再Font可以调整字体类型，Size可以调整字体大小
+
+F2修改文件名：File -> Settings -> Keymap -> 搜索 Rename -> 将快捷键设置为F2
+
+F3浏览目录结构：File -> Settings -> Keymap -> 搜索 Show In Explorer -> 将快捷键设置为F3
+```
+
+
 
 
 
@@ -127,6 +195,18 @@ https://www.cnblogs.com/Miracle-Maker/articles/6476687.html
 https://blog.csdn.net/small_mouse0/article/details/77506060
 
 ## 基础配置
+
+>
+
+```
+
+```
+
+
+
+
+
+
 
 > class类的doc模板
 
@@ -1307,338 +1387,9 @@ mvn deploy:deploy-file -DgroupId=com.bluecard -DartifactId=wxpay-sdk-0.0.3 -Dver
         <url>http://192.168.8.8:8080/manager/text</url>
     </configuration>
 
-(3).右键项目--> run as --> maven build(以前写过,选择第二个) -->输入 tomcat7:deploy(第一次发布); tomcat7:redeploy(非第一次发布).
+(3).右键项目--> run as --> maven build(以前写过,选择第二个) 
+    -->输入 tomcat7:deploy(第一次发布); tomcat7:redeploy(非第一次发布).
 ```
-
-# WebSocket
-
-## 基础概念
-
-```xml
-<dependency>
-    <groupId>org.springframework.boot</groupId>
-    <artifactId>spring-boot-starter-websocket</artifactId>
-</dependency>
-```
-
-> 简介
-
-B/S结构的软件项目中有时客户端需要实时的获得服务器消息，但默认HTTP协议只支持 `请求响应模式`。 对于这种需求可以通过 polling，Long-polling，长连接，Flash-Socket，HTML5中定义的WebSocket 完成。
-
-HTTP模式可以简化Web服务器，减少服务器的负担，加快响应速度，因为服务器不需要与客户端长时间建立一个通信链接。但不容易直接完成实时的消息推送功能（如聊天室，后台信息提示，实时更新数据等）。
-
-应用程序通过 Socket 向网络发出请求或者应答网络请求。Socket 可以使用TCP/IP协议或UDP协议。
-
-```java
-TCP协议：面向连接的，可靠的，基于字节流的传输层通信协议，负责数据的可靠性传输问题。
-UDP协议："无连接，不可靠"，基于报文的传输层协议，优点：发送后不用管，速度比TCP快。
-
-HTTP协议："无状态协议"，通过 Internet 发送请求消息和响应消息，默认使用80端口。（底层Socket）
-```
-
-> Http协议
-
-HTTP 协议原本是设计用于传输简单的文档和文件，而非实时的交互。
-
-根据 HTTP 协议，一个客户端如浏览器，向服务器打开一个连接，发出请求，等待回应，之后关闭连接。如果客户端需要更多数据，则需要打开一个新连接，以此循环往复。如果服务器有了新的信息，它必须等待客户端发出请求而不是立即发送消息。
-
-那么要看到页面中要展示信息的最新情况，应该怎么办？不断刷新！
-
-缺点：这种方式现在已经被完全淘汰，发送了很多不必要的请求，浪费大量带宽，页面不断刷新，用户体验差，而且做不到真正的实时，服务端有了新数据也不能立马推送给客户端，使得秒级的实时信息交互难以实现。
-
-> 双向通信
-
-HTTP协议决定了服务器与客户端之间的连接方式，无法直接实现消息推送（F5已坏），一些变相的解决办法：
-
-1. 轮询（Polling）
-
-   客户端定时向服务器发送Ajax请求，服务器接到请求后马上返回响应信息并关闭连接。
-
-   优点：后端程序编写比较容易
-
-   缺点：请求中有大半是无用，浪费带宽和服务器资源
-
-   实例：适于小型应用
-
-2. 长轮询（Long-Polling）
-
-   客户端向服务器发送Ajax请求，服务器接到请求后hold住连接，直到有新消息才返回响应信息并关闭连接。客户端处理完响应信息后再向服务器发送新的请求
-
-   优点：在无消息的情况下不会频繁的请求，耗费资小
-
-   缺点：服务器hold连接会消耗资源，返回数据顺序无保证，难于管理维护
-
-   实例：WebQQ，Hi网页版，Facebook-IM
-
-3. 长连接
-
-   在页面里嵌入一个隐蔵iframe，将这个隐蔵iframe的src属性设为对一个长连接的请求或是采用xhr请求，服务器端就能源源不断地往客户端输入数据
-
-   优点：消息即时到达，不发无用请求，管理起来也相对便
-
-   缺点：服务器维护一个长连接会增加开销
-
-   实例：Gmail聊天
-
-4. Flash-Socket
-
-   在页面中内嵌入一个使用了Socket类的 Flash 程序，JavaScript通过调用此Flash程序提供的Socket接口，与服务器端的Socket接口进行通信，JavaScript在收到服务器端传送的信息后控制页面的显示。
-
-   优点：实现真正的即时通信,而不是伪即时
-   缺点：客户端必须安装Flash插件，非HTTP协议，无法自动穿越防火墙
-   实例：网络互动游戏
-
-5. Websocket
-
-   Html5提供的一种浏览器与服务器间进行全双工通讯的网络技术。依靠这种技术可以实现客户端和服务器端的长连接，双向实时通信。
-
-   优点：事件驱动，异步，使用ws或者wss协议的客户端socket，能够实现真正意义上的推送功能。
-
-   缺点：少部分浏览器不支持，浏览器支持的程度与方式有区别。
-
-
-> WebSocket
-
-Websocket 允许通过js与远程服务器建立连接，从而实现客户端与服务器间双向的通信。Websocket 的url开头是ws，如果需要ssl加密可以使用wss。
-
-当调用构造方法构建一个 Websocket 对象后，就可以进行即时通信了`（new WebSocket(url)）`。
-
-## 客户端
-
-```html
-<body>
-    <input id="text" type="text"/>
-    <button onclick="send()">Send</button>
-    <button onclick="closeWebSocket()">Close</button>
-    <div id="message"></div>
-</body>
-<script type="text/javascript">
-    var websocket = null;
-
-    //判断当前浏览器是否支持WebSocket
-    if (!'WebSocket' in window) {
-        alert('浏览器不支持WebSocket')
-    } else {
-        var userId = parseInt(Math.random() * (99 + 1), 10); //生成[0,99]的任意随机数
-        websocket = new WebSocket("ws://localhost:8090/demo/websocket?id=" + userId);
-
-        //监听事件 -> 连接成功建立时触发该事件
-        websocket.onopen = function (event) {
-            setMessageInnerHTML("open: " + new Date());
-        };
-
-        //监听事件 -> 连接关闭
-        websocket.onclose = function (event) {
-            setMessageInnerHTML("close: " + new Date() + " - " + event.code);
-            websocket.send(event.code);
-        };
-
-        //监听事件 -> 接收到服务器发来的消息
-        websocket.onmessage = function (event) {
-            setMessageInnerHTML(event.data);
-        };
-
-        //监听事件 -> 连接发生错误
-        websocket.onerror = function () {
-            setMessageInnerHTML("error: " + new Date());
-        };
-
-        //监听事件 -> 监听窗口关闭事件
-        //当窗口关闭时，主动去关闭websocket连接，防止连接还没断开就关闭窗口，server端会抛异常
-        window.onbeforeunload = function () {
-            if (null != websocket) {
-                websocket.close();
-            }
-        };
-
-        //将消息显示在网页上
-        function setMessageInnerHTML(innerHTML) {
-            document.getElementById('message').innerHTML += innerHTML + '<br/>';
-        }
-
-        //关闭连接
-        function closeWebSocket() {
-            websocket.close();
-        }
-
-        //向远程服务器发送数据
-        function send() {
-            var message = document.getElementById('text').value;
-            websocket.send(message);
-        }
-    }
-</script>
-```
-
-## 服务端
-
-```java
-@Configuration
-public class WebSocketConfig {
-
-    //这个bean会自动注册使用 @ServerEndpoint 注解声明的 WebSocket-Endpoint.
-    //注意: 如果使用独立的servlet容器，而不是直接使用 SpringBoot 内置容器，就不要注入此bean，
-    //因为它将由容器自己提供和管理
-    @Bean
-    public ServerEndpointExporter serverEndpointExporter() {
-        return new ServerEndpointExporter();
-    }
-}
-```
-
-```java
-// 使用 SpringBoot 要使用注解 @Component
-// 使用独立容器(tomcat)是由容器自己管理 WebSocket，但在 SpringBoot 中连容器都是 Spring 管理。
-//
-// 虽然 @Component 默认是单例模式的
-// 但 SpringBoot 还是会为每个 WebSocket 连接初始化一个bean,所以可以用一个静态 Set/Map 保存起来.
-@Component
-
-// 使用注解 @ServerEndpoint 可以将一个普通Java类作为 WebSocket 服务器的端点
-// 使用 ServerEndpoint 注解的类必须有一个公共的无参数构造函数.
-//
-// WebSocket 服务端运行在 ws://[Server端IP或域名]:[Server端口]/项目/push
-// 客户端浏览器已经可以对WebSocket客户端API发起 <<<HTTP长连接>>>.
-@ServerEndpoint("/push")
-public class EchoEndpoint {
-
-    //客户端注册时调用
-    @OnOpen
-    public void onOpen(Session session) {}
-
-    //客户端关闭
-    @OnClose
-    public void onClose(Session session, CloseReason reason) {}
-
-    //客户端异常
-    @OnError
-    public void onError(Throwable t) {}
-
-    //收到浏览器客户端消息后调用
-    @OnMessage
-    public void onMessage(String message) {}
-
-    //更高级的注解，MaxMessageSize 属性可以被用来定义消息字节最大限制，
-    //在示例程序中，如果超过6个字节的信息被接收，就报告错误和连接关闭。
-    // @Message(maxMessageSize = 6)
-    // public void receiveMessage(String s) {
-    // }
-}
-```
-
-## 后台Demo
-
-```java
-@Component
-@ServerEndpoint(value = "/websocket")
-public class MyWebSocket {
-    
-    // 静态变量，用来记录当前在线连接数。应该把它设计成线程安全的
-    private static int onlineCount = 0;
-
-    // 旧版：concurrent包的线程安全Set，用来存放每个客户端对应的 MyWebSocket 对象
-    // private static CopyOnWriteArraySet<MyWebSocket> webSocketSet =
-    //         new CopyOnWriteArraySet<>();
-
-    //新版：使用map对象，便于根据 userId 来获取对应的 MyWebSocket
-    private static Map<String, MyWebSocket> webSocketMap = new ConcurrentHashMap<>();
-
-    //区别: 非静态变量 和 静态变量
-    //与某个客户端的连接会话,需要通过它来给客户端发送数据
-    private Session session;
-
-    //当前会话session对应的显式id
-    private String userId;
-
-    //客户端注册
-    @OnOpen
-    public void onOpen(Session session) {
-        String id = this.userId = session.getRequestParameterMap().get("id").get(0);
-        this.session = session;
-        addOnlineCount(); //在线数加1
-        webSocketMap.put(id, this); //加入Map
-        System.out.println("有新连接加入: " + this.userId + " 当前在线人数为: "
-                + getOnlineCount());
-
-        sendMsg2All(this.userId + " - 已上线! 欢迎");
-    }
-
-    //客户端关闭
-    @OnClose
-    public void onClose() {
-        if (null != webSocketMap.get(this.userId)) {
-            subOnlineCount(); //在线数减1
-            webSocketMap.remove(this.userId); //从Map中删除
-            System.out.println("有一连接关闭: " + this.userId + " 当前在线人数为: " 
-                    + getOnlineCount() + reason);
-
-            sendMsg2All(this.userId + " - 已下线! 再见");
-        }
-    }
-
-    //客户端异常
-    @OnError
-    public void onError(Session session, Throwable error) {
-        System.out.println("发生错误: " + error);
-        error.printStackTrace();
-    }
-
-    ///收到浏览器客户端消息后调用的方法
-    @OnMessage
-    public void onMessage(String message, Session session) {
-        System.out.println("来自客户端的消息: " + this.userId + " - " + message);
-
-        if (message.contains("-")) {
-            String[] split = message.split("-");
-            webSocketMap.keySet().forEach(x -> {
-                if (split[0].equalsIgnoreCase(x))
-                    sendMsg2One(this.userId + "->" + x + " - " + split[1], x); //点对点
-            });
-        } else {
-            sendMsg2All(userId + " - " + message); //群发
-        }
-    }
-
-    ///群发消息
-    public static void sendMsg2All(String message) {
-        webSocketMap.values().forEach(x -> x.sendMsg(message));
-    }
-
-    ///点对点发送消息
-    public static void sendMsg2One(String message, String userId) {
-        webSocketMap.get(userId).sendMsg(message);
-    }
-
-    ///实现服务器主动推送
-    private void sendMsg(String message) {
-        try {
-            this.session.getBasicRemote().sendText(message);
-            // this.session.getAsyncRemote().sendText(message);
-        } catch (IOException e) {
-            System.out.println("异常---发送消息: " + e);
-        }
-    }
-
-    //三个同步方法,线程安全
-    private static synchronized int getOnlineCount() {
-        return onlineCount;
-    }
-
-    private static synchronized void addOnlineCount() {
-        MyWebSocket.onlineCount++;
-    }
-
-    private static synchronized void subOnlineCount() {
-        MyWebSocket.onlineCount--;
-    }
-}
-```
-
-
-
-
-
-
 
 # fastjson
 

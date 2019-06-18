@@ -688,7 +688,7 @@ SHOW CREATE PROCEDURE 数据库.存储过程名;
 > 修改：只能改变存储过程的特征（注释和权限），不能修改过程的参数以及过程体。
 
 ```sql
-ALTER {PROCEDURE | FUNCTION}……
+ALTER {PROCEDURE | FUNCTION} … …
 ```
 
 > 删除：删除后再创建，可以修改存储过程的参数和过程体。
@@ -701,7 +701,7 @@ DROP PROCEDURE [IF EXISTS] db_name.sp_name;
 
 ```sql
 -- 参数模式：IN（只能做输入），OUT（只能做输出），INOUT（既能...又能...），
-CREATE PROCEDURE sp_test(参数模式 参数名 参数类型...)
+CREATE PROCEDURE pro_test(参数模式 参数名 参数类型...)
 BEGIN
   -- 存储过程体（一组合法的sql语句）
 END
@@ -710,14 +710,14 @@ END
 > DEMO-01：参数模式 IN
 
 ```sql
-DROP PROCEDURE IF EXISTS test0430.sp_login; -- 有则删除
+DROP PROCEDURE IF EXISTS test0430.pro_login; -- 有则删除
 
-CREATE PROCEDURE sp_login(IN login_name VARCHAR(20), IN login_pwd VARCHAR(15))
+CREATE PROCEDURE pro_login(IN login_name VARCHAR(20), IN login_pwd VARCHAR(15))
 BEGIN
-    DECLARE cnt INT DEFAULT 0; -- 变量声明
+    DECLARE cnt INT DEFAULT 0; -- 声明局部变量，及默认值
     DECLARE res VARCHAR(10) DEFAULT '';
 
-    SELECT COUNT(*) INTO cnt -- 变量赋值
+    SELECT COUNT(*) INTO cnt -- 局部变量赋值
     FROM student s
     WHERE s.sname=login_name AND s.sid=login_pwd;
 
@@ -787,6 +787,48 @@ SELECT @a,@b;
 
 用户定义的变量就叫用户变量。这样理解的话，会话变量和全局变量都可以是用户定义的变量。只是他们是对当前客户端生效，还是对所有客户端生效的区别了。所以，用户变量包括了会话变量和全局变量
 ```
+
+## 变量
+
+变量分为：系统变量 和 用户变量。
+
+> 系统变量：系统已经提前定义好了的变量，一般都有其特殊意义。如代表字符集、代表某些mysql文件位置
+
+```sql
+-- 系统变量包括：会话级变量（当次会话连接生效的变量，如names），全局变量（一直生效的变量）。二者声明方式相同，只是作用域不同。
+
+会话变量的赋值：set 变量名 = 值; -- 比如常用的set names ="utf8"; 或者set @@变量名=值
+全局变量的赋值：set global 变量名 = 值;
+
+show variables; --查看系统变量
+select @@变量名; --调用系统变量
+```
+
+> 用户变量：用户自己定义的变量，必须使用一个**@符号**。`用户变量都是会话级的变量，仅在当次连接中生效`
+
+```sql
+-- 用户变量可以不声明定义，就可以直接使用，默认为 null
+
+set @变量名=1;
+select @变量名:=值; -- 因为 = ，有很多地方都用来判断是否等于，为了避免歧义，也可以使用:=来赋值
+select 值 into @变量名;
+```
+
+>局部变量：用户自定义的，可认为局部变量`也是用户变量，但不需要使用 @`。一般用在存储过程块、触发器块等
+
+```sql
+-- 使用 declare 声明局部变量，其中可选项 default 后可以跟一个默认值
+-- 变量声明语句要在其他语句如 select 语句之前
+
+declare myq int; --声明
+declare myq int default 666;
+
+set myq= 值； --赋值
+
+select myq;  --获取
+```
+
+
 
 ## 函数
 
