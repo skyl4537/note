@@ -2,7 +2,33 @@
 
 #BOOT基础
 
-##BOOT常用
+##常用配置
+
+> 常用properties
+
+```properties
+server.port=8090
+server.servlet.context-path=/publisher
+#spring.profiles.active=dev
+
+#springcloud项目使用
+#spring.application.name=amqp-publisher
+
+spring.datasource.driverClassName=com.mysql.cj.jdbc.Driver
+spring.datasource.type=com.alibaba.druid.pool.DruidDataSource
+spring.datasource.url=jdbc:mysql://127.0.0.1:33306/webpark?useSSL=false&serverTimezone=GMT%2B8
+spring.datasource.username=bluecardsoft
+spring.datasource.password=#$%_BC13439677375
+
+#xml路径
+mybatis.mapper-locations=classpath*:com/example/amqp_publisher/mapper/sqlxml/*.xml
+#驼峰命名
+mybatis.configuration.map-underscore-to-camel-case=true
+#mybatis的sql打印
+logging.level.com.example.amqp_publisher.mapper=debug
+
+spring.thymeleaf.cache=false
+```
 
 > 常用pom
 
@@ -73,43 +99,7 @@
 </build>
 ```
 
-> 常用properties
-
-```properties
-server.port=8090
-server.servlet.context-path=/publisher
-#spring.profiles.active=dev
-
-#springcloud项目使用
-#spring.application.name=amqp-publisher
-
-spring.datasource.driverClassName=com.mysql.cj.jdbc.Driver
-spring.datasource.type=com.alibaba.druid.pool.DruidDataSource
-spring.datasource.url=jdbc:mysql://127.0.0.1:33306/webpark?useSSL=false&serverTimezone=GMT%2B8
-spring.datasource.username=bluecardsoft
-spring.datasource.password=#$%_BC13439677375
-
-#xml路径
-mybatis.mapper-locations=classpath*:com/example/amqp_publisher/mapper/sqlxml/*.xml
-#驼峰命名
-mybatis.configuration.map-underscore-to-camel-case=true
-
-spring.thymeleaf.cache=false
-```
-
-
-
-## BOOT2.0
-
-> 
-
-```
-
-```
-
-
-
-
+## 常用接口
 
 > 匹配带后缀url访问：http://192.168.8.7:8090/spring/test.do，其中 .do 可以省略
 
@@ -132,23 +122,97 @@ public ServletRegistrationBean servletRegistrationBean(DispatcherServlet dispatc
     return bean;
 }
 ```
+
+>CommandLineRunner：用于在应用初始化完成后执行代码（可使用任何依赖），这段代码在整个应用生命周期内只会执行一次。
+
+```java
+//使用方式1：配合 @Component
+@Component
+public class ApplicationStartupRunner implements CommandLineRunner { }
+```
+```java
+//使用方式2：配合 @SpringBootApplication
+@SpringBootApplication
+public class SpringBootWebApplication implements CommandLineRunner { }
+```
+```java
+//使用方式3：声明一个实现了 CommandLineRunner 接口的Bean
+public class ApplicationStartupRunner implements CommandLineRunner { }
+
+@SpringBootApplication
+public class SpringBootWebApplication {
+    @Bean
+    public ApplicationStartupRunner schedulerRunner() {
+        return new ApplicationStartupRunner();
+    }
+    ... ...
+}
+```
+
+```java
+//两个注意点：
+（1）.如果实现类的 run(String… args)方法内抛出异常，会直接导致应用启动失败。所以，一定要记得将危险的代码放在 try-catch 代码块里。
+
+（2）.对于多个实现类，使用 @Order(value=n) 设置它们的执行顺序。n越小，越先执行。
+```
+
+>SpringBootServletInitializer：使用外置的tomcat启动时，项目启动类继承该类，并复写configure()方法。`待证`
+
+```java
+@SpringBootApplication
+public class MyApplication extends SpringBootServletInitializer {
+
+    public static void main(String[] args) {
+        SpringApplication.run(MyApplication.class, args);
+    }
+
+    @Override
+    protected SpringApplicationBuilder configure(SpringApplicationBuilder builder) {
+        return super.configure(builder);
+    }
+}
+```
+
+>普通类中获取注解类对象 `如Demo类中获取service对象`
+
+```java
+@Component
+public class SpringUtils implements ApplicationContextAware {
+
+    private static ApplicationContext context;
+
+    // 设置上下文环境
+    @Override
+    public void setApplicationContext(ApplicationContext context) throws BeansException {
+        SpringUtils.context = context;
+    }
+
+    public static Object getBean(String name) {
+        return context.getBean(name);
+    }
+
+    public static <T> T getBean(Class<T> requiredType) {
+        return context.getBean(requiredType);
+    }
+
+    public static <T> T getBean(String name, Class<T> requiredType) {
+        return context.getBean(name, requiredType);
+    }
+}
+```
+
+## 启动方式
+
+
 >shell脚本启动
 
 ```shell
 #!/bin/bash
-PID=$(lsof -t -i:8090)
-
-if [ $PID ]
-then
-    kill -9 $PID
-    echo "kill -9 port 8090 PID: $PID"
-else
-    echo "8090 NO PID!"
-fi
-
 cd /var/tmp
 chmod 777 demo.jar
-nohup jdk1.8.0_191/bin/java -jar demo.jar >/dev/null 2>&1 &
+
+nohup java -jar demo.jar >/dev/null 2>&1 &
+echo $! > demo.pid #记录进程号，方便后续使用
 echo "start OK!~!"
 ```
 >linux服务启动
@@ -169,7 +233,7 @@ chmod +x /var/tmp/blue/demo.jar
 #将jar包软连接到 /etc/init.d 目录。其中，/etc/init.d/demo 结尾 demo 为该服务的别名
 ln -s /var/tmp/blue/demo.jar /etc/init.d/demo
 
-#通过linux服务命令形式 启动/关闭/重启/查询 该服务
+#通过 linux 服务命令形式：启动/关闭/重启/查询 该服务
 service demo start|stop|restart|status
 
 #该服务日志默认的存储路径： /var/log/demo.log
@@ -247,10 +311,10 @@ spring:
 //加载顺序: 先--->后. (由里到外). 后加载的覆盖先加载的. [互补配置]
 ```
 ```java
-0.以上是开发时配置文件的位置，对于打成jar包：由于 classpath 会被打成jar包，而 file 目录不会，所以应该把配置文件放到jar包同级目录。
+（0）以上是开发时配置文件位置，对于打成jar包：由于 classpath 会被打成jar包，而 file 目录不会，所以应该把配置文件放到jar包同级目录。
     //jar包同级 '/config/*.yml' 优先级最高，jar包内部默认位置的 '*.yml' 优先级最低！
 
-1.配置外部log
+（1）配置外部log
     //在配置文件中指定log位置（内部或外部yml都可以）。
     //推荐外部 -> logback的 scan 和 scanPeriod 两个属性保证了 热部署，即改即生效！
     logging.config=file:./config/logback-spring.xml
@@ -393,35 +457,96 @@ properties.load(new InputStreamReader(in, "UTF-8")); //U8方式读取
 properties.forEach((key, value) -> log.info(key + " - " + value));
 ```
 
->`@Value("#{}")与@Value("${}")的区别`
+>`@Value("#{}") 与 @Value("${}")的区别`
 
 ```java
-//(1).@Value("#{}") -> 通过SpEl表达式获取: 常量; bean属性值; 调用bean的某个方法    
+//（1）@Value("#{}") -> 通过SpEl表达式获取：常量，bean属性值，调用bean的某个方法
 @Value("#{1}")
-private int number; // 获取数字1
+private int number; //获取常量数字1
 
-@Value("#{'Spring Expression Language'}") // 获取字符串常量
+@Value("#{'Spring Expression Language'}") //获取字符串常量
 private String language;
 
-@Value("#{info.remoteAddress}") // 获取bean的属性
+@Value("#{info.remoteAddress}") //获取bean的属性
 InetAddress address;
 ```
 ```java
-//(2).@Value("${}") -> 获取属性文件中定义的属性值    
+//（2）@Value("${}") -> 获取属性文件中定义的属性值    
 @Value("${info.enabled:}")
-public String enabled; //获取配置属性,默认空字符串
+public String enabled; //获取配置属性，默认空字符串
 ```
 ```java
-//(3).总结
+//（3）总结
 ${ property : default_value }
-#{ obj.property? : default_value } //二者取默认值时,语法不同(多个?)
-#{ '${}' } //二者可以结合使用,注意单引号!~! 但不能反过来,如: ${ '#{}' }
+#{ obj.property? : default_value } //二者取默认值时，语法不同(多个?)
+#{ '${}' } //二者可以结合使用，注意单引号！但不能反过来，如: ${ '#{}' }
 ```
 >@PostConstruct
 
 
 
 #BOOT高级
+
+## druid
+
+```xml
+<dependency>
+    <groupId>com.alibaba</groupId>
+    <artifactId>druid-spring-boot-starter</artifactId>
+    <version>1.1.10</version>
+</dependency>
+```
+```properties
+#sp1.x默认数据源为：org.apache.tomcat.jdbc.pool.DataSource
+#sp2.x默认数据源为：com.zaxxer.hikari.HikariDataSource
+spring.datasource.type=com.alibaba.druid.pool.DruidDataSource
+
+spring.datasource.driverClassName=com.mysql.cj.jdbc.Driver
+spring.datasource.url=jdbc:mysql://127.0.0.1:33306/webpark?useSSL=false&serverTimezone=GMT%2B8
+spring.datasource.username=bluecardsoft
+spring.datasource.password=#$%_BC13439677375
+```
+
+>java配置
+
+```java
+@Configuration
+public class DruidConfig {
+    
+    // @Bean
+    // @ConfigurationProperties(prefix = "spring.datasource")
+    // public DataSource druid() {
+    //     return new DruidDataSource();
+    // }
+
+    // 1.配置一个管理后台的Servlet
+    @Bean
+    public ServletRegistrationBean statViewServlet() {
+        ServletRegistrationBean bean = new ServletRegistrationBean(new StatViewServlet(), "/druid/*");
+
+        Map<String, String> initParams = new HashMap<>();
+        initParams.put("loginUsername", "admin");
+        initParams.put("loginPassword", "123456");
+        initParams.put("allow", ""); //允许所有访问
+        initParams.put("deny", "192.168.15.21"); //黑名单阻止访问（共存时，deny优先于allow）
+        bean.setInitParameters(initParams);
+        return bean;
+    }
+
+    // 2.配置一个web监控的filter
+    @Bean
+    public FilterRegistrationBean webStatFilter() {
+        FilterRegistrationBean bean = new FilterRegistrationBean();
+
+        bean.setFilter(new WebStatFilter());
+        Map<String, String> initParams = new HashMap<>();
+        initParams.put("exclusions", "*.js,*.css,/druid/*");
+        bean.setInitParameters(initParams); //添加需要忽略的格式信息
+        bean.setUrlPatterns(Collections.singletonList("/*")); //添加过滤规则
+        return bean;
+    }
+}
+```
 
 ## 静态资源
 
@@ -498,7 +623,7 @@ public class MyWebMvcConfigurer implements WebMvcConfigurer {
     <link rel="shortcut icon" th:href="@{/img/favicon.ico}"/>
 
     <!--webjars-locator: 页面引用时，可省略版本号.(如 3.3.1)-->
-    <!--省略前: <script th:src="@{/webjars/jquery/3.3.1/jquery.min.js}"></script>-->
+    <!--省略前: <script th:src="@{/webjars/jquery/3.3.1/jquery.min.js}"/>-->
     <script th:src="@{/webjars/jquery/jquery.min.js}"></script>
     <script th:src="@{/webjars/bootstrap/js/bootstrap.min.js}"></script>
     <link rel="stylesheet" th:href="@{/webjars/bootstrap/css/bootstrap.min.css}"/>
@@ -601,22 +726,18 @@ public class MyWebMvcConfig implements WebMvcConfigurer {
 
 
 
-##CRUD
 
->restful是对于同一个服务器资源的一组不同的操作，包括：GET，POST，PUT，DELETE，PATCH，HEAD，OPTIONS
 
-```java
-http请求的安全和幂等：
-    安全 -> 请求不会影响资源的状态。只读的请求：GET,HEAD,OPTIONS
-    幂等 -> 多次相同的请求，目的一致。
-```
-|     请求      |                             说明                             |    是否幂等    |
-| :-----------: | :----------------------------------------------------------: | :------------: |
-| GET /emp/list |                   只读请求，不改变资源状态                   |   安全，幂等   |
-|  PUT /emp/5   |         多次请求都是将id为 5 的员工姓名修改成'wang'          |  不安全，幂等  |
-|   POST /emp   |                 多次请求会新增多条相同的数据                 | 不安全，不幂等 |
-| DELETE /emp/5 |              多次请求目的都是删除id为 5 的员工               |  不安全，幂等  |
-|               | `注意：第一次成功删除，第二次及以后虽资源已不存在，但也得返回 200 OK，不能返回 404` |                |
+
+
+
+
+
+
+
+
+
+
 
 
 
@@ -692,57 +813,6 @@ MultipartConfigElement multipartConfigElement() {
 
 
 
-## 常用接口
-
->CommandLineRunner：用于在应用初始化完成后执行代码（可使用任何依赖），这段代码在整个应用生命周期内只会执行一次。
-
-```java
-//使用方式1：配合 @Component
-@Component
-public class ApplicationStartupRunner implements CommandLineRunner { }
-```
-```java
-//使用方式2：配合 @SpringBootApplication
-@SpringBootApplication
-public class SpringBootWebApplication implements CommandLineRunner { }
-```
-```java
-//使用方式3：声明一个实现了 CommandLineRunner 接口的Bean
-public class ApplicationStartupRunner implements CommandLineRunner { }
-
-@SpringBootApplication
-public class SpringBootWebApplication {
-    @Bean
-    public ApplicationStartupRunner schedulerRunner() {
-        return new ApplicationStartupRunner();
-    }
-    ... ...
-}
-```
-
-```java
-//两个注意点：
-（1）.如果实现类的 run(String… args)方法内抛出异常，会直接导致应用启动失败。所以，一定要记得将危险的代码放在 try-catch 代码块里。
-
-（2）.对于多个实现类，使用 @Order(value=n) 设置它们的执行顺序。n越小，越先执行。
-```
-
->SpringBootServletInitializer：使用外置的tomcat启动时，项目启动类继承该类，并复写configure()方法。`待证`
-
-```java
-@SpringBootApplication
-public class MyApplication extends SpringBootServletInitializer {
-
-    public static void main(String[] args) {
-        SpringApplication.run(MyApplication.class, args);
-    }
-
-    @Override
-    protected SpringApplicationBuilder configure(SpringApplicationBuilder builder) {
-        return super.configure(builder);
-    }
-}
-```
 
 
 
@@ -791,6 +861,103 @@ Run As... --> mvn build... ---> Main --> Goals填写: spring-boot:run
 ```java
 Run Configuration... --> Arguments --> VM argumments填写: -javaagent:.\lib\springloaded-1.2.5.RELEASE.jar -noverify
 ```
+
+
+
+##email
+
+```xml
+<dependency>
+    <groupId>org.springframework.boot</groupId>
+    <artifactId>spring-boot-starter-mail</artifactId>
+</dependency>
+```
+```properties
+#邮箱开启SMTP功能: https://blog.csdn.net/caimengyuan/article/details/51224269
+spring.mail.host=smtp.163.com
+spring.mail.username=***@163.com
+spring.mail.password=*** //授权码作为密码使用
+```
+> 邮件（普通 + 附件 + 静态资源 + 模板）
+
+```java
+@RestController
+@RequestMapping("mail")
+public class MailController {
+    private static final String EMAIL_FROM = "dongyan3131@163.com";
+    private static final String EMAIL_TO = "453705197@qq.com";
+    private static final String EMAIL_SUBJECT = "主题：邮件主题";
+
+    @Autowired
+    JavaMailSender mailSender;
+
+    @Autowired
+    private TemplateEngine templateEngine;
+
+    //普通邮件
+    @GetMapping("/simple")
+    public void simpleEmail() {
+        SimpleMailMessage message = new SimpleMailMessage();
+        message.setFrom(EMAIL_FROM);
+        message.setTo(EMAIL_TO);
+        message.setSubject(EMAIL_SUBJECT);
+        message.setText("内容：邮件内容");
+
+        mailSender.send(message);
+    }
+
+    //三种复杂邮件
+    @GetMapping("/attach")
+    public void attachEmail() throws Exception {
+
+        // 含附件，静态资源，模板，则增加第二个参数，并为true
+        MimeMessage mimeMessage = this.mailSender.createMimeMessage();
+        MimeMessageHelper helper = new MimeMessageHelper(mimeMessage, true);
+        helper.setFrom(EMAIL_FROM); // 发送方
+        helper.setTo(EMAIL_TO); // 接收方
+        helper.setSubject(EMAIL_SUBJECT); //主题
+
+        //（1）附件
+        File file = new File(SystemUtils.getFilePath(), "/logs/sm/sm.log");//附件位置
+        if (file.exists()) {
+            String path = file.getPath();
+            String fileName = path.substring(path.lastIndexOf(File.separator) + 1);
+            helper.addAttachment(fileName, file); //添加附件(附件名,附件路径)
+        }
+
+        //（2）静态资源 -> 在邮件正文中查看图片,而非附件
+        String sb = "<h1>大标题-h1</h1>" +
+                "<p style='color:#F00'>红色字</p>" +
+                "<p style='text-align:right'>右对齐</p>" +
+                "<p><img src=\"cid:weixin\"></p>";
+        helper.setText(sb, true); //true表示启动HTML格式的邮件
+        file = new File(SystemUtils.getFilePath(), "/imgs/a.jpg");
+        if (file.exists()) {
+            // 注意: 资源名称"weixin" 需要与正文中 cid:weixin 对应起来
+            helper.addInline("weixin", file);
+        }
+
+        //（3）模板邮件 -> 固定的场景,如重置密码、注册确认等,只有小部分是变化的
+        org.thymeleaf.context.Context context = new org.thymeleaf.context.Context();
+        context.setVariable("username", "skyl");
+        String content = templateEngine.process("email", context);
+        helper.setText(content, true);
+
+        mailSender.send(mimeMessage);
+    }
+}
+```
+
+
+
+
+
+
+
+
+
+
+
 
 
 
@@ -1714,27 +1881,875 @@ Application: <span th:text="${application.app}"></span>
 
 >
 
-```html
 
+
+# CRUD
+
+##restful
+
+>restful是对于同一个服务器资源的一组不同的操作，包括：GET，POST，PUT，DELETE，PATCH，HEAD，OPTIONS
+
+```java
+http请求的安全和幂等，是指多次调用同一个请求对资源状态的影响。
+'安全' -> 请求不会影响资源的状态。只读的请求：GET,HEAD,OPTIONS
+'幂等' -> 多次相同的请求，目的一致。
+```
+| 请求方式 |  请求url  |                             说明                             |    是否幂等    |
+| :------: | :-------: | :----------------------------------------------------------: | :------------: |
+|   GET    | /emp/list |                   只读请求，不改变资源状态                   |   安全，幂等   |
+|   PUT    |  /emp/5   |         多次请求都是将id为 5 的员工姓名修改成'wang'          |  不安全，幂等  |
+|   POST   | /emp/emp  |                 多次请求会新增多条相同的数据                 | 不安全，不幂等 |
+|  DELETE  |  /emp/5   |              多次请求目的都是删除id为 5 的员工               |  不安全，幂等  |
+|          |           | `第一次成功删除，第二次及以后虽资源已不存在，但也得返回 200 OK，不能返回 404` |                |
+
+> 测试接口
+
+|     请求说明     |  请求url  | 请求方式 |
+| :--------------: | :-------: | :------: |
+|     列表页面     | /emp/list |   GET    |
+| 跳转页面（新增） | /emp/emp  |   GET    |
+|     新增接口     | /emp/emp  |   POST   |
+| 跳转页面（修改） | /emp/{id} |   GET    |
+|     修改接口     | /emp/emp  |   PUT    |
+|     删除接口     | /emp/{id} |  DELETE  |
+
+> `将 POST 请求转化为 PUT，DELETE`
+
+```xml
+<!--（1）配置 HiddenHttpMethodFilter，SpringBoot默认已配置-->
+<filter>
+    <filter-name>HiddenHttpMethodFilter</filter-name>  
+    <filter-class>org.springframework.web.filter.HiddenHttpMethodFilter</filter-class>  
+</filter>
 ```
 
->
+```html
+<!--（2）页面创建（POST表单 + 隐藏标签）-->
+<form method="post" th:action="@{/emp/}+${emp.id}">
+    <input type="hidden" name="_method" value="delete"> <!--隐藏标签 name + value-->
+
+    <a href="#" onclick="delEmp(this)" th:attr="url=@{/emp/}+${emp.id}">删除</a>
+</form>
+```
+##列表：get
+
+> 跳转到列表页面 `a标签对应的是 GET 请求`
 
 ```html
-
+<a th:href="@{/emp/list}">员工列表</a>
 ```
 
->
+>跳转逻辑
+
+```java
+@GetMapping("/list")
+public String list(Model model) {
+    model.addAttribute("emps", EmpUtils.listAll()); //模拟查库
+    return "/emp/list";
+}
+```
+
+> 列表页面
 
 ```html
+<!DOCTYPE html>
+<html lang="en" xmlns:th="http://www.thymeleaf.org">
+<head>
+    <meta charset="UTF-8">
+    <title>列表页面</title>
 
+    <script th:src="@{/webjars/jquery/jquery.min.js}"></script>
+    <script th:src="@{/webjars/bootstrap/js/bootstrap.min.js}"></script>
+    <link rel="stylesheet" th:href="@{/webjars/bootstrap/css/bootstrap.min.css}"/>
+
+    <script>/*删除记录的js...*/</script>
+</head>
+<body>
+<table>
+    <tr>
+        <th>姓名</th>
+        <th>年龄</th>
+        <th>城市</th>
+        <th>操作</th>
+    </tr>
+    <tr th:if="${null==emps || 0==emps.size()}">
+        <td colspan="4" th:text="员工列表为空"></td>
+    </tr>
+    <tr th:each="emp:${emps}" th:object="${emp}"> <!--th:object 和 *{...} 配合使用-->
+        <td th:text="${emp.name}"></td>
+        <td th:text="*{gender}?'男':'女'"></td>
+        <td th:text="*{city.name}"></td>
+        <td>
+            <a th:href="@{/emp/}+*{id}">修改</a> <!--路径拼接-->
+            <a href="#" onclick="deleteEmp(this)" th:attr="url=@{/emp/}+${emp.id}">删除</a>
+        </td>
+    </tr>
+</table>
+<a th:href="@{/emp/emp}">新增员工</a>
+</body>
+</html>
 ```
 
->
+##新增：post
+
+>跳转新增页面
 
 ```html
-
+<a th:href="@{/emp/emp}">新增员工</a>
 ```
+
+>跳转逻辑
+
+```java
+@GetMapping("/emp")
+public String toAdd(Model model) {
+    model.addAttribute("citys", EmpUtils.listCity()); //新增页面要显示的城市列表信息
+    return "/emp/emp"; //转发-页面
+}
+```
+
+> 新增页面（同修改页面，略）
+
+> 新增接口
+
+```java
+@PostMapping("/emp")
+public String add(Emp emp) {
+    empList.add(emp);
+    return "redirect:/emp/list"; //重定向-接口
+}
+```
+
+##修改：put
+
+>跳转修改页面
+
+```html
+<a th:href="@{/emp/}+*{id}">修改</a> <!--路径拼接-->
+```
+
+>跳转逻辑
+
+```java
+@GetMapping("/{id}")
+public String toUpdate(@PathVariable Integer id, Model model) {
+    Emp emp = EmpUtils.empList.get(id); //根据ID查找
+    
+    model.addAttribute("emp", emp);
+    model.addAttribute("citys", EmpUtils.cityList); //用于页面回显
+    return "/emp/emp";
+}
+```
+
+>回显数据到修改页面
+
+```html
+<!DOCTYPE html>
+<html lang="en" xmlns:th="http://www.thymeleaf.org">
+<head>
+    <meta charset="UTF-8">
+    <title>员工信息页</title>
+</head>
+<body>
+<form method="post" th:action="@{/emp/emp}">
+    <!--新增和修改使用同一页面，区分方式：回显 emp 是否为空 ${null!=person}-->
+    <input type="hidden" name="_method" value="put" th:if="${null!=emp}">
+    <!--修改：PUT请求 + emp.id-->
+    <input type="hidden" name="id" th:value="${emp.id}" th:if="${null!=emp}">
+
+    <table>
+        <tr>
+            <td>姓名：</td>
+            <td><input type="text" name="name" th:value="${null!=emp}?${emp.name}"></td>
+        </tr>
+        <tr>
+            <td>性别：</td>
+            <td>
+                <!--th:checked radio标签是否选中-->
+                <input type="radio" name="gender" value="1" th:checked="${null!=emp}?${emp.gender}">男
+                <input type="radio" name="gender" value="0" th:checked="${null!=emp}?${!emp.gender}">女
+            </td>
+        </tr>
+        <tr>
+            <td>住址：</td>
+            <td>
+                <select name="city.id">
+                    <!--th:selected 回显emp.city.id == 遍历city.id，则选中-->
+                    <option th:each="city:${citys}" th:object="${city}" th:value="*{id}" th:text="*{name}"
+                            th:selected="${null!=emp}?${emp.city.id}==*{id}"></option>
+                </select>
+            </td>
+        </tr>
+        <tr>
+            <td colspan="2">
+                <!--回显 emp 为空，则显示'新增'；否则显示'修改'-->
+                <input type="submit" th:value="${null==emp}?'新增':'修改'">
+            </td>
+        </tr>
+    </table>
+</form>
+</body>
+</html>
+```
+
+>修改接口
+
+```java
+@PutMapping("/emp")
+public String update(Emp emp) {
+    EmpUtils.empList.update(emp);
+    return "redirect:/emp/list";
+}
+```
+
+##删除：delete
+
+>删除方式（1）form表单
+
+```html
+<a href="#" onclick="deleteEmp(this)" th:attr="url=@{/emp/}+${emp.id}">删除</a>
+```
+
+```html
+<form id="deleteForm" method="post" action="#"> <!--独立于列表Table的<form/>表单-->
+    <input type="hidden" name="_method" value="DELETE">
+</form>
+```
+
+```html
+<script>
+    function deleteEmp(e) {
+        alert($(e).attr('url')); //按钮的url属性
+
+        //动态设置<form>的action属性，并提交
+        $('#deleteForm').attr('action', $(e).attr('url')).submit();
+        return false; //取消按钮的默认行为
+    }
+</script>
+```
+
+>删除方式（1）后台逻辑
+
+```java
+@DeleteMapping("/{id}")
+public String delete(@PathVariable Integer id) {
+    EmpUtils.empList.remove(id.intValue());
+    return "redirect:/emp/list";
+}
+```
+
+> 删除方式（2）不使用form表单，而使用ajax异步请求
+
+```html
+<a href="#" onclick="deleteEmp(this)" th:attr="url=@{/emp/}+${emp.id}">删除</a>
+```
+
+```html
+<script>
+    function deleteEmp(e) {
+        $.ajax({
+            type: 'delete',
+            url: $(e).attr('url'),
+            dataType: 'text',
+            success: function (data) {
+                //e 表示当前emp所在行的标签<a/>
+                //$(e).parent().parent() 表示<a/> -> td -> tr
+                $(e).parent().parent().remove();
+                alert(data);
+            },
+            error: function (data) {
+                var res = JSON.parse(data.responseText); //转化json
+                alert(res.status + " - " + res.error + " - " + res.message);
+            }
+        });
+        return false;
+    }
+</script>
+```
+
+> 删除方式（2）后台逻辑
+
+```java
+@DeleteMapping("/{id}")
+@ResponseBody
+public String delete(@PathVariable Integer id) {
+    EmpUtils.empList.deleteById(id);
+    return "success";
+}
+```
+
+
+
+
+
+
+# Exception
+
+Boot对于异常处理提供了五种处理方式，推荐使用方式（3）（5） http://blog.51cto.com/13902811/2170945?source=dra
+
+##五种方式
+
+> （1）自定义错误页面（默认）
+
+```java
+一旦程序出现异常，SpringBoot 会向url '/error' 发送请求。
+通过默认的 BasicExceptionController 来处理请求 '/error'，然后跳转到默认异常页面，显示异常信息。
+
+所以，如果需要将所有异常统一跳转到自定义错误页面，需新建页面 '/templates/error.html'，必须叫 error.html
+缺点：不符合实际需求，应该对于不同错误跳转不同页面。
+```
+
+>（2）注解处理异常 @ExceptionHandler
+
+>（3）注解处理异常 @ExceptionHandler + @ControllerAdvice
+
+```java
+当执行过程中出现异常，首先在本类中查找 @ExceptionHandler 标识的方法。
+找不到，再去查找 @ControllerAdvice 标识类中的 @ExceptionHandler 标识方法来处理异常。
+
+//处理优先级：异常的最近继承关系
+例如发生异常 NullPointerException; 但是声明的异常有 RuntimeException 和 Exception
+此时，根据异常的最近继承关系，找到继承深度最浅的那个，即 RuntimeException 的声明方法
+```
+
+```java
+@ControllerAdvice //异常处理类
+public class GlobalException {
+    /**
+     * 参数(可选):
+     *         异常参数(包括自定义异常);
+     *         请求或响应对象(HttpServletRequest; ServletRequest; PortleRequest/ActionRequest/RenderRequest) 
+     *         Session对象(HttpSession; PortletSession) 
+     *         WebRequest; NativeWebRequest; Locale; 
+     *         InputStream/Reader; OutputStream/Writer; Model
+     * 
+     * 返回值(可选):
+     *         ModelAndView; Model; Map; View; String; @ResponseBody;
+     *         HttpEntity<?>或ResponseEntity<?>; 以及void
+     */
+    @ExceptionHandler(ArithmeticException.class) //ex对应发生的异常对象
+    public ModelAndView arithmeticException(HttpServletRequest request, ArithmeticException ex) {
+        
+        //区分 URL & URI： http://ip:port/demo/hello/hello & /demo/hello/hello
+        log.info("{} & {}", request.getRequestURL(), request.getRequestURI());
+
+        ModelAndView mv = new ModelAndView("error1");
+        mv.addObject("errMsg", ex.getLocalizedMessage());
+        return mv; //跳转异常页，并携带异常信息
+    }
+    
+    @ExceptionHandler(RuntimeException.class)
+    public ModelAndView runtimeException(HttpServletRequest request, RuntimeException ex) {                
+        ModelAndView mv = new ModelAndView("error2");
+        mv.addObject("errMsg", ex.getLocalizedMessage());
+        return mv;
+    }
+}
+```
+> （4）配置 SimpleMappingExceptionResolver （3的简化）
+
+```java
+//优点：在全局异常类的一个方法中完成所有异常的统一处理
+//缺点：只能进行异常与视图的映射，不能传递异常信息
+
+@Configuration //（1）此处的注解不同
+public class GlobalException {
+    
+    //（2）方法必须有返回值。返回值类型必须是：SimpleMappingExceptionResolver
+    @Bean
+    public SimpleMappingExceptionResolver getSimpleMappingExceptionResolver() {
+        SimpleMappingExceptionResolver resolver = new SimpleMappingExceptionResolver();
+        Properties mappings = new Properties();
+
+        //arg0：异常的类型，注意必须是异常类型的全名； arg1：视图名称
+        mappings.put("java.lang.ArithmeticException", "error1");
+        mappings.put("java.lang.RuntimeException", "error2");
+
+        //（3）设置异常与视图的映射，但不能传递异常信息
+        resolver.setExceptionMappings(mappings);
+        return resolver;
+    }
+}
+```
+> （5）自定义类处理异常 HandlerExceptionResolver
+
+```java
+@Configuration
+public class GlobalException implements HandlerExceptionResolver {
+
+    @Override
+    public ModelAndView resolveException(
+            HttpServletRequest request, HttpServletResponse response, @Nullable Object handler, Exception ex) {
+        ModelAndView mv = new ModelAndView();
+
+        //不同异常类型，不同视图跳转
+        if (ex instanceof ArithmeticException) {
+            mv.setViewName("error1");
+        }
+        if (ex instanceof NullPointerException) {
+            mv.setViewName("error2");
+        }
+        //并传递异常信息
+        mv.addObject("errMsg", ex.toString());
+        return mv;
+    }
+}
+```
+## 自动处理
+
+参照 ErrorMvcAutoConfiguration，错误处理的自动配置
+
+> 一旦系统出现 4xx 或 5xx 之类的错误，ErrorPageCustomizer 就会生效，它会发送 /error 请求
+
+```java
+@Value("${error.path:/error}")    
+private String path = "/error";
+```
+>/error 请求会被 BasicErrorController 处理，它有两种处理机制：浏览器 + 接口
+
+```java
+@Controller
+@RequestMapping("${server.error.path:${error.path:/error}}")
+public class BasicErrorController extends AbstractErrorController {
+    // 针对浏览器请求的响应页面，产生html类型的数据
+    @RequestMapping(produces = "text/html")
+    public ModelAndView errorHtml(HttpServletRequest request, HttpServletResponse response) { }
+
+    // 针对其他客户端请求的响应数据，产生json数据
+    @RequestMapping
+    @ResponseBody 
+    public ResponseEntity<Map<String, Object>> error(HttpServletRequest request) { }
+}
+```
+>其中，html类型数据由 DefaultErrorViewResolver 解析产生，规则为
+
+    （1）有模板引擎的情况下： error/状态码。如：error/404.html
+    （2）没有模板引擎（模板引擎找不到这个错误页面），静态资源文件夹下找
+    （3）以上都没有错误页面，就使用 SpringBoot 默认的错误提示页面
+> json类型数据由 DefaultErrorAttributes 提供，其中包括
+
+    timestamp：时间戳;    status：状态码; 
+    error：错误提示;      exception：异常对象
+    message：异常消息;    errors：JSR303数据校验的错误都在这里
+##定制错误
+
+> 定制错误页面
+
+```java
+将错误页面命名为 '错误状态码.html'，存放路径: 'templates/error/*.html'，发生错误就会来到 对应状态码的页面
+文件名也可以使用 4xx 和 5xx 来模糊匹配状态码，当然精确匹配优先考虑！！
+```
+>定制错误的json数据
+
+```java
+//（第1版）接口和浏览器返回皆为json，没有做到自适应!!!
+//controller 的一个辅助类，最常用作全局异常处理的AOP切面类
+@ControllerAdvice
+public class GlobalExceptionHandler {
+
+    @ResponseBody
+    @ExceptionHandler(BlueException.class)
+    private Map<Object, Object> notFound(BlueException e) {
+        Map<Object, Object> map = new HashMap<>();
+        map.put("errMsg", e.errMsg);
+        return map;
+    }
+}
+```
+```java
+//（第2版）转发到 /error，进行自适应响应处理。未能显示用户自定义的异常信息
+@ExceptionHandler(BlueException.class)
+private String notFound(HttpServletRequest req, BlueException e) {
+    Map<Object, Object> map = new HashMap<>();
+    map.put("errMsg", e.errMsg);
+
+    // 传入自定义的错误状态码 4xx 5xx,否则就不会进入定制错误页面的解析流程
+    req.setAttribute("javax.servlet.error.status_code", 500);
+
+    // 转发到/error
+    return "forword:/error";
+}
+```
+```java
+//（第3版）错误请求的自适应反馈（转发到定制错误页面或返回json），以及携带自定义的数据内容
+@ExceptionHandler(BlueException.class)
+private String notFound(HttpServletRequest req, BlueException e) {
+    Map<Object, Object> map = new HashMap<>();
+    map.put("errCode", e.errCode);
+    map.put("errMsg", e.errMsg);
+
+    req.setAttribute("javax.servlet.error.status_code", 500);
+    req.setAttribute("err", map);
+
+    return "forward:/error";
+}
+```
+```java
+'再次强调：错误页面的数据集合由 DefaultErrorAttributes#getErrorAttributes() 提供!!!'
+//（配合第3版共同使用）给容器中加入我们自己定义的 ErrorAttributes
+@Component
+class BlueErrorAttributes extends DefaultErrorAttributes {
+    @Override
+    public Map<String, Object> getErrorAttributes(RequestAttributes requestAttributes, 
+                                                  boolean includeStackTrace) {
+        Map<String, Object> map = super.getErrorAttributes(requestAttributes, includeStackTrace);
+
+        // 取出上述方法的'err'，放入错误页面的数据集合
+        // 第二个参数：0代表从 request 中读取数据， 1代表从 session 中
+        map.put("data", requestAttributes.getAttribute("err", 0));
+
+        // 此map就是页面和json都能获取到的所有字段
+        return map;
+    }
+}
+```
+
+
+
+
+
+#jpa
+
+## 基础配置
+
+> 基础概念
+
+```java
+JPA                -> //Java-Persistence-API，对持久层操作的标准（接口 + 文档）
+
+Hibernate          -> //全自动化的ORM框架
+Hibernate JPA      -> //实现了 JPA 标准的 Hibernate（Hibernate-3.2+）
+
+Spring Data        -> //用于简化数据库（SQL，NoSQL...）访问，并支持云服务的开源框架.
+Spring Data JPA    -> //Spring Data的一个子模块，实现了 JPA 标准的 Spring Data，底层是 Hibernate
+
+Spring Data Redis  -> //通过简单配置，实现对reids各种操作，异常处理及序列化，支持发布订阅
+```
+> 基础配置
+
+```xml
+<dependency>
+    <groupId>org.springframework.boot</groupId>
+    <artifactId>spring-boot-starter-data-jpa</artifactId>
+</dependency>
+```
+```properties
+#可选参数-create: 每次启动都会删除旧表，新建一个空表
+#可选参数-update: 根据实体类创建/更新数据库表
+spring.jpa.hibernate.ddl-auto=update
+spring.jpa.show-sql=true
+```
+> 实体类
+
+```java
+@Data
+@Entity //表明是一个JPA实体，自动建表
+@Table(name = "t_emp") //默认表名为类名小写
+@NoArgsConstructor
+@AllArgsConstructor
+public class Employee {
+    @Id
+    @GeneratedValue(strategy = GenerationType.IDENTITY)
+    private Integer id;
+
+    @Column(name = "first_name")
+    private String firstName;
+
+    @Column //默认列名 -> gender_flag
+    private Boolean genderFlag;
+}
+```
+##Repository
+
+> Spring-Data-JPA 顶层接口，标识接口，空接口。
+
+>方法名称命名的方式
+
+```java
+//驼峰命名规则: findBy(关键字) + 属性名称(首字母大写) + 查询条件（首字母大写，Like，OrderBy...）
+public interface EmployeeRepoDao extends Repository<Employee, Integer> {
+
+    //SELECT * FROM t_emp WHERE first_name='zhang' AND gender_flag=TRUE
+    List<Employee> findByFirstNameAndGenderFlag(String firstName, boolean genderFlag);
+
+    //SELECT * FROM t_emp WHERE first_name LIKE '%ang%' OR gender_flag=TRUE ORDER BY id DESC
+    List<Employee> findByFirstNameLikeOrGenderFlagOrderByIdDesc(String firstName, boolean genderFlag);
+}
+```
+>基于注解的方式
+
+```java
+public interface EmployeeRepoDao extends Repository<Employee, Integer> {
+
+    //(1).hql --> 使用bean属性名称替代数据库字段进行查询
+    @Query("FROM Employee WHERE firstName LIKE ?1 OR genderFlag=?2 ORDER BY id DESC")
+    List<Employee> queryByHQL(String firstName, boolean genderFlag);
+
+    //(2-1).原生sql --> 参数序号从①开始; nativeQuery=true
+    @Query(value = "SELECT * FROM t_emp WHERE first_name LIKE ?1 OR gender_flag = ?2 ORDER BY id DESC", 
+           nativeQuery = true)
+    List<Employee> queryBySQL(String firstName, boolean genderFlag);
+
+    //(2-2).原生sql --> @Param("参数名")
+    @Query(value = "SELECT * FROM t_emp WHERE first_name LIKE :fName OR gender_flag = :genderFlag ORDER BY id DESC", 
+           nativeQuery = true)
+    List<Employee> queryBySQL(@Param("fName") String firstName, @Param("genderFlag") boolean genderFlag);
+
+    @Modifying //更新 或 删除，必须添加此注解
+    //@Transactional 
+    @Query(value = "UPDATE t_emp SET first_name=?1 WHERE id=?2", nativeQuery = true)
+    Integer updateBySQL(String firstName, Integer id);
+}
+```
+>事务
+
+```java
+业务逻辑层 Service 调用多个 Repository 方法时，需要在 Service 方法上声明事务 @Transactional
+```
+
+## CrudRep...
+
+> CrudRepository：最基础的CRUD，extends Repository
+
+```java
+public interface EmployeeCrudDao extends CrudRepository<Employee, Integer> {}
+```
+
+>测试DEMO
+
+```java
+@Test
+public void daoCrud() {
+    //save(): 先查询数据表中是否存在该id数据??? 无则新增; 有则更新
+    Employee save = employeeCrudDao.save(new Employee(7, "张三", true));
+    Iterable<Employee> all = employeeCrudDao.findAll();
+    System.out.println(save + " - " + JSON.toJSON(all));
+}
+```
+##Paging...
+
+> PagingAndSortingRepository：分页和排序功能，extends CrudRepository
+
+```java
+public interface EmployeePSDao extends PagingAndSortingRepository<Employee, Integer> {}
+```
+
+>测试DEMO
+
+```java
+@Test
+public void daoPS() {
+    Sort sort = Sort.by(Sort.Direction.DESC, "firstName", "id"); //(1).排序
+    Iterable<Employee> all = employeePSDao.findAll(sort);
+
+    Pageable pageable = PageRequest.of(0, 2); //(2).页码从0开始; 分页
+    Page<Employee> all = employeePSDao.findAll(pageable);
+
+    Sort sort = Sort.by(Sort.Direction.DESC, "id");
+    PageRequest pageable = PageRequest.of(1, 2, sort);
+    Page<Employee> all = employeePSDao.findAll(pageable); //(3).排序+分页
+    System.out.println("daoPS - " + JSON.toJSON(all));
+}
+```
+##JpaRep...！
+
+> JpaRepository 对父接口方法的返回值进行适配处理，extends PagingAndSortingRepository
+
+```java
+public interface EmployeeJpaDao extends JpaRepository<Person, Integer> {}
+```
+
+##JpaSpe...
+
+> JpaSpecificationExecutor：提供多条件查询，分页，排序，独立于以上接口存在，所以`需配合以上接口使用`
+
+```java
+public interface EmployeeDao extends JpaSpecificationExecutor<Employee>, JpaRepository<Employee, Integer> {}
+```
+
+> 测试DEMO
+
+```java
+@Test
+public void daoDao() {
+    Specification<Employee> spec = new Specification<Employee>() {
+        /**
+          * @param root     查询对象的属性封装,即 Employee
+          * @param query    查询关键字 SELECT, WHERE, ORDER BY ...
+          * @param builder  查询条件 =, >, LIKE
+          * @return         封装整个查询条件
+          */
+        @Override
+        public Predicate toPredicate(Root<Employee> root, CriteriaQuery<?> query, CriteriaBuilder builder) {
+            // SELECT * FROM t_emp
+            // WHERE first_name LIKE '%ang%'
+            // OR gender_flag=TRUE
+            // AND id BETWEEN 3 AND 9
+            // AND id>=4
+            // ORDER BY first_name DESC, id ASC;
+            Predicate or = builder.or(builder.like(root.get("firstName").as(String.class), "%ang%"),
+                                      builder.equal(root.get("genderFlag").as(boolean.class), true)); //OR
+
+            List<Predicate> list = new ArrayList<>(); //AND
+            list.add(or);
+            list.add(builder.between(root.get("id").as(Integer.class), 3, 9));
+            list.add(builder.greaterThanOrEqualTo(root.get("id").as(Integer.class), 4));
+            Predicate[] predicates = new Predicate[list.size()];
+
+            Predicate predicate = builder.and(list.toArray(predicates)); //所有条件
+            query.where(predicate); //WHERE ... OR ... AND ... AND ...
+
+            query.multiselect(root.get("id"), root.get("firstName")); //SELECT *,*
+
+            query.orderBy(builder.desc(root.get("firstName")),
+                          builder.asc(root.get("id"))); //ORDER BY ..., ...
+
+            return query.getRestriction();
+        }
+    };
+
+    // Sort sort = Sort.by(new Sort.Order(Sort.Direction.DESC, "firstName"),
+    //         new Sort.Order(Sort.Direction.ASC, "id")); //ORDER BY ..., ...
+
+    PageRequest pageable = PageRequest.of(1, 2/*, sort*/); //分页 LIMIT 1,2; 页码从0开始
+
+    Page<Employee> all = employeeDao.findAll(spec, pageable);
+    System.out.println("daoDao - " + JSON.toJSON(all));
+}
+```
+##一对多关联
+
+> 一对多关联映射：dept 与 emp 是一对多关系
+
+```java
+@Data
+@Entity
+@Table(name = "t_emp")
+public class Employee {
+    //... ...
+
+    /**
+      * PERSIST  持久保存拥有方实体时,也会持久保存该实体的所有相关数据。
+      * MERGE    将分离的实体重新合并到活动的持久性上下文时,也会合并该实体的所有相关数据。
+      * REMOVE   删除一个实体时,也会删除该实体的所有相关数据。
+      * ALL      以上都适用。
+      */
+    @ManyToOne(cascade = {CascadeType.PERSIST, CascadeType.MERGE}) //emp->dept: 多对一
+    @JoinColumn(name = "dept_id") //外键
+    private Dept dept;
+}
+
+@Data
+@Entity
+@Table(name = "t_dept")
+public class Dept {
+    @Id
+    @GeneratedValue(strategy = GenerationType.IDENTITY)
+    @Column(name = "dept_id")
+    private Integer deptId;
+
+    @Column(name = "dept_name")
+    private String deptName;
+
+    @OneToMany(mappedBy = "dept") //dept->emp: 一对多关系
+    private List<Employee> emps = new ArrayList<>();
+}
+```
+>新增DEMO
+
+```java
+@Test
+public void saveOne2Many() {
+    //新建 emp - dept
+    Employee employee = new Employee("whang", false);
+    Dept dept = new Dept("软件");
+
+    //关联
+    employee.setDept(dept);
+    dept.getEmps().add(employee);
+
+    //写库
+    employeeDao.save(employee);
+}
+```
+>查询DEMO
+
+```java
+@Test
+public void findOne2Many() {
+    Optional<Employee> optional = employeeDao.findById(10);
+    if (optional.isPresent()) {
+        Employee employee = optional.get();
+        System.out.println("DeptName: " + employee.getDept().getDeptName());
+    }
+}
+```
+##多对多关联
+
+>多对多关联映射：emp 和 role 是多对多关系
+
+```java
+@Data
+@Entity
+@Table(name = "t_emp")
+public class Employee {
+    //... ...
+    
+    @ManyToMany(mappedBy = "emps", cascade = CascadeType.PERSIST, fetch = FetchType.EAGER)
+    private Set<Role> roles = new HashSet<>();
+}
+
+@Data
+@Entity
+@Table(name = "t_role")
+public class Role {
+    //... ...
+    
+    @ManyToMany(cascade = CascadeType.PERSIST, fetch = FetchType.EAGER)
+    //JoinTable: 中间表信息(配置在两张表中的任意一个)
+    //joinColumns: 该表主键在中间表中的字段
+    //inverseJoinColumns: 另一个表(即emp)主键在中间表中的字段
+    @JoinTable(name = "t_emp_role", joinColumns = @JoinColumn(name = "role_id"),
+            inverseJoinColumns = @JoinColumn(name = "emp_id"))
+    private Set<Employee> emps = new HashSet<>();
+}
+```
+>新增DEMO
+
+```java
+@Test
+public void saveMany2Many() {
+    //新建 emp - role
+    Employee li = new Employee("li", false);
+    Employee zhang = new Employee("zhang", true);
+    Role admin = new Role("管理员");
+    Role finance = new Role("财务");
+
+    //关联 
+    li.getRoles().add(admin);
+    li.getRoles().add(finance);
+    admin.getEmps().add(li);
+    admin.getEmps().add(zhang);
+    
+    //写库
+    employeeDao.save(li);
+    employeeDao.save(zhang);
+}
+```
+>查询DEMO
+
+```java
+@Test
+public void findMany2Many() {
+    Optional<Employee> optional = employeeDao.findById(12);
+    System.out.println(optional.get().getRoles());
+}
+```
+
+
+
+
+
 
 
 
