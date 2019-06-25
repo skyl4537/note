@@ -1,17 +1,38 @@
 [TOC]
 
-#BOOT基础
+# BOOT基础
 
-##常用配置
+## 基础概念
+
+>SpringBoot 并不是对 Spring 功能上的增强，而是提供了一种快速使用 Spring 的方式
+
+```java
+简化依赖管理
+    //将各种功能模块进行划分，封装成一个个启动器(Starter)，更容易的引入和使用
+    //提供一系列的Starter，将各种功能性模块进行了划分与封装
+    //更容易的引入和使用，有效避免了用户在构建传统Spring应用时维护大量依赖关系，而引发的jar冲突等问题
+
+自动化配置 //为每一个Starter都提供了自动化的java配置类
+嵌入式容器 //嵌入式tomcat，无需部署war文件
+监控の端点 //通过Actuator模块暴露的http接口，可以轻松的了解和控制 Boot 应用的运行情况
+```
+
+
+## 常用配置
+
+> 新建项目
+
+https://start.spring.io/
 
 > 常用properties
 
 ```properties
 server.port=8090
 server.servlet.context-path=/publisher
+
 #spring.profiles.active=dev
 
-#springcloud项目使用
+#SpringCloud项目使用
 #spring.application.name=amqp-publisher
 
 spring.datasource.driverClassName=com.mysql.cj.jdbc.Driver
@@ -28,6 +49,8 @@ mybatis.configuration.map-underscore-to-camel-case=true
 logging.level.com.example.amqp_publisher.mapper=debug
 
 spring.thymeleaf.cache=false
+
+debug=true
 ```
 
 > 常用pom
@@ -82,6 +105,7 @@ spring.thymeleaf.cache=false
 </dependencies>
 
 <build>
+    <finalName>amqp</finalName> <!--默认打包后的jar包名很长，配置此项可指定文件名-->
     <plugins>
         <plugin>
             <groupId>org.springframework.boot</groupId>
@@ -222,7 +246,7 @@ echo "start OK!~!"
     <groupId>org.springframework.boot</groupId>
     <artifactId>spring-boot-maven-plugin</artifactId>
     <configuration>
-        <executable>true</executable> <!--可执行，必不可少。将导致jar包不可修改？（快压修改）-->
+        <executable>true</executable> <!--可执行，必不可少。将导致jar包不可修改（快压修改）-->
     </configuration>
 </plugin>
 ```
@@ -486,6 +510,22 @@ ${ property : default_value }
 
 
 #BOOT高级
+
+##跨域
+
+```
+跨域是什么？
+浏览器从一个域名的网页去请求另一个域名的资源时，域名、端口、协议任一不同，都是跨域。采用前后端分离开发，前后端分离部署，必然会存在跨域问题。
+
+怎么解决跨域？
+很简单，只需要在 Controller 类上添加注解 @CrossOrigin 即可！这个注解其实是CORS的实现。
+
+CORS（Cross-Origin Resource Sharing，跨源资源共享）是W3C出的一个标准，其思想是使用自定义的HTTP头部让浏览器与服务器进行沟通，
+从而决定请求或响应是应该成功，还是应该失败。因此，要想实现CORS进行跨域，需要服务器进行一些设置，同时前端也需要做一些配置和分析。
+本文简单的对服务端的配置和前端的一些设置进行分析。
+```
+
+
 
 ## druid
 
@@ -820,6 +860,61 @@ MultipartConfigElement multipartConfigElement() {
 
 #小众功能
 
+##外置tomcat
+
+>修改打包方式
+
+```xml
+<groupId>com.example</groupId>
+<artifactId>amqp_publisher</artifactId>
+<version>0.0.1-SNAPSHOT</version>
+<packaging>war</packaging> <!--打包war，tomcat必须有-->
+```
+
+> 移除自带的嵌入式Tomcat
+
+```xml
+<dependency>
+    <groupId>org.springframework.boot</groupId>
+    <artifactId>spring-boot-starter-web</artifactId>
+    <exclusions> <!-- 移除嵌入式tomcat插件 -->
+        <exclusion>
+            <groupId>org.springframework.boot</groupId>
+            <artifactId>spring-boot-starter-tomcat</artifactId>
+        </exclusion>
+    </exclusions>
+</dependency>
+```
+
+>添加servlet-api依赖
+
+```xml
+<dependency>
+    <groupId>javax.servlet</groupId>
+    <artifactId>javax.servlet-api</artifactId>
+    <version>3.1.0</version>
+    <scope>provided</scope> <!--该依赖参与编译，测试，运行，但不会被打进项目包。由容器tomcat提供-->
+</dependency>
+```
+
+>修改启动类，并重写初始化方法
+
+```java
+@MapperScan(value = "com.example.*.mapper")
+@SpringBootApplication
+public class AmqpPublisherApp extends SpringBootServletInitializer { //新增 extends
+
+    public static void main(String[] args) {
+        SpringApplication.run(AmqpPublisherApp.class, args);
+    }
+
+    @Override //新增方法
+    protected SpringApplicationBuilder configure(SpringApplicationBuilder builder) {
+        return builder.sources(AmqpPublisherApp.class);
+    }
+}
+```
+
 ## 热部署
 
 > （0）`DevTools`工具：重新部署
@@ -829,7 +924,7 @@ MultipartConfigElement multipartConfigElement() {
 <dependency>
     <groupId>org.springframework.boot</groupId>
     <artifactId>spring-boot-devtools</artifactId>
-    <optional>true</optional> //<!-- 依赖只在当前项目生效，不会传递到子项目中 -->
+    <optional>true</optional> //<!-- 依赖只在当前项目生效，不会传递到引用项目中 -->
 </dependency>
 ```
 > （1）SpringLoader插件：只对 java 代码生效，对页面更改无能为力
@@ -2183,9 +2278,9 @@ public String delete(@PathVariable Integer id) {
 
 
 
-# Exception
+# exception
 
-Boot对于异常处理提供了五种处理方式，推荐使用方式（3）（5） http://blog.51cto.com/13902811/2170945?source=dra
+Boot对于异常处理提供了五种处理方式，`推荐使用方式 3 或 5` http://blog.51cto.com/13902811/2170945?source=dra
 
 ##五种方式
 
@@ -2233,14 +2328,14 @@ public class GlobalException {
         //区分 URL & URI： http://ip:port/demo/hello/hello & /demo/hello/hello
         log.info("{} & {}", request.getRequestURL(), request.getRequestURI());
 
-        ModelAndView mv = new ModelAndView("error1");
+        ModelAndView mv = new ModelAndView("/error/airth");
         mv.addObject("errMsg", ex.getLocalizedMessage());
         return mv; //跳转异常页，并携带异常信息
     }
     
     @ExceptionHandler(RuntimeException.class)
     public ModelAndView runtimeException(HttpServletRequest request, RuntimeException ex) {                
-        ModelAndView mv = new ModelAndView("error2");
+        ModelAndView mv = new ModelAndView("/error/runtime");
         mv.addObject("errMsg", ex.getLocalizedMessage());
         return mv;
     }
@@ -2339,15 +2434,14 @@ public class BasicErrorController extends AbstractErrorController {
 将错误页面命名为 '错误状态码.html'，存放路径: 'templates/error/*.html'，发生错误就会来到 对应状态码的页面
 文件名也可以使用 4xx 和 5xx 来模糊匹配状态码，当然精确匹配优先考虑！！
 ```
->定制错误的json数据
+>第1版：接口和浏览器返回皆为json，没有做到自适应!!!
 
 ```java
-//（第1版）接口和浏览器返回皆为json，没有做到自适应!!!
 //controller 的一个辅助类，最常用作全局异常处理的AOP切面类
 @ControllerAdvice
 public class GlobalExceptionHandler {
 
-    @ResponseBody
+    @ResponseBody //返回json
     @ExceptionHandler(BlueException.class)
     private Map<Object, Object> notFound(BlueException e) {
         Map<Object, Object> map = new HashMap<>();
@@ -2356,8 +2450,9 @@ public class GlobalExceptionHandler {
     }
 }
 ```
+>第2版：转发到 /error，进行自适应响应处理。未能显示用户自定义的异常信息
+
 ```java
-//（第2版）转发到 /error，进行自适应响应处理。未能显示用户自定义的异常信息
 @ExceptionHandler(BlueException.class)
 private String notFound(HttpServletRequest req, BlueException e) {
     Map<Object, Object> map = new HashMap<>();
@@ -2370,8 +2465,9 @@ private String notFound(HttpServletRequest req, BlueException e) {
     return "forword:/error";
 }
 ```
+>第3版：错误请求的自适应反馈（转发到定制错误页面或返回json），以及携带自定义的数据内容
+
 ```java
-//（第3版）错误请求的自适应反馈（转发到定制错误页面或返回json），以及携带自定义的数据内容
 @ExceptionHandler(BlueException.class)
 private String notFound(HttpServletRequest req, BlueException e) {
     Map<Object, Object> map = new HashMap<>();
@@ -2384,9 +2480,10 @@ private String notFound(HttpServletRequest req, BlueException e) {
     return "forward:/error";
 }
 ```
+>配合第3版共同使用：给容器中加入我们自己定义的 ErrorAttributes。`待完善`
+
 ```java
 '再次强调：错误页面的数据集合由 DefaultErrorAttributes#getErrorAttributes() 提供!!!'
-//（配合第3版共同使用）给容器中加入我们自己定义的 ErrorAttributes
 @Component
 class BlueErrorAttributes extends DefaultErrorAttributes {
     @Override
@@ -2495,7 +2592,7 @@ public interface EmployeeRepoDao extends Repository<Employee, Integer> {
            nativeQuery = true)
     List<Employee> queryBySQL(@Param("fName") String firstName, @Param("genderFlag") boolean genderFlag);
 
-    @Modifying //更新 或 删除，必须添加此注解
+    @Modifying //增加，删除 或 更新，必须添加此注解
     //@Transactional 
     @Query(value = "UPDATE t_emp SET first_name=?1 WHERE id=?2", nativeQuery = true)
     Integer updateBySQL(String firstName, Integer id);
@@ -2526,7 +2623,7 @@ public void daoCrud() {
     System.out.println(save + " - " + JSON.toJSON(all));
 }
 ```
-##Paging...
+##PagingAn...
 
 > PagingAndSortingRepository：分页和排序功能，extends CrudRepository
 
@@ -2559,7 +2656,7 @@ public void daoPS() {
 public interface EmployeeJpaDao extends JpaRepository<Person, Integer> {}
 ```
 
-##JpaSpe...
+##JpaSpecif...
 
 > JpaSpecificationExecutor：提供多条件查询，分页，排序，独立于以上接口存在，所以`需配合以上接口使用`
 
@@ -2638,7 +2735,8 @@ public class Employee {
     @JoinColumn(name = "dept_id") //外键
     private Dept dept;
 }
-
+```
+```java
 @Data
 @Entity
 @Table(name = "t_dept")
@@ -2655,6 +2753,7 @@ public class Dept {
     private List<Employee> emps = new ArrayList<>();
 }
 ```
+
 >新增DEMO
 
 ```java

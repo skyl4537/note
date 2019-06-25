@@ -1,6 +1,6 @@
     http://start.spring.io/
     
-//{--------<<<基础概念>>>----------------------------
+//{--------<<<基础概念>>>----------------------------X
 https://start.spring.io/
 
 #SpringBoot 并不是对 Spring 功能上的增强,而是提供了一种快速使用 Spring 的方式.
@@ -1116,7 +1116,7 @@ HTTP模式可以简化Web服务器，减少服务器的负担，加快响应速�
 
 //}
 
-//{--------<<<JPA>>>---------------------------------
+//{--------<<<JPA>>>---------------------------------X
 #比对概念
         JPA                    -> //Java-Persistence-API, 对持久层操作的标准(接口+文档)
         
@@ -1349,50 +1349,50 @@ HTTP模式可以简化Web服务器，减少服务器的负担，加快响应速�
     
 #多对多关联映射
     0.emp和role是多对多关系
-        @Data
-        @Entity
-        @Table(name = "t_emp")
-        public class Employee {
-            //... ...
-            
-            @ManyToMany(mappedBy = "emps", cascade = CascadeType.PERSIST, fetch = FetchType.EAGER)
-            private Set<Role> roles = new HashSet<>();
-        }
+    @Data
+    @Entity
+    @Table(name = "t_emp")
+    public class Employee {
+        //... ...
         
-        @Data
-        @Entity
-        @Table(name = "t_role")
-        public class Role {
-            //... ...
-            
-            @ManyToMany(cascade = CascadeType.PERSIST, fetch = FetchType.EAGER)
-            //JoinTable: 中间表信息(配置在两张表中的任意一个)
-            //joinColumns: 该表主键在中间表中的字段
-            //inverseJoinColumns: 另一个表(即emp)主键在中间表中的字段
-            @JoinTable(name = "t_emp_role", joinColumns = @JoinColumn(name = "role_id"),
-                    inverseJoinColumns = @JoinColumn(name = "emp_id"))
-            private Set<Employee> emps = new HashSet<>();
-        }
+        @ManyToMany(mappedBy = "emps", cascade = CascadeType.PERSIST, fetch = FetchType.EAGER)
+        private Set<Role> roles = new HashSet<>();
+    }
+    
+    @Data
+    @Entity
+    @Table(name = "t_role")
+    public class Role {
+        //... ...
+        
+        @ManyToMany(cascade = CascadeType.PERSIST, fetch = FetchType.EAGER)
+        //JoinTable: 中间表信息(配置在两张表中的任意一个)
+        //joinColumns: 该表主键在中间表中的字段
+        //inverseJoinColumns: 另一个表(即emp)主键在中间表中的字段
+        @JoinTable(name = "t_emp_role", joinColumns = @JoinColumn(name = "role_id"),
+                inverseJoinColumns = @JoinColumn(name = "emp_id"))
+        private Set<Employee> emps = new HashSet<>();
+    }
         
     1.新增DEMO
-        @Test
-        public void saveMany2Many() {
-            //新建 emp - role
-            Employee li = new Employee("li", false);
-            Employee zhang = new Employee("zhang", true);
-            Role admin = new Role("管理员");
-            Role finance = new Role("财务");
+    @Test
+    public void saveMany2Many() {
+        //新建 emp - role
+        Employee li = new Employee("li", false);
+        Employee zhang = new Employee("zhang", true);
+        Role admin = new Role("管理员");
+        Role finance = new Role("财务");
 
-            //关联 
-            li.getRoles().add(admin);
-            li.getRoles().add(finance);
-            admin.getEmps().add(li);
-            admin.getEmps().add(zhang);
-            
-            //写库
-            employeeDao.save(li);
-            employeeDao.save(zhang);
-        }
+        //关联 
+        li.getRoles().add(admin);
+        li.getRoles().add(finance);
+        admin.getEmps().add(li);
+        admin.getEmps().add(zhang);
+        
+        //写库
+        employeeDao.save(li);
+        employeeDao.save(zhang);
+    }
     
     2.查询DEMO
         @Test
@@ -1865,7 +1865,7 @@ HTTP模式可以简化Web服务器，减少服务器的负担，加快响应速�
         <dependency>
             <groupId>org.springframework.boot</groupId>
             <artifactId>spring-boot-devtools</artifactId>
-            <optional>true</optional> //<!-- 依赖只在当前项目生效,不会传递到子项目中 -->
+            <optional>true</optional> //<!-- 依赖只在当前项目生效,不会传递到引用项目中 -->
         </dependency>
 
 //}

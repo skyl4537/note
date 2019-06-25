@@ -208,22 +208,11 @@ https://blog.csdn.net/small_mouse0/article/details/77506060
 
 ## 基础配置
 
->
-
-```
-
-```
-
-
-
-
-
-
-
 > class类的doc模板
 
 ```java
 （1）File -> Setting -> Editor -> File and Code Templates
+
 （2）选择Tab页'Includes'，点击'+'，name填写'File Header'，内容填写
    /**  
     * @desc: TODO
@@ -1065,7 +1054,7 @@ log4j.appender.CTRL_ERROR.layout.ConversionPattern=%d{HH:mm:ss.SSS} [%5p] [%t] -
 
 #Maven
 
-**约定 > 配置 > 编码 ==》** 能用配置解决的问题就不编码，能基于约定的就不进行配置
+`约定 > 配置 > 编码` ==》 能用配置解决的问题就不编码，能基于约定的就不进行配置
 
 ## 基本概念
 
@@ -1103,19 +1092,29 @@ mvn install       #将打包的结果(jar/war)安装到本地仓库中
 mvn site          #生成站点
 ```
 
->依赖的范围
+>依赖的范围：Scope 
 
-```shell
-compile  #主程序(√); 测试程序(√); 打包(√); 部署(√); 如: spring-core
-provied  #主程序(√); 测试程序(√); 打包(x); 部署(x); 如: servlet-api(tomcat提供)
-test     #主程序(x); 测试程序(√); 打包(x); 部署(X); 如: junit
-runtime  #主程序(x); 测试程序(√); 打包(√); 部署(√); 如: mysql-connector-java
+```
+compile  缺省值，适用于所有阶段，会随着项目一起发布。
+provided 类似compile，该依赖参与编译，测试，运行等阶段，但打包时不会打包进去，期望JDK、容器或使用者会提供这个依赖。如：servlet.jar，lombok。
+test     只在测试时使用，用于编译和运行测试代码。不会随项目发布。 
+runtime  无需参与项目的编译，只在后期的测试和运行时使用，如JDBC驱动，适用运行和测试阶段。
 ```
 
->依赖的传递：A依赖B，B依赖C，A能否使用C呢？
+```properties
+compile  #编译阶段(√); 测试阶段(√); 打包(√); 部署(√); 如: spring-core
+provied  #编译阶段(√); 测试阶段(√); 打包(x); 部署(x); 如: servlet-api（tomcat提供），lomboklombok
+test     #编译阶段(x); 测试阶段(√); 打包(x); 部署(X); 如: junit
+runtime  #编译阶段(x); 测试阶段(√); 打包(√); 部署(√); 如: mysql-connector-java
+```
+
+>依赖的传递：Optional
 
 ```java
-'非compile'范围的依赖不能传递，必须在有需要的工程中单独加入
+true 该依赖只能在本项目中传递，不会传递到引用该项目的父项目中，父项目需要主动引用该依赖才行。
+
+//A依赖B，B依赖C，A能否使用C呢？
+'非compile'范围的依赖不能传递，必须在有需要的工程 A 中单独加入 C.
 ```
 
 >依赖的排除
@@ -3195,6 +3194,127 @@ private void regist(String mobile, String checkCode) {
 ```java
 
 ```
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
 
 
 

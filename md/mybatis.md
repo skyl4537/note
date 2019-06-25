@@ -262,13 +262,20 @@ mybatis.mapper-locations=classpath*:com/example/demo/mapper/sqlxml/_*.xml
 #相关xml配置 <-> 与上不能同时使用
 //mybatis.config-location=mybatis.xml
 
-#全局注解; 可省去每个Mapper文件上的 @Mapper
-@MapperScan(value = "com.example.*.mapper")
+#mybatis的sql打印
+logging.level.com.example.amqp_publisher.mapper=debug
+```
+```java
+//全局注解; 可省去每个Mapper文件上的 @Mapper
+@MapperScan(value = "com.example.base.*.mapper")
+```
 
-#【不推荐】注解版xml; 直接在java文件写sql,省去对应的xml文件
+```java
+//【不推荐】注解版xml; 直接在java文件写sql,省去对应的xml文件
 @Select("SELECT sname FROM student WHERE sid=#{id}")
 String getNameById(int id);
 ```
+
 > 非必要设置
 
 ```properties
@@ -282,19 +289,36 @@ mybatis.configuration.lazy-loading-enabled=true
 #局部设置：是否不启用延迟加载
 mybatis.configuration.aggressive-lazy-loading=true
 ```
+> mapper.xml文件
+
+```
+<?xml version="1.0" encoding="UTF-8"?>
+
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"
+    "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+
+<mapper namespace="com.example.base.mapper.LabelMapper">
+    <select id="listLabelsByPage" resultType="com.example.base.pojo.Label">
+        SELECT `id`, `labelname`, `state`, `count`, `recommend`, `fans` FROM tb_label
+    </select>
+</mapper>
+```
+
 >资源拷贝插件
 
 ```xml
 <!-- mvn默认只把 src/main/resources 里的非java文件编译到classes中 -->
 <!-- 如果希望 src/main/java 下的文件（如mapper.xml）也编辑到 classes 中，在pom.xml中配置，与<plugins/>节点同级 -->
-<resources>
-    <resource>
-        <directory>src/main/java</directory>
-    </resource>
-    <resource>
-        <directory>src/main/resources</directory>
-    </resource>
-</resources>
+<build>
+    <resources>
+        <resource>
+            <directory>src/main/java</directory>
+        </resource>
+        <resource>
+            <directory>src/main/resources</directory>
+        </resource>
+    </resources>
+</build>
 ```
 ##xml提示
 
@@ -700,21 +724,23 @@ boolean saveBatch(List<Flower> list);
 
 >  在插件的拦截方法内拦截待执行的sql，然后重写sql，添加对应的物理分页语句和分页参数。
 
-```java
+```xml
 <dependency>
     <groupId>com.github.pagehelper</groupId>
     <artifactId>pagehelper-spring-boot-starter</artifactId>
     <version>1.2.5</version>
 </dependency>
+```
 
+```java
 @GetMapping("/person/{pageNum}/{pageSize}")
 public PageInfo<Person> listByPage(@PathVariable int pageNum, @PathVariable int pageSize) {
     PageHelper.startPage(pageNum, pageSize); //查询之前设置：页码数，页容量
     List<Person> list = service.listAll();
     
     //PageInfo包含了非常全面的分页属性: isFirstPage,hasPreviousPage,prePage,pages,startRow....
-    PageInfo<Person> pageInfo = new PageInfo<>(res, 5);//包含导航页码的PageInfo结果集 - 详见附表
-    int[] nums = pageInfo.getNavigatepageNums();//导航页码
+    PageInfo<Person> pageInfo = new PageInfo<>(res);//包含导航页码的PageInfo结果集 - 详见附表
+    //int[] nums = pageInfo.getNavigatepageNums();//导航页码
     
     return pageInfo;
 }

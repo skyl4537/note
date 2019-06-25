@@ -19,7 +19,7 @@
 > 微服务的子项目中是否需要接口？ `不需要`
 
 ```
-普通项目分为MCV三层，不同层由不同人员维护，所以在不同层进行相互调用时，就需要一套规范，即不同层的接口。
+普通项目分为MVC三层，不同层由不同人员维护，所以在不同层进行相互调用时，就需要一套规范，即不同层的接口。
 
 但是对于微服务项目，每一个子项目都是单独的一个服务，由单独的人员进行维护，所以也就不需要定义接口。
 ```
@@ -49,9 +49,7 @@
 > 父项目创建：<https://start.spring.io/>
 
 ```
-项目名：demo_parent，最好使用下划线进行分割
-
-由于父项目不写代码逻辑，所以可将 src 目录删除
+项目名：demo_parent，最好使用下划线进行分割。由于父项目不写代码逻辑，所以可将 src 目录删除
 ```
 
 >对于微服务的父项目而言，pom.xml中的打包类型选择 pom 类型
@@ -60,13 +58,19 @@
 <groupId>com.example</groupId>
 <artifactId>demo_parent</artifactId>
 <version>0.0.1-SNAPSHOT</version>
-<packaging>pom</packaging> <!--父项目必须设置-->
+<packaging>pom</packaging> <!--父项目必须设置pom-->
 ```
 
 > 父项目的 pom.xml 只写通用的jar包。如 mysql 驱动包只在部分子模块使用，就不要写在父项目中
 
 ```xml
 <dependencies>
+    <dependency>
+        <groupId>org.projectlombok</groupId>
+        <artifactId>lombok</artifactId>
+        <scope>provided</scope> <!--参与编译，测试，运行，但不会打包-->
+        <optional>true</optional> <!--true: 依赖不会传递，但是该依赖卸载父项目则所有子类都可用。false: 会传递-->
+    </dependency>
     <dependency>
         <groupId>org.springframework.boot</groupId>
         <artifactId>spring-boot-starter-web</artifactId>
@@ -149,10 +153,14 @@
 
 <dependencies>
     <dependency>
-        <groupId>org.projectlombok</groupId>
-        <artifactId>lombok</artifactId>
-        <!--<scope>provided</scope>--> <!--？？？？-->
-        <!--<optional>true</optional>--> <!--？？？？-->
+        <groupId>org.apache.commons</groupId>
+        <artifactId>commons-lang3</artifactId>
+        <version>3.8.1</version>
+    </dependency>
+    <dependency>
+        <groupId>commons-collections</groupId>
+        <artifactId>commons-collections</artifactId>
+        <version>3.2.2</version>
     </dependency>
 </dependencies>
 ```
@@ -285,7 +293,7 @@ public class PageResult<T> {
 <dependencies>
     <dependency>
         <groupId>com.example</groupId>
-        <artifactId>demo_common</artifactId> <!--公共模块-->
+        <artifactId>demo_common</artifactId> <!--公共模块 demo_common-->
         <version>0.0.1-SNAPSHOT</version>
     </dependency>
 
@@ -315,7 +323,7 @@ spring.application.name=demo-base
 
 spring.datasource.type=com.alibaba.druid.pool.DruidDataSource
 spring.datasource.driverClassName=com.mysql.cj.jdbc.Driver
-spring.datasource.url=jdbc:mysql://192.168.8.7:33306/test0329?useSSL=false&allowMultiQueries=true&serverTimezone=GMT%2B8
+spring.datasource.url=jdbc:mysql://192.168.8.7:33306/demo_base?useSSL=false&allowMultiQueries=true&serverTimezone=GMT%2B8
 spring.datasource.username=bluecardsoft
 spring.datasource.password=#$%_BC13439677375
 
@@ -323,6 +331,7 @@ spring.jpa.database=mysql
 spring.jpa.show-sql=true
 #是否自动生成ddl
 spring.jpa.generate-ddl=true
+spring.jpa.open-in-view=false
 ```
 
 > 启动类
@@ -344,21 +353,125 @@ public class BaseApplication {
 }
 ```
 
+> pojo
 
+```java
+@Data
+@Entity
+@Table(name = "tb_label") //同数据表名
+public class Label {
+    @Id
+    private String id;
+    private String labelname;//标签名称
+    private String state;//状态
+    private Long count;//使用数量
+    private Long fans;//关注数
+    private String recommend;//是否推荐
+}
+```
 
+> Controller
 
+```java
+@Slf4j
+@RequestMapping("/label")
+@RestController
+public class LabelController {
 
+    @Autowired
+    LabelService labelService;
 
+    //获取多个对象的方法用 list 做前缀，复数形式结尾如：listObjects
+    @GetMapping
+    public Result listLabels() {
+        List<Label> labels = labelService.listLabels();
+        log.info("listLabels: {}", labels);
+        return new Result(true, StatusCode.OK, "查询成功", labels);
+    }
 
+    //获取单个对象的方法用 get 做前缀
+    @GetMapping("/{labelId}")
+    public Result getById(@PathVariable String labelId) { //获取请求行参数
 
+        Optional<Label> label = labelService.getById(labelId);
+        return new Result(true, StatusCode.OK, "查询成功", label);
+    }
 
+    //插入的方法用 save/insert 做前缀
+    @PostMapping
+    public Result insertLabel(@RequestBody Label label) { //获取请求体参数
+        log.info("insertLabel: {}", label);
+        labelService.insertLabel(label);
+        return new Result(true, StatusCode.OK, "插入成功");
+    }
 
+    //修改的方法用 update 做前缀
+    @PutMapping("/{labelId}")
+    public Result updateById(@PathVariable String labelId, @RequestBody Label label) {
+        labelService.updateById(labelId, label);
+        return new Result(true, StatusCode.OK, "修改成功");
+    }
 
+    //删除的方法用 remove/delete 做前缀
+    @DeleteMapping("/{labelId}")
+    public Result deleteById(@PathVariable String labelId) {
+        labelService.deleteById(labelId);
+        return new Result(true, StatusCode.OK, "删除成功");
+    }
+}
+```
 
+> Service：`微服务中不需要使用接口，直接写实现类即可`
 
+```java
+@Slf4j
+@Service
+@Transactional
+public class LabelService {
 
+    @Autowired
+    LabelDao labelDao;
 
+    @Autowired
+    IdWorker idWorker;
 
+    //查询全部
+    public List<Label> listLabels() {
+        Iterable<Label> iterable = labelDao.findAll();
+        List<Label> labels = new ArrayList<>();
+        iterable.forEach(labels::add);
+        return labels;
+    }
+
+    //根据Id查找
+    public Optional<Label> getById(String id) {
+        return labelDao.findById(id)/*.get()*/;
+    }
+
+    //新增一条
+    public void insertLabel(Label label) {
+        label.setId(idWorker.nextId() + "");
+        labelDao.save(label); //先根据Id进行查询，有结果则更新，无结果则新增
+    }
+
+    //根据id更新
+    public void updateById(String labelId, Label label) {
+        label.setId(labelId + "");
+        labelDao.save(label);
+    }
+
+    //根据id删除
+    public void deleteById(String labelId) {
+        labelDao.deleteById(labelId);
+    }
+}
+```
+
+> DAO
+
+```java
+public interface LabelDao extends CrudRepository<Label, String> { }
+```
 
 
 
