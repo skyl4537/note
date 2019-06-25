@@ -2171,6 +2171,21 @@ ALTER USER 'root'@'%' IDENTIFIED WITH mysql_native_password BY '123456'; #修改
 exit #执行两次，依次退出 docker-mysql 和 docker。
 ```
 
+> redis
+
+```shell
+docker run --name redis -d -p 6379:6379 redis
+```
+
+> rabbitmq
+
+```shell
+#4369：erlang发现；5672：client通信；15672：UI管理界面；25672：server间内部通信    
+docker run --name rabbitmq -d -p 5671:5671 -p 5672:5672 -p 4369:4369 -p 15671:15671 -p 15672:15672 -p 25672:25672 -p 15674:15674 rabbitmq
+```
+
+
+
 ## 构建镜像
 
 > commit：通过已有的容器，打包成新的镜像
@@ -2197,7 +2212,9 @@ EXPOSE 80                        #运行该容器所使用的端口
 docker build -t 'skyl-nginx' /var/tmp/docker/
 ```
 
-## 镜像加速
+##常见问题
+
+> 镜像加速
 
 ```shell
 #aliyun加速
@@ -2222,6 +2239,17 @@ ExecStart=/usr/bin/docker -d -H fd:// --registry-mirror=https://docker.mirrors.u
 #非默认路径需要修改 dockerd 的 –config-file,在该文件中加入如下内容
 {"registry-mirrors": ["https://docker.mirrors.ustc.edu.cn"]}        
 ```
+> 配置http
+
+```shell
+#FATA[0010] Error response from daemon: v1 ping attempt failed with error: Get https://registry.docker-cn.com/v1/_ping: dial tcp
+
+#在最新的docker1.3.3中 无法pull，因为默认的是https。在'/etc/default/docker'中追加：
+DOCKER_OPTS="--insecure-registry juandapc:5000"
+```
+
+
+
 # RabbitMQ
 
 常用消息队列中间件：ActiveMQ（√），RabbitMQ（√），Kafka（√），ZeroMq，MetaMQ，RocketMQ
@@ -2963,6 +2991,254 @@ public class InfoConsumer {
 ```
 
 
+
+#redis
+
+## docker模式
+
+```shell
+#docker模式安装的redis没有配置文件，需要通过 -v 指令将宿主机配置文件进行映射
+docker run --name redis -d -p 6379:6379 redis
+
+#下载默认配置
+wget https://raw.githubusercontent.com/antirez/redis/4.0/redis.conf -O conf/redis.conf
+
+#挂载宿主机的配置
+docker run --name redis -d -p 6379:6379 -v /var/tmp/docker/redis.conf:/etc/redis/redis.conf \
+      -v /var/tmp/docker/data:/data redis redis-server /etc/redis/redis.conf --appendonly yes
+
+#-v /var/tmp/docker/redis.conf:/etc/redis/redis.conf --> 文件映射，将宿主机的配置文件复制到docker中
+#-v /var/tmp/docker/data:/data        --> 容器映射/data
+#redis-server /etc/redis/redis.conf   --> redis启动时，加载配置文件（/etc/redis/redis.conf），默认不加载
+#--appendonly yes                     --> 开启redis持久化
+```
+
+>
+
+```shell
+
+```
+
+
+
+
+
+
+
+##安装包模式
+
+> 下载安装
+
+```shell
+$ wget http://download.redis.io/releases/redis-2.8.17.tar.gz
+$ tar -zxvf redis-2.8.17.tar.gz
+$ cd redis-2.8.17
+$ make       #make编译完后会生成 src/redis-server 和 src/redis-cli，服务端和客户端
+```
+
+> 启动服务端的两种方式
+
+```shell
+$ ./src/redis-server  #读取默认配置，启动
+$ ./src/redis-server redis.conf  #读取自定义配置，启动
+```
+
+> 配置后台启动：redis.conf
+
+```shell
+daemonize no -改为-> daemonize yes
+```
+
+>开机自启：vim /etc/rc.local 
+
+```
+添加：/usr/local/redis/bin/redis-server /usr/local/redis/etc/redis.conf （意思就是开机调用这段启动redis的命令）
+```
+
+> 检测启动状态
+
+```shell
+$ ps -ef | grep redis
+$ lsof -i:6379
+$ netstat -anp | grep redis
+
+$ pkill redis    #停止redis
+```
+
+> 卸载redis
+
+```shell
+$ rm -rf /usr/local/redis            #删除安装目录
+$ rm -rf /usr/bin/redis-*            #删除所有redis相关命令脚本
+$ rm -rf /root/download/redis-4.0.4  #删除redis解压文件夹
+```
+
+> 启动redis客户端
+
+```shell
+$ ./src/redis-cli    #另起客户端命令行，以此命令启动redis客户端
+```
+## 相关配置
+
+> 查找配置文件位置
+
+```shell
+使用命令'whereis redis'，查找redis的安装路径，编辑文件 redis.conf
+```
+
+> 账号密码
+
+```shell
+#默认，访问Redis服务器是不需要密码的。配置密码为：redis
+#取消 requirepass 这一行的注释,或者新增一行
+requirepass redis
+```
+
+>配置Redis服务器可以远程访问
+
+```shell
+#默认，Redis服务器不允许远程访问，只允许本机访问
+bind 127.0.0.1 #注释此行
+sudo /etc/init.d/redis-server restart #重启redis
+```
+
+
+## Boot整合
+
+> 配置文件
+
+```xml
+<dependency>
+    <groupId>org.springframework.boot</groupId>
+    <artifactId>spring-boot-starter-data-redis</artifactId>
+</dependency>
+```
+```properties
+spring.cache.type=redis
+spring.redis.host=192.168.5.25
+#spring.redis.password=redis #docker版没有配置文件，所以没有密码
+spring.redis.jedis.pool.max-idle=10
+spring.redis.jedis.pool.min-idle=5
+spring.redis.jedis.pool.max-active=20
+spring.redis.jedis.pool.max-wait=-1ms
+```
+> json序列化
+
+```java
+@Configuration
+public class RedisConfig {
+    //对于显示操作生效
+    @Bean
+    public RedisTemplate<Object, Object> redisTemplate(RedisConnectionFactory factory) {
+        RedisTemplate<Object, Object> template = new RedisTemplate<>();
+        template.setConnectionFactory(factory);
+
+        StringRedisSerializer stringRedisSerializer = new StringRedisSerializer();
+        template.setKeySerializer(stringRedisSerializer); //序列化-key
+
+        GenericJackson2JsonRedisSerializer redisSerializer = new GenericJackson2JsonRedisSerializer(); //方式1
+
+        // Jackson2JsonRedisSerializer<Object> redisSerializer = new Jackson2JsonRedisSerializer<>(Object.class); //方式2
+        // ObjectMapper om = new ObjectMapper();
+        // om.setVisibility(PropertyAccessor.ALL, JsonAutoDetect.Visibility.ANY);
+        // om.enableDefaultTyping(ObjectMapper.DefaultTyping.NON_FINAL);
+        // redisSerializer.setObjectMapper(om);
+
+        template.setValueSerializer(redisSerializer); //序列化-value
+        template.setHashValueSerializer(redisSerializer); //序列化-value hashmap
+
+        return template;
+    }
+
+    //对于注解生效，如 @Cacheable
+    @Bean
+    public RedisCacheConfiguration redisCacheConfiguration() {
+        GenericJackson2JsonRedisSerializer redisSerializer = new GenericJackson2JsonRedisSerializer(); //方式1
+
+        // Jackson2JsonRedisSerializer<Object> redisSerializer = new Jackson2JsonRedisSerializer<>(Object.class); //方式2
+        // ObjectMapper om = new ObjectMapper();
+        // om.setVisibility(PropertyAccessor.ALL, JsonAutoDetect.Visibility.ANY);
+        // om.enableDefaultTyping(ObjectMapper.DefaultTyping.NON_FINAL);
+        // redisSerializer.setObjectMapper(om);
+
+        RedisCacheConfiguration redisCacheConfiguration = RedisCacheConfiguration.defaultCacheConfig();
+        redisCacheConfiguration = redisCacheConfiguration.serializeValuesWith(
+                RedisSerializationContext.SerializationPair.fromSerializer(redisSerializer)
+        ).entryTtl(Duration.ofMinutes(30));
+        return redisCacheConfiguration;
+    }
+}
+```
+
+> 两种序列化方式？
+
+```java
+//GenericJackson2JsonRedisSerializer 和 Jackson2JsonRedisSerializer
+(1).G* 比 J* 效率低，占用内存高
+
+(2).G* 序列化时，会保存对象的全类名，即'@class'。反序列化时以此标识就可以反序列化成指定的对象。如下所示
+
+{ //redis中数据
+  "@class": "com.example.spring.bean.Student",
+  "id": 6,
+  "name": "张四",
+  "teacher": null
+}
+```
+
+
+>`神坑1：类型转换异常`
+
+```java
+//java.lang.Integer cannot be cast to java.lang.Long
+
+@Test
+public void test() {
+    redisTemplate.opsForValue().set("long", 2L);
+    
+    // Long l = (Long) redisTemplate.opsForValue().get("long"); //类型转换异常
+    Long l = Long.valueOf(redisTemplate.opsForValue().get("long").toString());
+    System.out.println("long: " + l);
+}
+```
+>显示操作的常用方法
+
+```java
+redisTemplate.opsForValue().set("test", "100", 60 * 10, TimeUnit.SECONDS); //向redis里存入数据和设置缓存时间
+redisTemplate.opsForValue().get("test"); //根据key获取缓存中的val
+
+redisTemplate.boundValueOps("test").increment(-1); //val做-1操作
+redisTemplate.boundValueOps("test").increment(1); //val +1
+
+redisTemplate.expire("test", 1000, TimeUnit.MILLISECONDS); //设置过期时间
+redisTemplate.getExpire("test"); //根据key获取过期时间
+redisTemplate.getExpire("test", TimeUnit.SECONDS); //根据key获取过期时间并换算成指定单位
+
+redisTemplate.hasKey("test"); //检查key是否存在，返回boolean值
+redisTemplate.delete("test"); //根据key删除缓存
+
+redisTemplate.opsForSet().add("red_123", "1", "2", "3"); //向指定key中存放set集合
+redisTemplate.opsForSet().isMember("red_123", "1"); //根据key查看集合中是否存在指定数据
+redisTemplate.opsForSet().members("red_123");//根据key获取set集合
+```
+
+
+>注解版：SpringCache
+
+```java
+@Override
+@Cacheable(value = "student", key = "'id-' + #p0")
+public Student findById(int id) {
+    return helloMapper.findById(id);
+}
+```
+```java
+@Test
+public void test() {
+    System.out.println(helloService.findById(2)); //必须: Student implements Serializable
+    System.out.println(helloService.findById(2)); //第二次不读库
+}
+```
 
 
 
