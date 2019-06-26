@@ -154,7 +154,7 @@ long seconds = ChronoUnit.SECONDS.between(begin, end); //对于相隔秒数，�
 System.out.println(days + " - " + months + " - " + seconds); //521 - 17 - 45029290
 ```
 
-##TemporalAd...
+##Temporal...
 
 > 时间校正器。提供了日期操纵的接口，如：将日期调整到"下个周末"。TemporalAdjusters 是系统提供的接口实现类。`类似 Excutor，Excutors`
 
