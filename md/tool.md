@@ -383,127 +383,11 @@ Build,Exe... - Build Tools - Gradle - Offline work
 > Spring
 
 ```xml
-<!-- 为Spring核心提供了大量扩展。可以找到使用 Spring ApplicationContext 特性时所需的全部类，JDNI所需的全部类,
-     UI模板引擎（Templating），如 Velocity、FreeMarker、JasperReports, 以及校验 Validation 方面的相关类 -->
-<dependency>
-    <groupId>org.springframework</groupId>
-    <artifactId>spring-context</artifactId>
-    <version>4.3.3.RELEASE</version>
-</dependency>
 
-<!-- 含支持UI模版(Velocity,FreeMarker,JasperReports),邮件服务,脚本服务(JRuby),缓存Cache(EHCache),
-         任务计划Scheduling(uartz)方面的类. 外部依赖spring-context, (spring-jdbc, Velocity, FreeMarker,
-         JasperReports, BSH, Groovy, JRuby, Quartz, EHCache) -->
-<dependency>
-    <groupId>org.springframework</groupId>
-    <artifactId>spring-context-support</artifactId>
-    <version>4.3.3.RELEASE</version>
-</dependency>
-
-<!-- spring测试框架,需要配合 junit 进行使用创建单元测试. spring测试所需包: sring的相关组件,spring-test,junit -->
-<dependency>
-    <groupId>org.springframework</groupId>
-    <artifactId>spring-test</artifactId>
-    <version>4.3.3.RELEASE</version>
-</dependency>
-
-<!-- 包含Spring 框架基本的核心工具类. Spring 其它组件要都要使用到这个包里的类，是其它组件的基本核心.
-         也可以在自己的应用系统中使用这些工具类.外部依赖Commons-logging,Log4J -->
-<dependency>
-    <groupId>org.springframework</groupId>
-    <artifactId>spring-core</artifactId>
-    <version>4.3.3.RELEASE</version>
-</dependency>
-
-<!-- 所有应用都要用到的,它包含访问配置文件,创建和管理bean 以及 进行(IoC/DI)操作相关的所有类.
-         如果应用只需基本的IoC/DI 支持，引入spring-core.jar 及spring-beans.jar 文件就可以了. 外部依赖spring-core，(CGLIB)。 -->
-<dependency>
-    <groupId>org.springframework</groupId>
-    <artifactId>spring-beans</artifactId>
-    <version>4.3.3.RELEASE</version>
-</dependency>
-
-<!-- https://mvnrepository.com/artifact/org.springframework/spring-web
-         包含Web 应用开发时，用到Spring 框架时所需的核心类，包括自动载入Web Application Context
-         特性的类、Struts  与JSF 集成类、文件上传的支持类、Filter 类和大量工具辅助类。
-         外部依赖spring-context, Servlet API, (JSP API, JSTL, Commons FileUpload, COS)。 -->
-<dependency>
-    <groupId>org.springframework</groupId>
-    <artifactId>spring-web</artifactId>
-    <version>4.3.3.RELEASE</version>
-</dependency>
-
-<!-- https://mvnrepository.com/artifact/org.springframework/spring-webmvc
-          包含Spring MVC 框架相关的所有类。包括框架的Servlets，Web MVC框架，控制器和视图支持。
-          当然，如果你的应用使用了独立的MVC
-          框架，则无需这个JAR 文件里的任何类。
-          外部依赖spring-web, (spring-support，Tiles，iText，POI)。 -->
-<dependency>
-    <groupId>org.springframework</groupId>
-    <artifactId>spring-webmvc</artifactId>
-    <version>4.3.3.RELEASE</version>
-</dependency>
-
-<!-- https://mvnrepository.com/artifact/org.springframework/spring-jdbc
-         包含对Spring 对JDBC 数据访问进行封装的所有类。 外部依赖spring-beans，spring-dao。 -->
-<dependency>
-    <groupId>org.springframework</groupId>
-    <artifactId>spring-jdbc</artifactId>
-    <version>4.3.3.RELEASE</version>
-</dependency>
-
-<!-- https://mvnrepository.com/artifact/org.springframework/spring-aop
-         AOP（Aspect Oriented Programming），即面向切面编程（也叫面向方面编程，面向方法编程）。
-         其主要作用是，在不修改源代码的情况下给某个或者一组操作添加额外的功能。像日志记录，事务处理，
-         权限控制等功能，都可以用AOP来“优雅”地实现，使这些额外功能和真正的业务逻辑分离开来，
-         软件的结构将更加清晰。AOP是OOP的一个强有力的补充。 -->
-<dependency>
-    <groupId>org.springframework</groupId>
-    <artifactId>spring-aop</artifactId>
-    <version>4.3.3.RELEASE</version>
-</dependency>
-
-<!-- https://mvnrepository.com/artifact/org.springframework/spring-tx 事物控制 -->
-<dependency>
-    <groupId>org.springframework</groupId>
-    <artifactId>spring-tx</artifactId>
-    <version>4.3.3.RELEASE</version>
-</dependency>
-
-<!-- https://mvnrepository.com/artifact/org.springframework/spring-orm
-        包含Spring对DAO特性集进行了扩展，使其支持 iBATIS、JDO、OJB、TopLink， 因为Hibernate已经独立成包了，
-        现在不包含在这个包里了。这个jar文件里大部分的类都要
-        依赖spring-dao.jar里的类，用这个包时你需要同时包含spring-dao.jar包。 -->
-<dependency>
-    <groupId>org.springframework</groupId>
-    <artifactId>spring-orm</artifactId>
-    <version>4.3.3.RELEASE</version>
-</dependency>
-<dependency>
-    <groupId>org.springframework</groupId>
-    <artifactId>spring-aspects</artifactId>
-    <version>4.3.3.RELEASE</version>
-</dependency>
-
-<!--https://mvnrepository.com/artifact/org.springframework/spring-expression
-    SPEL表达式支持:
-    一、基本表达式：字面量表达式、关系，逻辑与算数运算表达式、字符串连接及截取表达式、
-       三目运算及Elivis表达式、正则表达式、括号优先级表达式；
-    二、类相关表达式：类类型表达式、类实例化、instanceof表达式、变量定义及引用、赋值表达式、
-       自定义函数、对象属性存取及安全导航表达式、对象方法调用、Bean引用；
-    三、集合相关表达式：内联List、内联数组、集合，字典访问、列表，字典，数组修改、集合投影、
-       集合选择；不支持多维内联数组初始化；不支持内联字典定义；
-    四、其他表达式：模板表达式。
-    注：SpEL表达式中的关键字是不区分大小写的。-->
-<dependency>
-    <groupId>org.springframework</groupId>
-    <artifactId>spring-expression</artifactId>
-    <version>4.3.3.RELEASE</version>
-</dependency>
 ```
 ##A001
 
-> 
+> 常用方法
 
 ```java
 //获取项目class路径
@@ -523,10 +407,6 @@ public static String newline() {
 }
 ```
 
-```
-
-```
-
 > 使用占位符拼接字符串
 
 ```java
@@ -539,16 +419,6 @@ String.format("域名%s被访问了%3.2f次", "\"www.qq.com\"", 123.456);
 //先转化十六进制,再高位补0
 String.format("%04d",Integer.parseInt(String.format("%x", 16))); //0010
 ```
-
-
-
-
-
-
-
-
-
-##B001
 
 > 定时任务：不建议使用Timer
 
@@ -563,10 +433,7 @@ public static ScheduledExecutorService getScheduleExecutor() {
             if (scheduledExecutor == null) {                
                 scheduledExecutor = new ScheduledThreadPoolExecutor(10,
                         //源自：org.apache.commons.lang3.concurrent.BasicThreadFactory
-                        new BasicThreadFactory.Builder()
-                                .namingPattern("schedule-pool-%d")
-                                .daemon(true).build());
-
+                        new BasicThreadFactory.Builder().namingPattern("schedule-pool-%d").daemon(true).build());
             }
         }
     }
@@ -575,10 +442,10 @@ public static ScheduledExecutorService getScheduleExecutor() {
 ```
 
 ```java
-    public ScheduledFuture<?> scheduleWithFixedDelay(Runnable command,
-                                                     long initialDelay,
-                                                     long delay,
-                                                     TimeUnit unit);
+public ScheduledFuture<?> scheduleWithFixedDelay(Runnable command,
+                                                 long initialDelay,
+                                                 long delay,
+                                                 TimeUnit unit);
 ```
 
 >通过类名获取类的对象
@@ -603,7 +470,6 @@ public class MyApplicationContextAware implements ApplicationContextAware {
     // 通过name获取Bean.
     public static Object getBean(String name) {
         return context.getBean(name);
-
     }
 
     // 通过clazz获取Bean.
@@ -616,6 +482,41 @@ public class MyApplicationContextAware implements ApplicationContextAware {
         return context.getBean(name, clazz);
     }
 }
+```
+
+## 其他概念
+
+> 淘汰算法
+
+```java
+//LRU（least_recently_used）：最近最少使用
+将最近使用的条目存放到缓存的顶部位置。达到缓存极限时，从底部开始移除
+
+这里会使用到昂贵的算法，而且它需要记录"年龄位"来精确显示条目是何时被访问的。
+此外，当一个LRU缓存算法删除某个条目后，"年龄位"将随其他条目发生改变。
+
+[]; 'A'->[A]; 'B'->[B,A]; 'C'->[C,B,A]; 'D'->[D,C,B,A]; 'C'->[C,D,B,A]; 'E'->[E,C,D,B]
+缓存容量4，初始为空。访问A则缓存为[A]，...当再次访问C时，将C提到首位；最后访问E，由于缓存已达上限，则将最后的A移除
+```
+```java
+//LFU（least_frequently_used）：最不经常使用
+使用一个计数器来记录条目被访问的频率，最低访问频率的条目首先被移除
+
+此算法并不经常使用，因为它无法对一个拥有最初高访问率，但之后长时间没有被访问的条目缓存负责
+
+[A-32,B-30,C-26,D-26]; 'D'->[A-32,B-30,D-27,C-26]; 'B'->[A-32,B-31,D-27,C-26]; 'F'->[A-32,B-31,D-27,F-1]
+首先访问D，则D的频率+1，并和C调换位置；再访问B，将B频率+1；最后访问F，由于容量为4，则必须将末位C移除，并将F加入，评率设为1
+```
+```java
+//FIFO（first_in_first_out）：先进先出
+与普通存储器的区别是没有外部读写地址线，这样使用起来非常简单
+
+但缺点就是只能顺序写入数据，顺序的读出数据，其数据地址由内部读写指针自动加1完成。不能像普通存储器那样可以由地址线决定读取或写入某个指定的地址
+```
+
+```java
+//MRU（most_recently_used）：最近最常使用
+最先移除最近最常使用的条目。一个MRU算法擅长处理一个条目越久，越容易被访问的情况
 ```
 
 
@@ -2990,8 +2891,124 @@ public class InfoConsumer {
 }
 ```
 
+# EHCache
 
+##Boot整合
 
+> 纯java的进程内缓存框架！快速，精干
+
+```xml
+<dependency>
+    <groupId>org.springframework.boot</groupId>
+    <artifactId>spring-boot-starter-cache</artifactId>
+</dependency>
+<dependency>
+    <groupId>net.sf.ehcache</groupId>
+    <artifactId>ehcache</artifactId>
+</dependency>
+```
+```properties
+#缓存类型，如用redis改为redis
+spring.cache.type=ehcache
+#存放'/resources'目录下
+spring.cache.ehcache.config=classpath:ehcache.xml
+```
+>ehcahe.xml
+
+```xml
+<ehcache xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+    xsi:noNamespaceSchemaLocation="ehcache.xsd"
+    updateCheck="true" monitoring="autodetect" dynamicConfig="true">
+
+    <diskStore path="java.io.tmpdir/ehcache" />
+    
+    <!-- 的默认缓存策略 -->
+    <defaultCache
+        eternal="false" <!--是否永不过期？ 默认false。true则属性 timeTo* 将不起作用 -->
+        timeToIdleSeconds="120" <!--缓存最大闲置时间. 0无限.-->
+        timeToLiveSeconds="120" <!--........存活.........-->
+        
+        maxEntriesLocalHeap="100" <!--内存缓存最大个数. 0无限. 过时属性 maxElementsInMemory-->
+        maxEntriesLocalDisk="100" <!--磁盘.......................... maxElementsOnDisk-->
+        
+        <!--磁盘缓存相关-->
+        overflowToDisk="true" <!--内存中缓存过量是否输出到磁盘?? 默认true-->
+        diskSpoolBufferSizeMB="30" <!--写入磁盘时IO缓冲区大小. 默认30MB. 每个Cache一个缓冲区-->
+        diskExpiryThreadIntervalSeconds="120" <!--磁盘缓存清理线程的运行间隔. 默认120s.-->
+        diskPersistent="false" <!--磁盘缓存在jvm重启后是否保持. 默认为false-->
+        
+        memoryStoreEvictionPolicy="LRU"> <!--内存中缓存过量后的移除策略. 默认 LRU(最近最少使用)-->
+        
+        <persistence strategy="localTempSwap" />
+    </defaultCache>
+    
+    <!-- 自定义缓存策略 -->
+    <cache
+        name="system_set"
+        eternal="false"
+        timeToLiveSeconds="300"
+        maxEntriesLocalHeap="2"
+        overflowToDisk="true"
+        maxEntriesLocalDisk="5">
+    </cache>
+</ehcache>
+```
+>配置说明
+
+```java
+diskStore: 过量缓存输出到磁盘的存储路径.
+    //默认 path="java.io.tmpdir".
+    //windows-> "C:\Users\当前用户\AppData\Local\Temp\"; linux-> "/tmp"
+    //缓存文件名为缓存name, 后缀为data. 如: C:\Users\当前用户\AppData\Local\Temp\system_set.data
+
+当 maxEntriesLocalHeap 过量时,两种情况: 
+    //overflowToDisk=true  --> 过量缓存输出磁盘. 
+    //overflowToDisk=false --> 则按照 memoryStoreEvictionPolicy 从内存中移除缓存
+    
+clearOnFlush: 调用 flush() 方法时,是否清空内存缓存??? 默认true.
+    //设为true, 则系统在初始化时会在磁盘中查找 CacheName.index 缓存文件, 如 system_set.index. 找到后将其加载到内存.
+    //注意: 在使用 net.sf.ehcache.Cache 的 void put (Element element) 方法后要使用 void flush() 方法
+```
+##测试DEMO
+
+> javaBean
+
+```java
+@Data
+public class Student implements Serializable { //对于磁盘缓存，必须'序列化'
+    private  int id;
+    private String name;
+}
+```
+>Service
+
+```java
+@Service
+public class HelloServiceImpl implements HelloService {
+
+    @Override
+    @Cacheable(value = "student") //开启缓存，配合全局注解 @EnableCaching
+    public Student selStudentById(int id) {
+        return helloMapper.selStudentById(id);
+    }
+}
+```
+>单元测试
+
+```java
+@RunWith(SpringRunner.class)
+@SpringBootTest
+public class ApplicationTests {
+    @Autowired
+    HelloService helloService;
+
+    @Test
+    public void test() {
+        System.out.println(helloService.selStudentById(3));
+        System.out.println(helloService.selStudentById(3)); //从日志看出，第二次不再查库
+    }
+}
+```
 #redis
 
 ## docker模式
@@ -3197,7 +3214,7 @@ public void test() {
     redisTemplate.opsForValue().set("long", 2L);
     
     // Long l = (Long) redisTemplate.opsForValue().get("long"); //类型转换异常
-    Long l = Long.valueOf(redisTemplate.opsForValue().get("long").toString());
+    Long l = Long.valueOf(redisTemplate.opsForValue().get("long").toString()); //常用作法
     System.out.println("long: " + l);
 }
 ```
@@ -3239,6 +3256,177 @@ public void test() {
     System.out.println(helloService.findById(2)); //第二次不读库
 }
 ```
+
+
+
+# SpringCache
+
+##基础概念
+
+>应用场景
+
+    高频热点数据 -> 频繁访问数据库，数据库压力过大
+    临时性的数据 -> 手机号发送的验证码，三分钟有效，过期删掉
+>Java缓存规范：JSR107
+
+```java
+Java Caching 定义了5个核心接口：CachingProvider，CacheManager，Cache，Entry 和 Expiry
+//其中，CachingProvider，CacheManager，Cache，Entry：都是一对多的关系！
+```
+```java
+'CachingProvider'（类比数据库）：定义创建，配置，获取，管理和控制多个 CacheManager。
+//一个应用在运行期访问多个 CachingProvider。
+```
+```java
+'CacheManager'（数据表）：定义创建，配置，获取，管理和控制多个唯一命名的Cache。这些 Cache 存在于 CacheManager 的上下文中。
+//CachingProvider 与 CacheManager 是一对多的关系。
+```
+```java
+'Cache'（数据行）：一个类似Map的数据结构，并临时存储以Key为索引的值。
+//CacheManager 与 Cache 是一对多的关系。
+```
+```java
+'Entry'（数据字段）：一个存储在Cache中的 key-value 对。
+//Cache 与 Entry 是一对多的关系。
+```
+```java
+'Expiry'：每一个存储在 Cache 中的条目有一个定义的有效期。一旦过期，条目将不可访问，更新和删除。缓存有效期可以通过 ExpiryPolicy 设置。
+```
+>相关概念
+
+```java
+'cacheManager/cacheResolver'：缓存管理器，默认使用 ConcurrentMapCacheManager
+```
+
+```java
+'cache'：CacheManager管理多个Cache对象，对缓存的真正CRUD操作是基于Cache对象的。默认使用 ConcurrentMapCache
+//每个Cache对象都有唯一一个名字。
+```
+
+
+![](assets/tool0.jpg)
+
+
+
+## 常用注解
+
+> @EnableCaching：全局注解。系统默认缓存为：ConcurrentMapCacheManager
+
+```xml
+<dependency>
+    <groupId>org.springframework.boot</groupId>
+    <artifactId>spring-boot-starter-cache</artifactId>
+</dependency>
+```
+> @Cacheable：开启缓存，标注在（类/方法）上。根据方法的请求参数对其结果进行缓存。`适用于查询`
+
+```java
+//工作流程
+(0).目标方法调用之前，先检查缓存，有则返回；无则查库，并将结果放入缓存
+(1).检查缓存时，先根据 value/cacheNames 找到对应的Cache对象
+(2).再根据 key 从Cache对象（ConcurrentMapCache<K,V>）中取出对应的缓存值
+```
+
+```java
+//value/cacheNames：缓存名称，必须指定。数组形式，表示缓存到多个 Cache 中。如：value = {"people","emp"}
+//key：用来指定存储缓存时使用的key，默认使用方法参数对应的值（支持SpringEL表达式）。
+
+@Cacheable(value = "people", key = "#person.id") //自定义key: person.id
+public Person getOneById(Person person) {
+    return personMapper.getOneById(person.id);
+}
+```
+> @CacheEvict：清空缓存。`适用于添加，删除`
+
+```java
+//value：缓存名字，同上
+//allEntries：是否清空对应 value 中的所有缓存，默认 false
+//beforeInvocation：清空动作是否在方法调用之前，默认 false，即方法调用出错，则缓存不会清空
+
+@CacheEvict(value = "people"/*, allEntries = true*/) //默认key为方法参数值
+public int deleteOneById(int id) {
+    return personMapper.deleteOneById(id);
+}
+```
+
+> @CachePut：既调用方法，又更新缓存。`适用于更新`
+
+```java
+//此时若不指定 @CachePut 的value和key，则不能更新 @Cacheable 的缓存。即查询到的仍旧是更新前的数据
+//这是因为默认的 key 为方法参数对应的值，即 @CachePut 是以 Person对象 作为缓存的key
+
+//也可以这样指定：@CachePut(value = "people", key = "#result.id")
+//但是，@Cacheable 则不可以!!!! 
+//因为后者 #result.id 是在方法调用之前取值，为null，报错
+
+@CachePut(value = "people", key = "#person.id")
+public void updateOneById(Person person) {
+    personMapper.updateOneById(person);
+}
+```
+> @Caching：复杂场景使用的组合注解
+
+```java
+//方法调用后，将结果保存到三组缓存中： people:<name,VALUE>; people:<id,VALUE>; emp:<id,VALUE>;
+
+//此时，根据 value = "people" 的 id 查找，直接从缓存读取。
+//但是，根据 value = "people" 的 name 查找，则会调用方法。这是因为组合注解中包含 put 的缘故！
+
+@Caching(
+    cacheable = {
+        @Cacheable(value = "people", key = "#result.name")
+    },
+    put = {
+        @CachePut(value = "people", key = "#result.id"),
+        @CachePut(value = "emp", key = "@result.id")
+    }
+)
+public int getOneByName(String name) {
+    return personMapper.deleteOneById(1);
+}
+```
+> @CacheConfig：类注解，用于抽取当前类中所有缓存的共同属性。类比于 @RequestMapping
+
+```java
+//与全局配置不一致的方法，可单独的显示配置 cacheNames 属性
+@CacheConfig(cacheNames = "people")
+public class PersonServiceImpl { }
+```
+## 常用参数
+
+> 缓存的key值：根据SpEL表达式生成
+
+|     名字      |            描述            |                             示例                             |
+| :-----------: | :------------------------: | :----------------------------------------------------------: |
+|    method     |      当前被调用的方法      |                      #root.method.name                       |
+|  methodName   |     当前被调用的方法名     |      \#root.methodName+'['+#id+']' `如：getOneById[66]`      |
+|    target     |    当前被调用的目标对象    |                         #root.target                         |
+|  targetClass  |   当前被调用的目标对象类   |                      #root.targetClass                       |
+|     args      | 当前被调用的方法的参数列表 |               \#root.args[0] `如：第一个参数`                |
+|    caches     | 当前方法调用使用的缓存列表 |         \#root.caches[0].name `如：第一个缓存的name`         |
+| argument name |       方法参数的名字       | \#id，#a0，#p0 `可用 #参数名，也可 #p0或#a0 的形式，0 为参数索引` |
+|    result     |     方法执行后的返回值     |                           #result                            |
+
+>自定义 KeyGenerator
+
+```java
+@Configuration
+public class CacheConfig {
+
+    @Bean(value = "myKeyGenerator") //自定义 KeyGenerator
+    public KeyGenerator keyGenerator() {
+        return (target, method, params) -> method.getName() + "[" + Arrays.asList(params) + "]";
+    }
+}
+```
+```java
+//使用自定义
+@Cacheable(value = "people", keyGenerator = "myKeyGenerator")
+```
+
+
+
+
 
 
 
@@ -3383,7 +3571,7 @@ SmsUtil smsUtil;
 smsUtil.sendSms(moblieNum, templateCode, signName, "{\"checkCode\":\"" + checkCode + "\"}");
 ```
 
-##用户注册
+##注册DEMO
 
 
 >服务端将注册验证码发送给用户，发送短信Controller
