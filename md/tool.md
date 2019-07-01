@@ -103,6 +103,13 @@ mini与full版：差别在于有没有内建 msysgit 工具
 
 ## 常见问题
 
+>如何在IDEA中多次启动同一个程序呢
+
+```java
+点击工具栏启动标识 小三角 左边的 'Edit Configurations'，在弹出窗口中取消勾选 Single instance only（单例模式） ，点击OK
+每次运行 SpringBoot 项目前，修改配置文件中的端口号即可。
+```
+
 >`如何在单个窗口打开多个Maven工程啊？`
 
 ```
@@ -111,8 +118,9 @@ mini与full版：差别在于有没有内建 msysgit 工具
 >复制警告或错误信息
 
 ```
-(1).鼠标光标悬浮在报错的地方，待错误提示出现后，键盘按住 Alt，同时点击鼠标左键，Ctrl+V 到度娘即可。
-(2).直接在界面的底部右键copy，错误信息显示在底部。
+方式一：鼠标光标悬浮在报错的地方，待错误提示出现后，键盘按住 Alt，同时点击鼠标左键，Ctrl+V 到度娘即可。
+
+方式二：直接在界面的底部右键copy，错误信息显示在底部。
 ```
 
 > mvn打包时，跳过Test
@@ -1057,16 +1065,21 @@ true 该依赖只能在本项目中传递，不会传递到引用该项目的父
 </dependency>
 ```
 
-##下载配置
+## 安装配置
 
-https://maven.apache.org/download.cgi 配置环境变量，cmd命令验证'mvn -version'
+> 安装测试：https://maven.apache.org/download.cgi
+
+ ```java
+配置系统环境变量，cmd命令验证'mvn -version'
+ ```
 
 >eclipse使用mvn
 
-```
-本地mvn：window - preferences - maven - installations - add - External - 本地maven路径
+```java
+本地mvn：window - preferences - maven - installations - add - External - 本地maven路径，如：'D:/apache-maven-3.3.9'
 
 mvn仓库: window - preferences - maven - user_settings - add Global_Settings 和 User_Settings 都选择本地mvn的"settings.xml"文件
+如：'D:\apache-maven-3.3.9\conf\settings.xml'
 ```
 
 > 配置mvn：配置文件 settings.xml
@@ -1117,7 +1130,7 @@ mvn仓库: window - preferences - maven - user_settings - add Global_Settings �
 
 >配置nexus的阿里云仓库
 
-```xml
+```java
 以用户名 "admin" 密码 "admin123"，登陆 http://localhost:8081/nexus
 
 主界面 -> Add... -> Proxy Repository
@@ -1156,8 +1169,10 @@ mvn deploy:deploy-file -DgroupId=com.bluecard -DartifactId=wxpay-sdk-0.0.3 -Dver
 
 >依赖关系
 
-        使用标签<dependency>把另一个项目的 jar 引入到当前项目
-        自动下载另一个项目所依赖的其他项目
+```xml
+使用标签<dependency>把另一个项目的 jar 引入到当前项目
+自动下载另一个项目所依赖的其他项目
+```
 >继承关系
 
 ```xml

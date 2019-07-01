@@ -227,7 +227,7 @@ windows - proferences - java – Installed JREs设置jdk为1.8
 
 基于thead dump分析线程的运行情况，如是否存在死锁、是否存在一个线程长时间持有锁不放等等。在dump中，以下种状态：RUNNABLE（线程处于执行中），BLOCKED（线程被阻塞），WAITING（线程正在等待）。
 
-- 多线程竞争 synchronized 锁
+> 多线程竞争 synchronized 锁
 
 ![](assets/error0.png)
 
@@ -240,7 +240,7 @@ windows - proferences - java – Installed JREs设置jdk为1.8
 3、'waiting for monitor entry [0x000000001e21f000]' 说明线程1是通过 synchronized 关键字进入了监视器的临界区，并处于"Entry Set"队列，等待monitor，具体实现可以参考深入分析 synchronized 的JVM实现；
 ```
 
-- 通过 wait 挂起线程
+> 通过 wait 挂起线程
 
 ![](assets/error1.png)
 
@@ -250,6 +250,12 @@ windows - proferences - java – Installed JREs设置jdk为1.8
 
 2、'waiting on <0x000000076bf62500>'说明线程执行了wait方法之后，释放了monitor，进入到"Wait Set"队列，等待其它线程执行地址为'<0x000000076bf62500>'对象的notify方法，并唤醒自己，具体实现可以参考深入分析Object.wait/notify实现机制；
 ```
+
+
+
+
+
+
 
 
 

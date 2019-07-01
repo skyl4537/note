@@ -214,18 +214,25 @@ docker build -t 'skyl-nginx' /var/tmp/docker/
 > 镜像加速
 
 ```shell
-#aliyun加速
+#aliyun 加速
 https://cr.console.aliyun.com/cn-hangzhou/mirrors
-    
-#daocloud加速
-https://hub.daocloud.io/
+```
 
-#直接设置 –registry-mirror 参数,仅对当前的命令有效 
+```shell
+#daocloud 加速
+#docker pull daocloud.io/library/logstash
+https://hub.daocloud.io/
+```
+
+```shell
+#直接设置 –registry-mirror 参数，仅对当前的命令有效 
 docker run hello-world --registry-mirror=https://docker.mirrors.ustc.edu.cn
 
 #修改 /etc/default/docker，加入 DOCKER_OPTS=”镜像地址”，可以有多个
 DOCKER_OPTS="--registry-mirror=https://docker.mirrors.ustc.edu.cn"
+```
 
+```shell
 #支持 systemctl 的系统,通过 sudo systemctl edit docker.service
 #会生成 etc/systemd/system/docker.service.d/override.conf 覆盖默认的参数,在该文件中加入如下内容
 [Service] 
@@ -253,14 +260,25 @@ DOCKER_OPTS="--insecure-registry juandapc:5000"
 
 执行速度：Kafka > RabbitMQ > ActiveMQ。安全性则相反。
 
-##相关概念
+## 相关概念
 
->应用场景1：流量削峰（秒杀服务）
+> 基础概念
+
+```java
+RabbitMQ 是一个由 Erlang 语言开发的 'AMQP' 的开源实现。
+
+'JMS'：Java Message Service，JAVA消息服务。基于JVM消息代理的规范，ActiveMQ、HornetMQ 是 JMS 实现。
+
+'AMQP'：Advanced Message Queue，高级消息队列协议。也是一个消息代理的规范，兼容JMS。
+它是应用层协议的一个开放标准，为面向消息的中间件设计，基于此协议的客户端与消息中间件可传递消息，并不受产品、开发语言等条件的限制。
+```
+
+>应用场景1：流量削峰（秒杀服务），消息通讯
 
     服务器接收用户请求后，首先写入消息队列，依次处理。
     
     假如消息队列长度超过最大数量，则直接抛弃用户请求或跳转到错误页面
-> 应用场景1：同步变异步，扩展解耦能力
+> 应用场景2：同步变异步，应用耦合
 
 ```java
 //(1).原始过程：用户下单 到 生成订单，总共花费 60ms，同步过程，强耦合。
@@ -293,16 +311,73 @@ public void sendSms(String mobile) {
 > 核心概念
 
 ```java
-'Queue'：消息队列，用于存储消息。多个消费者订阅同一个Queue，消息会被平均分摊给多个消费者进行处理，而不是每个消费者都收到所有的消息并处理。 
-//一个消息可投入一个或多个队列
-//消息一直在队列里面，等待消费者连接到这个队列将其取走
+'RabbitMQ Server'：也叫broker server，它是一种传输服务。
+维护一条从 Producer 到 Consumer 的路线，保证数据能够按照指定的方式进行传输。
 ```
 
 ```java
-'Message acknowledgment'：在实际应用中，可能会发生消费者收到Queue中的消息，但没有处理完成就宕机（或出现其他意外）的情况，这种情况下就可能会导致消息丢失。
-为了避免这种情况发生，可以要求消费者在消费完消息后发送一个回执给RabbitMQ，RabbitMQ收到消息回执（Message acknowledgment）后才将该消息从Queue中移除；如果RabbitMQ没有收到回执并检测到消费者的RabbitMQ连接断开，则RabbitMQ会将该消息发送给其他消费者（如果存在多个消费者）进行处理。
-这里不存在timeout概念，一个消费者处理消息时间再长也不会导致该消息被发送给其他消费者，除非它的RabbitMQ连接断开。这里会产生另外一个问题，如果我们的开发人员在处理完业务逻辑后，忘记发送回执给RabbitMQ，这将会导致严重的bug —— Queue中堆积的消息会越来越多；消费者重启后会重复消费这些消息并重复执行业务逻辑…
-另外pub message是没有ack的。
+'Exchange'：生产者将消息发送到 Exchange（交换器），由 Exchange 将消息路由到一个或多个Queue中（或者丢弃）。
+
+//Exchange 并不存储消息。
+//RabbitMQ中的Exchange有 direct（默认）、fanout、topic、headers四种类型，每种类型对应不同的路由规则。
+```
+
+```java
+'Queue'：消息队列，用于存储消息。消息消费者就是通过订阅队列来获取消息的。
+
+RabbitMQ中的消息都只能存储在Queue中，生产者生产消息并最终投递到Queue中，消费者可以从Queue中获取消息并消费。
+多个消费者订阅同一个Queue，消息会被平均分摊给多个消费者进行处理，而不是每个消费者都收到所有的消息并处理。 
+
+//一个消息可投入一个或多个队列。消息一直在队列里面，等待消费者连接到这个队列将其取走
+```
+
+```java
+'Routing-key'：生产者在将消息发送给Exchange的时候，一般会指定一个 Routing-key，来指定这个消息的路由规则，
+而这个 Routing-key 需要与 Exchange-Type 及 Binding-key 联合使用才能最终生效。 
+
+在 Exchange-Type 与 binding-key 固定的情况下，生产者就可以在发送消息给Exchange时，通过指定 Routing-key 来决定消息流向哪里。
+RabbitMQ为routing key设定的长度限制为 255 bytes。
+```
+
+```java
+'Binding-key'：在绑定 Exchange 与 Queue 时，一般会指定一个 Binding-key。
+消费者将消息发送给 Exchange 时，一般会指定一个 Routing-key，当 Binding-key 与 Routing-key 相匹配时，消息将会被路由到对应的 Queue 中。
+
+//在绑定多个 Queue 到同一个 Exchange 的时候，这些绑定允许使用相同的binding key。
+//Binding-key 并不是在所有情况下都生效，它依赖于 Exchange-Type，
+//比如 fanout 类型的Exchange就会无视 Binding-key，而是将消息路由到所有绑定到该 Exchange 的 Queue。
+```
+
+> 其他概念
+
+```java
+'Connection'：连接，Producer和Consumer都是通过 TCP 连接到RabbitMQ Server的。
+
+//程序的起始处就是建立这个TCP连接。
+```
+
+```java
+'Channels'：信道，它建立在上述的TCP连接中。
+
+数据流动都是在 Channel 中进行的。也就是说，一般情况是程序起始建立TCP连接，第二步就是建立这个Channel。
+```
+
+```java
+'VirtualHost'：权限控制的基本单位，一个 VirtualHost 里面有若干 Exchange 和 MessageQueue，以及指定被哪些 user 使用。
+```
+
+```java
+'Message ACK'：Message acknowledgment，消息回执。
+
+实际应用中，可能发生消费者收到Queue中的消息，但没有处理完成就宕机（或出现其他意外）情况，这种情况下就可能会导致消息丢失。
+为了避免这种情况发生，可以要求消费者在消费完消息后发送一个回执给RabbitMQ，RabbitMQ收到消息回执（Message ACK）后才将该消息从Queue中移除；
+如果RabbitMQ没有收到回执并检测到消费者的RabbitMQ连接断开，则RabbitMQ会将该消息发送给其他消费者（如果存在多个消费者）进行处理。
+这里不存在timeout概念，一个消费者处理消息时间再长也不会导致该消息被发送给其他消费者，除非它的RabbitMQ连接断开。
+
+这里会产生另外一个问题，如果我们的开发人员在处理完业务逻辑后，忘记发送回执给RabbitMQ，这将会导致严重的bug。
+Queue中堆积的消息会越来越多；消费者重启后会重复消费这些消息并重复执行业务逻辑…
+
+//另外，pub message是没有 ACK 的。
 ```
 
 ```java
@@ -316,17 +391,15 @@ public void sendSms(String mobile) {
 ```
 
 ```java
-'Exchange'：生产者将消息发送到Exchange（交换器），由Exchange将消息路由到一个或多个Queue中（或者丢弃）。
-//Exchange(4种类型)： direct(默认)，fanout，topic， headers(几乎不用)
+
 ```
 
 ```java
-'routing key'：生产者在将消息发送给Exchange的时候，一般会指定一个routing key，来指定这个消息的路由规则，而这个routing key需要与Exchange Type及binding key联合使用才能最终生效。 在Exchange Type与binding key固定的情况下（在正常使用时一般这些内容都是固定配置好的），生产者就可以在发送消息给Exchange时，通过指定routing key来决定消息流向哪里。 RabbitMQ为routing key设定的长度限制为255 bytes。
+
 ```
 
 ```java
-'Binding key'：在绑定（Binding）Exchange与Queue的同时，一般会指定一个binding key；消费者将消息发送给Exchange时，一般会指定一个routing key；当binding key与routing key相匹配时，消息将会被路由到对应的Queue中。这个将在Exchange Types章节会列举实际的例子加以说明。在绑定多个Queue到同一个Exchange的时候，这些Binding允许使用相同的binding key。
-binding key 并不是在所有情况下都生效，它依赖于Exchange Type，比如fanout类型的Exchange就会无视binding key，而是将消息路由到所有绑定到该Exchange的Queue。
+
 ```
 
 ```java
@@ -433,13 +506,14 @@ spring.rabbitmq.listener.simple.retry.enabled=true
 spring.rabbitmq.listener.simple.retry.max-attempts=3
 ```
 
-## boot整合
+## 安装配置
 
 > docker启动
 
 ```shell
 #4369：erlang发现；5672：client通信；15672：UI管理界面；25672：server间内部通信    
-docker run --name rabbitmq -d -p 5671:5671 -p 5672:5672 -p 4369:4369 -p 15671:15671 -p 15672:15672 -p 25672:25672 -p 15674:15674 rabbitmq
+docker run --name rabbitmq -d -p 5671:5671 -p 5672:5672 -p 4369:4369 -p 15671:15671 -p 15672:15672 \
+-p 25672:25672 -p 15674:15674 rabbitmq
 
 #开启 UI管理页面
 docker exec -it rabbitmq /bin/bash
@@ -480,7 +554,7 @@ rabbitmqctl list_permissions -p /
 rabbitmqctl set_user_tags admin administrator
 ```
 
-> 配置权限：js连接RabbitMq通过stomp实现消息实时推送
+> 开启插件 & 配置权限：js连接RabbitMq通过stomp实现消息实时推送
 
 ```shell
 #获得容器的bash
@@ -525,6 +599,8 @@ loopback_users.guest = false #false：远程访问；true：本地访问
 
 ![](assets/RabbitMQ4.jpg)
 
+##BOOT整合
+
 >基础配置
 
 ```xml
@@ -532,15 +608,19 @@ loopback_users.guest = false #false：远程访问；true：本地访问
     <groupId>org.springframework.boot</groupId>
     <artifactId>spring-boot-starter-amqp</artifactId>
 </dependency>
+```
 
+```properties
 #rabbitmq
 spring.rabbitmq.host=192.168.5.23
 spring.rabbitmq.port=5672
-spring.rabbitmq.username=guest //默认,可省
+spring.rabbitmq.username=guest //默认，可省
 spring.rabbitmq.password=guest
+```
 
+```java
 //全局注解   + 监听注解
-//@EnableRabbit + @RabbitListener
+@EnableRabbit + @RabbitListener
 ```
 >序列化器：默认以java序列化，现配置json序列化
 
@@ -645,7 +725,7 @@ rabbitTemplate.convertAndSend("exchange", "routing key", new Object());
 
 - topic（主题）：... ... Binding 的 RK 和 Msg 的 RK 模糊匹配即可
 
-## 广播模式
+## 广播：fanout
 
 ![](assets/RabbitMQ1.png)
 
@@ -773,7 +853,7 @@ public class ErrorConsumer {
 }
 ```
 
-## 直接模式
+## 直接：direct
 
 ![](assets/RabbitMQ2.png)
 
@@ -869,7 +949,7 @@ public class InfoConsumer {
 }
 ```
 
-## 主题模式
+## 主题：topic
 
 ![](assets/RabbitMQ3.png)
 
@@ -991,7 +1071,7 @@ public class InfoConsumer {
 
 # EHCache
 
-##Boot整合
+##BOOT整合
 
 > 纯java的进程内缓存框架！快速，精干
 
@@ -1107,12 +1187,14 @@ public class ApplicationTests {
     }
 }
 ```
-#redis
+#Redis
 
 ## docker模式
 
+>docker模式安装的redis没有配置文件
+
 ```shell
-#docker模式安装的redis没有配置文件，需要通过 -v 指令将宿主机配置文件进行映射
+#需要通过 -v 指令将宿主机配置文件进行映射
 docker run --name redis -d -p 6379:6379 redis
 
 #下载默认配置
@@ -1134,12 +1216,6 @@ docker run --name redis -d -p 6379:6379 -v /var/tmp/docker/redis.conf:/etc/redis
 
 ```
 
-
-
-
-
-
-
 ##安装包模式
 
 > 下载安装
@@ -1148,7 +1224,7 @@ docker run --name redis -d -p 6379:6379 -v /var/tmp/docker/redis.conf:/etc/redis
 $ wget http://download.redis.io/releases/redis-2.8.17.tar.gz
 $ tar -zxvf redis-2.8.17.tar.gz
 $ cd redis-2.8.17
-$ make       #make编译完后会生成 src/redis-server 和 src/redis-cli，服务端和客户端
+$ make #make 编译完后会生成 src/redis-server 和 src/redis-cli，服务端和客户端
 ```
 
 > 启动服务端的两种方式
@@ -1217,8 +1293,7 @@ bind 127.0.0.1 #注释此行
 sudo /etc/init.d/redis-server restart #重启redis
 ```
 
-
-## Boot整合
+## BOOT整合
 
 > 配置文件
 
@@ -1361,7 +1436,7 @@ public void test() {
 
 ##基础概念
 
->应用场景。`相比于Redis 的缺点为：不能设置过期时间`
+>应用场景。`相比于 Redis 的缺点为：不能设置过期时间`
 
     高频热点数据 -> 频繁访问数据库，数据库压力过大
     
@@ -1523,7 +1598,472 @@ public class CacheConfig {
 @Cacheable(value = "people", keyGenerator = "myKeyGenerator")
 ```
 
+#ElasticSearch
 
+## 安装配置
 
+> 搜索分两类：搜索引擎（google），站内搜索
 
+```java
+ElasticSearch & Solar：前者可以实现'分布式搜索'，后者依赖插件
+```
+
+> docker模式安装
+
+```shell
+docker search elasticsearch #以docker形式检索
+docker pull registry.docker-cn.com/library/elasticsearch #下载，镜像加速
+
+#后台启动ES，指定内存大小，端口号，及自定义名称
+#ES的web通信使用 9200，分布式集群的节点间通信使用 9300
+docker run --name ES01 -d -e ES_JAVA_OPTS="-Xms256m -Xmx256m" -p 9200:9200 -p 9300:9300 elasticsearch
+
+http://192.168.5.23:9200/ #检测是否启动成功
+```
+
+> BOOT整合问题
+
+```shell
+#因为 ES 从5版本以后默认不开启远程连接，需要修改配置文件
+#NoNodeAvailableException[None of the configured nodes are available:[{#transport#‐1}{192.168.184.135:9300}]]
+
+docker exec -it ES01 /bin/bash #进入容器内部
+cat /usr/share/elasticsearch/config/elasticsearch.yml #ES默认的配置文件
+
+#由于 ES 容器中不能使用 vi 命令，所以必须先将默认配置拷贝至宿主机
+docker cp ES01:/usr/share/elasticsearch/config/elasticsearch.yml /var/lib/webpark/logs/sm/task/file/
+
+#修改宿主机中的配置文件，将前面的注释去掉，表示所有 ip 都可以访问。也可以指定 ip
+http.host: 0.0.0.0
+
+#增加以下两句命令，解决 head 插件的跨域问题
+http.cors.enabled: true
+http.cors.allow‐origin: "*"
+
+#停止和删除原来创建的容器
+docker stop ES01 
+docker rm  ES01
+
+#重新执行创建容器命令，使用 -v 加载宿主机的配置文件
+docker run --name ES01 -d -e ES_JAVA_OPTS="-Xms256m -Xmx256m" -p 9200:9200 -p 9300:9300 \
+-v /var/lib/webpark/logs/sm/task/file/elasticsearch.yml:/usr/share/elasticsearch/config/elasticsearch.yml elasticsearch
+```
+
+>ES与MySQL逻辑结构的概念对比
+
+|        ES        |     mysql      |
+| :--------------: | :------------: |
+|  索引（index）   | 库（database） |
+|   类型（type）   |  表（table）   |
+| 文档（document） |   行（row）    |
+
+##测试DEMO
+
+> （0）DEMO说明
+
+```java
+每个雇员对应一个文档（doucument），包含该雇员的所有信息
+每个文档都将是 employee 类型（type）
+该类型位于索引（index） megacorp 内
+该索引保存在我们的 Elasticsearch 集群中
+
+'1个ES集群 --> 多个索引(index) --> 多个类型(type) --> 多个文档(document) --> 多个属性'
+```
+> （1）新建索引（类比数据库）
+
+```java
+PUT http://192.168.5.23:9200/megacorp
+```
+
+> （2）新增类型和文档（类比数据表和数据行）
+
+```java
+PUT http://192.168.5.23:9200/megacorp/employee/1
+{
+    "first_name": "二狗",
+    "last_name":  "王",
+    "age":        30,
+    "about":      "没事打游戏",
+    "interests":  ["吹牛", "农药"]
+}
+```
+>（3）修改文档
+
+```java
+//类似 SpringData 的更新API，新增时：该Id有对应数据则更新，无则新增
+PUT http://192.168.5.23:9200/megacorp/employee/1
+{
+    "first_name": "二狗",
+    "last_name":  "王",
+    "age":        33,
+    "about":      "没事打游戏",
+    "interests":  ["吹牛", "农药"]
+}
+```
+
+>（4）判断是否存在
+
+```java
+//根据响应码判断，200：存在；404：不存在
+HEAD http://192.168.5.23:9200/megacorp/employee/4
+```
+>（5）删除文档
+
+```java
+DELETE http://192.168.5.23:9200/megacorp/employee/4
+```
+
+>（6）查询所有文档
+
+```java
+GET http://192.168.5.23:9200/megacorp/employee/_search
+```
+
+>（7）查询根据条件
+
+```java
+//first_name 中包含"狗"，用 * 代表任意字符
+GET http://192.168.5.23:9200/megacorp/employee/_search?q=first_name:*狗*
+```
+
+> （8）查询根据表达式
+
+```java
+//first_name 包含"狗"
+POST  http://192.168.5.23:9200/megacorp/employee/_search
+{
+    "query" : {
+        "match" : {
+            "first_name" : "狗"
+        }
+    }
+}
+```
+
+```java
+//first_name 包含"狗"，age > 30
+POST  http://192.168.5.23:9200/megacorp/employee/_search
+{
+    "query" : {
+        "bool": {
+            "must": {
+                "match" : {
+                    "first_name" : "狗" 
+                }
+            },
+            "filter": {
+                "range" : {
+                    "age" : { "gt" : 30} 
+                }
+            }
+        }
+    }
+}
+```
+
+##HEAD插件
+
+> 通过图形化界面来实现 Elasticsearch 的日常管理：增删查改
+
+```
+通过 rest 请求的方式使用Elasticsearch，太过麻烦，也不够人性化。
+```
+
+> 下载安装
+
+```
+下载head插件：https://github.com/mobz/elasticsearch-head  elasticsearch-head-master.zip
+
+解压到任意目录，但是要和elasticsearch的安装目录区别开
+
+安装nodejs，安装cnpm
+npm install ‐g cnpm ‐‐registry=https://registry.npm.taobao.org
+
+将grunt安装为全局命令。Grunt是基于Node.js的项目构建工具。它可以自动运行所设定的任务
+npm install ‐g grunt‐cli
+
+安装依赖 
+cnpm install
+
+进入head目录启动head，在命令提示符下输入命令
+grunt server
+
+打开浏览器，验证 http://localhost:9100
+```
+
+> 跨域问题
+
+```properties
+#点击连接按钮没有任何相应，按F12发现有如下错误：
+No 'Access-Control-Allow-Origin' header is present on the requested resource
+
+#这个错误是由于elasticsearch默认不允许跨域调用，而elasticsearch-head是属于前端工程，所以报错。
+#修改elasticsearch的配置，让其允许跨域访问。
+
+#修改 elasticsearch 配置文件：elasticsearch.yml，增加以下两句命令：
+http.cors.enabled: true
+http.cors.allow‐origin: "*"
+```
+
+##IK分词器
+
+> 安装配置
+
+```shell
+#windows版本：下载，解压，拷贝到ES的 '/plugins' 目录，重启ES即可
+https://github.com/medcl/elasticsearch-analysis-ik/releases/download/v5.6.12/elasticsearch-analysis-ik-5.6.12.zip
+```
+```shell
+#Linux版本の方式一：将IK分词器拷贝到docker容器
+#下载（版本一定要对应），解压，拷贝到docker容器，重启ES
+docker exec -it ES01 /bin/bash
+docker cp /var/lib/elasticsearch-analysis-ik-5.6.12 ES01:/usr/share/elasticsearch/plugins
+```
+```shell
+#方式二：docker容器挂载宿主机的IK分词器
+#下载，解压，启动image时挂载外部配置文件
+docker run --name ES02 -d -e ES_JAVA_OPTS="-Xms256m -Xmx256m" -p 9201:9200 -p 9301:9300 -v \
+/var/tmp/plugins:/usr/share/elasticsearch/plugins elasticsearch
+```
+
+> 两种测试
+
+```shell
+#最少切分：中华人民共和国，国歌
+http://localhost:9200/_analyze?pretty&analyzer=ik_smart&text=中华人民共和国国歌
+```
+```shell
+#最细切分：中华人民共和国，中华人民，中华，华人，人民共和国，人民，共和国，共和，国歌
+http://localhost:9200/_analyze?pretty&analyzer=ik_max_word&text=中华人民共和国国歌
+```
+
+>自定义词库
+
+```shell
+#默认不作为一个词
+http://localhost:9200/_analyze?pretty&analyzer=ik_smart&text=人艰不拆
+```
+```java
+在'/elasticsearch/plugins/ik/config/'新建 my.dic (编码UTF-8)，编写内容'人艰不拆' 
+```
+
+```xml
+<!--修改'/~/ik/config/IKAnalyzer.cfg.xml'，重启ES-->
+<properties>
+    <comment>IK Analyzer 扩展配置</comment> 
+    <entry key="ext_dict">my.dic</entry> <!--配置此项-->
+    <entry key="ext_stopwords"></entry>
+
+    <entry key="remote_ext_dict">location</entry> 
+    <entry key="remote_ext_stopwords">location</entry> 
+</properties>
+```
+##BOOT整合
+
+> SpringBoot 默认支持两种技术和ES进行交互：jest，SpringData（默认）
+
+> jest模式
+
+```xml
+<!-- https://mvnrepository.com/artifact/io.searchbox/jest -->
+<dependency>
+    <groupId>io.searchbox</groupId>
+    <artifactId>jest</artifactId>
+    <version>5.3.4</version>
+</dependency>
+```
+```properties
+spring.elasticsearch.jest.uris=192.168.5.23:9200
+```
+> SpringData（默认）
+
+```xml
+<dependency>
+    <groupId>org.springframework.data</groupId>
+    <artifactId>spring-data-elasticsearch</artifactId>
+</dependency>
+```
+```properties
+spring.data.elasticsearch.cluster-name=elasticsearch
+spring.data.elasticsearch.cluster-nodes=192.168.5.23:9300
+```
+> 常用注解
+
+```java
+public @interface Document {
+    String indexName(); //索引库的名称，个人建议以项目的名称命名
+    String type() default ""; //类型，个人建议以实体的名称命名
+
+    short shards() default 5; //默认分区数
+    short replicas() default 1; //每个分区默认的备份数
+    String refreshInterval() default "1s"; //刷新间隔
+    String indexStoreType() default "fs"; //索引文件存储类型
+}
+```
+```java
+public @interface Field {
+    FieldType type() default FieldType.Auto; //自动检测属性的类型，可以根据实际情况自己设置
+
+    FieldIndex index() default FieldIndex.analyzed; //默认情况，一般默认分词就好，除非这个字段你确定查询时不会用到
+
+    DateFormat format() default DateFormat.none; //时间类型的格式化
+
+    String pattern() default ""; 
+
+    boolean store() default false; //默认情况下不存储原文
+
+    String searchAnalyzer() default ""; //指定字段搜索时使用的分词器
+
+    String indexAnalyzer() default ""; //指定字段建立索引时指定的分词器
+
+    String[] ignoreFields() default {}; //如果某个字段需要被忽略
+
+    boolean includeInParent() default false;
+}
+```
+> 使用注解
+
+```java
+@Document(indexName = "book", type = "article")
+public class Article {
+    //mysql中的id，非索引库中的id
+    @Id
+    private String id;
+
+    // 对应索引库中的域
+    // index: 是否被索引（能否被搜索）；是否分词（搜索时是整体匹配还是分词匹配）；是否存储（是否在页面上显示）
+    // analyzer: 存储时使用的分词策略
+    // searchAnalyzer 查询时的.....（二者必须一致）
+    @Field(index = true, analyzer = "ik_max_word", searchAnalyzer = "ik_max_word")
+    private String title;
+
+    @Field(index = true, analyzer = "ik_smart", searchAnalyzer = "ik_smart")
+    private String content;
+}
+```
+> ElasticsearchTemplate（方式1，略）
+
+> ElasticsearchRepository（方式2）
+
+```java
+@Repository
+public interface ArticleDao extends ElasticsearchRepository<Article, String> {
+    List<Article> findByTitleLike(String title); //查询接口
+}
+```
+```java
+@Autowired
+ArticleDao articleDao;
+
+@Test
+public void test() {
+    Object index = articleDao.index(new Article("1", "三国演义", "群雄逐鹿中原")); //新增
+
+    List<Article> articleList = articleDao.findByTitleLike("三"); //查询
+}
+```
+# logstash
+
+> 基础概念：<https://www.cnblogs.com/cjsblog/p/9459781.html>
+
+```java
+//和 ES 配合使用
+开源的服务器端数据处理管道，可以同时从多个数据源获取数据，并对其进行转换，然后将其发送到你最喜欢的“存储”。（当然，最喜欢的是Elasticsearch）
+```
+
+```
+Logstash 能够动态地转换和解析数据，不受格式或复杂度的影响：
+（1）.利用 Grok 从非结构化数据中派生出结构
+（2）.从 IP 地址破译出地理坐标
+（3）.将 PII 数据匿名化，完全排除敏感字段
+（4）.整体处理不受数据源、格式或架构的影响
+```
+
+![](assets/docker1.png)
+
+> Docker安装，并测试 `待完善` <https://blog.csdn.net/qq_33547169/article/details/86629261>
+
+```shell
+#加速下载
+docker pull daocloud.io/library/logstash
+
+#宿主机上创建配置文件夹
+mkdir /usr/local/logstash/config
+
+#启动命令
+docker run --name logstash -d -p 5044:5044 -p 9600:9600 -it -v /usr/local/logstash/config/:/usr/share/logstash/config/ \
+daocloud.io/library/logstash
+```
+
+```shell
+#此语句表示：将控制台输入，输出到控制台
+#-e 加载命令行指定的配置。 -f 加载配置文件
+bin/logstash -e 'input { stdin {} } output { stdout {} }'
+```
+
+> 自定义配置（三部分） `mysql.conf`
+
+```shell
+input {
+    stdin {
+    }
+    jdbc {
+      # mysql 数据库链接,shop为数据库名
+      jdbc_connection_string => "jdbc:mysql://127.0.0.1:33306/webpark?useSSL=false&serverTimezone=GMT%2B8"
+      # 用户名和密码
+      jdbc_user => "bluecardsoft"
+      jdbc_password => "#$%_BC13439677375"
+      # 驱动包路径
+      jdbc_driver_library => "./elasticsearch/logstash-5.5.2/mysqletc/mysql-connector-java-8.0.16.jar"
+      jdbc_driver_class => "com.mysql.cj.jdbc.Driver"
+      # 分页相关
+      jdbc_paging_enabled => "true"
+      jdbc_page_size => "100"
+      
+      # 可以选择：sql文件 或 sql语句
+      # 执行的 sql文件路径+名称
+      # statement_filepath => "./elasticsearch/logstash-5.5.2/mysqletc/plate.sql"
+      # 执行的 sql语句
+      statement => ""
+      
+      # 设置监听间隔  各字段含义(由左至右)分、时、天、月、年，全部为 * 默认含义为每分钟都更新
+      schedule => "* * * * *"
+      # 索引类型
+      type => "content"
+    }
+}
+```
+```shell
+filter {
+    json {
+        source => "message"
+        remove_field => ["message"]
+    }
+}
+```
+```shell
+output {
+    elasticsearch {
+        # ES的 ip 地址与端口
+        hosts => ["192.168.5.23:9200"]
+        
+        # ES 索引名称（自定义）
+        index => "plate_index"
+        
+        # 自增编号id，%{id} 表示使用上述sql结果的id
+        document_id => "%{id}"
+        document_type => "plate_document"
+    }
+    stdout {
+        #以JSON格式输出
+        codec => json_lines
+    }
+}
+```
+>加载自定义配置文件
+
+```shell
+#需要 mysql 的连接驱动包：mysql-connector-java-8.0.16.jar
+logstash -f ../mysqletc/mysql.conf
+```
 

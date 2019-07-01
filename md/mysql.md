@@ -1576,10 +1576,15 @@ CROSS JOIN departments d; -- 交叉连接 a*b
 
 <https://mp.weixin.qq.com/s/NnaecffGc6-FgbEpjp4t7w>
 
+> 数据库优化：设计优化（必须熟悉业务，利于扩展） + 查询优化
 
+```sql
+查询语句不要用 SELECT * FROM
 
+避免全局扫描，即涉及到 非 逻辑，不要用 NOT IN，可以用 EXISTS 代替。
 
-
+创建索引，加速查询，但影响增删改
+```
 
 
 
