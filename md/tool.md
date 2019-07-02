@@ -548,8 +548,11 @@ public class MyApplicationContextAware implements ApplicationContextAware {
 
 > `TRACE < DEBUG < INFO < WARN < ERROR`
 
+```
 日志门面：日志的接口，如slf4j，jcl，jboss-logging
+
 日志实现：具体实现类，如logback，log4j，log4j2，jul
+```
 
 > 配置文件
 
@@ -805,16 +808,15 @@ log4j.appender.err.layout.ConversionPattern=%d{HH:mm:ss.SSS} - %m%n
     <!-- 滚动记录文件: 先将日志记录到临时文件,当符合某个条件时,再将日志归档到目标文件 -->
     <appender name="CTRL_DEBUG" class="ch.qos.logback.core.rolling.RollingFileAppender">
 
-        <!-- 可选节点,归档前临时文件的路径,不指定则直接写入归档后的目标文件 -->
+        <!-- 可选节点，归档前临时文件的路径。不指定，默认直接写入归档后的目标文件 -->
         <file>${LOG_HOME}/ctrl/debug/debug</file>
 
         <!-- 按照'大小和时间'两种策略综合滚动 -->
         <rollingPolicy class="ch.qos.logback.core.rolling.SizeAndTimeBasedRollingPolicy">
-            <!-- 必选节点,归档后文件路径 -->
-            <!-- 支持.zip和.gz压缩模式,(单个文件超过最大容量才会压缩,后缀名改为.zip即可压缩) -->
-            <!-- 每小时一归档: 当大小超过 maxFileSize 时,按照 i 进行文件归档 -->
-            <fileNamePattern>${LOG_HOME}/ctrl/debug/debug_%d{yyyyMMdd_HH}_%i.zip
-            </fileNamePattern>
+            <!-- 必选节点，归档后的文件路径 -->
+            <!-- 支持 *.zip和 *.gz压缩模式（单个文件超过最大容量才会压缩，后缀名改为 .zip即可压缩） -->
+            <!-- 每小时一归档：当大小超过 maxFileSize 时，按照 i 进行文件归档 -->
+            <fileNamePattern>${LOG_HOME}/ctrl/debug/debug_%d{yyyyMMdd_HH}_%i.zip</fileNamePattern>
 
             <!-- 单个日志文件最大1MB, 最多保存5个小时的日志, 总日志大小不能超过5MB -->
             <!-- 当 MaxHistory 或 totalSizeCap 都满足时,自动删除旧的日志 -->
@@ -855,9 +857,9 @@ log4j.appender.err.layout.ConversionPattern=%d{HH:mm:ss.SSS} - %m%n
         </encoder>
 
         <!--LevelFilter: 级别过滤器. 等于配置级别,根据 onMath 和 onMismatch 接收或拒绝日志 -->
-        <!--ThresholdFilter: 临界值过滤器,过滤掉低于指定临界值的日志(只输出等于或高于临界值的日志).->
+        <!--ThresholdFilter: 临界值过滤器,过滤掉低于指定临界值的日志(只输出等于或高于临界值的日志).-->
         <filter class="ch.qos.logback.classic.filter.LevelFilter">
-            <level>WARN</level>  //<!-- ONLY WARN -->
+            <level>WARN</level>  <!-- ONLY WARN -->
             <onMatch>ACCEPT</onMatch>
             <onMismatch>DENY</onMismatch>
         </filter>
@@ -1493,10 +1495,10 @@ HttpPost httpPost = new HttpPost(uri);
 
 ```java
 //1.POST表单
-List<NameValuePair> nvps = new ArrayList<>();
+List<NameValuePair> nvps = new ArrayList<>(2);
 nvps.add(new BasicNameValuePair("name", "中国"));
 nvps.add(new BasicNameValuePair("age", "70"));
-UrlEncodedFormEntity entity = new UrlEncodedFormEntity(nvps, "UTF-8"); //中文乱码
+UrlEncodedFormEntity entity = new UrlEncodedFormEntity(nvps, Charset.forName("UTF-8")); //中文乱码
 
 HttpPost httpPost = new HttpPost("http://127.0.0.1:8090/demo/http/post");
 httpPost.setEntity(entity);
@@ -1929,281 +1931,6 @@ sonar.java.binaries=F:/sp_project/demo/target/classes
 https://blog.csdn.net/happyzwh/article/details/77991095
 https://www.jianshu.com/p/b50f01eeba4d
 ```
-
-
-
-
-
-
-
-
-# Sms
-
-> 短信服务使用 阿里云通信
-
-```java
-（1）注册，登陆，实名，产品选择'短信服务'
-（2）申请签名，申请模板，创建 AccessKey，充值
-```
-##基础配置
-
-> 配置文件
-
-```xml
-<!-- https://mvnrepository.com/artifact/com.aliyun/aliyun-java-sdk-dysmsapi -->
-<dependency>
-    <groupId>com.aliyun</groupId>
-    <artifactId>aliyun-java-sdk-dysmsapi</artifactId>
-    <version>1.1.0</version>
-</dependency>
-<!-- https://mvnrepository.com/artifact/com.aliyun/aliyun-java-sdk-core -->
-<dependency>
-    <groupId>com.aliyun</groupId>
-    <artifactId>aliyun-java-sdk-core</artifactId>
-    <version>3.2.8</version>
-</dependency>
-```
-
-```properties
-aliyun.sms.accessKeyId=*
-aliyun.sms.accessKeySecret=*
-aliyun.sms.templateCode=sms_20190328 #模板CODE
-aliyun.sms.signName=短信测试          #签名名称
-```
-
->SMS工具类
-
-```java
-/**
- * 短信工具类
- *
- * @author Administrator
- */
-@Component
-public class SmsUtils {
-
-    //产品名称:云通信短信API产品,开发者无需替换
-    static final String product = "Dysmsapi";
-    //产品域名,开发者无需替换
-    static final String domain = "dysmsapi.aliyuncs.com";
-
-    @Autowired
-    private Environment env;
-
-    // TODO 此处需要替换成开发者自己的AK(在阿里云访问控制台寻找)
-
-    /**
-     * 发送短信
-     *
-     * @param mobile        手机号
-     * @param template_code 模板号
-     * @param sign_name     签名
-     * @param param         参数
-     * @return
-     * @throws ClientException
-     */
-    public SendSmsResponse sendSms(String mobile, String template_code, String sign_name, String param) throws
-            ClientException {
-        String accessKeyId = env.getProperty("aliyun.sms.accessKeyId");
-        String accessKeySecret = env.getProperty("aliyun.sms.accessKeySecret");
-        //可自助调整超时时间
-        System.setProperty("sun.net.client.defaultConnectTimeout", "10000");
-        System.setProperty("sun.net.client.defaultReadTimeout", "10000");
-        //初始化acsClient,暂不支持region化
-        IClientProfile profile = DefaultProfile.getProfile("cn-hangzhou", accessKeyId, accessKeySecret);
-        DefaultProfile.addEndpoint("cn-hangzhou", "cn-hangzhou", product, domain);
-        IAcsClient acsClient = new DefaultAcsClient(profile);
-        //组装请求对象-具体描述见控制台-文档部分内容
-        SendSmsRequest request = new SendSmsRequest();
-        //必填:待发送手机号
-        request.setPhoneNumbers(mobile);
-        //必填:短信签名-可在短信控制台中找到
-        request.setSignName(sign_name);
-        //必填:短信模板-可在短信控制台中找到
-        request.setTemplateCode(template_code);
-        //可选:模板中的变量替换JSON串,如模板内容为"亲爱的${name},您的验证码为${code}"时,此处的值为
-        request.setTemplateParam(param);
-        //选填-上行短信扩展码(无特殊需求用户请忽略此字段)
-        //request.setSmsUpExtendCode("90997");
-        //可选:outId为提供给业务方扩展字段,最终在短信回执消息中将此值带回给调用者
-        request.setOutId("yourOutId");
-        //hint 此处可能会抛出异常，注意catch
-        SendSmsResponse sendSmsResponse = acsClient.getAcsResponse(request);
-        return sendSmsResponse;
-    }
-
-    public QuerySendDetailsResponse querySendDetails(String mobile, String bizId) throws ClientException {
-        String accessKeyId = env.getProperty("accessKeyId");
-        String accessKeySecret = env.getProperty("accessKeySecret");
-        //可自助调整超时时间
-        System.setProperty("sun.net.client.defaultConnectTimeout", "10000");
-        System.setProperty("sun.net.client.defaultReadTimeout", "10000");
-        //初始化acsClient,暂不支持region化
-        IClientProfile profile = DefaultProfile.getProfile("cn-hangzhou", accessKeyId, accessKeySecret);
-        DefaultProfile.addEndpoint("cn-hangzhou", "cn-hangzhou", product, domain);
-        IAcsClient acsClient = new DefaultAcsClient(profile);
-        //组装请求对象
-        QuerySendDetailsRequest request = new QuerySendDetailsRequest();
-        //必填-号码
-        request.setPhoneNumber(mobile);
-        //可选-流水号
-        request.setBizId(bizId);
-        //必填-发送日期 支持30天内记录查询，格式yyyyMMdd
-        SimpleDateFormat ft = new SimpleDateFormat("yyyyMMdd");
-        request.setSendDate(ft.format(new Date()));
-        //必填-页大小
-        request.setPageSize(10L);
-        //必填-当前页码从1开始计数
-        request.setCurrentPage(1L);
-        //hint 此处可能会抛出异常，注意catch
-        QuerySendDetailsResponse querySendDetailsResponse = acsClient.getAcsResponse(request);
-        return querySendDetailsResponse;
-    }
-}
-```
-
->SMS发送
-
-```java
-@Value("${aliyun.sms.templateCode}")
-String templateCode;
-
-@Value("${aliyun.sms.signName}")
-String signName;
-
-@Autowired
-SmsUtil smsUtil;
-
-//发送短信
-smsUtil.sendSms(moblieNum, templateCode, signName, "{\"checkCode\":\"" + checkCode + "\"}");
-```
-
-##注册DEMO
-
-
->服务端将注册验证码发送给用户，发送短信Controller
-
-```java
-@PostMapping("/sendSms/{mobile}")
-public String sendSms(@PathVariable String mobile) {
-    if (StringUtils.isEmpty(mobile)) { //正则检测略
-        return "手机号不合法";
-    }
-    return HelloService.sendSms(mobile);
-}
-```
->发送短信Service
-
-```java
-public void sendSms(String mobile) {
-    //(1).生成验证码
-    String checkCode = RandomStringUtils.randomNumeric(6); //org.apache.commons.lang3
-
-    //(2).存入redis-5分钟失效
-    redisTemplate.opsForValue().set("checkCode_" + mobile, checkCode, 5, TimeUnit.MINUTES);
-
-    //(3).发送消息 RabbitMQ，短信验证
-    JSONObject object = new JSONObject();
-    object.put("mobile", mobile);
-    object.put("checkCode", checkCode);
-    rabbitTemplate.convertAndSend("spring.sms", object);
-}
-```
-
->用户收到验证码，后用户注册Controller
-
-```java
-@PostMapping("/regist/{mobile}/{checkCode}")
-public String regist(@PathVariable String mobile, @PathVariable String checkCode) {
-    if (StringUtils.isEmpty(mobile) || StringUtils.isEmpty(checkCode)) { //正则检测略
-        return "手机号或验证码不合法";
-    }
-    return HelloService.regist(mobile, checkCode);
-}
-```
->用户注册Service
-
-```java
-//service, dao --> 抛出异常; Controller/全局异常处理器 --> 处理异常.
-private void regist(String mobile, String checkCode) {
-    if (StringUtils.isEmpty(checkCode))
-        throw new RuntimeException("请输入验证码");
-
-    if (!smsCodeRedis.equalsIgnoreCase(checkCode))
-        throw new RuntimeException("验证码不正确或已过期");
-
-    personDao.add(person); //写库
-}
-```
->
-
-```java
-
-```
->
-
-```java
-
-```
->
-
-```java
-
-```
->
-
-```java
-
-```
->
-
-```java
-
-```
->
-
-```java
-
-```
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
 
 
 

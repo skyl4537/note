@@ -27,7 +27,7 @@ service.shutdown();
 service.awaitTermination(1, TimeUnit.DAYS);
 ```
 
-## LocalDateTime
+## LocalDate
 
 LocalDate，LocalTime，LocalDateTime：`人读的时间（非时间戳），都是线程安全的`。
 
@@ -37,16 +37,6 @@ LocalDate，LocalTime，LocalDateTime：`人读的时间（非时间戳），都
 LocalDateTime now = LocalDateTime.now(); //北京时间：2019-4-29T12:37:46.354
 now = LocalDateTime.parse("2019-4-29T12:37:46.354");//必须有T
 now = LocalDateTime.of(2019, 10, 26, 12, 10, 55, 255 * 1000 * 1000); //最后参数为纳秒
-```
-
->与传统日期处理的转换：`遗留类.from(); 遗留类.to新类();`
-
-```java
-Date date = Date.from(Instant.now());// Sat Oct 20 14:35:01 CST 2018
-Instant instant = date.toInstant();// 2018-10-20T06:35:01.958Z
-
-Timestamp timestamp = Timestamp.from(instant);//2018-10-20 14:52:12.611
-Instant instant2 = timestamp.toInstant();//2018-10-20T06:52:12.611Z
 ```
 
 > 增减操作：分别使用 `plus 和 minus` 关键字
@@ -94,7 +84,7 @@ boolean before = plusDays.isBefore(ldt); //false
 boolean leapYear = LocalDate.now().isLeapYear();
 ```
 
-## DateTimeFor...
+## 格式化
 
 > 日期格式化，线程安全。
 
@@ -120,7 +110,7 @@ long epochSecond = instant.getEpochSecond();//秒值
 ## ChronoUnit
 
 > Duration，Period：分别表示时间间隔的两个维度，`前者用时分秒，后者用年月日`。
->
+
 > Duration：表示两个时间之间相隔的时分秒。
 
 ```java
@@ -167,8 +157,17 @@ with = now.with(TemporalAdjusters.lastInMonth(DayOfWeek.SATURDAY));//本月最�
 with = now.with(TemporalAdjusters.lastDayOfMonth());//本月最后一天
 ```
 
+##旧接口
 
+>与传统日期处理的转换：`遗留类.from(); 遗留类.to新类();`
 
+```java
+Date date = Date.from(Instant.now());// Sat Oct 20 14:35:01 CST 2018
+Instant instant = date.toInstant();// 2018-10-20T06:35:01.958Z
+
+Timestamp timestamp = Timestamp.from(instant);//2018-10-20 14:52:12.611
+Instant instant2 = timestamp.toInstant();//2018-10-20T06:52:12.611Z
+```
 # 接口变动
 
 接口中变量的修饰符默认是 `public static final`，方法的修饰符默认是 `public abstract`。`都只能是`。

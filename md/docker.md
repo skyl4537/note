@@ -717,13 +717,13 @@ rabbitTemplate.convertAndSend("exchange", "routing key", new Object());
 
 > 三种模式的区别
 
-- fanout（广播）：Queue 只要连上 Exchange，就能收到其中的 Msg
+```
+fanout（广播）：Queue 只要连上 Exchange，就能收到其中的 Msg
 
+direct（直接）：Queue 不仅要连上 Exchange，并且 E Q 之间 Binding 的 RK 还必须和 Msg 的 RK 完全一致
 
-- direct（直接）：`Queue 不仅要连上 Exchange，并且 E Q 之间 Binding 的 RK 还必须和 Msg 的 RK 完全一致`
-
-
-- topic（主题）：... ... Binding 的 RK 和 Msg 的 RK 模糊匹配即可
+topic（主题）：... ... Binding 的 RK 和 Msg 的 RK 模糊匹配即可
+```
 
 ## 广播：fanout
 
@@ -1602,10 +1602,10 @@ public class CacheConfig {
 
 ## 安装配置
 
-> 搜索分两类：搜索引擎（google），站内搜索
+> 搜索分两类：搜索引擎（google） + 站内搜索
 
 ```java
-ElasticSearch & Solar：前者可以实现'分布式搜索'，后者依赖插件
+ElasticSearch & Solar：前者可以直接实现'分布式搜索'，后者依赖插件
 ```
 
 > docker模式安装
@@ -1771,24 +1771,24 @@ POST  http://192.168.5.23:9200/megacorp/employee/_search
 
 > 下载安装
 
-```
-下载head插件：https://github.com/mobz/elasticsearch-head  elasticsearch-head-master.zip
+```shell
+#下载head插件
+#解压到任意目录，但是要和 elasticsearch 的安装目录区别开
+https://github.com/mobz/elasticsearch-head  elasticsearch-head-master.zip
 
-解压到任意目录，但是要和elasticsearch的安装目录区别开
-
-安装nodejs，安装cnpm
+#安装nodejs，安装cnpm
 npm install ‐g cnpm ‐‐registry=https://registry.npm.taobao.org
 
-将grunt安装为全局命令。Grunt是基于Node.js的项目构建工具。它可以自动运行所设定的任务
+#将grunt安装为全局命令。Grunt是基于Node.js的项目构建工具。它可以自动运行所设定的任务
 npm install ‐g grunt‐cli
 
-安装依赖 
+#安装依赖 
 cnpm install
 
-进入head目录启动head，在命令提示符下输入命令
+#进入head目录启动head，在命令提示符下输入命令
 grunt server
 
-打开浏览器，验证 http://localhost:9100
+#打开浏览器，验证 http://localhost:9100
 ```
 
 > 跨域问题
@@ -2066,4 +2066,10 @@ output {
 #需要 mysql 的连接驱动包：mysql-connector-java-8.0.16.jar
 logstash -f ../mysqletc/mysql.conf
 ```
+
+
+
+
+
+
 

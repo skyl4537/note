@@ -3462,7 +3462,7 @@ PUT  http://192.168.5.23:9200/megacorp/employee/1
         
 //}
 
-//{--------<<<BCrypt加密>>>--------------------------？？？？
+//{--------<<<BCrypt加密>>>--------------------------X
 #SpringSecurity 提供的 BCrypt 强哈希方法每次加密的结果都不一样. 
     0.pom.xml
         <dependency>
@@ -3678,6 +3678,8 @@ PUT  http://192.168.5.23:9200/megacorp/employee/1
         //前后端约定 - 前端请求微服务时需要添加头信息 Authorization : Bearer+空格+token
         @DeleteMapping("/user/{id}")
         public Result delete(@RequestHeader String authorization, @PathVariable String id) {
+            
+            //eyJhbGciOiJIUzI1NiJ9.eyJqdGkiOiIxMTQ1OTY2ODcyODk5NjA4NTc2Iiwic3ViIjoiYWFhIiwiaWF0IjoxNTYyMDU0NzY4LCJyb2xlcyI6ImFkbWluIiwiZXhwIjoxNTYyMDU1MDY4fQ.qBax-Ut4jpd7jjCPu2XN6goa2R1aDyQUD3iS8SN1jDo
             log.info("{} - {}", authorization, id);
 
             if (null == authorization) {
