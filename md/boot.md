@@ -1103,20 +1103,20 @@ public class HelloServiceTest {
 
 > 各个端点endpoint
 
-```properties
-auditevents        --    审计事件
-beans            --    应用程序上下文里全部的Bean,以及它们的关系
-health            --    报告应用程序的健康指标,这些值由 HealthIndicator 的实现类提供
-conditions        --    自动配置报告,记录哪些自动配置条件通过了,哪些没通过
-configprops        --    描述配置属性(包含默认值)如何注入Bean
-info            --    显示配置文件中以 'info' 打头的属性
-threaddump        --    获取线程活动的快照
-scheduledtasks    --    定时任务
-httptrace        --    跟踪 HTTP 请求-响应交换的情况
-mappings        --    描述全部的URI路径，以及它们和控制器(包含Actuator端点)的映射关系
-(*)metrics        --    报告各种应用程序度量信息,比如内存用量和HTTP请求计数.
-(*)loggers        --    显示和修改应用程序中的loggers配置
-(*)env            --    获取全部环境属性
+```shell
+auditevents     #审计事件
+beans           #应用程序上下文里全部的Bean,以及它们的关系
+health          #报告应用程序的健康指标,这些值由 HealthIndicator 的实现类提供
+conditions      #自动配置报告,记录哪些自动配置条件通过了,哪些没通过
+configprops     #描述配置属性(包含默认值)如何注入Bean
+info            #显示配置文件中以 'info' 打头的属性
+threaddump      #获取线程活动的快照
+scheduledtasks  #定时任务
+httptrace       #跟踪 HTTP 请求-响应交换的情况
+mappings        #描述全部的URI路径，以及它们和控制器(包含Actuator端点)的映射关系
+(*)metrics      #报告各种应用程序度量信息,比如内存用量和HTTP请求计数.
+(*)loggers      #显示和修改应用程序中的loggers配置
+(*)env          #获取全部环境属性
 ```
 > Spring Boot2.x 所有端点访问路径都移到了/actuator
 

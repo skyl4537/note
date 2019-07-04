@@ -2,9 +2,60 @@
 
 
 
-#微服务
+#SpringCloud
 
 ## 基础概念
+
+> 什么是SpringCloud？ http://projects.spring.io/spring-cloud/
+
+```
+Spring Cloud是一系列框架的有序集合。
+
+它利用Spring Boot的开发便利性巧妙地简化了分布式系统基础设施的开发，
+如服务发现注册、配置中心、消息总线、负载均衡、熔断器、数据监控等，都可以用Spring Boot的开发风格做到一键启动和部署。
+
+Spring并没有重复制造轮子，它只是将目前各家公司开发的比较成熟、经得起实际考验的服务框架组合起来，
+通过Spring Boot风格进行再封装，屏蔽掉了复杂的配置和实现原理，最终给开发者留出了一套简单易懂、易部署和易维护的分布式系统开发工具包。
+```
+
+>SpringCloud 与 SpringBoot
+
+```
+SpringBoot 是 Spring 的一套快速配置框架，可以基于 SpringBoot 快速开发单个微服务，SpringCloud 是一个基于 SpringBoot 实现的云应用开发工具；
+
+SpringBoot 专注于快速、方便集成的单个微服务个体，Spring Cloud关注全局的服务治理框架；
+
+SpringBoot 使用了'默认大于配置'的理念，很多集成方案已经帮你选择好了，能不配置就不配置，
+SpringCloud 很大的一部分是基于 SpringBoot 来实现，可以不基于 SpringBoot吗？ 不可以。
+
+SpringBoot 可以离开 SpringCloud 独立使用开发项目，但是 SpringCloud 离不开 SpringBoot，属于依赖的关系。
+```
+
+> SpringCloud 和 Dubbo
+
+```
+Dubbo 只是实现了服务治理，而 SpringCloud 下面有 21 个子项目（可能还会新增）分别覆盖了微服务架构下的方方面面，
+服务治理只是其中的一个方面，一定程度来说，Dubbo 只是 SpringCloud Netflix 中的一个子集。
+```
+
+> SpringCloud主要框架
+
+```
+服务发现——Netflix Eureka
+服务调用——Netflix Feign
+熔断器——Netflix Hystrix
+服务网关——Netflix Zuul
+分布式配置——Spring Cloud Config
+消息总线 —— Spring Cloud Bus
+```
+
+> SpringCloud 版本
+
+| SpringBoot |       SpringCloud        |
+| :--------: | :----------------------: |
+|   1.5.x    | Dalston版本、Edgware版本 |
+|   2.0.x    |       Finchley版本       |
+|   2.1.x    |      Greenwich版本       |
 
 > 镜像，容器，微服务
 
@@ -37,27 +88,25 @@
 
 ##父项目
 
+
+> 父项目：`demo-parent`。创建：<https://start.spring.io/>
+
+```java
+项目名最好使用下划线进行分割 'demo_parent'。但是，微服务名称只能用-进行分割，不能用下划线 'demo-parent'。
+
+由于父项目不写代码逻辑，所以可将 src 目录删除。
+```
+
 > 区别 IDEA 中的 project 和 module
 
 ```
 
 ```
 
-> 父项目：demo_parent。创建：<https://start.spring.io/>
-
-```
-项目名最好使用下划线进行分割。由于父项目不写代码逻辑，所以可将 src 目录删除
-```
-
->对于微服务的父项目而言，pom 文件中的打包类型选择 pom 类型
+>父项目打包类型必须选择 pom 类型
 
 ```xml
 <modelVersion>4.0.0</modelVersion>
-<modules>
-    <module>demo_common</module>  <!--子项目列表-->
-    <module>demo_base</module>
-    <module>demo_user</module>
-</modules>
 <parent>
     <groupId>org.springframework.boot</groupId>
     <artifactId>spring-boot-starter-parent</artifactId>
@@ -72,9 +121,30 @@
 <name>demo_parent</name>
 <description>Demo project for Spring Boot</description>
 
+<modules>
+    <module>demo_common</module> <!--子项目列表-->
+    <module>demo_base</module>
+    <module>demo_user</module>
+    <module>demo_eureka</module>
+</modules>
+
 <properties>
     <java.version>1.8</java.version>
 </properties>
+
+<!--父项目 demo-parent，锁定 SpringCloud 版本-->
+<dependencyManagement>
+    <dependencies>
+        <dependency>
+            <groupId>org.springframework.cloud</groupId>
+            <artifactId>spring-cloud-dependencies</artifactId> <!--G 对应 2.1.x-->
+            <!--<version>Finchley.M9</version>--> <!--F 对应 2.0.x-->
+            <version>Greenwich.RELEASE</version>
+            <type>pom</type>
+            <scope>import</scope>
+        </dependency>
+    </dependencies>
+</dependencyManagement>
 ```
 
 > 父项目的 pom 文件只写通用的jar包。如 mysql 驱动包只在部分子模块使用，就不要写在父项目中
@@ -148,15 +218,15 @@
 
 ## 公共模块
 
-> 项目创建：demo_common
+> 公共模块，最终是以jar包形式存在。所以，`勿需指定微服务名 demo-common`。
 
-```
-选中父项目，然后右键选择 new -> module，项目名称：demo_common
+```java
+选中父项目，然后右键选择 new -> module，项目名称：'demo_common'
 
 对于公共模块只写公共方法，不写业务逻辑，所以 pom.xml 不用引用其他jar包
 ```
 
-> pom.xml
+> 基础配置
 
 ```xml
 <parent>
@@ -180,6 +250,13 @@
         <version>3.2.2</version>
     </dependency>
 </dependencies>
+```
+
+```properties
+server.port=9001
+
+#微服务名称只能用-进行分割，不能用下划线
+spring.application.name=demo-base
 ```
 
 > 状态码实体类
@@ -268,17 +345,17 @@ public class Result {
 
 ##基础微服务
 
-> 基础微服务：demo_base
+> 基础微服务：`demo-base`
 
 ```java
 //与公共模块的区别：
 公共模块只写一些公共类，不写逻辑代码，最终是以 jar 包形式在各个微服务中调用。
 基础微服务是整个项目的一个子模块，也是微服务的一个。
 
-但创建方式相同，都是右键选择 new -> module，项目名称：demo_base
+但创建方式相同，都是右键选择 new -> module，项目名称：'demo_base'
 ```
 
-> pom.xml
+> 基础配置
 
 ```xml
 <parent>
@@ -312,8 +389,6 @@ public class Result {
     </dependency>
 </dependencies>
 ```
-
-> properties
 
 ```properties
 server.port=9001
@@ -427,11 +502,13 @@ public interface LabelDao extends CrudRepository<Label, String> { }
 
 ##用户微服务
 
-> 用户微服务：demo_user
+> 用户微服务：`demo-user`
 
+```java
+创建方式同上，右键选择 new -> module，项目名称：'demo_user'
 ```
-创建方式同上，右键选择 new -> module，项目名称：demo_user
-```
+
+> 基础配置
 
 ```xml
 <parent>
@@ -452,11 +529,20 @@ public interface LabelDao extends CrudRepository<Label, String> { }
 </dependencies>
 ```
 
+```properties
+server.port=9002
+
+#微服务名，横岗分割
+spring.application.name=demo-user
+
+jwt.config.key=bluecard
+jwt.config.ttl=300000
+```
+
 > 关于JWT认证
 
 ```java
-JWT认证的 pom 引用，及工具类 JwtUtil 写在 'demo_common' 模块（不用写配置）
-
+//JWT认证的 pom 引用，及工具类 JwtUtil 写在 'demo_common' 模块（不用写配置）
 @Data
 @ConfigurationProperties(prefix = "jwt.config")
 public class JwtUtil {
@@ -465,24 +551,20 @@ public class JwtUtil {
 ```
 
 ```java
-但是JWT认证功能在 用户微服务 中使用，所以必须在 'demo_user' 微服务的启动类中注入 Bean，并增加配置
-
+//但是JWT认证功能在 用户微服务 中使用，所以必须在 'demo_user' 微服务的启动类中注入 Bean，并增加配置
 @Bean
 public JwtUtil jwtUtil() {
     return new JwtUtil();
 }
 ```
 
-```properties
-jwt.config.key=bluecard
-jwt.config.ttl=300000
-```
 
 
 
 
+# 短信Sms
 
-# Sms
+##基础配置
 
 > 短信服务使用 阿里云通信
 
@@ -490,7 +572,6 @@ jwt.config.ttl=300000
 （1）注册，登陆，实名，产品选择'短信服务'
 （2）申请签名，申请模板，创建 AccessKey，充值
 ```
-##基础配置
 
 > 配置文件
 
@@ -722,18 +803,21 @@ public static String sendSMS(String userName, String key, String toMobile, Strin
 ```
 # BCrypt加密
 
->基础配置：hash算法不可逆，所以不能解密
+##基础概念
+
+>HASH算法不可逆，所以不能解密
 
 ```java
 任何应用考虑到安全，绝不能明文的方式保存密码。密码应该通过哈希算法进行加密。有很多标准的算法比如 SHA 或 MD5，结合salt（盐）是一个不错的选择。
 Spring Security提供了 BCryptPasswordEncoder 类，实现Spring的 PasswordEncoder 接口使用'BCrypt强哈希方法'来加密密码。
 ```
 ```java
+//都是HASH算法
 '纯md5加密'：可以使用密码字典破解，暴力破解。（X）
 'md5加盐加密'：一旦知道 salt 和加密规则，就可以破解所有的密码。（X）
 'md5随机盐加密'：不同用户分配不同的salt。必须得单独保存salt，验证时使用。（X）
 
-'BCrypt加密'：将salt随机，并混入最终加密后的密码。验证时也无需单独提供之前的salt，从而无需单独处理salt问题。
+'BCrypt加密'：随机生成salt，并混入最终加密后的密码。验证时也无需单独提供之前的salt，从而无需单独处理salt问题。
 ```
 
 ```java
@@ -743,6 +827,10 @@ Spring Security提供了 BCryptPasswordEncoder 类，实现Spring的 PasswordEnc
 在下次校验时，从hash中取出salt，salt跟password进行hash。得到的结果跟保存在DB中的hash进行比对。
 ```
 
+##配置使用
+
+> 基础配置
+
 ```xml
 <dependency>
     <groupId>org.springframework.boot</groupId>
@@ -750,7 +838,7 @@ Spring Security提供了 BCryptPasswordEncoder 类，实现Spring的 PasswordEnc
 </dependency>
 ```
 ```java
-@Bean //配置bean
+@Bean //注入Bean
 public BCryptPasswordEncoder encoder(){
     return new BCryptPasswordEncoder();
 }
@@ -760,7 +848,7 @@ public BCryptPasswordEncoder encoder(){
 
 ```java
 添加了spring security依赖后，所有的地址都被spring security所控制了。
-目前只是需要用到'BCrypt密码加密'的部分，所以我们要添加一个配置类，配置为所有地址都可以匿名访问。
+目前只是需要用到'BCrypt密码加密'的部分，所以要添加一个配置类，配置为所有地址都可以匿名访问。
 ```
 
 ```java
@@ -769,11 +857,12 @@ public BCryptPasswordEncoder encoder(){
 public class WebSecurityConfig extends WebSecurityConfigurerAdapter {
     @Override
     protected void configure(HttpSecurity http) throws Exception {
-        super.configure(http);
-        http.authorizeRequests()
-                .antMatchers("/**").permitAll()
-                .anyRequest().authenticated()
-                .and().csrf().disable();
+        // super.configure(http); //必须注掉
+        
+        http.authorizeRequests() //开启权限验证
+                .antMatchers("/**").permitAll() //拦截所有路径，任何权限都可以访问
+                .anyRequest().authenticated() //任意请求，认证后才可以访问
+                .and().csrf().disable(); //固定写法：表示使CRSF（网络攻击技术）拦截失效
     }
 }
 ```
@@ -793,19 +882,27 @@ public void encoder() {
     System.out.println("matches: " + matches); //比对: true
 }
 ```
-#JWT认证
+# JWT认证
 
-##常见认证
+## 常见认证
 
->HTTP Basic Auth
+>**有状态登陆 & 无状态登陆**
+
+```java
+'有状态登陆'：服务端需要保存用户的登陆状态（如 SessionId），每个用户发起请求都需要根据 SessionId 查询redis获取用户的登陆信息。
+
+'无...登陆'：.....不需要.....，每个用户发起请求后，只需要验证 Token 就可以获取到用户的登陆信息。
+```
+
+>HTTP Basic Auth `无状态登陆`
 
 ```
 每次请求API时，都提供用户的 username 和 password。
 简言之，Basic Auth是配合RESTful API 使用的最简单的认证方式，只需提供用户名密码即可。
-但由于有把用户名密码暴露给第三方客户端的风险，在生产环境下被使用的越来越少。因此，在开发对外开放的 RESTful API 时，尽量避免采用HTTP Basic Auth。
+但由于有把用户名密码暴露给第三方客户端的风险，所以应该尽量避免使用。
 ```
 
->OAuth：<https://www.cnblogs.com/flashsun/p/7424071.html>
+>OAuth `无状态登陆` <https://www.cnblogs.com/flashsun/p/7424071.html>
 
 ```
 OAuth（开放授权）是一个开放的授权标准，允许用户让第三方应用访问该用户在某一web服务上存储的私密的资源（如照片，视频，联系人列表），
@@ -820,11 +917,11 @@ OAuth允许用户提供一个令牌，而不是用户名和密码来访问他们
 
 ![](assets/tool0.jpg)
 
->Cookie Auth
+>Cookie Auth `有状态登陆`
 
 ```java
-为一次请求认证在服务端创建一个Session对象，同时在客户端的浏览器端创建了一个Cookie对象；
-通过客户端带上来Cookie对象来与服务器端的Session对象匹配来实现'状态管理'的。
+一次请求认证后，在服务端创建一个Session对象，同时在客户端的浏览器端创建了一个Cookie对象；
+通过客户端带上来Cookie对象，来与服务器端的Session对象匹配来实现'状态管理'的。
 默认的，当我们关闭浏览器的时候，cookie会被删除。但可以通过修改cookie 的expire time使cookie在一定时间内有效。
 
 cookie 验证是用于长时间用户验证，cookie 验证是'有状态的'，意味着验证记录或者会话需要一直在服务端和客户端保持。
@@ -842,38 +939,59 @@ cookie 验证是用于长时间用户验证，cookie 验证是'有状态的'，�
 
 ![](assets/tool1.webp)
 
->Token Auth：<https://www.jianshu.com/p/c33f5777c2eb>
+>Token Auth `无状态登陆` <https://www.jianshu.com/p/c33f5777c2eb>
 
 ```java
-使用基于 Token 的身份验证方法，在服务端不需要存储用户的登录记录。
+使用基于 Token 的身份验证方法，'在服务端不需要存储用户的登录记录（无状态登陆的本质）'。
 
 //大概的流程是这样的：
-（1）客户端使用用户名跟密码请求登录
+（1）客户端使用 username 和 password 请求登录
 （2）服务端收到请求，去验证用户名与密码
 （3）验证成功后，服务端会签发一个 Token，再把这个 Token 发送给客户端
 （4）客户端收到 Token 以后可以把它存储起来，比如存储在 local storage，也可以存储在 session storage 或者 cookie 中
-（5）客户端每次向服务端请求资源的时候，将 token 放进 Authorization header，然后发送到服务端
-（6）服务端收到请求，然后去验证客户端请求里面带着的 Token，如果验证成功，就向客户端返回请求的数据
+（5）客户端'以后每次'向服务端请求资源的时候，将 token 放进 Authorization-header，然后发送到服务端
+（6）服务端收到请求，然后解码 Token，就可以知道用户的相关信息，然后根据权限返回请求的数据
 （7）一旦用户登出，token 在客户端被销毁，不需要经过服务器端
 ```
 
 ##Token优缺点
 
->（优点1）：无状态，可扩展和解耦
+```java
+//4个优点
+因为token存储在客户端，服务器只负责解码。这样不需要占用服务器端资源。
+服务器端可以无限扩展，负载均衡器可以将用户传递到任何服务器，服务器都能知道用户信息，因为jwt里面包含了。
+数据安全，因为有签名，防止了篡改，但信息还是透明的，不要放敏感信息。
+放入请求头提交，很好的防止了csrf攻击，
+```
 
 ```java
-使用 token 而不是 cookie 的最大优点应该就是'无状态'
+//2个缺点
+（1）无法主动让token失效，小伙伴们会说token不是有过期时间吗？是的，token本身是有过期时间，但token一旦发出，服务器就无法收回。
+如：一个jwt的token的失效时间是3天，但我们发现这个token有异常，有可能被人登录，那真实的用户可以修改密码。但是即使修改了密码，那个异常的token还是合法的，因为3天的失效时间未到，我们服务器是没法主动让异常token失效。
+
+（2）数据延时，不一致问题。因为jwt中包含了用户的部分信息，如果这些部分信息修改了，服务器获取的还是以前的jwt中的用户信息，导致数据不一致。
+```
+
+>（优点1）：`无状态登陆`，可扩展和解耦
+
+```java
+使用 token，而不是 cookie 的最大优点应该就是'无状态'
 后端不需要保持对 token 的记录，每个 token 都是独立的，包含了检查其有效性的所有数据，并通过声明传达了用户信息。
 
-服务器端的工作只需要在登录成功后，生成（或者 sign，签署） token，或者验证传入的 token 是否有效。
+服务器端的工作只需要在登录成功后，生成（或者 sign，签署）token，或者验证传入的 token 是否有效。
 有时候甚至不需要生成 token，第三方服务比如 Auth0 可以处理 token 的签发，服务器只需要验证 token 的有效性就可以。
+
+解耦：Token可以在任何地方生成，只要在API被调用的时候，可以进行Token生成调用即可。
 ```
 
->（优点2）：跨域和 CORS
+>（优点2）：支持跨域和 CORS，避免 CSRF
 
-```
+```java
 cookie 能很好的处理单域和子域，但是遇到跨域的问题就会变得难以处理。
-而使用 token 的 CORS 可以很好的处理跨域的问题。由于每次发送请求到后端，都需要检查 JWT，只要它们被验证通过就可以处理请求。
+
+使用 token 的 CORS 可以很好的处理跨域的问题。由于每次发送请求到后端，都需要检查 JWT，只要它们被验证通过就可以处理请求。
+
+因为不再依赖于Cookie，所以不需要考虑对 CSRF（跨站请求伪造）的防范。
 ```
 
 >（优点3）：在 JWT 中存储数据
@@ -898,6 +1016,12 @@ cookie 能很好的处理单域和子域，但是遇到跨域的问题就会变�
 另一方面，token 更容易在 IOS 和 Android 上实现，Token 也更容易实现物联网应用程序和服务，没有 Cookie 存储的概念。
 ```
 
+> （优点5）：性能高
+
+```
+一次网络往返时间（通过数据库查询session信息），总比做一次 HMACSHA256 计算的Token验证和解析要费时得多。
+```
+
 >缺点1：JWT 大小
 
 ```
@@ -917,12 +1041,31 @@ session storage 就更不用说了，会话断开就被清除掉了。
 （个人记录：由于JWT前两个字符串采用base64进行编码，所以内容越多，编码字符串长度越长）
 ```
 
-##JWT的Token
+## JWT基础
 
-> JWT组成：头部（header）、载荷（playload）与签名（signature）
+> JWT，全称JSON Web Token，主要特点：
 
+```java
+（1）数据是JSON格式
+（2）用于Web应用
+（3）是一个Token，也就是一个令牌方式
 ```
-JSON Web Token（JWT）是一个非常轻巧的规范。这个规范允许使用 JWT 在用户和服务器之间传递安全可靠的信息。
+
+```java
+JWT 定义了一种'紧凑且自包含'的方式，用于在各方之间'以JSON对象进行安全传输信息'。这些信息可以通过对称/非对称方式'进行签名，防止信息被串改'。
+
+'紧凑'：就是JWT比较小，数据量不大，可以通过URL、POST参数或Header请求头方式进行传输。
+'自包含'：JWT可以让用户自定义JWT里面包含的用户信息，如：姓名、昵称等（不要放隐密的信息）。从而避免了多次查询数据库。
+```
+
+> JWT数据结构：头部（header）、载荷（playload）与签名（signature）
+
+```java
+Header.Payload.Signature //三者通过'.'组合在一起
+
+eyJhbGciOiJIUzI1NiJ9. //Header
+eyJqdGkiOiIxMTQ2MDM1MDEzOTQ0MDEyODAwIiwic3ViIjoiYWFhIMDcxMzE0fQ. //Payload
+TrJCYlVNnDSOYhwU9n5-k06kua-NCv0AX76JDwl_4qM //Signature
 ```
 
 > BASE64编码和解码：http://tool.oschina.net/encrypt?type=3
@@ -947,30 +1090,34 @@ public void demo01() throws IOException {
 }
 ```
 
->头部（header）：用于描述关于该JWT的最基本的信息，例如其类型以及签名所用的算法等。也可以被表示成一个JSON对象。
+>头部（header）：用于描述关于该JWT的最基本的信息，例如其类型以及签名所用的算法等。
 
 ```java
-{"typ":"JWT","alg":"HS256"} //签名算法是HS256算法
+{"typ":"JWT","alg":"HS256"} //alg：签名的算法，默认HS256，可自定义。type：令牌的类型，JWT令牌就为JWT。
 
-eyJ0eXAiOiJKV1QiLCJhbGciOiJIUzI1NiJ9 //BASE64编码
+eyJ0eXAiOiJKV1QiLCJhbGciOiJIUzI1NiJ9 //BASE64编码后的结果
 ```
 
->载荷（playload）：存放有效信息的地方。包含三部分内容：
+>载荷（playload）：用来存放实际需要传递的数据。包含三部分内容：
 
 ```java
 //（1）标准中注册的声明（建议但不强制使用）
-iss: jwt签发者
-sub: jwt所面向的用户
-aud: 接收jwt的一方
-exp: jwt的过期时间，这个过期时间必须要大于签发时间
-nbf: 定义在什么时间之前，该jwt都是不可用的.
-iat: jwt的签发时间
-jti: jwt的唯一身份标识，主要用来作为一次性token，从而回避重放攻击。
+jti（JWT Id）: jwt的唯一编号，主要用来作为一次性token，从而回避重复攻击。
+sub（subject）: 主题
+
+iss（issuer）: 签发jwt的一方
+aud（audience）: 接收jwt的一方
+
+iat（Issued At）: jwt的签发时间
+nbf（Not Before）: 生效时间，jwt从这个时间点开始生效
+exp（Expiration time）: jwt的过期时间，这个过期时间必须要大于签发时间
 ```
 
 ```java
 //（2）公共的声明
 可以添加任何的信息，一般添加用户的相关信息或其他业务需要的必要信息。'但不建议添加敏感信息'，因为该部分在客户端可解密
+
+'注意'：JWT使用Base64算法，默认不加密，任何人都可以获取，只要进行Base64解码就行了，所以不要把隐密的信息放到JWT中
 ```
 
 ```java
@@ -981,28 +1128,64 @@ jti: jwt的唯一身份标识，主要用来作为一次性token，从而回避
 这些claim跟JWT标准规定的claim区别在于：
 JWT规定的claim，JWT的接收方在拿到JWT之后，都知道怎么对这些标准的claim进行验证（还不知道是否能够验证）；
 而 private claims不会验证，除非明确告诉接收方要对这些 claim 进行验证以及规则才行。
+```
 
+```java
 {"sub":"1234567890","name":"John Doe","admin":true} //自定义playload
 eyJzdWIiOiIxMjM0NTY3ODkwIiwibmFtZSI6IkpvaG4gRG9lIiwiYWRtaW4iOnRydWV9 //BASE64编码
 ```
 
-> 签证（signature）：jwt的第三部分是一个签证信息，由三部分组成：
+> 签证（signature）：JWT第三段数据，主要作用是对前面两段的数据进行签名，防止数据篡改。
 
 ```java
-//header (base64后的) + payload (base64后的) + secret
+进行签名的时候会有个'密钥（secret）'，只有服务器知道，然后利用Header中的签名算法进行签名。
 
-这个部分需要base64加密后的header 和 base64加密后的payload使用 '.' 连接组成的字符串，
-然后通过header中声明的加密方式进行加盐secret组合加密，然后就构成了jwt的第三部分。
-
-eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9. //header (base64后的)
-eyJzdWIiOiIxMjM0NTY3ODkwIiwibmFtZSI6IkpvaG4gRG9lIiwiYWRtaW4iOnRydWV9. //payload (base64后的)
-TJVA95OrM7E2cBab30RMHrHDcEfxjoYZgeFONFh7HgQ //secret
+//签名算法：base64加密后的header 和 base64加密后的payload，使用'.'连接组成的字符串，
+//        然后通过header中声明的加密方式进行加盐（secret）加密，最终生成jwt的第三部分
+HMACSHA256(base64UrlEncode(header) + "." + base64UrlEncode(payload), secret) 
 ```
+
+> `jwt最终组成部分`：header（base64后的）+`.`+ payload（base64后的）+`.`+ signature
 
 ```java
-注意：secret是保存在服务器端的，jwt的签发生成也是在服务器端的，secret就是用来进行jwt的签发和jwt的验证，
-所以，它就是你服务端的私钥，'在任何场景都不应该流露出去'。一旦客户端得知这个secret, 那就意味着客户端是可以自我签发jwt了。
+eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9. //header
+eyJzdWIiOiIxMjM0NTY3ODkwIiwibmFtZSI6IkpvaG4gRG9lIiwiYWRtaW4iOnRydWV9. //payload
+TJVA95OrM7E2cBab30RMHrHDcEfxjoYZgeFONFh7HgQ //signature
 ```
+
+> jwt的工作方式
+
+```java
+在用户进行认证登录时，登录成功后服务器会返回一个JWT给客户端；那这个JWT就是用户的凭证，以后到哪里去都要带上这个凭证token。
+尤其访问受保护的资源的时候，通常把JWT放在'Authorization header'中。要用 Bearer schema，如header请求头中：
+
+Authorization: Bearer <token>
+```
+
+![](assets/cloud1.webp)
+
+>基于JWT的身份认证
+
+```java
+用户信息是放在JWT中的，是存放在客户端（cookie，local storage）中的，服务器只需解码验证就行了，就可以知道获取到用户信息。
+'这和之前的Session方式就不一样。'
+```
+
+>与Session-Cookie方式的区别
+
+```java
+Session方式：用户信息（即SessionId）是'存储在服务器端'。
+
+Token方式：用户信息（即token）是'存储在客户端'，服务器端只要解码即可。
+```
+
+
+
+![](assets/cloud2.webp)
+
+![](assets/cloud3.webp)
+
+
 
 ## JJWT基础
 
@@ -1079,10 +1262,10 @@ public void parseToken() {
 
 ##JJWT整合
 
-> JJWT工具类，写在公共模块 `demo_common`
+> JJWT工具类。写在公共模块 `demo_common`
 
 ```java
-@Data
+@Data //读取配置文件，但配置文件不应该写在模块 demo_common，而是写在使用 JWT 功能的微服务，这样不同的微服务就可以自定义不同的配置。
 @ConfigurationProperties(prefix = "jwt.config")
 public class JwtUtil {
     private String key; //加盐Secret
@@ -1113,10 +1296,12 @@ public class JwtUtil {
 }
 ```
 
->JWT使用，写在用户微服务 `demo_user`
+>JWT配置。写在用户微服务 `demo_user`
 
 ```java
-@Bean //启动类注入Bean
+//JWT鉴权，并不是所有的微服务项目都使用，所以不要在 JwtUtil 类上加 @Component
+//而应该在使用 JwtUtil 的微服务中用 @Bean 标签注入
+@Bean
 public JwtUtil jwtUtil() {
     return new JwtUtil();
 }
@@ -1184,20 +1369,14 @@ public Result delete(@RequestHeader("Authorization") String authHeader, @PathVar
 }
 ```
 
->使用拦截器方式实现token鉴权
+## 拦截器鉴权
 
-```java
-每个接口都进行 鉴权 处理，会显得冗余。可以通过 拦截器 进行优化。 extends HandlerInterceptorAdapter
-
-（1）定义拦截器
-（2）注册拦截器
-（3）更新鉴权方式，不再每个接口中进行鉴权
-```
+>定义拦截器：每个接口都进行鉴权处理，会显得冗余。可以通过拦截器 进行优化。 
 
 ```java
 @Slf4j
 @Component
-public class JwtInterceptor extends HandlerInterceptorAdapter {
+public class JwtInterceptor implements HandlerInterceptor /*extends HandlerInterceptorAdapter*/ {
 
     @Autowired
     JwtUtil jwtUtil;
@@ -1206,9 +1385,6 @@ public class JwtInterceptor extends HandlerInterceptorAdapter {
     @Override
     public boolean preHandle(HttpServletRequest request, HttpServletResponse response, Object handler) throws
             Exception {
-        // return super.preHandle(request, response, handler);
-
-        System.out.println("经过了拦截器");
         String authHeader = request.getHeader("Authorization");
         if (authHeader != null && authHeader.startsWith("Bearer ")) {
             String token = authHeader.substring(7); //The part after "Bearer "
@@ -1235,17 +1411,17 @@ public class JwtInterceptor extends HandlerInterceptorAdapter {
     @Override
     public void postHandle(HttpServletRequest request, HttpServletResponse response, Object handler, ModelAndView
             modelAndView) throws Exception {
-        super.postHandle(request, response, handler, modelAndView);
     }
 
     //返回处理（已经渲染了页面）：可以根据ex是否为null判断是否发生了异常，进行日志记录
     @Override
     public void afterCompletion(HttpServletRequest request, HttpServletResponse response, Object handler, Exception
             ex) throws Exception {
-        super.afterCompletion(request, response, handler, ex);
     }
 }
 ```
+
+> 注册拦截器
 
 ```java
 @Configuration
@@ -1265,6 +1441,8 @@ public class WebMvcConfig implements WebMvcConfigurer {
 }
 ```
 
+>更新鉴权方式，不再每个接口中进行鉴权
+
 ```java
 @DeleteMapping("/{id}") //使用 拦截器 后的删除接口
 public Result delete(@PathVariable String id) {
@@ -1279,57 +1457,248 @@ public Result delete(@PathVariable String id) {
 
 
 
+# Eureka
 
+##基础概念
 
+>Netflix-Eureka
 
+```
+Eureka 是 Netflix 开发的服务发现框架，SpringCloud 将它集成在自己的子项目 spring-cloud-netflix 中，实现 SpringCloud 的服务发现功能。
+Eureka 包含两个组件：Eureka-Server 和 Eureka-Client。
+```
 
+```
+Eureka-Server 提供服务注册服务，各个节点启动后，会在 Eureka-Server 中进行注册，
+这样 Eureka-Server 中的服务注册表中将会存储所有可用服务节点的信息，服务节点的信息可以在界面中直观的看到。
+```
+```
+Eureka-Client 是一个java客户端，用于简化与 Eureka-Server 的交互，客户端同时也是一个内置的、使用轮询(round-robin)负载算法的负载均衡器。
+在应用启动后，将会向 Eureka-Server 发送心跳，默认周期为 30 秒，如果 Eureka-Server 在多个心跳周期内没有接收到某个节点的心跳，
+Eureka-Server 将会从服务注册表中把这个服务节点移除（默认90秒，3个周期）。
+```
+```
+Eureka-Server 之间通过复制的方式完成数据的同步，Eureka 还提供了客户端缓存机制，即使所有的 Eureka-Server 都挂掉，
+客户端依然可以利用缓存中的信息消费其他服务的API。综上，Eureka 通过心跳检查、客户端缓存等机制，确保了系统的高可用性、灵活性和可伸缩性。
+```
 
+##服务端
 
+>父项目锁定 SpringCloud 版本 `demo-parent`
 
+```xml
+<!--父项目 demo-parent，锁定 SpringCloud 版本-->
+<dependencyManagement>
+    <dependencies>
+        <dependency>
+            <groupId>org.springframework.cloud</groupId>
+            <artifactId>spring-cloud-dependencies</artifactId> <!--G 对应 2.1.x-->
+            <!--<version>Finchley.M9</version>--> <!--F 对应 2.0.x-->
+            <version>Greenwich.RELEASE</version>
+            <type>pom</type>
+            <scope>import</scope>
+        </dependency>
+    </dependencies>
+</dependencyManagement>
+```
 
+>Eureka服务端微服务：`demo-eureka`
 
+```xml
+<parent>
+    <artifactId>demo_parent</artifactId>
+    <groupId>com.example</groupId>
+    <version>0.0.1-SNAPSHOT</version>
+</parent>
+<modelVersion>4.0.0</modelVersion>
 
+<artifactId>demo_eureka</artifactId>
 
+<dependencies>
+    <!--添加依赖 Eureka-Server-->
+    <dependency>
+        <groupId>org.springframework.cloud</groupId>
+        <artifactId>spring-cloud-starter-netflix-eureka-server</artifactId>
+    </dependency>
+</dependencies>
+```
 
+```properties
+server.port=6868
 
+#Euraka
+#是否注册到Eureka服务中，本身就是服务端，勿需注册
+eureka.client.register-with-eureka=false
+#是否从Eureka中获取注册信息
+eureka.client.fetch-registry=false
+eureka.client.service-url.defaultZone=http://127.0.0.1:${server.port}/eureka
+```
 
+```java
+@EnableEurekaServer //Eureka-Server启动类
+@SpringBootApplication
+public class EurekaApplication {
+    public static void main(String[] args) {
+        SpringApplication.run(EurekaApplication.class, args);
+    }
+}
+```
 
+> 页面验证：<http://localhost:6868/>
 
+```java
+主界面中 'System-Status' 系统信息，'General-Info' 一般信息。'Instances-currently-registered-with-Eureka' 注册的所有微服务列表
+```
 
+##客户端
 
+> 以基础微服务为例 `demo-base`
 
+```xml
+<!--添加依赖 Eureka-Client-->
+<dependency>
+    <groupId>org.springframework.cloud</groupId>
+    <artifactId>spring-cloud-starter-netflix-eureka-client</artifactId>
+</dependency>
+```
 
+```properties
+#Eureka
+eureka.client.service-url.defaultZone=http://localhost:6868/eureka
+#将IP注册到 Eureka-Server。默认注册的是主机名
+eureka.instance.prefer-ip-address=true
+```
 
+```java
+//启动类添加注解
+@EnableEurekaClient
+```
 
+> Eureka 保护模式
 
+```java
+如果在 Eureka-Server 的首页看到以下这段提示，则说明Eureka已经进入了保护模式：
+'EMERGENCY! EUREKA MAY BE INCORRECTLY CLAIMING INSTANCES ARE UP WHEN THEYRE NOT...'
+```
 
+```
+Eureka-Server 在运行期间，会统计心跳失败的比例在 15 分钟之内是否低于 85%，如果出现低于的情况（在单机调试的时候很容易满足，
+实际在生产环境上通常是由于网络不稳定导致），Eureka-Server 会将当前的实例注册信息保护起来，同时提示这个警告。
 
+保护模式 主要用于一组客户端和 Eureka-Server 之间存在网络分区场景下的保护。
+一旦进入保护模式，Eureka-Server 将会尝试保护其服务注册表中的信息，不再删除服务注册表中的数据（也就是不会注销任何微服务）。
+```
 
+#Feign
 
+##基础概念
 
+>Feign简介
 
+```
+Feign 是简化 Java-HTTP 客户端开发的工具（java-to-httpclient-binder），它的灵感来自于 Retrofit、JAXRS-2.0 和 WebSocket。
 
+Feign 的初衷是降低统一绑定 Denominator 到 HTTP-API 的复杂度，不区分是否为 restful。
+```
 
+## 基础配置
 
+> 用户微服务 `demo-user` 调用基础微服务 `demo-base` 。所以，在 `demo-user` 中添加依赖。
 
+```xml
+<!--添加依赖 Feign-->
+<dependency>
+    <groupId>org.springframework.cloud</groupId>
+    <artifactId>spring-cloud-starter-openfeign</artifactId>
+</dependency>
+```
 
+```java
+//启动类添加注解
+@EnableDiscoveryClient
+@EnableFeignClients
+```
 
+##测试DEMO
 
+>`demo-user` 中新建包 com.example.user.client，存放 `demo-base` 中的的接口。
 
+```java
+@Component //加不加都行，无意义
+@FeignClient("demo-base") //指定微服务名，不能包含下划线
+public interface LabelClient {
 
+    //用于对被调用的微服务进行地址映射。
+    @GetMapping("/label")
+    Result listLabels();
 
+    //@PathVariable注解一定要指定参数名称，否则出错
+    @GetMapping("/label/{labelId}")
+    Result getById(@PathVariable("labelId") String id);
+}
+```
 
+> `demo-user` 中调用远程接口
 
+```java
+@Slf4j
+@RequestMapping("/user")
+@RestController
+public class UserController {
 
+    @Autowired
+    LabelClient labelClient;
 
+    @GetMapping("/label")
+    public Result listLabels() {
+        return labelClient.listLabels();
+    }
 
+    @GetMapping("/label/{labelId}")
+    public Result getById(@PathVariable("labelId") String id) {
+        return labelClient.getById(id);
+    }
+}
+```
 
+> `demo-base`中的元接口
 
+```java
+@Slf4j
+@RequestMapping("/label")
+@RestController
+public class LabelController {
 
+    @Autowired
+    LabelService labelService;
 
+    //获取多个对象的方法用 list 做前缀，复数形式结尾如：listObjects
+    @GetMapping
+    public Result listLabels() {
+        List<Label> labels = labelService.listLabels();
+        return new Result(true, StatusCode.OK, "查询成功", labels);
+    }
 
+    //获取单个对象的方法用 get 做前缀
+    @GetMapping("/{labelId}")
+    public Result getById(@PathVariable String id) { //获取请求行参数
+        Optional<Label> label = labelService.getById(id);
+        log.info("getById: {}", label.get());
+        return new Result(true, StatusCode.OK, "查询成功", label);
+    }
+}
+```
 
+##负载均衡
 
+> 同时启动多次 `demo-base`，多次请求，轮流调用。
+
+```java
+同时启动多次单个 SpringBoot 项目：启动绿三角左边的 'Edit Config...'，选中待启动项目，取消构造'Single-instance-only'
+每次运行 SpringBoot 项目前，修改配置文件中的端口号即可。
+
+注意：'demo-base'最好排除依赖'spring-boot-devtools'
+```
 
 
 

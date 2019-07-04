@@ -103,17 +103,19 @@ mini与full版：差别在于有没有内建 msysgit 工具
 
 ## 常见问题
 
->如何在IDEA中多次启动同一个程序呢
+>如何在IDEA中多次启动同一个项目
 
 ```java
-点击工具栏启动标识 小三角 左边的 'Edit Configurations'，在弹出窗口中取消勾选 Single instance only（单例模式） ，点击OK
+启动绿三角 左边的 'Edit Config...'，在弹出窗口中取消勾选 'Single-instance-only（单例模式）'，点击OK
 每次运行 SpringBoot 项目前，修改配置文件中的端口号即可。
+
+注意：项目最好排除'spring-boot-devtools'
 ```
 
->`如何在单个窗口打开多个Maven工程啊？`
+>如何在单个窗口打开多个Maven工程啊？
 
 ```
-随便新建一个文件夹，然后将工程都扔进去，使用IDEA打开这个文件夹。
+随便新建一个文件夹，然后将工程都扔进去，使用 IDEA 打开这个文件夹。
 ```
 >复制警告或错误信息
 
@@ -128,6 +130,14 @@ mini与full版：差别在于有没有内建 msysgit 工具
 ```java
 打开右侧"Maven-Projects"，当前项目'Lifecycle'，选中'Test'，点击菜单栏的"小闪电"，此时Test上多了一条横。
 ```
+
+> SpringBoot 项目的 Run Dashboard
+
+```
+工具栏，启动绿三角左边的 Edit Config...，找到 SpringBoot，点击 + 号新建一个标签，右侧 Main class 过滤启动类，修改 Name
+```
+
+
 
 
 
@@ -214,7 +224,7 @@ https://www.cnblogs.com/Miracle-Maker/articles/6476687.html
 
 https://blog.csdn.net/small_mouse0/article/details/77506060
 
-## 基础配置
+## 其他配置
 
 > class类的doc模板
 
@@ -979,7 +989,7 @@ log4j.appender.CTRL_ERROR.layout.ConversionPattern=%d{HH:mm:ss.SSS} [%5p] [%t] -
 
 ## 基本概念
 
->什么是构建???
+>什么是构建？ `Ant，Maven，Gradle`
 
 ```java
 构建并不是创建，创建一个工程并不等于构建一个项目。
@@ -1004,7 +1014,7 @@ log4j.appender.CTRL_ERROR.layout.ConversionPattern=%d{HH:mm:ss.SSS} [%5p] [%t] -
 >mvn命令：与项目构建相关的命令，必须切换到 pom.xml 同级目录
 
 ```shell
-mvn clean         #删除以前的编译结果,为重新编译做准备
+mvn clean         #删除以前的编译结果，为重新编译做准备
 mvn compile       #编译主程序
 mvn test-compile  #编译测试程序
 mvn test          #执行测试
@@ -1172,8 +1182,7 @@ mvn deploy:deploy-file -DgroupId=com.bluecard -DartifactId=wxpay-sdk-0.0.3 -Dver
 >依赖关系
 
 ```xml
-使用标签<dependency>把另一个项目的 jar 引入到当前项目
-自动下载另一个项目所依赖的其他项目
+使用标签<dependency>把另一个项目的 jar 引入到当前项目，自动下载另一个项目所依赖的其他项目
 ```
 >继承关系
 
@@ -1194,7 +1203,7 @@ mvn deploy:deploy-file -DgroupId=com.bluecard -DartifactId=wxpay-sdk-0.0.3 -Dver
 <artifactId>child</artifactId>
 <!-- <version>0.0.1-SNAPSHOT</version> --> 可省
 ```
-> 聚合关系（多模块模式，分布式项目推荐）
+> 聚合关系（多模块模式，微服务项目推荐）
 
 ```xml
 <!--前提是继承关系，父项目会把子项目包含到父项目中-->
