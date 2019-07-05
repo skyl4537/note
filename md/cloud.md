@@ -1,10 +1,6 @@
 [TOC]
 
-
-
-#SpringCloud
-
-## 基础概念
+# 基础概念
 
 > 什么是SpringCloud？ http://projects.spring.io/spring-cloud/
 
@@ -86,7 +82,9 @@ Dubbo 只是实现了服务治理，而 SpringCloud 下面有 21 个子项目（
 'SpringData'：持久层框架。不仅能够适用于关系型数据库，还能够适用于非~。如 MongoDB，Redis，Hadoop
 ```
 
-##父项目
+# 父项目
+
+##基础概念
 
 
 > 父项目：`demo-parent`。创建：<https://start.spring.io/>
@@ -102,6 +100,8 @@ Dubbo 只是实现了服务治理，而 SpringCloud 下面有 21 个子项目（
 ```
 
 ```
+
+##基础配置
 
 >父项目打包类型必须选择 pom 类型
 
@@ -216,15 +216,19 @@ Dubbo 只是实现了服务治理，而 SpringCloud 下面有 21 个子项目（
 
 
 
-## 公共模块
+# 公共模块
 
-> 公共模块，最终是以jar包形式存在。所以，`勿需指定微服务名 demo-common`。
+##基础概念
+
+> 公共模块，最终是以jar包形式存在。`没有配置文件，所以，也勿需指定微服务名 demo-common`。
 
 ```java
 选中父项目，然后右键选择 new -> module，项目名称：'demo_common'
 
 对于公共模块只写公共方法，不写业务逻辑，所以 pom.xml 不用引用其他jar包
 ```
+
+##基础配置
 
 > 基础配置
 
@@ -258,6 +262,8 @@ server.port=9001
 #微服务名称只能用-进行分割，不能用下划线
 spring.application.name=demo-base
 ```
+
+##公共方法
 
 > 状态码实体类
 
@@ -343,7 +349,9 @@ public class Result {
 
 
 
-##基础微服务
+# 基础微服务
+
+##基础概念
 
 > 基础微服务：`demo-base`
 
@@ -354,6 +362,8 @@ public class Result {
 
 但创建方式相同，都是右键选择 new -> module，项目名称：'demo_base'
 ```
+
+##基础配置
 
 > 基础配置
 
@@ -409,6 +419,8 @@ spring.jpa.generate-ddl=true
 spring.jpa.open-in-view=false
 ```
 
+##常规方法
+
 > 启动类
 
 ```java
@@ -461,6 +473,7 @@ public class LabelController {
     //插入的方法用 save/insert 做前缀
     //修改的方法用 update 做前缀
     //删除的方法用 remove/delete 做前缀
+    //获取统计值的方法用 count 做前缀
     @GetMapping
     public Result listLabels() {
         List<Label> labels = labelService.listLabels();
@@ -497,10 +510,12 @@ public class LabelService {
 > DAO
 
 ```java
-public interface LabelDao extends CrudRepository<Label, String> { }
+public interface LabelDao extends JpaRepository<Label, String> { }
 ```
 
-##用户微服务
+# 用户微服务
+
+##基础配置
 
 > 用户微服务：`demo-user`
 
@@ -539,10 +554,11 @@ jwt.config.key=bluecard
 jwt.config.ttl=300000
 ```
 
-> 关于JWT认证
+##特殊说明
+
+> JWT认证的声明，如 pom 中依赖的引用，及工具类 JwtUtil 都写在 `demo_common` 模块（不用写配置），为其他微服务所共享。
 
 ```java
-//JWT认证的 pom 引用，及工具类 JwtUtil 写在 'demo_common' 模块（不用写配置）
 @Data
 @ConfigurationProperties(prefix = "jwt.config")
 public class JwtUtil {
@@ -550,15 +566,97 @@ public class JwtUtil {
 }
 ```
 
+>但是，JWT认证的使用是在 `demo-user，demo-friend` 中，所以，必须在使用微服务的启动类中注入 Bean，并增加配置
+
 ```java
-//但是JWT认证功能在 用户微服务 中使用，所以必须在 'demo_user' 微服务的启动类中注入 Bean，并增加配置
 @Bean
 public JwtUtil jwtUtil() {
     return new JwtUtil();
 }
 ```
 
+```properties
+jwt.config.key=bluecard
+jwt.config.ttl=300000
+```
 
+#交友微服务
+
+##基础配置
+
+> 交友微服务 `demo-friend`
+
+```properties
+server.port=9003
+spring.application.name=demo-friend
+```
+
+> 两张数据表：好友表（tb_friend） 和 非好友表（tb_nofriend）
+
+```sql
+DROP TABLE IF EXISTS `tb_friend`;
+CREATE TABLE `tb_friend` (
+  `userid` varchar(20) NOT NULL COMMENT '用户ID',
+  `friendid` varchar(20) NOT NULL COMMENT '好友ID',
+  `islike` varchar(1) DEFAULT NULL COMMENT '是否互相喜欢', -- tb_nofriend 去掉此行
+  PRIMARY KEY (`userid`,`friendid`)
+) ENGINE=InnoDB DEFAULT CHARSET=utf8;
+```
+
+| 字段名称 |   字段含义   | 字段类型 |           备注           |
+| :------: | :----------: | :------: | :----------------------: |
+|  userid  |    用户ID    |   文本   |                          |
+| friendid |    好友ID    |   文本   |                          |
+|  islike  | 是否互相喜欢 |   文本   | 0：单向喜欢，1：互相喜欢 |
+
+| 字段名称 | 字段含义 | 字段类型 | 备注 |
+| :------: | :------: | :------: | :--: |
+|  userid  |  用户ID  |   文本   |      |
+| friendid |  好友ID  |   文本   |      |
+
+##业务逻辑
+
+> 主要业务逻辑
+
+```
+（1）当用户登陆后，在推荐好友列表中点击“心”，表示喜欢此人，在数据库 tb_friend 表中插入一条数据，islike 为0
+
+（2）当你点击了喜欢过的人，也喜欢了你，表示互粉成功！ 也向 tb_friend 表中插入一条数据，islike为1，并且将你喜欢她的数据 islike 也修改为1
+
+（3）当你点击了不喜欢某人（点击了叉），向 tb_nofriend 添加一条记录
+
+（4）当两个人互粉后，其中一人不喜欢对方了，删除好友表中的记录 ，向非好友表中添加记录
+```
+
+>什么场景下使用 SpringCloud 呢？
+
+```
+用户表，有两列：fanscount 表示粉丝数，followcount 表示关注数
+
+（1）当用户点击了喜欢：比如小宝关注了楚楚，小宝的 followcount（关注数）加1， 楚楚的 fanscount（粉丝数）加1
+
+（2）当用户删除了好友：比如楚楚删除了好友小宝，小宝的 fanscount（粉丝数）减1，楚楚的 followcount（关注数）减1
+```
+
+> 逻辑梳理
+
+```java
+//A 添加 B 好友时，A 的 followcount 加1，B的 fanscount 加1。
+若 A，B之间毫无关系。添加后，tb_friend 插入一条数据，islike 为0。
+
+若 B 已添加 A 好友。添加后，tb_friend 插入一条数据，islike 为1。'并且，tb_friend 中B对A的 islike 为1'。
+
+//A 删除 B 好友时，A 的 followcount 减1，B的 fanscount 减1。
+若 A，B只是单向好友。删除后，tb_friend 移除一条数据，tb_nofriend 增加一条数据。
+
+若 A，B是双向的好友。删除后，tb_friend 移除一条数据，tb_nofriend 增加一条数据。'并且，将 tb_friend 中B对A的 islike 为0'。
+```
+
+
+
+
+
+#华丽分割线
 
 
 
@@ -1444,6 +1542,9 @@ public class WebMvcConfig implements WebMvcConfigurer {
 >更新鉴权方式，不再每个接口中进行鉴权
 
 ```java
+@Autowired
+HttpServletRequest request;
+
 @DeleteMapping("/{id}") //使用 拦截器 后的删除接口
 public Result delete(@PathVariable String id) {
     Claims claims = (Claims) request.getAttribute("admin_claims");
@@ -1689,9 +1790,7 @@ public class LabelController {
 }
 ```
 
-##负载均衡
-
-> 同时启动多次 `demo-base`，多次请求，轮流调用。
+> 负载均衡：同时启动多次 `demo-base`，多次请求，轮流调用。
 
 ```java
 同时启动多次单个 SpringBoot 项目：启动绿三角左边的 'Edit Config...'，选中待启动项目，取消构造'Single-instance-only'

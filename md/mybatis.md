@@ -1,5 +1,67 @@
 [TOC]
 
+# Ali规约
+
+> 1，2，4，5，6，8，9，11
+
+```sql
+获取多个对象的方法用 'list' 做前缀，复数形式结尾如：listObjects
+获取单个对象的方法用 'get' 做前缀
+插入的方法用 save/'insert' 做前缀
+修改的方法用 'update' 做前缀
+删除的方法用 remove/'delete' 做前缀
+获取统计值的方法用 'count' 做前缀
+```
+
+```sql
+'1.强制' 在表查询中，一律不要使用 * 作为查询的字段列表，需要哪些字段必须明确写明。
+-- 说明：(1).增加查询分析器解析成本。(2).增减字段容易与 resultMap 配置不一致。
+```
+```sql
+'2.强制' POJO 类 boolean属性不能加 is，而数据库字段必须加 is_，要求在 resultMap 中进行字段与属性的映射。
+-- 说明：参见定义 POJO 类以及数据库字段定义规定，在 sql.xml 增加映射，是必须的。
+```
+```sql
+'3.强制' 不要用 resultClass 当返回参数，即使所有类属性名与数据库字段一一对应，也需要定义；反过来，每一个表也必然有一个与之对应。
+-- 说明：配置映射关系，使字段与 DO 类解耦，方便维护。
+```
+```sql
+'4.强制' xml 配置中参数注意使用：#{}，#param# 不要使用${}，此种方式容易出现 SQL 注入。
+```
+```sql
+'5.强制' iBATIS 自带的 queryForList(String statementName, int start, int size) 不推荐使用。
+-- 说明：此方法在数据库取到 statementName 对应的SQL语句的所有记录，再通过 subList 取 start,size 的子集合，线上因为这个原因曾经出现过 OOM
+
+-- 正例：在 sqlmap.xml 中引入 #start#, #size#
+Map<String, Object> map = new HashMap<String, Object>();
+map.put("start", start);
+map.put("size", size);
+```
+```sql
+'6.强制' 不允许直接拿 HashMap 与 Hashtable 作为查询结果集的输出。
+-- 反例：某同学为避免写一个<resultMap>，直接使用 HashMap 来接收数据库返回结果，
+--      结果出现异常是把 bigint 转成 long 值，而线上由于数据库版本不一致，，解析成 BigInteger，导致线上问题。
+```
+```sql
+'7.强制' 更新数据表记录时，必须同时更新记录对应的 gmt_modified 字段值为当前时间。（gmt 格林威治时间）
+```
+```sql
+'8.推荐' 不要写一个大而全的数据更新接口，传入为 POJO 类，不管是不是自己的目标更新字段，都进行 update table set c1=value1, c2=value2, c3=value3; 这是不对的。
+-- 执行 SQL时，尽量不要更新无改动的字段，一是易出错； 二是效率低； 三是 binlog 增加存储。
+```
+```sql
+'9.参考' @Transactional 事务不要滥用。事务会影响数据库的 QPS。
+另外使用事务的地方需要考虑各方面的回滚方案，包括缓存回滚、搜索引擎回滚、消息补偿、统计修正等。
+```
+```sql
+'10.参考' <isEqual>中的 compareValue 是与属性值对比的常量，一般是数字，表示相等时带上此条件；
+<isNotEmpty>表示不为空且不为 null 时执行； <isNotNull>表示不为 null 值时执行。
+```
+```sql
+
+```
+
+
 # 基本概念
 
 ## 常见概念
@@ -291,7 +353,7 @@ mybatis.configuration.aggressive-lazy-loading=true
 ```
 > mapper.xml文件
 
-```
+```xml
 <?xml version="1.0" encoding="UTF-8"?>
 
 <!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"
@@ -1107,6 +1169,344 @@ e1[ e2 ]              //对于List，数组和Map，按索引取值
 
 
 
+#华丽分割线
 
 
 
+# 基础配置
+
+> 基础概念
+
+```java
+JPA                -> //Java-Persistence-API，对持久层操作的标准（接口 + 文档）
+
+Hibernate          -> //全自动化的ORM框架
+Hibernate JPA      -> //实现了 JPA 标准的 Hibernate（Hibernate-3.2+）
+
+Spring Data        -> //用于简化数据库（SQL，NoSQL...）访问，并支持云服务的开源框架.
+Spring Data JPA    -> //Spring Data的一个子模块，实现了 JPA 标准的 Spring Data，底层是 Hibernate
+
+Spring Data Redis  -> //通过简单配置，实现对reids各种操作，异常处理及序列化，支持发布订阅
+```
+> 常用配置
+
+```xml
+<dependency>
+    <groupId>org.springframework.boot</groupId>
+    <artifactId>spring-boot-starter-data-jpa</artifactId>
+</dependency>
+```
+```properties
+spring.jpa.database=mysql
+spring.jpa.show-sql=true
+
+#可选参数-create: 每次启动都会删除旧表，新建一个空表
+#可选参数-update: 根据实体类创建/更新数据库表
+spring.jpa.hibernate.ddl-auto=update
+```
+> 实体类
+
+```java
+@Data
+@Entity //表明是一个JPA实体，自动建表
+@Table(name = "t_emp") //默认表名为类名小写
+@NoArgsConstructor
+@AllArgsConstructor
+public class Employee {
+    @Id //主键标识，对于复合主键，两个注解@Id
+    @GeneratedValue(strategy = GenerationType.IDENTITY) //自增
+    private Integer id;
+
+    @Column(name = "first_name") //显示指定列名，默认将驼峰转下划线
+    private String firstName;
+
+    @Column //默认列名 -> gender_flag
+    private Boolean genderFlag;
+}
+```
+
+
+#使用方式
+
+>基于方法名称的方式：驼峰命名规则，findBy（关键字） + 属性名称（首字母大写） + 查询条件（首字母大写，Like，OrderBy...）
+
+```java
+public interface EmployeeRepoDao extends Repository<Employee, Integer> {
+
+    //SELECT * FROM t_emp WHERE first_name='zhang' AND gender_flag=TRUE
+    List<Employee> findByFirstNameAndGenderFlag(String firstName, boolean genderFlag);
+
+    //SELECT * FROM t_emp WHERE first_name LIKE '%ang%' OR gender_flag=TRUE ORDER BY id DESC
+    List<Employee> findByFirstNameLikeOrGenderFlagOrderByIdDesc(String firstName, boolean genderFlag);
+}
+```
+>基于注解的方式（一）：HQL，使用bean属性名称替代数据库字段进行查询
+
+```java
+public interface EmployeeRepoDao extends Repository<Employee, Integer> {
+
+    @Query("FROM Employee WHERE firstName LIKE ?1 OR genderFlag=?2 ORDER BY id DESC") //没有 SELECT
+    List<Employee> queryByHQL(String firstName, boolean genderFlag);
+}
+```
+> 基于注解的方式（二）：SQL，nativeQuery 属性必须指定为 true
+
+```java
+public interface EmployeeRepoDao extends Repository<Employee, Integer> {
+
+    //（1）直接使用参数序号，从 1 开始，使用 ？1 进行占位。
+    @Query(value = "SELECT * FROM t_emp WHERE first_name LIKE ?1 OR gender_flag = ?2 ORDER BY id DESC", 
+           nativeQuery = true) 
+    List<Employee> queryBySQL(String firstName, boolean genderFlag);
+
+    //(2)使用 @Param("参数名") 进行参数重命名，并且使用 :参数名 进行占位。
+    @Query(value = "SELECT * FROM t_emp WHERE first_name LIKE :fName OR gender_flag = :genderFlag ORDER BY id DESC", 
+           nativeQuery = true)
+    List<Employee> queryBySQL(@Param("fName") String firstName, @Param("genderFlag") boolean genderFlag);
+
+    //（3）.对于增加，删除 或 更新，必须添加注解 @Modifying
+    @Modifying
+    //@Transactional 
+    @Query(value = "UPDATE t_emp SET first_name=?1 WHERE id=?2", nativeQuery = true)
+    Integer updateBySQL(String firstName, Integer id);
+}
+```
+
+>事务相关
+
+```java
+业务逻辑层 'Service' 调用多个 Repository 方法时，需要在 Service 方法上声明事务 '@Transactional'。
+```
+
+#常用接口
+
+> `Repository`：Spring-Data-JPA 顶层接口，标识接口，空接口。
+
+> `CrudRepository`：最基础的CRUD，extends Repository
+
+```java
+public interface EmployeeCrudDao extends CrudRepository<Employee, Integer> {}
+```
+
+```java
+@Test
+public void daoCrud() {
+    //save(): 先查询数据表中是否存在该id数据??? 无则新增; 有则更新
+    Employee save = employeeCrudDao.save(new Employee(7, "张三", true));
+    Iterable<Employee> all = employeeCrudDao.findAll();
+    System.out.println(save + " - " + JSON.toJSON(all));
+}
+```
+> `PagingAndSortingRepository`：分页和排序功能，extends CrudRepository
+
+```java
+public interface EmployeePSDao extends PagingAndSortingRepository<Employee, Integer> {}
+```
+
+```java
+@Test
+public void daoPS() {
+    Sort sort = Sort.by(Sort.Direction.DESC, "firstName", "id"); //(1).排序
+    Iterable<Employee> all = employeePSDao.findAll(sort);
+
+    Pageable pageable = PageRequest.of(0, 2); //(2).页码从0开始; 分页
+    Page<Employee> all = employeePSDao.findAll(pageable);
+
+    Sort sort = Sort.by(Sort.Direction.DESC, "id");
+    PageRequest pageable = PageRequest.of(1, 2, sort);
+    Page<Employee> all = employeePSDao.findAll(pageable); //(3).排序+分页
+    System.out.println("daoPS - " + JSON.toJSON(all));
+}
+```
+> `JpaRepository`：对父接口方法的返回值进行适配处理，extends PagingAndSortingRepository
+
+```java
+public interface EmployeeJpaDao extends JpaRepository<Person, Integer> {}
+```
+
+> `JpaSpecificationExecutor`：提供多条件查询，分页，排序，独立于以上接口存在，所以`需配合以上接口使用`
+
+```java
+public interface EmployeeDao extends JpaSpecificationExecutor<Employee>, JpaRepository<Employee, Integer> {}
+```
+
+```java
+@Test
+public void daoDao() {
+    Specification<Employee> spec = new Specification<Employee>() {
+        /**
+          * @param root     查询对象的属性封装,即 Employee
+          * @param query    查询关键字 SELECT, WHERE, ORDER BY ...
+          * @param builder  查询条件 =, >, LIKE
+          * @return         封装整个查询条件
+          */
+        @Override
+        public Predicate toPredicate(Root<Employee> root, CriteriaQuery<?> query, CriteriaBuilder builder) {
+            // SELECT * FROM t_emp
+            // WHERE first_name LIKE '%ang%'
+            // OR gender_flag=TRUE
+            // AND id BETWEEN 3 AND 9
+            // AND id>=4
+            // ORDER BY first_name DESC, id ASC;
+            Predicate or = builder.or(builder.like(root.get("firstName").as(String.class), "%ang%"),
+                                      builder.equal(root.get("genderFlag").as(boolean.class), true)); //OR
+
+            List<Predicate> list = new ArrayList<>(); //AND
+            list.add(or);
+            list.add(builder.between(root.get("id").as(Integer.class), 3, 9));
+            list.add(builder.greaterThanOrEqualTo(root.get("id").as(Integer.class), 4));
+            Predicate[] predicates = new Predicate[list.size()];
+
+            Predicate predicate = builder.and(list.toArray(predicates)); //所有条件
+            query.where(predicate); //WHERE ... OR ... AND ... AND ...
+
+            query.multiselect(root.get("id"), root.get("firstName")); //SELECT *,*
+
+            query.orderBy(builder.desc(root.get("firstName")),
+                          builder.asc(root.get("id"))); //ORDER BY ..., ...
+
+            return query.getRestriction();
+        }
+    };
+
+    // Sort sort = Sort.by(new Sort.Order(Sort.Direction.DESC, "firstName"),
+    //         new Sort.Order(Sort.Direction.ASC, "id")); //ORDER BY ..., ...
+
+    PageRequest pageable = PageRequest.of(1, 2/*, sort*/); //分页 LIMIT 1,2; 页码从0开始
+
+    Page<Employee> all = employeeDao.findAll(spec, pageable);
+    System.out.println("daoDao - " + JSON.toJSON(all));
+}
+```
+#关联查询
+
+##一对多关联
+
+> 一对多关联映射：dept 与 emp 是一对多关系
+
+```java
+@Data
+@Entity
+@Table(name = "t_emp")
+public class Employee {
+    //... ...
+
+    /**
+      * PERSIST  持久保存拥有方实体时,也会持久保存该实体的所有相关数据。
+      * MERGE    将分离的实体重新合并到活动的持久性上下文时,也会合并该实体的所有相关数据。
+      * REMOVE   删除一个实体时,也会删除该实体的所有相关数据。
+      * ALL      以上都适用。
+      */
+    @ManyToOne(cascade = {CascadeType.PERSIST, CascadeType.MERGE}) //emp->dept: 多对一
+    @JoinColumn(name = "dept_id") //外键
+    private Dept dept;
+}
+```
+```java
+@Data
+@Entity
+@Table(name = "t_dept")
+public class Dept {
+    @Id
+    @GeneratedValue(strategy = GenerationType.IDENTITY)
+    @Column(name = "dept_id")
+    private Integer deptId;
+
+    @Column(name = "dept_name")
+    private String deptName;
+
+    @OneToMany(mappedBy = "dept") //dept->emp: 一对多关系
+    private List<Employee> emps = new ArrayList<>();
+}
+```
+
+>新增DEMO
+
+```java
+@Test
+public void saveOne2Many() {
+    //新建 emp - dept
+    Employee employee = new Employee("whang", false);
+    Dept dept = new Dept("软件");
+
+    //关联
+    employee.setDept(dept);
+    dept.getEmps().add(employee);
+
+    //写库
+    employeeDao.save(employee);
+}
+```
+>查询DEMO
+
+```java
+@Test
+public void findOne2Many() {
+    Optional<Employee> optional = employeeDao.findById(10);
+    if (optional.isPresent()) {
+        Employee employee = optional.get();
+        System.out.println("DeptName: " + employee.getDept().getDeptName());
+    }
+}
+```
+##多对多关联
+
+>多对多关联映射：emp 和 role 是多对多关系
+
+```java
+@Data
+@Entity
+@Table(name = "t_emp")
+public class Employee {
+    //... ...
+    
+    @ManyToMany(mappedBy = "emps", cascade = CascadeType.PERSIST, fetch = FetchType.EAGER)
+    private Set<Role> roles = new HashSet<>();
+}
+
+@Data
+@Entity
+@Table(name = "t_role")
+public class Role {
+    //... ...
+    
+    @ManyToMany(cascade = CascadeType.PERSIST, fetch = FetchType.EAGER)
+    //JoinTable: 中间表信息(配置在两张表中的任意一个)
+    //joinColumns: 该表主键在中间表中的字段
+    //inverseJoinColumns: 另一个表(即emp)主键在中间表中的字段
+    @JoinTable(name = "t_emp_role", joinColumns = @JoinColumn(name = "role_id"),
+            inverseJoinColumns = @JoinColumn(name = "emp_id"))
+    private Set<Employee> emps = new HashSet<>();
+}
+```
+>新增DEMO
+
+```java
+@Test
+public void saveMany2Many() {
+    //新建 emp - role
+    Employee li = new Employee("li", false);
+    Employee zhang = new Employee("zhang", true);
+    Role admin = new Role("管理员");
+    Role finance = new Role("财务");
+
+    //关联 
+    li.getRoles().add(admin);
+    li.getRoles().add(finance);
+    admin.getEmps().add(li);
+    admin.getEmps().add(zhang);
+    
+    //写库
+    employeeDao.save(li);
+    employeeDao.save(zhang);
+}
+```
+>查询DEMO
+
+```java
+@Test
+public void findMany2Many() {
+    Optional<Employee> optional = employeeDao.findById(12);
+    System.out.println(optional.get().getRoles());
+}
+```

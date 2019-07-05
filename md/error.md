@@ -114,19 +114,10 @@ public class A {
 
 ## mybatis
 
->Invalid bound statement (not found): com.example.blue.mapper.PersonMapper.getOneById
+>资源拷贝插件：打包时，没有将mybatis的 xml 文件打进war包。
 
-```xml
-<!--打包时，没有将 mapper.xml 文件打进war包。在 pom.xml 的<build/>节点新增内容-->
-
-<resources>
-    <resource>
-        <directory>src/main/java</directory>
-    </resource>
-    <resource>
-        <directory>src/main/resources</directory>
-    </resource>
-</resources>
+```java
+//Invalid bound statement (not found): com.example.blue.mapper.PersonMapper.getOneById
 ```
 
 >Parameter Maps collection does not contain value for java.lang.Integer
@@ -145,6 +136,22 @@ public class A {
 ```java
 (1)类 PersonServiceImpl 是否添加 @Service 注解; 
 (2)sp项目启动类是否添加 @MapperScan(value = "com.x.x.mapper")
+```
+
+
+
+## jpa
+
+> 对于 `增删改` 操作，需要添加额外注解：`@Modifying`
+
+```java
+//Can not issue data manipulation statements with executeQuery().
+```
+
+>对于 `删改` 操作涉及到事务机制，需要在 service 类上加上注解：`@Transactional`
+
+```java
+//javax.persistence.TransactionRequiredException: Executing an update/delete query
 ```
 
 
