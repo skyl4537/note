@@ -1722,7 +1722,7 @@ Feign 的初衷是降低统一绑定 Denominator 到 HTTP-API 的复杂度，不
 
 ##测试DEMO
 
->`demo-user` 中新建包 com.example.user.client，存放 `demo-base` 中的的接口。
+>`demo-user` 中新建包 `com.example.user.client`，存放 `demo-base` 中的的接口。
 
 ```java
 @Component //加不加都行，无意义

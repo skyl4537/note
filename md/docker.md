@@ -6,11 +6,13 @@
 
 ## 基础概念
 
+```
 能够把应用程序自动部署到容器的开源引擎，轻量级容器技术！
 
 简化程序：将软件做好配置依赖 --> 编译成镜像 --> 镜像发布 --> 其他使用者就可以直接使用这个镜像。
 
 简化部署：传统做法先安装（包管理工具或者源码包编译），再配置和运行。Docker模式为复制镜像，然后运行。
+```
 
 ```java
 主机(Host)       ->  安装了Docker程序的机器(Docker直接安装在操作系统之上)
@@ -198,20 +200,43 @@ docker run --name skyl-mysql -d -e MYSQL_ROOT_PASSWORD=123456 mysql
 > build：从零开始构建，先创建 dockerfile
 
 ```shell
-#First Dockerfile                ##为注释
-FROM ubuntu:14.01                #FROM：基础镜像，必须写在第一行
-MAINTAINER skyl 'skyl@qq.com'    #MAI*: 作者相关
-RUN apt-get update                
-RUN apt-get install -y nginx
-EXPOSE 80                        #运行该容器所使用的端口
+#依赖镜像名称和ID。基础镜像，必须写在第一行
+FROM centos:7
+#指定镜像创建者信息
+MAINTAINER SKYL
+#切换工作目录
+WORKDIR /usr
+#创建容器的文件夹
+RUN mkdir /usr/local/java
+#把jdk添加到容器中，ADD：复制+解压
+ADD jdk-8u171-linux-x64.tar.gz /usr/local/java/
+#配置jdk环境变量
+ENV JAVA_HOME /usr/local/java/jdk1.8.0_171
+ENV JRE_HOME $JAVA_HOME/jre
+ENV CLASSPATH $JAVA_HOME/lib/dt.jar:$JAVA_HOME/lib/tools.jar:$JRE_HOME/lib:$CLASSPATH
+ENV PATH $JAVA_HOME/bin:$PATH
+```
 
-#build-构建(dockerfile所在目录)
-docker build -t 'skyl-nginx' /var/tmp/docker/
+```shell
+#切换到 dockerfile 所在目录，执行命令。最后一个点，表示 dockerfile 文件在当前目录
+docker build -t='skyl-jdk1.8' .
+
+#查看镜像是否建立完成
+docker images
+
+#创建容器
+docker run ‐it ‐‐name=myjdk8 skyl-jdk1.8 /bin/bash
 ```
 
 ##常见问题
 
 > 镜像加速
+
+```shell
+#默认配置文件：/etc/docker/daemon.json
+#新版的 Docker 推荐使用 json 配置文件的方式
+{"registry-mirrors": ["https://docker.mirrors.ustc.edu.cn"]} 
+```
 
 ```shell
 #aliyun 加速
@@ -237,11 +262,7 @@ DOCKER_OPTS="--registry-mirror=https://docker.mirrors.ustc.edu.cn"
 #会生成 etc/systemd/system/docker.service.d/override.conf 覆盖默认的参数,在该文件中加入如下内容
 [Service] 
 ExecStart= 
-ExecStart=/usr/bin/docker -d -H fd:// --registry-mirror=https://docker.mirrors.ustc.edu.cn
-
-#新版的 Docker 推荐使用 json 配置文件的方式,默认为 /etc/docker/daemon.json
-#非默认路径需要修改 dockerd 的 –config-file,在该文件中加入如下内容
-{"registry-mirrors": ["https://docker.mirrors.ustc.edu.cn"]}        
+ExecStart=/usr/bin/docker -d -H fd:// --registry-mirror=https://docker.mirrors.ustc.edu.cn       
 ```
 > 配置http
 

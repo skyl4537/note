@@ -2,7 +2,7 @@
 
 # BOOT基础
 
-## 基础概念
+## 基础配置
 
 新建项目：https://start.spring.io/
 
@@ -104,7 +104,7 @@ debug=true
             <artifactId>spring-boot-maven-plugin</artifactId>
         </plugin>
     </plugins>
-    <resources> <!--资源拷贝插件，针对mybatis的xml-->
+    <resources> <!--资源拷贝插件，针对mybatis的xml--> 
         <resource>
             <directory>src/main/java</directory>
         </resource>

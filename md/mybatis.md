@@ -1225,10 +1225,9 @@ public class Employee {
 }
 ```
 
+#两种查询
 
-#使用方式
-
->基于方法名称的方式：驼峰命名规则，findBy（关键字） + 属性名称（首字母大写） + 查询条件（首字母大写，Like，OrderBy...）
+>基于方法名称的查询：驼峰命名规则，findBy（关键字） + 属性名称（首字母大写） + 查询条件（首字母大写，Like，OrderBy...）
 
 ```java
 public interface EmployeeRepoDao extends Repository<Employee, Integer> {
@@ -1240,7 +1239,7 @@ public interface EmployeeRepoDao extends Repository<Employee, Integer> {
     List<Employee> findByFirstNameLikeOrGenderFlagOrderByIdDesc(String firstName, boolean genderFlag);
 }
 ```
->基于注解的方式（一）：HQL，使用bean属性名称替代数据库字段进行查询
+>基于注解的查询（一）：使用HQL，使用bean属性名称替代数据库字段进行查询。`没有 SELECT`
 
 ```java
 public interface EmployeeRepoDao extends Repository<Employee, Integer> {
@@ -1249,7 +1248,7 @@ public interface EmployeeRepoDao extends Repository<Employee, Integer> {
     List<Employee> queryByHQL(String firstName, boolean genderFlag);
 }
 ```
-> 基于注解的方式（二）：SQL，nativeQuery 属性必须指定为 true
+> 基于注解的查询（二）：使用SQL，`nativeQuery = true`
 
 ```java
 public interface EmployeeRepoDao extends Repository<Employee, Integer> {
@@ -1263,6 +1262,13 @@ public interface EmployeeRepoDao extends Repository<Employee, Integer> {
     @Query(value = "SELECT * FROM t_emp WHERE first_name LIKE :fName OR gender_flag = :genderFlag ORDER BY id DESC", 
            nativeQuery = true)
     List<Employee> queryBySQL(@Param("fName") String firstName, @Param("genderFlag") boolean genderFlag);
+}
+```
+
+> 基于注解的 增删改：必须添加注解 `@Modifying`
+
+```java
+public interface EmployeeRepoDao extends Repository<Employee, Integer> {
 
     //（3）.对于增加，删除 或 更新，必须添加注解 @Modifying
     @Modifying
