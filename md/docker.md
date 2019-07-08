@@ -97,7 +97,7 @@ docker inspect CONTAINER_NAME     #容器相关信息
 docker logs [-t] [--tail 10] CONTAINER_NAME    #容器日志(-t: 显示时间, --tail: 最新10条)
 
 #动态的更新一个或多个容器的配置
-docker update --restart=always mysql #更新容器mysql的配置，改为开机自启
+docker update --restart=always mysql #'restart'退出容器时，总是重启
 ```
 
 > 互动相关

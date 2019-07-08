@@ -654,6 +654,516 @@ CREATE TABLE `tb_friend` (
 
 
 
+#Cloud技术
+
+## Eureka
+
+>`服务发现` Netflix-Eureka
+
+```
+Eureka 是 Netflix 开发的服务发现框架，SpringCloud 将它集成在自己的子项目 spring-cloud-netflix 中，实现 SpringCloud 的服务发现功能。
+Eureka 包含两个组件：Eureka-Server 和 Eureka-Client。
+
+Eureka-Server 提供服务注册服务，各个节点启动后，会在 Eureka-Server 中进行注册，
+这样 Eureka-Server 中的服务注册表中将会存储所有可用服务节点的信息，服务节点的信息可以在界面中直观的看到。
+
+Eureka-Client 是一个java客户端，用于简化与 Eureka-Server 的交互，客户端同时也是一个内置的、使用轮询(round-robin)负载算法的负载均衡器。
+在应用启动后，将会向 Eureka-Server 发送心跳，默认周期为 30 秒，如果 Eureka-Server 在多个心跳周期内没有接收到某个节点的心跳，
+Eureka-Server 将会从服务注册表中把这个服务节点移除（默认90秒，3个周期）。
+
+Eureka-Server 之间通过复制的方式完成数据的同步，Eureka 还提供了客户端缓存机制，即使所有的 Eureka-Server 都挂掉，
+客户端依然可以利用缓存中的信息消费其他服务的API。综上，Eureka 通过心跳检查、客户端缓存等机制，确保了系统的高可用性、灵活性和可伸缩性。
+```
+
+>Eureka服务端の微服务：`demo-eureka`
+
+```xml
+<parent>
+    <artifactId>demo_parent</artifactId>
+    <groupId>com.example</groupId>
+    <version>0.0.1-SNAPSHOT</version>
+</parent>
+<modelVersion>4.0.0</modelVersion>
+
+<artifactId>demo_eureka</artifactId>
+
+<dependencies>
+    <!--添加依赖 Eureka-Server-->
+    <dependency>
+        <groupId>org.springframework.cloud</groupId>
+        <artifactId>spring-cloud-starter-netflix-eureka-server</artifactId>
+    </dependency>
+</dependencies>
+```
+
+```properties
+server.port=6868
+
+#Euraka
+#是否注册到Eureka服务中，本身就是服务端，勿需注册
+eureka.client.register-with-eureka=false
+#是否从Eureka中获取注册信息
+eureka.client.fetch-registry=false
+eureka.client.service-url.defaultZone=http://127.0.0.1:${server.port}/eureka
+```
+
+```java
+@EnableEurekaServer //Eureka-Server启动类
+@SpringBootApplication
+public class EurekaApplication {
+    public static void main(String[] args) {
+        SpringApplication.run(EurekaApplication.class, args);
+    }
+}
+```
+
+> Eureka客户端の微服务：以基础微服务为例 `demo-base`
+
+```xml
+<!--添加依赖 Eureka-Client-->
+<dependency>
+    <groupId>org.springframework.cloud</groupId>
+    <artifactId>spring-cloud-starter-netflix-eureka-client</artifactId>
+</dependency>
+```
+
+```properties
+#Eureka
+eureka.client.service-url.defaultZone=http://localhost:6868/eureka
+#将IP注册到 Eureka-Server。默认注册的是主机名
+eureka.instance.prefer-ip-address=true
+```
+
+```java
+//启动类添加注解
+@EnableEurekaClient
+```
+
+> 页面验证：<http://localhost:6868/>
+
+```java
+主界面中 'System-Status' 系统信息，'General-Info' 一般信息。'Instances-currently-registered-with-Eureka' 注册的所有微服务列表
+```
+
+> Eureka 保护模式
+
+```java
+如果在 Eureka-Server 的首页看到以下这段提示，则说明Eureka已经进入了保护模式：
+'EMERGENCY! EUREKA MAY BE INCORRECTLY CLAIMING INSTANCES ARE UP WHEN THEYRE NOT...'
+```
+
+```
+Eureka-Server 在运行期间，会统计心跳失败的比例在 15 分钟之内是否低于 85%，如果出现低于的情况（在单机调试的时候很容易满足，
+实际在生产环境上通常是由于网络不稳定导致），Eureka-Server 会将当前的实例注册信息保护起来，同时提示这个警告。
+
+保护模式 主要用于一组客户端和 Eureka-Server 之间存在网络分区场景下的保护。
+一旦进入保护模式，Eureka-Server 将会尝试保护其服务注册表中的信息，不再删除服务注册表中的数据（也就是不会注销任何微服务）。
+```
+
+##Feign
+
+>`服务调用` Feign简介
+
+```
+Feign 是简化 Java-HTTP 客户端开发的工具（java-to-httpclient-binder），它的灵感来自于 Retrofit、JAXRS-2.0 和 WebSocket。
+
+Feign 的初衷是降低统一绑定 Denominator 到 HTTP-API 的复杂度，不区分是否为 restful。
+```
+
+> 用户微服务 `demo-user` 调用基础微服务 `demo-base` 。所以，在 `demo-user` 中添加依赖。
+
+```xml
+<artifactId>demo_user</artifactId>
+
+<dependencies>
+    <!--添加依赖 Feign-->
+    <dependency>
+        <groupId>org.springframework.cloud</groupId>
+        <artifactId>spring-cloud-starter-openfeign</artifactId>
+    </dependency>
+</dependencies>
+```
+
+```java
+//启动类添加注解
+@EnableDiscoveryClient
+@EnableFeignClients
+```
+
+>`demo-user` 中新建包 `com.example.user.client`，存放 `demo-base` 中的接口。
+
+```java
+@Component //加不加都行，无意义
+@FeignClient("demo-base") //指定微服务名，不能包含下划线
+public interface LabelClient {
+
+    //用于对被调用的微服务进行地址映射。
+    @GetMapping("/label")
+    Result listLabels();
+
+    //@PathVariable注解一定要指定参数名称，否则出错
+    @GetMapping("/label/{labelId}")
+    Result getById(@PathVariable("labelId") String id);
+}
+```
+
+> `demo-user` 中调用远程接口
+
+```java
+@Slf4j
+@RequestMapping("/user")
+@RestController
+public class UserController {
+
+    @Autowired
+    LabelClient labelClient;
+
+    @GetMapping("/label")
+    public Result listLabels() {
+        return labelClient.listLabels();
+    }
+
+    @GetMapping("/label/{labelId}")
+    public Result getById(@PathVariable("labelId") String id) {
+        return labelClient.getById(id);
+    }
+}
+```
+
+> `demo-base`中的元接口
+
+```java
+@Slf4j
+@RequestMapping("/label")
+@RestController
+public class LabelController {
+
+    @Autowired
+    LabelService labelService;
+
+    //获取多个对象的方法用 list 做前缀，复数形式结尾如：listObjects
+    @GetMapping
+    public Result listLabels() {
+        List<Label> labels = labelService.listLabels();
+        return new Result(true, StatusCode.OK, "查询成功", labels);
+    }
+
+    //获取单个对象的方法用 get 做前缀
+    @GetMapping("/{labelId}")
+    public Result getById(@PathVariable String id) { //获取请求行参数
+        Optional<Label> label = labelService.getById(id);
+        log.info("getById: {}", label.get());
+        return new Result(true, StatusCode.OK, "查询成功", label);
+    }
+}
+```
+
+> 负载均衡：同时启动多次 `demo-base`，多次请求，轮流调用。
+
+```java
+同时启动多次单个 SpringBoot 项目：启动绿三角左边的 'Edit Config...'，选中待启动项目，取消构造'Single-instance-only'
+每次运行 SpringBoot 项目前，修改配置文件中的端口号即可。
+
+注意：'demo-base'最好排除依赖'spring-boot-devtools'
+```
+
+##Hystrix
+
+>`熔断器` Hystrix
+
+```
+Hystrix [hɪst'rɪks]，中文含义是豪猪，因其背上长满棘刺，从而拥有了自我保护的能力。
+
+Hystrix设计目标：
+对来自依赖的延迟和故障进行防护和控制——这些依赖通常都是通过网络访问的
+阻止故障的连锁反应
+快速失败并迅速恢复
+回退并优雅降级
+提供近实时的监控与告警
+```
+
+> 雪崩效应
+
+```java
+在微服务架构中通常会有多个服务层调用，基础服务的故障可能会导致级联故障，进而造成整个系统不可用的情况，这种现象被称为服务雪崩效应。
+服务雪崩效应是一种因'服务提供者'的不可用导致'服务消费者'的不可用，并将不可用逐渐放大的过程。
+
+如果下图所示：A作为服务提供者，B为A的服务消费者，C和D是B的服务消费者。A不可用引起了B的不可用，并将不可用像滚雪球一样放大到C和D时，雪崩效应就形成了。
+```
+
+![](assets/cloud4.png)
+
+> 用户微服务 `demo-user` 调用基础微服务 `demo-base` 。其中，Feign 本身支持Hystrix，不需要额外引入依赖。`demo-user`中开启Hystrix。
+
+```properties
+#feign-hystrix
+feign.hystrix.enabled=true
+```
+
+>`demo-user` 中新建包 `com.example.user.client.impl`，存放 `demo-base` 中接口的熔断实现类。
+
+```java
+@Component
+public class LabelClientImpl implements LabelClient {
+
+    @Override
+    public Result listLabels() {
+        return new Result(false, StatusCode.ERROR, "熔断器启动了");
+    }
+
+    @Override
+    public Result getById(String id) {
+        return new Result(false, StatusCode.ERROR, "熔断器启动了");
+    }
+}
+```
+
+> `demo-user`中的`com.example.user.client`增加注解配置。
+
+```java
+@Component //加不加都行，无意义
+// @FeignClient("demo-base") //指定微服务名，不能包含下划线
+@FeignClient(value = "demo-base", fallback = LabelClientImpl.class) //增加熔断器后的配置
+public interface LabelClient {
+
+    //用于对被调用的微服务进行地址映射。
+    @GetMapping("/label")
+    Result listLabels();
+
+    //@PathVariable注解一定要指定参数名称，否则出错
+    @GetMapping("/label/{labelId}")
+    Result getById(@PathVariable("labelId") String id);
+}
+```
+
+## Zuul
+
+> `服务网管` Zuul
+
+```java
+不同的微服务一般有不同的网络地址，而外部的客户端可能需要调用多个服务的接口才能完成一个业务需求。
+比如一个电影购票的收集APP,可能回调用电影分类微服务，用户微服务，支付微服务等。如果客户端直接和微服务进行通信，会存在一下问题：
+
+# 客户端会多次请求不同微服务，增加客户端的复杂性
+# 存在跨域请求，在一定场景下处理相对复杂
+# 认证复杂，每一个服务都需要独立认证
+# 难以重构，随着项目的迭代，可能需要重新划分微服务，如果客户端直接和微服务通信，那么重构会难以实施
+# 某些微服务可能使用了其他协议，直接访问有一定困难
+
+上述问题，都可以借助微服务网关解决。'微服务网关是介于客户端和服务器端之间的中间层，所有的外部请求都会先经过微服务网关'。
+```
+
+```java
+Zuul 是 Netflix 开源的微服务网关，他可以和 Eureka，Ribbon，Hystrix 等组件配合使用。
+Zuul组件的核心是一系列的过滤器，这些过滤器可以完成以下功能：
+
+# 身份认证和安全: 识别每一个资源的验证要求，并拒绝那些不符的请求
+# 审查与监控：
+# 动态路由：动态将请求路由到不同后端集群
+# 压力测试：逐渐增加指向集群的流量，以了解性能
+# 负载分配：为每一种负载类型分配对应容量，并弃用超出限定值的请求
+# 静态响应处理：边缘位置进行响应，避免转发到内部集群
+# 多区域弹性：跨域AWS Region进行请求路由，旨在实现ELB（ElasticLoad Balancing）使用多样化
+```
+
+![](assets/cloud5.png)
+
+
+
+> 网关微服务 `demo-manager`
+
+```xml
+<parent>
+    <artifactId>demo_parent</artifactId>
+    <groupId>com.example</groupId>
+    <version>0.0.1-SNAPSHOT</version>
+</parent>
+<modelVersion>4.0.0</modelVersion>
+
+<artifactId>demo_manager</artifactId>
+
+<dependencies>
+    <!--引入依赖 zuul-->
+    <dependency>
+        <groupId>org.springframework.cloud</groupId>
+        <artifactId>spring-cloud-starter-netflix-zuul</artifactId>
+    </dependency>
+    <!--引入依赖 eureka-->
+    <dependency>
+        <groupId>org.springframework.cloud</groupId>
+        <artifactId>spring-cloud-starter-netflix-eureka-client</artifactId>
+    </dependency>
+</dependencies>
+```
+
+```properties
+server.port=9011
+spring.application.name=demo-manager
+
+#Eureka
+eureka.client.service-url.defaultZone=http://localhost:6868/eureka
+#将IP注册到 Eureka-Server。默认注册的是主机名
+eureka.instance.prefer-ip-address=true
+
+#zuul
+#配置请求URL的请求规则，指定Eureka注册中心中的服务id
+zuul.routes.demo-base.path=/base/**
+zuul.routes.demo-base.service-id=demo-base
+zuul.routes.demo-friend.path=/friend/**
+zuul.routes.demo-friend.service-id=demo-friend
+zuul.routes.demo-user.path=/user/**
+zuul.routes.demo-user.service-id=demo-user
+```
+
+```java
+@EnableZuulProxy //zuul注解
+@EnableEurekaClient
+@SpringBootApplication
+public class ManagerApplication {
+    public static void main(String[] args) {
+        SpringApplication.run(ManagerApplication.class, args);
+    }
+}
+```
+
+> zuul过滤器配置
+
+```java
+@Component
+public class ManagerFilter extends ZuulFilter {
+    @Override
+    public String filterType() { //过滤器类型：pre，route，post，error
+        return "pre";
+    }
+
+    @Override
+    public int filterOrder() { //过滤器的执行顺序，值越小越先执行
+        return 0;
+    }
+
+    @Override
+    public boolean shouldFilter() { //过滤器是否开启
+        return true;
+    }
+
+    @Override
+    public Object run() throws ZuulException { //过滤器的具体逻辑
+        System.out.println("zuul过滤器...");
+        return null;
+    }
+}
+```
+
+> zuul网关配置后，使用 IDEA 的 REST_API 测试
+
+```properties
+###获取label的id为1信息
+GET http://localhost:9001/label/1
+
+###获取label的id为1信息（zuul）
+GET http://localhost:9011/base/label/1
+```
+
+```properties
+###登陆
+POST http://localhost:9002/user/login
+Content-Type: application/json
+
+{"loginName": "aaa","password": "111"}
+
+###登陆（zuul）
+POST http://localhost:9011/user/user/login
+Content-Type: application/json
+
+{"loginName": "aaa","password": "111"}
+```
+
+```properties
+###删除用户
+DELETE http://localhost:9002/user/5
+Authorization: Bearer eyJhbGciOiJIUzI1NiJ9.eyJqdGkiOiIxIiwic3ViIjoiYWFhIiwiaWF0IjoxNTYyNTc1ODMzLCJyb2xlcyI6ImFkbWluIn0.fz4pnLx6ixhz75TjGmjG-oZhn17zPJKiai9OQrjx8Ms
+
+###删除用户（zuul）
+DELETE http://localhost:9011/user/user/5
+Authorization: Bearer eyJhbGciOiJIUzI1NiJ9.eyJqdGkiOiIxIiwic3ViIjoiYWFhIiwiaWF0IjoxNTYyNTc1ODMzLCJyb2xlcyI6ImFkbWluIn0.fz4pnLx6ixhz75TjGmjG-oZhn17zPJKiai9OQrjx8Ms
+```
+
+> `zuul网关默认会过滤掉请求头`，现配置转发请求头。
+
+```java
+@Slf4j
+@Component
+public class ManagerFilter extends ZuulFilter {
+    @Autowired
+    JwtUtil jwtUtil;
+
+    @Override
+    public String filterType() { //过滤器类型：pre，route，post，error
+        return "pre";
+    }
+
+    @Override
+    public int filterOrder() { //过滤器的执行顺序，值越小越先执行
+        return 0;
+    }
+
+    @Override
+    public boolean shouldFilter() { //过滤器是否开启
+        return true;
+    }
+
+    @Override
+    public Object run() throws ZuulException { //过滤器的具体逻辑
+        log.info("zuul过滤器...");
+
+        RequestContext requestContext = RequestContext.getCurrentContext();
+        HttpServletRequest request = requestContext.getRequest();
+        String url = request.getRequestURL().toString();
+        if (url.indexOf("/user/login") > 0) {
+            log.info("登陆页面：" + url);
+            return null;
+        }
+
+        String authorization = "Authorization";
+        String header = request.getHeader(authorization);
+        String prefix = "Bearer ";
+        if (StringUtils.isNotBlank(header) && header.startsWith(prefix)) {
+            String token = header.substring(prefix.length());
+            log.info("token：" + token);
+
+            try {
+                Claims claims = jwtUtil.parseJWT(token);
+                log.info("claims：" + claims);
+
+                if (null != claims) {
+                    if ("admin".equals(claims.get("roles"))) {
+                        requestContext.addZuulRequestHeader(authorization, header);
+                        log.info("token验证通过，添加了头信息" + header);
+                        return null;
+                    }
+                }
+            } catch (Exception e) {
+                log.error("token验证异常：", e);
+            }
+        }
+
+        requestContext.setSendZuulResponse(false); //终止运行
+        requestContext.setResponseStatusCode(401); //http状态码
+        requestContext.setResponseBody("无权访问");
+        requestContext.getResponse().setContentType("text/html;charset=UTF-8");
+        return null;
+    }
+}
+```
+
+##Config
+
+
+
+
+
+
+
 
 
 #华丽分割线
@@ -1480,26 +1990,30 @@ public class JwtInterceptor implements HandlerInterceptor /*extends HandlerInter
     JwtUtil jwtUtil;
 
     //预处理：可以进行编码、安全控制等处理
-    @Override
-    public boolean preHandle(HttpServletRequest request, HttpServletResponse response, Object handler) throws
-            Exception {
-        String authHeader = request.getHeader("Authorization");
-        if (authHeader != null && authHeader.startsWith("Bearer ")) {
-            String token = authHeader.substring(7); //The part after "Bearer "
+    public boolean preHandle(HttpServletRequest request, HttpServletResponse response, Object handler)
+            throws Exception {
+        log.info("经过了拦截器...");
 
-            Claims claims = null;
+        String authorization = "Authorization";
+        String header = request.getHeader(authorization);
+        String prefix = "Bearer ";
+        if (StringUtils.isNotBlank(header) && header.startsWith(prefix)) {
+            String token = header.substring(prefix.length());
+            log.info("token：" + token);
             try {
-                claims = jwtUtil.parseJWT(token);
+                Claims claims = jwtUtil.parseJWT(token);
+                log.info("claims：" + claims);
+
+                if (null != claims) {
+                    if ("admin".equals(claims.get("roles"))) { //如果是管理员
+                        request.setAttribute("admin_claims", claims);
+                    }
+                    if ("user".equals(claims.get("roles"))) { //如果是用户
+                        request.setAttribute("user_claims", claims);
+                    }
+                }
             } catch (Exception e) {
-                log.error("JwtInterceptor#preHandle Exception: ", e);
-            }
-            if (claims != null) {
-                if ("admin".equals(claims.get("roles"))) { //如果是管理员
-                    request.setAttribute("admin_claims", claims);
-                }
-                if ("user".equals(claims.get("roles"))) { //如果是用户
-                    request.setAttribute("user_claims", claims);
-                }
+                log.error("token验证异常：", e);
             }
         }
         return true;
@@ -1555,275 +2069,6 @@ public Result delete(@PathVariable String id) {
     return new Result(true, StatusCode.OK, "删除成功");
 }
 ```
-
-
-
-# Eureka
-
-##基础概念
-
->Netflix-Eureka
-
-```
-Eureka 是 Netflix 开发的服务发现框架，SpringCloud 将它集成在自己的子项目 spring-cloud-netflix 中，实现 SpringCloud 的服务发现功能。
-Eureka 包含两个组件：Eureka-Server 和 Eureka-Client。
-```
-
-```
-Eureka-Server 提供服务注册服务，各个节点启动后，会在 Eureka-Server 中进行注册，
-这样 Eureka-Server 中的服务注册表中将会存储所有可用服务节点的信息，服务节点的信息可以在界面中直观的看到。
-```
-```
-Eureka-Client 是一个java客户端，用于简化与 Eureka-Server 的交互，客户端同时也是一个内置的、使用轮询(round-robin)负载算法的负载均衡器。
-在应用启动后，将会向 Eureka-Server 发送心跳，默认周期为 30 秒，如果 Eureka-Server 在多个心跳周期内没有接收到某个节点的心跳，
-Eureka-Server 将会从服务注册表中把这个服务节点移除（默认90秒，3个周期）。
-```
-```
-Eureka-Server 之间通过复制的方式完成数据的同步，Eureka 还提供了客户端缓存机制，即使所有的 Eureka-Server 都挂掉，
-客户端依然可以利用缓存中的信息消费其他服务的API。综上，Eureka 通过心跳检查、客户端缓存等机制，确保了系统的高可用性、灵活性和可伸缩性。
-```
-
-##服务端
-
->父项目锁定 SpringCloud 版本 `demo-parent`
-
-```xml
-<!--父项目 demo-parent，锁定 SpringCloud 版本-->
-<dependencyManagement>
-    <dependencies>
-        <dependency>
-            <groupId>org.springframework.cloud</groupId>
-            <artifactId>spring-cloud-dependencies</artifactId> <!--G 对应 2.1.x-->
-            <!--<version>Finchley.M9</version>--> <!--F 对应 2.0.x-->
-            <version>Greenwich.RELEASE</version>
-            <type>pom</type>
-            <scope>import</scope>
-        </dependency>
-    </dependencies>
-</dependencyManagement>
-```
-
->Eureka服务端微服务：`demo-eureka`
-
-```xml
-<parent>
-    <artifactId>demo_parent</artifactId>
-    <groupId>com.example</groupId>
-    <version>0.0.1-SNAPSHOT</version>
-</parent>
-<modelVersion>4.0.0</modelVersion>
-
-<artifactId>demo_eureka</artifactId>
-
-<dependencies>
-    <!--添加依赖 Eureka-Server-->
-    <dependency>
-        <groupId>org.springframework.cloud</groupId>
-        <artifactId>spring-cloud-starter-netflix-eureka-server</artifactId>
-    </dependency>
-</dependencies>
-```
-
-```properties
-server.port=6868
-
-#Euraka
-#是否注册到Eureka服务中，本身就是服务端，勿需注册
-eureka.client.register-with-eureka=false
-#是否从Eureka中获取注册信息
-eureka.client.fetch-registry=false
-eureka.client.service-url.defaultZone=http://127.0.0.1:${server.port}/eureka
-```
-
-```java
-@EnableEurekaServer //Eureka-Server启动类
-@SpringBootApplication
-public class EurekaApplication {
-    public static void main(String[] args) {
-        SpringApplication.run(EurekaApplication.class, args);
-    }
-}
-```
-
-> 页面验证：<http://localhost:6868/>
-
-```java
-主界面中 'System-Status' 系统信息，'General-Info' 一般信息。'Instances-currently-registered-with-Eureka' 注册的所有微服务列表
-```
-
-##客户端
-
-> 以基础微服务为例 `demo-base`
-
-```xml
-<!--添加依赖 Eureka-Client-->
-<dependency>
-    <groupId>org.springframework.cloud</groupId>
-    <artifactId>spring-cloud-starter-netflix-eureka-client</artifactId>
-</dependency>
-```
-
-```properties
-#Eureka
-eureka.client.service-url.defaultZone=http://localhost:6868/eureka
-#将IP注册到 Eureka-Server。默认注册的是主机名
-eureka.instance.prefer-ip-address=true
-```
-
-```java
-//启动类添加注解
-@EnableEurekaClient
-```
-
-> Eureka 保护模式
-
-```java
-如果在 Eureka-Server 的首页看到以下这段提示，则说明Eureka已经进入了保护模式：
-'EMERGENCY! EUREKA MAY BE INCORRECTLY CLAIMING INSTANCES ARE UP WHEN THEYRE NOT...'
-```
-
-```
-Eureka-Server 在运行期间，会统计心跳失败的比例在 15 分钟之内是否低于 85%，如果出现低于的情况（在单机调试的时候很容易满足，
-实际在生产环境上通常是由于网络不稳定导致），Eureka-Server 会将当前的实例注册信息保护起来，同时提示这个警告。
-
-保护模式 主要用于一组客户端和 Eureka-Server 之间存在网络分区场景下的保护。
-一旦进入保护模式，Eureka-Server 将会尝试保护其服务注册表中的信息，不再删除服务注册表中的数据（也就是不会注销任何微服务）。
-```
-
-#Feign
-
-##基础概念
-
->Feign简介
-
-```
-Feign 是简化 Java-HTTP 客户端开发的工具（java-to-httpclient-binder），它的灵感来自于 Retrofit、JAXRS-2.0 和 WebSocket。
-
-Feign 的初衷是降低统一绑定 Denominator 到 HTTP-API 的复杂度，不区分是否为 restful。
-```
-
-## 基础配置
-
-> 用户微服务 `demo-user` 调用基础微服务 `demo-base` 。所以，在 `demo-user` 中添加依赖。
-
-```xml
-<!--添加依赖 Feign-->
-<dependency>
-    <groupId>org.springframework.cloud</groupId>
-    <artifactId>spring-cloud-starter-openfeign</artifactId>
-</dependency>
-```
-
-```java
-//启动类添加注解
-@EnableDiscoveryClient
-@EnableFeignClients
-```
-
-##测试DEMO
-
->`demo-user` 中新建包 `com.example.user.client`，存放 `demo-base` 中的的接口。
-
-```java
-@Component //加不加都行，无意义
-@FeignClient("demo-base") //指定微服务名，不能包含下划线
-public interface LabelClient {
-
-    //用于对被调用的微服务进行地址映射。
-    @GetMapping("/label")
-    Result listLabels();
-
-    //@PathVariable注解一定要指定参数名称，否则出错
-    @GetMapping("/label/{labelId}")
-    Result getById(@PathVariable("labelId") String id);
-}
-```
-
-> `demo-user` 中调用远程接口
-
-```java
-@Slf4j
-@RequestMapping("/user")
-@RestController
-public class UserController {
-
-    @Autowired
-    LabelClient labelClient;
-
-    @GetMapping("/label")
-    public Result listLabels() {
-        return labelClient.listLabels();
-    }
-
-    @GetMapping("/label/{labelId}")
-    public Result getById(@PathVariable("labelId") String id) {
-        return labelClient.getById(id);
-    }
-}
-```
-
-> `demo-base`中的元接口
-
-```java
-@Slf4j
-@RequestMapping("/label")
-@RestController
-public class LabelController {
-
-    @Autowired
-    LabelService labelService;
-
-    //获取多个对象的方法用 list 做前缀，复数形式结尾如：listObjects
-    @GetMapping
-    public Result listLabels() {
-        List<Label> labels = labelService.listLabels();
-        return new Result(true, StatusCode.OK, "查询成功", labels);
-    }
-
-    //获取单个对象的方法用 get 做前缀
-    @GetMapping("/{labelId}")
-    public Result getById(@PathVariable String id) { //获取请求行参数
-        Optional<Label> label = labelService.getById(id);
-        log.info("getById: {}", label.get());
-        return new Result(true, StatusCode.OK, "查询成功", label);
-    }
-}
-```
-
-> 负载均衡：同时启动多次 `demo-base`，多次请求，轮流调用。
-
-```java
-同时启动多次单个 SpringBoot 项目：启动绿三角左边的 'Edit Config...'，选中待启动项目，取消构造'Single-instance-only'
-每次运行 SpringBoot 项目前，修改配置文件中的端口号即可。
-
-注意：'demo-base'最好排除依赖'spring-boot-devtools'
-```
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
 
 
 
