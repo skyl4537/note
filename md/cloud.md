@@ -103,7 +103,7 @@ Dubbo 只是实现了服务治理，而 SpringCloud 下面有 21 个子项目（
 
 ##基础配置
 
->父项目打包类型必须选择 pom 类型
+>父项目打包类型必须选择 pom 类型。`不要配置build节点`
 
 ```xml
 <modelVersion>4.0.0</modelVersion>
@@ -152,10 +152,15 @@ Dubbo 只是实现了服务治理，而 SpringCloud 下面有 21 个子项目（
 ```xml
 <dependencies>
     <dependency>
+        <groupId>org.springframework.boot</groupId>
+        <artifactId>spring-boot-devtools</artifactId>
+        <optional>true</optional> <!-- 依赖只在当前项目生效,不会传递到引用项目中 -->
+    </dependency>
+    <dependency>
         <groupId>org.projectlombok</groupId>
         <artifactId>lombok</artifactId>
         <scope>provided</scope> <!--参与编译，测试，运行，但不会打包-->
-        <optional>true</optional> <!--true: 依赖不会传递，但是该依赖卸载父项目则所有子类都可用。false: 会传递-->
+        <optional>true</optional> <!--true: 依赖不会传递，但是该依赖写在父项目则所有子类都可用。false: 会传递-->
     </dependency>
     <dependency>
         <groupId>org.springframework.boot</groupId>
@@ -172,15 +177,6 @@ Dubbo 只是实现了服务治理，而 SpringCloud 下面有 21 个子项目（
 > 配置 Spring 的仓库地址，与 build 标签同级
 
 ```xml
-<build>
-    <plugins>
-        <plugin>
-            <groupId>org.springframework.boot</groupId>
-            <artifactId>spring-boot-maven-plugin</artifactId>
-        </plugin>
-    </plugins>
-</build>
-
 <repositories> <!--jar包仓库-->
     <repository>
         <id>spring-snapshots</id>
@@ -214,11 +210,9 @@ Dubbo 只是实现了服务治理，而 SpringCloud 下面有 21 个子项目（
 </pluginRepositories>
 ```
 
-
-
 # 公共模块
 
-##基础概念
+##基础配置
 
 > 公共模块，最终是以jar包形式存在。`没有配置文件，所以，也勿需指定微服务名 demo-common`。
 
@@ -227,8 +221,6 @@ Dubbo 只是实现了服务治理，而 SpringCloud 下面有 21 个子项目（
 
 对于公共模块只写公共方法，不写业务逻辑，所以 pom.xml 不用引用其他jar包
 ```
-
-##基础配置
 
 > 基础配置
 
@@ -254,6 +246,10 @@ Dubbo 只是实现了服务治理，而 SpringCloud 下面有 21 个子项目（
         <version>3.2.2</version>
     </dependency>
 </dependencies>
+
+<build>
+    <finalName>demo-common</finalName>
+</build>
 ```
 
 ```properties
@@ -351,7 +347,7 @@ public class Result {
 
 # 基础微服务
 
-##基础概念
+##基础配置
 
 > 基础微服务：`demo-base`
 
@@ -363,9 +359,7 @@ public class Result {
 但创建方式相同，都是右键选择 new -> module，项目名称：'demo_base'
 ```
 
-##基础配置
-
-> 基础配置
+> 基础配置 `父项目不写build节点，所以子项目必须添加打包插件`
 
 ```xml
 <parent>
@@ -380,8 +374,20 @@ public class Result {
 <dependencies>
     <dependency>
         <groupId>com.example</groupId>
-        <artifactId>demo_common</artifactId> <!--引用公共模块 demo_common-->
+        <artifactId>demo_common</artifactId> <!--公共模块-->
         <version>0.0.1-SNAPSHOT</version>
+    </dependency>
+
+    <!--添加依赖 config-client-->
+    <dependency>
+        <groupId>org.springframework.cloud</groupId>
+        <artifactId>spring-cloud-starter-config</artifactId>
+    </dependency>
+
+    <!--添加依赖 Eureka-Client-->
+    <dependency>
+        <groupId>org.springframework.cloud</groupId>
+        <artifactId>spring-cloud-starter-netflix-eureka-client</artifactId>
     </dependency>
 
     <dependency>
@@ -398,6 +404,24 @@ public class Result {
         <artifactId>mysql-connector-java</artifactId>
     </dependency>
 </dependencies>
+
+<build>
+    <finalName>demo-base</finalName> <!--打包名称-->
+    <plugins>
+        <plugin>
+            <groupId>org.springframework.boot</groupId> <!--打包插件-->
+            <artifactId>spring-boot-maven-plugin</artifactId>
+        </plugin>
+    </plugins>
+    <resources>
+        <resource> <!--资源拷贝插件-->
+            <directory>src/main/java</directory>
+        </resource>
+        <resource>
+            <directory>src/main/resources</directory>
+        </resource>
+    </resources>
+</build>
 ```
 
 ```properties
@@ -1006,13 +1030,19 @@ eureka.client.service-url.defaultZone=http://localhost:6868/eureka
 eureka.instance.prefer-ip-address=true
 
 #zuul
-#配置请求URL的请求规则，指定Eureka注册中心中的服务id
+#配置请求URL的请求规则，指定Eureka注册中心中的服务id，转发请求头（默认过滤请求头）
 zuul.routes.demo-base.path=/base/**
 zuul.routes.demo-base.service-id=demo-base
+zuul.routes.demo-base.custom-sensitive-headers=true
 zuul.routes.demo-friend.path=/friend/**
 zuul.routes.demo-friend.service-id=demo-friend
+zuul.routes.demo-friend.custom-sensitive-headers=true
 zuul.routes.demo-user.path=/user/**
 zuul.routes.demo-user.service-id=demo-user
+zuul.routes.demo-user.custom-sensitive-headers=true
+
+#jwt
+jwt.config.key=bluecard
 ```
 
 ```java
@@ -1027,68 +1057,6 @@ public class ManagerApplication {
 ```
 
 > zuul过滤器配置
-
-```java
-@Component
-public class ManagerFilter extends ZuulFilter {
-    @Override
-    public String filterType() { //过滤器类型：pre，route，post，error
-        return "pre";
-    }
-
-    @Override
-    public int filterOrder() { //过滤器的执行顺序，值越小越先执行
-        return 0;
-    }
-
-    @Override
-    public boolean shouldFilter() { //过滤器是否开启
-        return true;
-    }
-
-    @Override
-    public Object run() throws ZuulException { //过滤器的具体逻辑
-        System.out.println("zuul过滤器...");
-        return null;
-    }
-}
-```
-
-> zuul网关配置后，使用 IDEA 的 REST_API 测试
-
-```properties
-###获取label的id为1信息
-GET http://localhost:9001/label/1
-
-###获取label的id为1信息（zuul）
-GET http://localhost:9011/base/label/1
-```
-
-```properties
-###登陆
-POST http://localhost:9002/user/login
-Content-Type: application/json
-
-{"loginName": "aaa","password": "111"}
-
-###登陆（zuul）
-POST http://localhost:9011/user/user/login
-Content-Type: application/json
-
-{"loginName": "aaa","password": "111"}
-```
-
-```properties
-###删除用户
-DELETE http://localhost:9002/user/5
-Authorization: Bearer eyJhbGciOiJIUzI1NiJ9.eyJqdGkiOiIxIiwic3ViIjoiYWFhIiwiaWF0IjoxNTYyNTc1ODMzLCJyb2xlcyI6ImFkbWluIn0.fz4pnLx6ixhz75TjGmjG-oZhn17zPJKiai9OQrjx8Ms
-
-###删除用户（zuul）
-DELETE http://localhost:9011/user/user/5
-Authorization: Bearer eyJhbGciOiJIUzI1NiJ9.eyJqdGkiOiIxIiwic3ViIjoiYWFhIiwiaWF0IjoxNTYyNTc1ODMzLCJyb2xlcyI6ImFkbWluIn0.fz4pnLx6ixhz75TjGmjG-oZhn17zPJKiai9OQrjx8Ms
-```
-
-> `zuul网关默认会过滤掉请求头`，现配置转发请求头。
 
 ```java
 @Slf4j
@@ -1118,17 +1086,21 @@ public class ManagerFilter extends ZuulFilter {
 
         RequestContext requestContext = RequestContext.getCurrentContext();
         HttpServletRequest request = requestContext.getRequest();
-        String url = request.getRequestURL().toString();
-        if (url.indexOf("/user/login") > 0) {
-            log.info("登陆页面：" + url);
+
+        if ("OPTIONS".equals(request.getMethod())) { //好像不起作用
+            log.info("跳过-zuul的网关分发...");
             return null;
         }
 
-        String authorization = "Authorization";
-        String header = request.getHeader(authorization);
-        String prefix = "Bearer ";
-        if (StringUtils.isNotBlank(header) && header.startsWith(prefix)) {
-            String token = header.substring(prefix.length());
+        String url = request.getRequestURL().toString();
+        if (url.indexOf("/user/login") > 0) {
+            log.info("跳过-登陆接口：" + url);
+            return null;
+        }
+
+        String header = request.getHeader(GlobalString.TOKEN_KEY);
+        if (StringUtils.isNotBlank(header) && header.startsWith(GlobalString.TOKEN_PREFIX)) {
+            String token = header.substring(GlobalString.TOKEN_PREFIX.length());
             log.info("token：" + token);
 
             try {
@@ -1137,8 +1109,8 @@ public class ManagerFilter extends ZuulFilter {
 
                 if (null != claims) {
                     if ("admin".equals(claims.get("roles"))) {
-                        requestContext.addZuulRequestHeader(authorization, header);
-                        log.info("token验证通过，添加了头信息" + header);
+                        requestContext.addZuulRequestHeader(GlobalString.TOKEN_KEY, header);
+                        log.info("token验证通过，添加了头信息：" + header);
                         return null;
                     }
                 }
@@ -1156,919 +1128,127 @@ public class ManagerFilter extends ZuulFilter {
 }
 ```
 
+> zuul网关配置后，使用 IDEA 的 REST_API 测试
+
+```properties
+###获取label的id为1信息
+GET http://localhost:9001/label/1
+
+###获取label的id为1信息（zuul）
+GET http://localhost:9011/base/label/1
+Authorization: Bearer eyJhbGciOiJIUzI1NiJ9.*.*
+```
+
+```properties
+###登陆
+POST http://localhost:9002/user/login
+Content-Type: application/json
+
+{"loginName": "aaa","password": "111"}
+
+###登陆（zuul）
+POST http://localhost:9011/user/user/login
+Content-Type: application/json
+
+{"loginName": "aaa","password": "111"}
+```
+
+```properties
+###删除用户
+DELETE http://localhost:9002/user/5
+Authorization: Bearer eyJhbGciOiJIUzI1NiJ9.*.*
+
+###删除用户（zuul）
+DELETE http://localhost:9011/user/user/5
+Authorization: Bearer eyJhbGciOiJIUzI1NiJ9.*.*
+```
+
 ##Config
 
+>`分布式配置 ` Config
 
+```
+在分布式系统中，由于服务数量巨多，为了方便服务配置文件统一管理，实时更新，所以需要分布式配置中心组件。
+Spring-Cloud-Config 支持配置服务放在配置服务的内存中（即本地），也支持放在远程Git仓库中。两个角色：Config-Server，Config-Client。
 
+Config-Server 是一个可横向扩展、集中式的配置服务器，它用于集中管理应用程序各个环境下的配置，
+默认使用Git存储配置文件内容，也可以使用SVN存储，或者是本地文件存储。
 
-
-
-
-
-
-#华丽分割线
-
-
-
-# 短信Sms
-
-##基础配置
-
-> 短信服务使用 阿里云通信
-
-```java
-（1）注册，登陆，实名，产品选择'短信服务'
-（2）申请签名，申请模板，创建 AccessKey，充值
+Config-Client 用于操作存储在 Config-Server 中的配置内容。微服务在启动时会请求 Config-Server 获取配置文件的内容，请求到后再启动容器。
 ```
 
-> 配置文件
+>服务端：配置微服务`demo-config`
+
+```java
+将项目中的配置文件重命名为： '{application}-{profile}.yml' 或 '{application}-{profile}.properties'
+
+码云上新建仓库 'demo-config'，然后上传以上的配置文件。
+```
 
 ```xml
-<!-- https://mvnrepository.com/artifact/com.aliyun/aliyun-java-sdk-dysmsapi -->
+<dependencies>
+    <!--添加依赖 Eureka-Server-->
+    <dependency>
+        <groupId>org.springframework.cloud</groupId>
+        <artifactId>spring-cloud-config-server</artifactId>
+    </dependency>
+</dependencies>
+```
+
+```properties
+server.port=12000
+spring.application.name=demo-config
+
+#config
+spring.cloud.config.server.git.uri=https://gitee.com/skyl4537/demo-config.git
+```
+
+```java
+@EnableConfigServer
+@SpringBootApplication
+public class ConfigApplication {
+    public static void main(String[] args) {
+        SpringApplication.run(ConfigApplication.class, args);
+    }
+}
+```
+
+> 客户端：以基础微服务为例 `demo-base`
+
+```xml
+<!--添加依赖 config-client-->
 <dependency>
-    <groupId>com.aliyun</groupId>
-    <artifactId>aliyun-java-sdk-dysmsapi</artifactId>
-    <version>1.1.0</version>
-</dependency>
-<!-- https://mvnrepository.com/artifact/com.aliyun/aliyun-java-sdk-core -->
-<dependency>
-    <groupId>com.aliyun</groupId>
-    <artifactId>aliyun-java-sdk-core</artifactId>
-    <version>3.2.8</version>
+    <groupId>org.springframework.cloud</groupId>
+    <artifactId>spring-cloud-starter-config</artifactId>
 </dependency>
 ```
 
 ```properties
-aliyun.sms.accessKeyId=*
-aliyun.sms.accessKeySecret=*
-aliyun.sms.templateCode=sms_20190328 #模板CODE
-aliyun.sms.signName=短信测试          #签名名称
-```
-
->SMS工具类
-
-```java
-/**
- * 短信工具类
- *
- * @author Administrator
- */
-@Component
-public class SmsUtils {
-
-    //产品名称:云通信短信API产品,开发者无需替换
-    static final String product = "Dysmsapi";
-    //产品域名,开发者无需替换
-    static final String domain = "dysmsapi.aliyuncs.com";
-
-    @Autowired
-    private Environment env;
-
-    // TODO 此处需要替换成开发者自己的AK(在阿里云访问控制台寻找)
-
-    /**
-     * 发送短信
-     *
-     * @param mobile        手机号
-     * @param template_code 模板号
-     * @param sign_name     签名
-     * @param param         参数
-     * @return
-     * @throws ClientException
-     */
-    public SendSmsResponse sendSms(String mobile, String template_code, String sign_name, String param) throws
-            ClientException {
-        String accessKeyId = env.getProperty("aliyun.sms.accessKeyId");
-        String accessKeySecret = env.getProperty("aliyun.sms.accessKeySecret");
-        //可自助调整超时时间
-        System.setProperty("sun.net.client.defaultConnectTimeout", "10000");
-        System.setProperty("sun.net.client.defaultReadTimeout", "10000");
-        //初始化acsClient,暂不支持region化
-        IClientProfile profile = DefaultProfile.getProfile("cn-hangzhou", accessKeyId, accessKeySecret);
-        DefaultProfile.addEndpoint("cn-hangzhou", "cn-hangzhou", product, domain);
-        IAcsClient acsClient = new DefaultAcsClient(profile);
-        //组装请求对象-具体描述见控制台-文档部分内容
-        SendSmsRequest request = new SendSmsRequest();
-        //必填：待发送手机号
-        request.setPhoneNumbers(mobile);
-        //必填：短信签名-可在短信控制台中找到
-        request.setSignName(sign_name);
-        //必填：短信模板-可在短信控制台中找到
-        request.setTemplateCode(template_code);
-        //可选：模板中的变量替换JSON串,如模板内容为"亲爱的${name},您的验证码为${code}"时,此处的值为
-        request.setTemplateParam(param);
-        //选填，上行短信扩展码(无特殊需求用户请忽略此字段)
-        //request.setSmsUpExtendCode("90997");
-        //可选，outId为提供给业务方扩展字段,最终在短信回执消息中将此值带回给调用者
-        request.setOutId("yourOutId");
-        //hint 此处可能会抛出异常，注意catch
-        SendSmsResponse sendSmsResponse = acsClient.getAcsResponse(request);
-        return sendSmsResponse;
-    }
-
-    //查询发送短信的详情：如当天的发送消息总数
-    public QuerySendDetailsResponse querySendDetails(String mobile, String bizId) throws ClientException {
-        String accessKeyId = env.getProperty("accessKeyId");
-        String accessKeySecret = env.getProperty("accessKeySecret");
-        //可自助调整超时时间
-        System.setProperty("sun.net.client.defaultConnectTimeout", "10000");
-        System.setProperty("sun.net.client.defaultReadTimeout", "10000");
-        //初始化acsClient,暂不支持region化
-        IClientProfile profile = DefaultProfile.getProfile("cn-hangzhou", accessKeyId, accessKeySecret);
-        DefaultProfile.addEndpoint("cn-hangzhou", "cn-hangzhou", product, domain);
-        IAcsClient acsClient = new DefaultAcsClient(profile);
-        //组装请求对象
-        QuerySendDetailsRequest request = new QuerySendDetailsRequest();
-        //必填-号码
-        request.setPhoneNumber(mobile);
-        //可选-流水号
-        request.setBizId(bizId);
-        //必填-发送日期 支持30天内记录查询，格式yyyyMMdd
-        SimpleDateFormat ft = new SimpleDateFormat("yyyyMMdd");
-        request.setSendDate(ft.format(new Date()));
-        //必填-页大小
-        request.setPageSize(10L);
-        //必填-当前页码从1开始计数
-        request.setCurrentPage(1L);
-        //hint 此处可能会抛出异常，注意catch
-        QuerySendDetailsResponse querySendDetailsResponse = acsClient.getAcsResponse(request);
-        return querySendDetailsResponse;
-    }
-}
-```
-
->SMS发送
-
-```java
-@Value("${aliyun.sms.templateCode}") //模板编号Code
-String templateCode;
-
-@Value("${aliyun.sms.signName}") //签名
-String signName;
-
-@Autowired
-SmsUtil smsUtil;
-
-//发送短信
-smsUtil.sendSms(moblieNum, templateCode, signName, "{\"checkCode\":\"" + checkCode + "\"}");
-```
-
-##注册DEMO
-
-
->用户填写手机号，点击获取验证码。服务器向用户填写的手机号发送验证码。
-
-```java
-@PostMapping("/sendSms/{mobile}")
-public String sendSms(@PathVariable String mobile) {
-    if (StringUtils.isEmpty(mobile)) { //正则检测略
-        return "手机号不合法";
-    }
-    return HelloService.sendSms(mobile);
-}
-```
->发送短信Service
-
-```java
-public void sendSms(String mobile) {
-    //(1).生成验证码
-    String checkCode = RandomStringUtils.randomNumeric(6); //org.apache.commons.lang3
-
-    //(2).验证码存入redis，5分钟失效
-    redisTemplate.opsForValue().set("checkCode_" + mobile, checkCode, 5, TimeUnit.MINUTES);
-
-    //(3).发送消息 RabbitMQ，短信验证
-    JSONObject object = new JSONObject();
-    object.put("mobile", mobile);
-    object.put("checkCode", checkCode);
-    rabbitTemplate.convertAndSend("spring.sms", object);
-}
-```
-
->用户将收到的验证码填入，然后点击注册
-
-```java
-@PostMapping("/regist/{mobile}/{checkCode}")
-public String regist(@PathVariable String mobile, @PathVariable String checkCode) {
-    if (StringUtils.isEmpty(mobile)) { //正则检测略
-        return "手机号不合法";
-    }
-    return HelloService.regist(mobile, checkCode);
-}
-```
->用户注册Service
-
-```java
-//service, dao --> 抛出异常; Controller/全局异常处理器 --> 处理异常.
-private void regist(String mobile, String checkCode) {
-    if (StringUtils.isEmpty(checkCode))
-        throw new RuntimeException("请输入验证码");
-
-    if (!smsCodeRedis.equalsIgnoreCase(checkCode))
-        throw new RuntimeException("验证码不正确或已过期");
-
-    personDao.add(person); //写库
-}
-```
-##中国网建
-
->测试账户
-
-```java
-private static final String ZGWJ_NAME = "bluecardsoft"; //中国网建账号
-private static final String ZGWJ_PASS = "537915b43b2b99a355df"; //中国网建发短息密钥
-
-SmsUtils.sendSMS(ZGWJ_NAME, ZGWJ_PASS, "1761061****", "测试文档");
-```
->短信工具类
-
-```java
-public static String sendSMS(String userName, String key, String toMobile, String smsText) {
-    List<NameValuePair> nvps = new ArrayList<>(4);
-    nvps.add(new BasicNameValuePair("Uid", userName));
-    nvps.add(new BasicNameValuePair("Key", key));
-    nvps.add(new BasicNameValuePair("smsMob", toMobile));
-    nvps.add(new BasicNameValuePair("smsText", smsText));
-    UrlEncodedFormEntity entity = new UrlEncodedFormEntity(nvps, Charset.forName("GBK")); //中文乱码
-    entity.setContentType("application/x-www-form-urlencoded;charset=gbk");
-
-    HttpPost httpPost = new HttpPost("http://gbk.sms.webchinese.cn");
-    httpPost.setEntity(entity);
-
-    try (CloseableHttpResponse httpResponse =
-         HttpClients.createDefault().execute(httpPost)) { //发送请求，连接自动关闭
-        if (null != httpResponse && HttpStatus.SC_OK ==
-            httpResponse.getStatusLine().getStatusCode()) {
-            String res = EntityUtils.toString(httpResponse.getEntity(), "UTF-8"); //获取结果
-            System.out.println(res);
-            return res;
-        }
-    } catch (IOException e) {
-        e.printStackTrace();
-    }
-    return null;
-}
-```
-# BCrypt加密
-
-##基础概念
-
->HASH算法不可逆，所以不能解密
-
-```java
-任何应用考虑到安全，绝不能明文的方式保存密码。密码应该通过哈希算法进行加密。有很多标准的算法比如 SHA 或 MD5，结合salt（盐）是一个不错的选择。
-Spring Security提供了 BCryptPasswordEncoder 类，实现Spring的 PasswordEncoder 接口使用'BCrypt强哈希方法'来加密密码。
-```
-```java
-//都是HASH算法
-'纯md5加密'：可以使用密码字典破解，暴力破解。（X）
-'md5加盐加密'：一旦知道 salt 和加密规则，就可以破解所有的密码。（X）
-'md5随机盐加密'：不同用户分配不同的salt。必须得单独保存salt，验证时使用。（X）
-
-'BCrypt加密'：随机生成salt，并混入最终加密后的密码。验证时也无需单独提供之前的salt，从而无需单独处理salt问题。
-```
-
-```java
-//BCrypt加密对于同一个密码，每次生成的hash不一样。因为随机salt
-但是，hash结果中包含了salt（hash产生过程：先随机生成salt，salt跟password进行hash）。
-
-在下次校验时，从hash中取出salt，salt跟password进行hash。得到的结果跟保存在DB中的hash进行比对。
-```
-
-##配置使用
-
-> 基础配置
-
-```xml
-<dependency>
-    <groupId>org.springframework.boot</groupId>
-    <artifactId>spring-boot-starter-security</artifactId>
-</dependency>
-```
-```java
-@Bean //注入Bean
-public BCryptPasswordEncoder encoder(){
-    return new BCryptPasswordEncoder();
-}
-```
-
-> 必要配置
-
-```java
-添加了spring security依赖后，所有的地址都被spring security所控制了。
-目前只是需要用到'BCrypt密码加密'的部分，所以要添加一个配置类，配置为所有地址都可以匿名访问。
-```
-
-```java
-@Configuration
-@EnableWebSecurity
-public class WebSecurityConfig extends WebSecurityConfigurerAdapter {
-    @Override
-    protected void configure(HttpSecurity http) throws Exception {
-        // super.configure(http); //必须注掉
-        
-        http.authorizeRequests() //开启权限验证
-                .antMatchers("/**").permitAll() //拦截所有路径，任何权限都可以访问
-                .anyRequest().authenticated() //任意请求，认证后才可以访问
-                .and().csrf().disable(); //固定写法：表示使CRSF（网络攻击技术）拦截失效
-    }
-}
-```
-
-> 加密测试
-
-```java
-@Autowired
-BCryptPasswordEncoder encoder;
-
-@Test
-public void encoder() {
-    String encode = encoder.encode("123");
-    System.out.println("encode: " + encode); //加密: $2a$10$ujGzEaaHHU0y72yzfwMk.OA0KUNpKfRFr291I5YuGqnWawmnAQV1y
-
-    boolean matches = encoder.matches("123", "$2a$10$ujGzEaaHHU0y72yzfwMk.OA0KUNpKfRFr291I5YuGqnWawmnAQV1y");
-    System.out.println("matches: " + matches); //比对: true
-}
-```
-# JWT认证
-
-## 常见认证
-
->**有状态登陆 & 无状态登陆**
-
-```java
-'有状态登陆'：服务端需要保存用户的登陆状态（如 SessionId），每个用户发起请求都需要根据 SessionId 查询redis获取用户的登陆信息。
-
-'无...登陆'：.....不需要.....，每个用户发起请求后，只需要验证 Token 就可以获取到用户的登陆信息。
-```
-
->HTTP Basic Auth `无状态登陆`
-
-```
-每次请求API时，都提供用户的 username 和 password。
-简言之，Basic Auth是配合RESTful API 使用的最简单的认证方式，只需提供用户名密码即可。
-但由于有把用户名密码暴露给第三方客户端的风险，所以应该尽量避免使用。
-```
-
->OAuth `无状态登陆` <https://www.cnblogs.com/flashsun/p/7424071.html>
-
-```
-OAuth（开放授权）是一个开放的授权标准，允许用户让第三方应用访问该用户在某一web服务上存储的私密的资源（如照片，视频，联系人列表），
-而无需将用户名和密码提供给第三方应用。
-
-OAuth允许用户提供一个令牌，而不是用户名和密码来访问他们存放在特定服务提供者的数据。
-每一个令牌授权一个特定的第三方系统（例如，视频编辑网站)在特定的时段（例如，接下来的2小时内）内访问特定的资源（例如仅仅是某一相册中的视频）。
-这样，OAuth让用户可以授权第三方网站访问他们存储在另外服务提供者的某些特定信息，而非所有内容。
-
-这种基于OAuth的认证机制适用于个人消费者类的互联网产品，如社交类APP等应用，但是不太适合拥有自有认证权限管理的企业应用。
-```
-
-![](assets/tool0.jpg)
-
->Cookie Auth `有状态登陆`
-
-```java
-一次请求认证后，在服务端创建一个Session对象，同时在客户端的浏览器端创建了一个Cookie对象；
-通过客户端带上来Cookie对象，来与服务器端的Session对象匹配来实现'状态管理'的。
-默认的，当我们关闭浏览器的时候，cookie会被删除。但可以通过修改cookie 的expire time使cookie在一定时间内有效。
-
-cookie 验证是用于长时间用户验证，cookie 验证是'有状态的'，意味着验证记录或者会话需要一直在服务端和客户端保持。
-服务器需要保持对数据库（如 redis）中活动会话的追踪，当在前端创建了一个 cookie，cookie 中包含了一个 session 标识符。
-```
-
-```java
-//传统 cookie 会话的验证流程：
-（1）用户登录，输入账号密码
-（2）服务器验证用户账号密码正确，创建一个 session 存储在数据库（或者 redis）
-（3）将 session ID 放进 cookie 中，被存储在用户浏览器中
-（4）再次发起请求，服务器直接通过 session ID 对用户进行验证
-（5）一旦用户登出，则 session 在客户端和服务器端都被销毁
-```
-
-![](assets/tool1.webp)
-
->Token Auth `无状态登陆` <https://www.jianshu.com/p/c33f5777c2eb>
-
-```java
-使用基于 Token 的身份验证方法，'在服务端不需要存储用户的登录记录（无状态登陆的本质）'。
-
-//大概的流程是这样的：
-（1）客户端使用 username 和 password 请求登录
-（2）服务端收到请求，去验证用户名与密码
-（3）验证成功后，服务端会签发一个 Token，再把这个 Token 发送给客户端
-（4）客户端收到 Token 以后可以把它存储起来，比如存储在 local storage，也可以存储在 session storage 或者 cookie 中
-（5）客户端'以后每次'向服务端请求资源的时候，将 token 放进 Authorization-header，然后发送到服务端
-（6）服务端收到请求，然后解码 Token，就可以知道用户的相关信息，然后根据权限返回请求的数据
-（7）一旦用户登出，token 在客户端被销毁，不需要经过服务器端
-```
-
-##Token优缺点
-
-```java
-//4个优点
-因为token存储在客户端，服务器只负责解码。这样不需要占用服务器端资源。
-服务器端可以无限扩展，负载均衡器可以将用户传递到任何服务器，服务器都能知道用户信息，因为jwt里面包含了。
-数据安全，因为有签名，防止了篡改，但信息还是透明的，不要放敏感信息。
-放入请求头提交，很好的防止了csrf攻击，
-```
-
-```java
-//2个缺点
-（1）无法主动让token失效，小伙伴们会说token不是有过期时间吗？是的，token本身是有过期时间，但token一旦发出，服务器就无法收回。
-如：一个jwt的token的失效时间是3天，但我们发现这个token有异常，有可能被人登录，那真实的用户可以修改密码。但是即使修改了密码，那个异常的token还是合法的，因为3天的失效时间未到，我们服务器是没法主动让异常token失效。
-
-（2）数据延时，不一致问题。因为jwt中包含了用户的部分信息，如果这些部分信息修改了，服务器获取的还是以前的jwt中的用户信息，导致数据不一致。
-```
-
->（优点1）：`无状态登陆`，可扩展和解耦
-
-```java
-使用 token，而不是 cookie 的最大优点应该就是'无状态'
-后端不需要保持对 token 的记录，每个 token 都是独立的，包含了检查其有效性的所有数据，并通过声明传达了用户信息。
-
-服务器端的工作只需要在登录成功后，生成（或者 sign，签署）token，或者验证传入的 token 是否有效。
-有时候甚至不需要生成 token，第三方服务比如 Auth0 可以处理 token 的签发，服务器只需要验证 token 的有效性就可以。
-
-解耦：Token可以在任何地方生成，只要在API被调用的时候，可以进行Token生成调用即可。
-```
-
->（优点2）：支持跨域和 CORS，避免 CSRF
-
-```java
-cookie 能很好的处理单域和子域，但是遇到跨域的问题就会变得难以处理。
-
-使用 token 的 CORS 可以很好的处理跨域的问题。由于每次发送请求到后端，都需要检查 JWT，只要它们被验证通过就可以处理请求。
-
-因为不再依赖于Cookie，所以不需要考虑对 CSRF（跨站请求伪造）的防范。
-```
-
->（优点3）：在 JWT 中存储数据
-
-```java
-当使用 cookie 进行验证时，是将 session id 存储到 cookie 里，JWT 允许你存储任何类型的元数据，只要是合法的 JSON。
-可以在里面添加任何数据，可以只有用户 ID 和到期日，也可以添加其它的比如邮件地址，域名等等。
-
-假如：有一个 API 是'/api/orders'，用于取回最新的订单，但是只有 admin 角色的用户可以获取到这些数据。
-在基于 cookie 的验证中，一旦请求被创建，就需要先去访问数据库去验证 session 是否正确（现在应该都是存储到 redis 里了，不会存数据库里了），
-另外还要去获取数据库里的用户权限去校验用户是否拥有 admin 的权限（这个应该是根据用户 role_id 查看权限是否是 admin），最后才是调用订单信息。
-
-而使用 JWT 的话，可以将用户角色放进 JWT 内，所以只要验证通过了，就可以直接调用订单信息。
-```
-
->（优点4）：移动平台
-
-```
-现代的 API 不仅仅和浏览器交互，正确编写一个 API 可以同时支持浏览器，还有原生移动平台，比如 IOS 或者 Android。
-
-原生移动平台并不一定和 cookie 能良好的兼容，在使用中会存在一些限制和需要注意的地方。
-另一方面，token 更容易在 IOS 和 Android 上实现，Token 也更容易实现物联网应用程序和服务，没有 Cookie 存储的概念。
-```
-
-> （优点5）：性能高
-
-```
-一次网络往返时间（通过数据库查询session信息），总比做一次 HMACSHA256 计算的Token验证和解析要费时得多。
-```
-
->缺点1：JWT 大小
-
-```
-token 最大的缺点就是它的大小，最小的它都比 cookie 要大。
-如果 token 中包含很多声明，那问题就会变得比较严重，毕竟向服务器发送的每个请求都要有这个 token。（太大了会导致请求缓慢）
-```
-
->缺点2：哪里存储 token
-
-```
-通常 JWT 被存储在浏览器的 local storage 中并且能够很好的运用。
-但是这样存储也会有问题，不像 cookie，local storage 被沙盒化到特定域，其区域不能被任何其他域访问，包括子域。
-
-可以存储 token 在 cookie 中，但是 cookie 最大的大小也只有 4kb，所以如果你有许多声明的时候可能会存储不够，
-session storage 就更不用说了，会话断开就被清除掉了。
-
-（个人记录：由于JWT前两个字符串采用base64进行编码，所以内容越多，编码字符串长度越长）
-```
-
-## JWT基础
-
-> JWT，全称JSON Web Token，主要特点：
-
-```java
-（1）数据是JSON格式
-（2）用于Web应用
-（3）是一个Token，也就是一个令牌方式
-```
-
-```java
-JWT 定义了一种'紧凑且自包含'的方式，用于在各方之间'以JSON对象进行安全传输信息'。这些信息可以通过对称/非对称方式'进行签名，防止信息被串改'。
-
-'紧凑'：就是JWT比较小，数据量不大，可以通过URL、POST参数或Header请求头方式进行传输。
-'自包含'：JWT可以让用户自定义JWT里面包含的用户信息，如：姓名、昵称等（不要放隐密的信息）。从而避免了多次查询数据库。
-```
-
-> JWT数据结构：头部（header）、载荷（playload）与签名（signature）
-
-```java
-Header.Payload.Signature //三者通过'.'组合在一起
-
-eyJhbGciOiJIUzI1NiJ9. //Header
-eyJqdGkiOiIxMTQ2MDM1MDEzOTQ0MDEyODAwIiwic3ViIjoiYWFhIMDcxMzE0fQ. //Payload
-TrJCYlVNnDSOYhwU9n5-k06kua-NCv0AX76JDwl_4qM //Signature
-```
-
-> BASE64编码和解码：http://tool.oschina.net/encrypt?type=3
-
-```java
-//Base64是一种基于64个可打印字符来表示二进制数据的表示方法。
-JDK 中提供了非常方便的 BASE64Encoder 和 BASE64Decoder，用它们可以非常方便的完成基于 BASE64 的编码和解码
-
-由于2的6次方等于64，所以每6个比特为一个单元，对应某个可打印字符。
-3个字节有24个比特，对应于4个Base64单元，即3个字节需要用4个可打印字符来表示。
-```
-
-```java
-@Test
-public void demo01() throws IOException {
-    String encode = new BASE64Encoder().
-        encode("{\"typ\":\"JWT\",\"alg\":\"HS256\"}".getBytes(Charset.forName("UTF-8")));
-    System.out.println("BASE64 编码: " + encode);
-
-    String decode = new String(new BASE64Decoder().decodeBuffer("eyJ0eXAiOiJKV1QiLCJhbGciOiJIUzI1NiJ9"));
-    System.out.println("BASE64 解码: " + decode);
-}
-```
-
->头部（header）：用于描述关于该JWT的最基本的信息，例如其类型以及签名所用的算法等。
-
-```java
-{"typ":"JWT","alg":"HS256"} //alg：签名的算法，默认HS256，可自定义。type：令牌的类型，JWT令牌就为JWT。
-
-eyJ0eXAiOiJKV1QiLCJhbGciOiJIUzI1NiJ9 //BASE64编码后的结果
-```
-
->载荷（playload）：用来存放实际需要传递的数据。包含三部分内容：
-
-```java
-//（1）标准中注册的声明（建议但不强制使用）
-jti（JWT Id）: jwt的唯一编号，主要用来作为一次性token，从而回避重复攻击。
-sub（subject）: 主题
-
-iss（issuer）: 签发jwt的一方
-aud（audience）: 接收jwt的一方
-
-iat（Issued At）: jwt的签发时间
-nbf（Not Before）: 生效时间，jwt从这个时间点开始生效
-exp（Expiration time）: jwt的过期时间，这个过期时间必须要大于签发时间
-```
-
-```java
-//（2）公共的声明
-可以添加任何的信息，一般添加用户的相关信息或其他业务需要的必要信息。'但不建议添加敏感信息'，因为该部分在客户端可解密
-
-'注意'：JWT使用Base64算法，默认不加密，任何人都可以获取，只要进行Base64解码就行了，所以不要把隐密的信息放到JWT中
-```
-
-```java
-//（3）私有的声明
-提供者和消费者所共同定义的声明，即自定义的claim。一般'不建议存放敏感信息'，因为base64是对称解密的，意味着该部分信息可以归类为明文信息。
-如前面那个结构举例中的 admin 和 name 都属于自定的claim。
-
-这些claim跟JWT标准规定的claim区别在于：
-JWT规定的claim，JWT的接收方在拿到JWT之后，都知道怎么对这些标准的claim进行验证（还不知道是否能够验证）；
-而 private claims不会验证，除非明确告诉接收方要对这些 claim 进行验证以及规则才行。
-```
-
-```java
-{"sub":"1234567890","name":"John Doe","admin":true} //自定义playload
-eyJzdWIiOiIxMjM0NTY3ODkwIiwibmFtZSI6IkpvaG4gRG9lIiwiYWRtaW4iOnRydWV9 //BASE64编码
-```
-
-> 签证（signature）：JWT第三段数据，主要作用是对前面两段的数据进行签名，防止数据篡改。
-
-```java
-进行签名的时候会有个'密钥（secret）'，只有服务器知道，然后利用Header中的签名算法进行签名。
-
-//签名算法：base64加密后的header 和 base64加密后的payload，使用'.'连接组成的字符串，
-//        然后通过header中声明的加密方式进行加盐（secret）加密，最终生成jwt的第三部分
-HMACSHA256(base64UrlEncode(header) + "." + base64UrlEncode(payload), secret) 
-```
-
-> `jwt最终组成部分`：header（base64后的）+`.`+ payload（base64后的）+`.`+ signature
-
-```java
-eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9. //header
-eyJzdWIiOiIxMjM0NTY3ODkwIiwibmFtZSI6IkpvaG4gRG9lIiwiYWRtaW4iOnRydWV9. //payload
-TJVA95OrM7E2cBab30RMHrHDcEfxjoYZgeFONFh7HgQ //signature
-```
-
-> jwt的工作方式
-
-```java
-在用户进行认证登录时，登录成功后服务器会返回一个JWT给客户端；那这个JWT就是用户的凭证，以后到哪里去都要带上这个凭证token。
-尤其访问受保护的资源的时候，通常把JWT放在'Authorization header'中。要用 Bearer schema，如header请求头中：
-
-Authorization: Bearer <token>
-```
-
-![](assets/cloud1.webp)
+#添加配置文件 bootstrap.properties（优先级比原有的高），删除原有配置文件
 
->基于JWT的身份认证
-
-```java
-用户信息是放在JWT中的，是存放在客户端（cookie，local storage）中的，服务器只需解码验证就行了，就可以知道获取到用户信息。
-'这和之前的Session方式就不一样。'
-```
-
->与Session-Cookie方式的区别
-
-```java
-Session方式：用户信息（即SessionId）是'存储在服务器端'。
-
-Token方式：用户信息（即token）是'存储在客户端'，服务器端只要解码即可。
-```
-
-
-
-![](assets/cloud2.webp)
-
-![](assets/cloud3.webp)
-
-
-
-## JJWT基础
-
-> 基础概念
-
-```java
-JJWT是一个提供 端到端 的JWT创建和验证的'Java库'。永远免费和开源(Apache-License，版本2.0)，JJWT很容易使用和理解。
-它被设计成一个以建筑为中心的流畅界面，隐藏了它的大部分复杂性。
-```
-
-```xml
-<!-- https://mvnrepository.com/artifact/io.jsonwebtoken/jjwt -->
-<dependency>
-    <groupId>io.jsonwebtoken</groupId>
-    <artifactId>jjwt</artifactId>
-    <version>0.9.1</version>
-</dependency>
-```
-
->Token的创建
-
-```java
-private static final String SECRET_KEY = "bluecard"; //服务端的秘钥
-```
-
-```java
-public void createToken() {
-    long now = System.currentTimeMillis(); //当前时间
-    long exp = now + 1000 * 60; //过期时间设为1分钟
-
-    JwtBuilder builder = Jwts.builder()
-        .signWith(SignatureAlgorithm.HS256, SECRET_KEY) //秘钥
-        .setId("888")
-        .setSubject("小白")
-        .setIssuedAt(new Date()) //签发时间
-        .setExpiration(new Date(exp)) //过期时间
-        .claim("roles", "admin") //自定义Claims：roles
-        .claim("logo", "logo.png"); //自定义Claims：logo
-    String token = builder.compact();
-    System.out.println(token);
-}
-```
-
-> Token的解析
-
-```java
-public void parseToken() {
-    String token = "eyJhbGciOiJIUzI1NiJ9." +
-        "eyJqdGkiOiI4ODgiLCJzdWIiOiLlsI_nmb0iLCJpYXQiOjE1NjIwMzc0NTUsImV4cCI6" +
-        "MTU2MjAzNzUxNCwicm9sZXMiOiJhZG1pbiIsImxvZ28iOiJsb2dvLnBuZyJ9." +
-        "3biyBWxg0BNC_RnWlWJG_NM-pdUFmIRhonPJRdEvA_M";
-
-    //parseClaimsJws(token); 可能抛出各种异常。
-    //如，Token过期时会引发 io.jsonwebtoken.ExpiredJwtException 异常
-    Claims claims = Jwts.parser().setSigningKey(SECRET_KEY).parseClaimsJws(token).getBody();
-
-    //jti：jwt的唯一身份标识，主要用来作为一次性token，从而回避重放攻击
-    System.out.println("jti: " + claims.get("jti")); //888
-    //iat：jwt的签发时间
-    System.out.println("iat: " + claims.get("iat")); //1562044568
-
-    System.out.println("id: " + claims.getId()); //888
-    System.out.println("subject: " + claims.getSubject()); //小白
-
-    System.out.println("roles: " + claims.get("roles")); //自定义Claims: admin
-    System.out.println("logo: " + claims.get("logo")); //logo.png
-
-    SimpleDateFormat sdf = new SimpleDateFormat("yyyy-MM-dd hh:mm:ss");
-    System.out.println("签发时间: " + sdf.format(claims.getIssuedAt()));
-    System.out.println("过期时间: " + sdf.format(claims.getExpiration()));
-    System.out.println("当前时间: " + sdf.format(new Date()));
-}
-```
-
-##JJWT整合
-
-> JJWT工具类。写在公共模块 `demo_common`
-
-```java
-@Data //读取配置文件，但配置文件不应该写在模块 demo_common，而是写在使用 JWT 功能的微服务，这样不同的微服务就可以自定义不同的配置。
-@ConfigurationProperties(prefix = "jwt.config")
-public class JwtUtil {
-    private String key; //加盐Secret
-    private long ttl; //过期时间
-
-    //生成JWT
-    public String createJWT(String id, String subject, String roles) {
-        long nowMillis = System.currentTimeMillis();
-        JwtBuilder builder = Jwts.builder()
-                .setId(id)
-                .setSubject(subject)
-                .setIssuedAt(new Date(nowMillis))
-                .signWith(SignatureAlgorithm.HS256, key)
-                .claim("roles", roles);
-        if (ttl > 0) {
-            builder.setExpiration(new Date(nowMillis + ttl));
-        }
-        return builder.compact();
-    }
-
-    //解析JWT
-    public Claims parseJWT(String jwtStr) {
-        return Jwts.parser()
-                .setSigningKey(key)
-                .parseClaimsJws(jwtStr)
-                .getBody();
-    }
-}
-```
-
->JWT配置。写在用户微服务 `demo_user`
-
-```java
-//JWT鉴权，并不是所有的微服务项目都使用，所以不要在 JwtUtil 类上加 @Component
-//而应该在使用 JwtUtil 的微服务中用 @Bean 标签注入
-@Bean
-public JwtUtil jwtUtil() {
-    return new JwtUtil();
-}
-```
-
-```properties
-#配置文件
-jwt.config.key=bluecard
-jwt.config.ttl=300000
-```
-
-> 生成JWT。场景需求：登陆成功后生成 Token，返回给客户端
-
-```java
-@PostMapping("/login")
-public Result login(@RequestBody Map<String, String> loginMap) { //restful接口的参数可以封装为 javaBean,也可以封装 map
-    String loginName = loginMap.get("loginName");
-    String loginPwd = loginMap.get("loginPwd");
-    User user = userService.login(loginName, loginPwd); //登陆验证逻辑
-
-    if (null == user) {
-        return new Result(false, StatusCode.LOGIN_ERROR, "用户名或密码错误");
-    }
-
-    String userName = user.getName();
-    String userRole = user.getRoles();
-    String token = jwtUtil.createJWT(user.getId() + "", userName, userRole);
-    HashMap<String, String> map = new HashMap<>();
-    map.put("token", token);
-    map.put("name", userName);
-    map.put("roles", userRole); //返回前台，不用解析即可使用
-    return new Result(true, StatusCode.OK, "登陆成功", map);
-}
-```
-
-> 解析JWT。场景需求：删除用户，必须拥有管理员权限，否则不能删除。
-
-```java
-'前后端约定'：前端请求微服务时需要添加头信息 Authorization: Bearer+空格+token
-```
-
-```java
-@DeleteMapping("/{id}")
-public Result delete(@RequestHeader("Authorization") String authHeader, @PathVariable String id) {
-    //@RequestHeader("Authorization") String authHeader //获取头信息：注解版
-    // String authHeader = request.getHeader("Authorization"); //获取头信息：代码版
-
-    if (authHeader == null || !authHeader.startsWith("Bearer ")) {
-        return new Result(false, StatusCode.ACCESS_ERROR, "权限不足");
-    }
-
-    String token = authHeader.substring(7);//提取token
-    Claims claims = null;
-    try {
-        claims = jwtUtil.parseJWT(token);
-    } catch (Exception e) {
-        log.error("delete Exception: ", e);
-    }
-    if (claims == null || !"admin".equals(claims.get("roles"))) {
-        return new Result(false, StatusCode.ACCESS_ERROR, "权限不足");
-    }
-
-    userService.deleteById(id); //删除用户逻辑
-    return new Result(true, StatusCode.OK, "删除成功");
-}
+#config
+spring.cloud.config.name=base
+spring.cloud.config.profile=dev
+spring.cloud.config.label=master
+#spring.cloud.config.discovery.enabled=true
+#spring.cloud.config.discovery.service-id=demo-config
 ```
 
-## 拦截器鉴权
 
->定义拦截器：每个接口都进行鉴权处理，会显得冗余。可以通过拦截器 进行优化。 
 
-```java
-@Slf4j
-@Component
-public class JwtInterceptor implements HandlerInterceptor /*extends HandlerInterceptorAdapter*/ {
 
-    @Autowired
-    JwtUtil jwtUtil;
 
-    //预处理：可以进行编码、安全控制等处理
-    public boolean preHandle(HttpServletRequest request, HttpServletResponse response, Object handler)
-            throws Exception {
-        log.info("经过了拦截器...");
 
-        String authorization = "Authorization";
-        String header = request.getHeader(authorization);
-        String prefix = "Bearer ";
-        if (StringUtils.isNotBlank(header) && header.startsWith(prefix)) {
-            String token = header.substring(prefix.length());
-            log.info("token：" + token);
-            try {
-                Claims claims = jwtUtil.parseJWT(token);
-                log.info("claims：" + claims);
 
-                if (null != claims) {
-                    if ("admin".equals(claims.get("roles"))) { //如果是管理员
-                        request.setAttribute("admin_claims", claims);
-                    }
-                    if ("user".equals(claims.get("roles"))) { //如果是用户
-                        request.setAttribute("user_claims", claims);
-                    }
-                }
-            } catch (Exception e) {
-                log.error("token验证异常：", e);
-            }
-        }
-        return true;
-    }
 
-    //后处理（调用了Service并返回ModelAndView，但未进行页面渲染）：有机会修改ModelAndView
-    @Override
-    public void postHandle(HttpServletRequest request, HttpServletResponse response, Object handler, ModelAndView
-            modelAndView) throws Exception {
-    }
 
-    //返回处理（已经渲染了页面）：可以根据ex是否为null判断是否发生了异常，进行日志记录
-    @Override
-    public void afterCompletion(HttpServletRequest request, HttpServletResponse response, Object handler, Exception
-            ex) throws Exception {
-    }
-}
-```
-
-> 注册拦截器
 
-```java
-@Configuration
-public class WebMvcConfig implements WebMvcConfigurer {
 
-    @Autowired
-    JwtInterceptor jwtInterceptor;
 
-    @Override
-    protected void addInterceptors(InterceptorRegistry registry) {
-        super.addInterceptors(registry);
 
-        registry.addInterceptor(jwtInterceptor)
-                .addPathPatterns("/**")
-                .excludePathPatterns("/**/login");
-    }
-}
-```
 
->更新鉴权方式，不再每个接口中进行鉴权
 
-```java
-@Autowired
-HttpServletRequest request;
 
-@DeleteMapping("/{id}") //使用 拦截器 后的删除接口
-public Result delete(@PathVariable String id) {
-    Claims claims = (Claims) request.getAttribute("admin_claims");
-    if (claims == null) {
-        return new Result(true, StatusCode.ACCESS_ERROR, "无权访问");
-    }
-    userService.deleteById(id);
-    return new Result(true, StatusCode.OK, "删除成功");
-}
-```
 
 
 
