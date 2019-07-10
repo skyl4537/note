@@ -1709,7 +1709,7 @@ session storage 就更不用说了，会话断开就被清除掉了。
 （个人记录：由于JWT前两个字符串采用base64进行编码，所以内容越多，编码字符串长度越长）
 ```
 
-## JWT基础
+## JWT概念
 
 > JWT，全称JSON Web Token，主要特点：
 
@@ -1855,7 +1855,7 @@ Token方式：用户信息（即token）是'存储在客户端'，服务器端�
 
 
 
-## JJWT基础
+## JJWT概念
 
 > 基础概念
 
@@ -1933,7 +1933,10 @@ public void parseToken() {
 > JJWT工具类。写在公共模块 `demo_common`
 
 ```java
-@Data //读取配置文件，但配置文件不应该写在模块 demo_common，而是写在使用 JWT 功能的微服务，这样不同的微服务就可以自定义不同的配置。
+/**
+ * 读取配置文件，但配置文件不应该写在模块 demo_common，而是写在使用 JWT 功能的微服务，这样不同的微服务就可以自定义不同的配置。
+ */
+@Data
 @ConfigurationProperties(prefix = "jwt.config")
 public class JwtUtil {
     private String key; //加盐Secret
@@ -2044,51 +2047,53 @@ public Result delete(@RequestHeader("Authorization") String authHeader, @PathVar
 ```java
 @Slf4j
 @Component
-public class JwtInterceptor implements HandlerInterceptor /*extends HandlerInterceptorAdapter*/ {
+public class JwtInterceptor implements HandlerInterceptor {
 
     @Autowired
     JwtUtil jwtUtil;
 
     //预处理：可以进行编码、安全控制等处理
+    @Override
     public boolean preHandle(HttpServletRequest request, HttpServletResponse response, Object handler)
             throws Exception {
         log.info("经过了拦截器...");
 
-        String authorization = "Authorization";
-        String header = request.getHeader(authorization);
-        String prefix = "Bearer ";
-        if (StringUtils.isNotBlank(header) && header.startsWith(prefix)) {
-            String token = header.substring(prefix.length());
-            log.info("token：" + token);
-            try {
-                Claims claims = jwtUtil.parseJWT(token);
-                log.info("claims：" + claims);
+        String header = request.getHeader(GlobalStr.TOKEN_KEY);
+        if (StringUtils.isBlank(header) || !header.startsWith(GlobalStr.TOKEN_PREFIX)) {
+            return true;
+        }
 
-                if (null != claims) {
-                    if ("admin".equals(claims.get("roles"))) { //如果是管理员
-                        request.setAttribute("admin_claims", claims);
-                    }
-                    if ("user".equals(claims.get("roles"))) { //如果是用户
-                        request.setAttribute("user_claims", claims);
-                    }
+        String token = header.substring(GlobalStr.TOKEN_PREFIX.length());
+        log.info("token：" + token);
+
+        try {
+            Claims claims = jwtUtil.parseJWT(token);
+            log.info("claims：" + claims);
+
+            if (null != claims) {
+                if ("admin".equals(claims.get("roles"))) { //如果是管理员
+                    request.setAttribute("admin_claims", claims);
                 }
-            } catch (Exception e) {
-                log.error("token验证异常：", e);
+                if ("user".equals(claims.get("roles"))) { //如果是用户
+                    request.setAttribute("user_claims", claims);
+                }
             }
+        } catch (Exception e) {
+            log.error("token验证异常：", e);
         }
         return true;
     }
 
     //后处理（调用了Service并返回ModelAndView，但未进行页面渲染）：有机会修改ModelAndView
     @Override
-    public void postHandle(HttpServletRequest request, HttpServletResponse response, Object handler, ModelAndView
-            modelAndView) throws Exception {
+    public void postHandle(HttpServletRequest request, HttpServletResponse response, Object handler,
+                           ModelAndView modelAndView) throws Exception {
     }
 
     //返回处理（已经渲染了页面）：可以根据ex是否为null判断是否发生了异常，进行日志记录
     @Override
-    public void afterCompletion(HttpServletRequest request, HttpServletResponse response, Object handler, Exception
-            ex) throws Exception {
+    public void afterCompletion(HttpServletRequest request, HttpServletResponse response,
+                                Object handler, Exception ex) throws Exception {
     }
 }
 ```
@@ -2103,9 +2108,7 @@ public class WebMvcConfig implements WebMvcConfigurer {
     JwtInterceptor jwtInterceptor;
 
     @Override
-    protected void addInterceptors(InterceptorRegistry registry) {
-        super.addInterceptors(registry);
-
+    public void addInterceptors(InterceptorRegistry registry) {
         registry.addInterceptor(jwtInterceptor)
                 .addPathPatterns("/**")
                 .excludePathPatterns("/**/login");
