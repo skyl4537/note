@@ -109,7 +109,7 @@ docker cp CONTAINER_NAME:SRC_PATH DEST_PATH #拷出来
 docker cp DEST_PATH CONTAINER_NAME:SRC_PATH #拷进去
 ```
 
-## 配置容器
+##配置容器
 
 ```shell
 --name #为容器指定一个名称：--name ES01
@@ -197,7 +197,7 @@ docker commit -a 'skyl' -m 'hello skyl' mysql01 skyl/mysql
 docker run --name skyl-mysql -d -e MYSQL_ROOT_PASSWORD=123456 mysql
 ```
 
-> build：从零开始构建，先创建 dockerfile
+> Dockerfile：一系列命令和参数构成的脚本，这些命令应用于基础镜像并最终创建一个新的镜像（只是镜像，而非容器）。
 
 ```shell
 #依赖镜像名称和ID。基础镜像，必须写在第一行
@@ -224,7 +224,7 @@ docker build -t='skyl-jdk1.8' .
 #查看镜像是否建立完成
 docker images
 
-#创建容器
+#构建容器jdk8
 docker run ‐it ‐‐name=myjdk8 skyl-jdk1.8 /bin/bash
 ```
 
@@ -233,9 +233,8 @@ docker run ‐it ‐‐name=myjdk8 skyl-jdk1.8 /bin/bash
 > 镜像加速
 
 ```shell
-#默认配置文件：/etc/docker/daemon.json
-#新版的 Docker 推荐使用 json 配置文件的方式
-{"registry-mirrors": ["https://docker.mirrors.ustc.edu.cn"]} 
+#默认配置文件：/etc/docker/daemon.json（没有，则新建）。然后重启docker
+{"registry-mirrors": ["https://docker.mirrors.ustc.edu.cn"]}
 ```
 
 ```shell
@@ -271,6 +270,13 @@ ExecStart=/usr/bin/docker -d -H fd:// --registry-mirror=https://docker.mirrors.u
 
 #在最新的docker1.3.3中 无法pull，因为默认的是https。在'/etc/default/docker'中追加：
 DOCKER_OPTS="--insecure-registry juandapc:5000"
+```
+
+> 重启报错：使用 sudo service docker restart
+
+```shell
+使用命令'service docker restart'重启 docker 报错。
+#stop: Rejected send message, 1 matched rules; type="method_call", sender=":1.430" (uid=117 pid=28917 comm="stop docker ") 
 ```
 
 

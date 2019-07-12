@@ -909,14 +909,18 @@ public class AmqpPublisherApp extends SpringBootServletInitializer { //新增 ex
 
 ## 热部署
 
-> （0）`DevTools`工具：重新部署
+> （0）`DevTools`：Ctrl+F9 重新部署
+
+```properties
+#禁用模板缓存
+spring.thymeleaf.cache=false
+```
 
 ```xml
-<!-- DevTools -->
 <dependency>
     <groupId>org.springframework.boot</groupId>
     <artifactId>spring-boot-devtools</artifactId>
-    <optional>true</optional> //<!-- 依赖只在当前项目生效，不会传递到引用项目中 -->
+    <optional>true</optional> <!-- 依赖只在当前项目生效，不会传递到引用项目中 -->
 </dependency>
 ```
 > （1）SpringLoader插件：只对 java 代码生效，对页面更改无能为力
@@ -948,8 +952,6 @@ Run As... --> mvn build... ---> Main --> Goals填写: spring-boot:run
 ```java
 Run Configuration... --> Arguments --> VM argumments填写: -javaagent:.\lib\springloaded-1.2.5.RELEASE.jar -noverify
 ```
-
-
 
 ##email
 
@@ -1054,7 +1056,7 @@ public class MailController {
 
 ## junit
 
->@SpringBootTest
+>`@SpringBootTest`
 
 ```xml
 <dependency>
@@ -1065,7 +1067,7 @@ public class MailController {
 ```
 ```java
 @RunWith(SpringRunner.class) //junit 与 spring 进行整合，也可用 SpringJUnit4ClassRunner.class
-@SpringBootTest//(classes = {SpringMain.class}) //加载项目启动类，可省
+@SpringBootTest//(classes = {SpringMain.class}) //加载项目启动类，当测试类的路径同启动类时，可省。
 public class HelloServiceTest {
 
     @Autowired
@@ -1122,7 +1124,7 @@ http://localhost:8090/demo/actuator/health --> 访问health端点
 ```
 
 ```properties
-#以上，端点带(*)表示当前路径只能获取目录信息,详情信息得需要进一步访问获取. 如，获取系统cpu个数:
+#以上，端点带(*)表示当前路径只能获取目录信息，详情信息得需要进一步访问获取。如，获取系统cpu个数:
 http://localhost:8090/demo/actuator/metrics/system.cpu.count
 
 #所有模块的日志级别

@@ -36,24 +36,13 @@ Dubbo 只是实现了服务治理，而 SpringCloud 下面有 21 个子项目（
 服务治理只是其中的一个方面，一定程度来说，Dubbo 只是 SpringCloud Netflix 中的一个子集。
 ```
 
-> SpringCloud主要框架
+> SpringBoot 与 SpringCloud 版本对应
 
 ```
-服务发现——Netflix Eureka
-服务调用——Netflix Feign
-熔断器——Netflix Hystrix
-服务网关——Netflix Zuul
-分布式配置——Spring Cloud Config
-消息总线 —— Spring Cloud Bus
+1.5.x - Dalston、Edgware
+2.0.x - Finchley
+2.1.x - Greenwich
 ```
-
-> SpringCloud 版本
-
-| SpringBoot |       SpringCloud        |
-| :--------: | :----------------------: |
-|   1.5.x    | Dalston版本、Edgware版本 |
-|   2.0.x    |       Finchley版本       |
-|   2.1.x    |      Greenwich版本       |
 
 > 镜像，容器，微服务
 
@@ -132,6 +121,15 @@ Dubbo 只是实现了服务治理，而 SpringCloud 下面有 21 个子项目（
 <artifactId>demo_parent</artifactId>
 <version>1.0-SNAPSHOT</version>
 <packaging>pom</packaging> <!--父项目的打包类型必须设置为 pom-->
+
+<modules>
+    <module>demo_common</module>
+    <module>demo_user</module>
+    <module>demo_friend</module>
+    <module>demo_eureka</module>
+    <module>demo_zuul</module>
+    <module>demo_config</module>
+</modules>
 ```
 
 > 父项目只依赖通用的jar包。如 mysql 驱动包只在部分子模块使用，就不要写在父项目中。
@@ -168,7 +166,7 @@ Dubbo 只是实现了服务治理，而 SpringCloud 下面有 21 个子项目（
     </dependency>
 </dependencies>
 
-<!--父项目 demo-parent，锁定 SpringCloud 版本-->
+<!--父项目锁定 Spring-Cloud 版本-->
 <dependencyManagement>
     <dependencies>
         <dependency>
@@ -181,7 +179,7 @@ Dubbo 只是实现了服务治理，而 SpringCloud 下面有 21 个子项目（
     </dependencies>
 </dependencyManagement>
 
-<!--父项目中不要配置build节点的打包插件-->
+<!--SpringBoot打包插件-->
 <build>
     <plugins>
         <plugin>
@@ -204,7 +202,7 @@ Dubbo 只是实现了服务治理，而 SpringCloud 下面有 21 个子项目（
 对于公共模块只写公共方法，不写业务逻辑，所以 pom.xml 不用引用其他jar包
 ```
 
-> 基础配置
+> 基础配置 `一定要跳过 SpringBoot 打包插件`
 
 ```xml
 <parent>
@@ -217,20 +215,25 @@ Dubbo 只是实现了服务治理，而 SpringCloud 下面有 21 个子项目（
 <artifactId>demo_common</artifactId>
 
 <dependencies>
+    <!-- https://mvnrepository.com/artifact/io.jsonwebtoken/jjwt -->
     <dependency>
-        <groupId>org.apache.commons</groupId>
-        <artifactId>commons-lang3</artifactId>
-        <version>3.8.1</version>
-    </dependency>
-    <dependency>
-        <groupId>commons-collections</groupId>
-        <artifactId>commons-collections</artifactId>
-        <version>3.2.2</version>
+        <groupId>io.jsonwebtoken</groupId>
+        <artifactId>jjwt</artifactId>
+        <version>0.9.1</version>
     </dependency>
 </dependencies>
 
 <build>
     <finalName>demo-common</finalName>
+    <plugins>
+        <plugin>
+            <groupId>org.springframework.boot</groupId>
+            <artifactId>spring-boot-maven-plugin</artifactId>
+            <configuration>
+                <skip>true</skip> <!--公共模块demo-common，跳过此打包插件-->
+            </configuration>
+        </plugin>
+    </plugins>
 </build>
 ```
 
@@ -253,18 +256,20 @@ public class StatusCode {
 
 ```java
 @Data
-@RequiredArgsConstructor
 @AllArgsConstructor
 @NoArgsConstructor
 public class Result {
-    @NonNull
     private boolean flag; //是否成功 （规范2）
-    @NonNull
     private Integer code; //返回码 （规范1）
-    @NonNull
     private String message; //返回信息
 
     private Object data; //返回数据
+
+    public Result(boolean flag, Integer code, String message) { //三个参数的构造
+        this.flag = flag;
+        this.code = code;
+        this.message = message;
+    }
 }
 ```
 
@@ -563,8 +568,18 @@ CREATE TABLE `tb_friend` (
 若 A，B是双向的好友。删除后，tb_friend 移除一条数据，tb_nofriend 增加一条数据。'并且，将 tb_friend 中B对A的 islike 为0'。
 ```
 
-#Cloud技术
+# Cloud技术
 
+> SpringCloud主要框架
+
+```
+服务发现——Netflix Eureka
+服务调用——Netflix Feign
+熔断器——Netflix Hystrix
+服务网关——Netflix Zuul
+分布式配置——Spring Cloud Config
+消息总线——Spring Cloud Bus
+```
 ## Eureka
 
 > `服务发现` Netflix-Eureka
@@ -583,17 +598,17 @@ Eureka-Server 之间通过复制的方式完成数据的同步，Eureka 还提�
 客户端依然可以利用缓存中的信息消费其他服务的API。综上，Eureka 通过心跳检查、客户端缓存等机制，确保了系统的高可用性、灵活性和可伸缩性。
 ```
 
->服务端の微服务：`demo-eureka` 。网页验证：<http://localhost:6868/>
+>服务端の微服务：`demo-eureka` 。网页验证：<http://localhost:8761/>
 
 ```properties
-server.port=6868
+server.port=8761
 
-#Euraka
-#是否注册到Eureka服务中，本身就是服务端，勿需注册
+#euraka
+#是否注册到Eureka服务中，本身就是服务端，勿需注册（不做高可用的前提）
 eureka.client.register-with-eureka=false
-#是否从Eureka中获取注册信息
+#是否从Eureka中获取服务的注册信息
 eureka.client.fetch-registry=false
-eureka.client.service-url.defaultZone=http://127.0.0.1:${server.port}/eureka
+eureka.client.service-url.defaultZone=http://localhost:${server.port}/eureka
 ```
 
 ```xml
@@ -628,8 +643,8 @@ public class EurekaApplication {
 > 客户端の微服务：`demo-user`
 
 ```properties
-#Eureka
-eureka.client.service-url.defaultZone=http://localhost:6868/eureka
+#eureka
+eureka.client.service-url.defaultZone=http://localhost:8761/eureka
 #将IP注册到 Eureka-Server。默认注册的是主机名
 eureka.instance.prefer-ip-address=true
 ```
@@ -665,7 +680,7 @@ Eureka-Server 在运行期间，会统计心跳失败的比例在 15 分钟之�
 
 ##Feign
 
-> `服务调用` Feign
+> `服务调用` Feign：
 
 ```
 Feign 是简化 Java-HTTP 客户端开发的工具（java-to-httpclient-binder），它的灵感来自于 Retrofit、JAXRS-2.0 和 WebSocket。
@@ -694,9 +709,13 @@ Feign 的初衷是降低统一绑定 Denominator 到 HTTP-API 的复杂度，不
 
 ```java
 @EnableFeignClients
-@EnableDiscoveryClient //添加注解feign
+@EnableDiscoveryClient //添加注解feign，开启服务发现功能
 @SpringBootApplication
-public class FriendApplication { }
+public class FriendApplication {
+    public static void main(String[] args) {
+        SpringApplication.run(FriendApplication.class, args);
+    }
+}
 ```
 
 > `请求头转发`，默认过滤请求头（还有问题，待解决？？）。
@@ -772,11 +791,42 @@ public class FriendController {
 注意：'demo-base'最好排除依赖'spring-boot-devtools'
 ```
 
+> RestTemplate 和注解 @LoadBalanced
+
+```java
+@Bean //主配置类中注入bean
+@LoadBalanced //开启负载均衡
+public RestTemplate restTemplate(){ 
+    return new RestTemplate();
+}
+```
+
+```java
+@RunWith(SpringRunner.class)
+@SpringBootTest(classes = FriendApplication.class)
+public class FriendTest {
+
+    @Autowired
+    RestTemplate restTemplate;
+
+    @Test
+    public void test01() {
+        //RPC远程调用服务，两种方式：1.名称（可以负载均衡），2.域名（不可以负载均衡）
+        
+        // String url = "http://demo-user/user/1";
+        String url = "http://192.168.5.23:9001/user/1";
+
+        Result result = restTemplate.getForObject(url, Result.class);
+        System.out.println("Result: " + result);
+    }
+}
+```
+
 ![](assets/cloud4.png)
 
 ##Hystrix
 
-> `熔断器` Hystrix
+> `熔断器` Netflix-Hystrix：？
 
 ```
 Hystrix [hɪst'rɪks]，中文含义是豪猪，因其背上长满棘刺，从而拥有了自我保护的能力。
@@ -831,7 +881,7 @@ public interface UserClient {}
 
 ## Zuul
 
-> `服务网关` Netflix-Zuul
+> `服务网关`：（1）微服务工程统一入口，方便前端调用。（2）集中处理权限问题。
 
 ```java
 不同的微服务一般有不同的网络地址，而外部的客户端可能需要调用多个服务的接口才能完成一个业务需求。
@@ -866,7 +916,7 @@ server.port=9011
 spring.application.name=demo-zuul
 
 #eureka
-eureka.client.service-url.defaultZone=http://localhost:6868/eureka
+eureka.client.service-url.defaultZone=http://localhost:8761/eureka
 #将IP注册到 Eureka-Server。默认注册的是主机名
 eureka.instance.prefer-ip-address=true
 
@@ -947,7 +997,7 @@ Authorization: Bearer eyJhbGciOiJIUzI1NiJ9.*.*
 ```
 ##Config
 
-> `分布式配置` Config
+> `分布式配置`：将配置文件放到云端，方便后期维护
 
 ```
 在分布式系统中，由于服务数量巨多，为了方便服务配置文件统一管理，实时更新，所以需要分布式配置中心组件。
@@ -1020,3 +1070,549 @@ spring.cloud.config.uri=http://localhost:12000
     <artifactId>spring-cloud-starter-config</artifactId>
 </dependency>
 ```
+##Bus
+
+> `消息总线`：可以在不重启微服务的情况下，更新码云中的配置文件，让其立刻生效
+
+```java
+事件、消息总线，用于在集群（例如，配置变化事件）中传播状态变化，可与 Spring-Cloud-Config 联合实现热部署。
+```
+
+> 服务端の微服务：Bus 配合 Config 使用，在 `demo-config` 中配置
+
+```properties
+#rabbitmq
+spring.rabbitmq.host=192.168.5.23
+spring.rabbitmq.port=5672
+
+#bus
+#暴露触发消息总线的地址（Actuator模块）
+management.endpoints.web.exposure.include=bus-refresh
+```
+
+```xml
+<!--添加依赖 Bus-Server-->
+<dependency>
+    <groupId>org.springframework.cloud</groupId>
+    <artifactId>spring-cloud-starter-bus-amqp</artifactId>
+</dependency>
+```
+
+> 客户端の微服务：以 `demo-user` 为例
+
+```properties
+#rabbitmq
+spring.rabbitmq.host=192.168.5.23
+spring.rabbitmq.port=5672
+```
+
+```xml
+<!--引入依赖 Bus-Client-->
+<dependency>
+    <groupId>org.springframework.cloud</groupId>
+    <artifactId>spring-cloud-starter-bus-amqp</artifactId>
+</dependency>
+<dependency>
+    <groupId>org.springframework.boot</groupId>
+    <artifactId>spring-boot-starter-actuator</artifactId>
+</dependency>
+```
+
+> 测试`默认配置`
+
+```java
+修改码云上的配置文件 'user-dev.properties'，将数据库连接ip改为 192.168.8.8。发送 POST 请求刷新配置（状态码 204 表示成功）。
+POST http://192.168.5.23:12000/actuator/bus-refresh
+
+然后再次请求，观察返回结果，确认数据库是否切换。
+GET http://192.168.5.23:9011/user/user/1
+```
+
+> 测试`自定义配置`
+
+```properties
+info.msg=2019-7-10 19:52:59
+```
+
+```java
+@RefreshScope //很重要
+@Slf4j
+@RequestMapping("/user")
+@RestController
+public class UserController {
+    @Value("${info.msg}")
+    private String infoMsg;
+
+    @GetMapping("/info")
+    public Result info() {
+        return new Result(true, StatusCode.OK, "查询成功!", infoMsg);
+    }
+}
+```
+
+```java
+码云上的配置文件 'user-dev.properties'，新增字段 info.msg。
+代码中新增对外接口，获取自定义配置。一定不能忘了类注解 @RefreshScope
+
+修改码云上的自定义配置之后，再次发送：
+POST http://192.168.5.23:12000/actuator/bus-refresh
+
+测试是否已修改：
+GET http://192.168.5.23:9001/user/info
+```
+
+# 容器部署
+
+##Dockerfile
+
+> 一系列命令和参数构成的脚本，这些命令应用于基础镜像并最终创建一个新的镜像（只是镜像，而非容器）。
+
+```
+（1）对于开发人员：可以为开发团队提供一个完全一致的开发环境；
+（2）对于测试人员：可以直接拿开发时所构建的镜像或者通过 Dockerfile 文件构建一个新的镜像开始工作了；
+（3）对于运维人员：在部署时，可以实现应用的无缝移植。
+```
+
+> 构建镜像：jdk1.8
+
+```shell
+#新建目录，将'jdk-8u191-linux-x64.tar.gz'上传至此目录，目录下新建文件：dockerfile
+mkdir -p /var/tmp/docker-jdk8
+```
+
+```shell
+#依赖镜像名称和ID。基础镜像，必须写在第一行
+FROM centos:7
+#指定镜像创建者信息
+MAINTAINER SKYL
+#切换工作目录
+WORKDIR /usr
+#创建容器的文件夹
+RUN mkdir /usr/local/java
+#把jdk添加到容器中，ADD：复制+解压
+ADD jdk-8u191-linux-x64.tar.gz /usr/local/java/
+#配置jdk环境变量
+ENV JAVA_HOME /usr/local/java/jdk1.8.0_191
+ENV JRE_HOME $JAVA_HOME/jre
+ENV CLASSPATH $JAVA_HOME/lib/dt.jar:$JAVA_HOME/lib/tools.jar:$JRE_HOME/lib:$CLASSPATH
+ENV PATH $JAVA_HOME/bin:$PATH
+```
+
+```shell
+docker run --name jdk8 -d jdk1.8#执行命令构建镜像（最后一个点，表示 dockerfile 在当前目录）
+docker build -t='jdk1.8' .
+
+#查看镜像是否建立完成
+docker images
+
+#构建容器jdk8
+docker run --name jdk8 -d jdk1.8
+```
+
+>私有仓库搭建与配置
+
+```shell
+#拉取私有仓库镜像
+docker pull registry
+
+#创建私有仓库容器
+docker run --name registry -d -p 5000:5000 registry
+
+#打开浏览器，输入以下地址。看到 {"repositories":[]} 表示私有仓库搭建成功，并且内容为空
+http://192.168.5.23:5000/v2/_catalog
+
+#修改配置使得 docker 信任私有仓库地址
+#对于ubuntu系统，更改 /etc/default/docker
+DOCKER_OPTS="--registry-mirror=https://docker.mirrors.ustc.edu.cn" #代理，加快下载
+DOCKER_OPTS="--insecure-registry juandapc:5000 --insecure-registry 192.168.5.23:5000" #解决http问题
+
+#对于CentOS系统，更改 /etc/dokcer/daemon.json（没有则新建）
+{
+"registry-mirrors": ["https://docker.mirrors.ustc.edu.cn"],
+"insecure-registries":["0.0.0.0:5000"]
+}
+
+#重启docker
+sudo service docker restart
+```
+
+>镜像上传至私有仓库
+
+```shell
+#标记此镜像为私有仓库的镜像
+docker tag jdk1.8 192.168.5.23:5000/jdk1.8
+
+#启动私服容器
+docker start registry
+
+#上传标记的镜像
+docker push 192.168.5.23:5000/jdk1.8
+```
+
+##Mvm插件
+
+>微服务部署有两种方法
+
+```
+（1）手动部署：首先基于源码打包生成jar包（或war包），将jar包（或war包）上传至虚拟机并拷贝至JDK容器。
+```
+
+```
+（2）通过Maven插件自动部署
+```
+
+>Maven插件自动部署步骤
+
+```shell
+#修改宿主机的docker配置，让其可以远程访问
+#对于ubuntu系统，更改 /etc/default/docker。添加
+DOCKER_OPTS="-H unix:///var/run/docker.sock -H tcp://0.0.0.0:2375"
+
+##对于CentOS系统，更改 /lib/systemd/system/docker.service。ExecStart=后追加配置
+ExecStart=/usr/bin/dockerd ‐H tcp://0.0.0.0:2375 ‐H unix:///var/run/docker.sock
+
+#刷新配置，重启 docker 和私有仓库
+sudo service docker restart
+docker start registry
+```
+
+```xml
+<!--以 'demo-config' 工程为例，pom文件新增配置-->
+<build>
+<plugins>
+    <!-- docker的maven插件，官网：https://github.com/spotify/docker-maven-plugin -->
+    <plugin>
+        <groupId>com.spotify</groupId>
+        <artifactId>docker-maven-plugin</artifactId>
+        <version>0.4.13</version>
+        <configuration>
+            <!--注意ip地址-->
+            <imageName>192.168.5.23:5000/${project.artifactId}:${project.version}</imageName>
+            <baseImage>jdk1.8</baseImage>
+            <entryPoint>["java", "-jar","/${project.build.finalName}.jar"]</entryPoint>
+            <resources>
+                <resource>
+                    <targetPath>/</targetPath>
+                    <directory>${project.build.directory}</directory>
+                    <include>${project.build.finalName}.jar</include>
+                </resource>
+            </resources>
+            <dockerHost>http://192.168.5.23:2375</dockerHost> <!--对应上文修改的配置 -H 0.0.0.0:2375 -->
+        </configuration>
+    </plugin>
+</plugins>
+</build>
+```
+
+```shell
+#在 IDEA 的 Terminal 命令提示符下，进入 demo-common 工程所在的目录，输入以下命令，进行打包和上传镜像
+F:\sp_project\demo_parent\demo_config> mvn clean package docker:build -DpushImage
+
+#命令执行完成之后，浏览器输入以下路径。得到 {"repositories":["demo-config"]}
+http://192.168.5.23:5000/v2/_catalog
+
+#进入宿主机，查看镜像。确认微服务 demo-config 已经做成镜像
+docker images
+
+#通过该镜像构建容器
+docker run --name demo-config -d -p 12000:12000 192.168.5.23:5000/demo_config:1.0-SNAPSHOT
+
+#浏览器测试，容器是否启动成功
+http://192.168.5.23:12000/user-dev.properties
+```
+
+## 常见问题
+
+>http请求方式
+
+```shell
+#测试用的是ubuntu14.04.1，docker1.62。push上传时，报以下异常。
+#Error response from daemon: v1 ping attempt failed with error: Get http://19
+
+#这是由于客户端采用https，docker-registry未采用https服务所致。一种处理方式是把客户对私有库地址请求改为http。
+
+#对于ubuntu系统，更改 /etc/default/docker
+DOCKER_OPTS="--registry-mirror=https://docker.mirrors.ustc.edu.cn" #代理，加快下载
+DOCKER_OPTS="--insecure-registry juandapc:5000 --insecure-registry 192.168.5.23:5000" #解决http问题
+
+#对于CentOS系统，更改 /etc/dokcer/daemon.json（没有则新建）
+{
+"registry-mirrors": ["https://docker.mirrors.ustc.edu.cn"],
+"insecure-registries":["0.0.0.0:5000"]
+}
+```
+
+> mvn配置
+
+```xml
+<!--No plugin found for prefix 'docker' in the current project and in the plugin groups....-->
+
+<!--解决方案：在 maven 的 conf/setting.xml 中加入-->
+<pluginGroups>
+    <pluginGroup>com.spotify</pluginGroup>  
+</pluginGroups>
+```
+
+# 持续集成
+
+##基础概念
+
+>持续集成 Continuous integration ，简称CI
+
+```
+随着软件开发复杂度的不断提高，团队开发成员间如何更好地协同工作以确保软件开发的质量已经慢慢成为开发过程中不可回避的问题。
+尤其是近些年来，敏捷（Agile）在软件工程领域越来越红火，如何能再不断变化的需求中快速适应和保证软件的质量也显得尤其的重要。
+
+持续集成正是针对这一类问题的一种软件开发实践。它倡导团队开发成员必须经常集成他们的工作，甚至每天都可能发生多次集成。
+而每次的集成都是通过自动化的构建来验证，包括自动编译、发布和测试，从而尽快地发现集成错误，让团队能够更快的开发内聚的软件。
+```
+
+```
+持续集成的特点：
+1.它是一个自动化的周期性的集成测试过程，从检出代码、编译构建、运行测试、结果记录、测试统计等都是自动完成的，无需人工干预；
+2.需要有专门的集成服务器来执行集成构建；
+3.需要有代码托管工具支持，下一小节将介绍Git以及可视化界面Gogs的使用
+```
+
+```
+持续集成作用：
+1.保证团队开发人员提交代码的质量，减轻了软件发布时的压力；
+2.持续集成中的任何一个环节都是自动完成的，无需太多的人工干预，有利于减少重复过程以节省时间、费用和工作量；
+```
+
+##Gogs
+
+>Gogs：一款极易搭建的自助 Git 服务，`管理代码`。
+
+```
+Gogs 的目标是打造一个最简单、最快速和最轻松的方式搭建自助 Git 服务。
+使用 Go 语言开发使得 Gogs 能够通过独立的二进制分发，并且支持 Go 语言支持的 所有平台，包括 Linux、Mac OS X、Windows 以及 ARM 平台。
+```
+
+> Gogs安装与配置
+
+```shell
+#下载镜像
+docker pull gogs/gogs
+
+#构建容器（10022内部使用，3000为外部使用）
+docker run --name gogs -d -p 10022:22 -p 3000:3000 -v /var/gogsdata:/var/tmp/gogsdata gogs/gogs
+
+#浏览器输入以下网址，进入首次安装页面。
+http://192.168.5.23:3000
+
+#gogs的数据存储选择 SQLite3，大型公司可选择 mysql。域名修改为：192.168.5.23。SSH端口33022。立即安装。
+#注册用户：用户名：skyl，邮箱：skyl@qq.com，密码：skyl
+#创建仓库：demo，不用选择 私有。创建完成，复制当前仓库的地址，备用。
+http://192.168.5.23:3000/skyl/demo.git
+```
+
+> IDEA配置Git
+
+```shell
+本地已安装 git（windows版本）
+IDEA - CVS - Enable Version Control Integration... - 选择 git #当前 project 选择git管理
+IDEA - Settings - 搜索git - Path to Git...：选择本地的 git.exe  #本地 git 路径
+
+右键父项目 demo-parent
+Git - Repository - Remotes... - 粘贴上一步复制的仓库地址。#配置git仓库地址
+Git - Add #将当前项目添加到仓库中
+Git - Commit Directory... #提交到本地仓库
+Git - Repository - Push - push - 输入用户名和密码 #提交到远程仓库
+```
+
+##Jenkins
+
+>Jenkins：一款持续集成工具，可以将更新后的代码自动部署到服务器上运行。
+
+```
+Jenkins 能实施监控集成中存在的错误，提供详细的日志文件和提醒功能，还能用图表的形式形象地展示项目构建的趋势和稳定性。
+
+易安装：仅仅一个 java -jar jenkins.war，从官网下载该文件后，直接运行，无需额外的安装，更无需安装数据库；
+易配置：提供友好的GUI配置界面；
+变更支持：Jenkins能从代码仓库（Subversion/CVS）中获取并产生代码更新列表并输出到编译输出信息中；
+支持永久链接：用户是通过web来访问Jenkins的，而这些web页面的链接地址都是永久链接地址，因此，你可以在各种文档中直接使用该链接；
+
+集成E-Mail/RSS/IM：当完成一次集成时，可通过这些工具实时告诉你集成结果（据我所知，构建一次集成需要花费一定时间，有了这个功能，
+你就可以在等待结果过程中，干别的事情）；
+JUnit/TestNG测试报告：也就是用以图表等形式提供详细的测试报表功能；
+支持分布式构建：Jenkins可以把集成构建等工作分发到多台计算机中完成；
+文件指纹信息：Jenkins会保存哪次集成构建产生了哪些jars文件，哪一次集成构建使用了哪个版本的jars文件等构建记录；
+支持第三方插件：使得 Jenkins 变得越来越强大
+```
+
+>Jenkins安装
+
+```shell
+#搜索和拉取镜像
+docker search jenkins
+docker pull jenkins
+
+#8080为默认的访问端口，映射为8090。-v 挂载目录。-v /etc/localtime... 让容器使用和服务器同样的时间设置
+docker run  --name jenkins -d -p 8090:8080 -p 50000:50000 -v /var/tmp/jenkins:/var/jenkins_home \
+-v /etc/localtime:/etc/localtime jenkins
+```
+
+```shell
+#启动报错：touch: cannot touch '/var/jenkins_home/copy_reference_file.log': Permission denied
+#原因是Jenkins镜像内部使用的用户是jenkons（uid为1000），但是我们启动容器时的账号是root。导致用户 jenkons 没有权限操作挂载目录。
+#更新挂载目录的权限，重新启动
+sudo chown -R 1000:1000 /var/tmp/jenkins
+```
+
+```shell
+#浏览器打开页面
+http://192.168.5.23:8090/
+
+#从容器中的路径（/var/lib/jenkins/secrets/initialAdminPassword）获取到初始化密码
+docker exec jenkins tail /var/jenkins_home/secrets/initialAdminPassword
+
+#在页面输入密码，点击 Continue，进入插件安装页面。点击左边的 Install suggested plugins，安装推荐插件就好。
+#安装好插件后，系统会提示建立管理员账户。
+```
+
+```shell
+#系统管理 - 管理插件 - 可选插件 
+搜索maven - 勾选：Maven Integration -立即安装
+搜索git - 勾选Git - 立即安装
+
+#系统管理 - Global Tool Configuration
+新增jdk - 别名：jdk1.8 - JAVA_HOME：/var/tmp/jenkins/jdk1.8.0_191 （此目录为挂载目录，事先解压一份 'jdk-8u191-linux-x64.tar.gz'）
+新增mvn - 同上，（过程如下）
+```
+
+```shell
+tar -zxvf /var/tmp/apache-maven-3.6.1-bin.tar.gz
+
+#编辑 setting.xml 配置文件，配置本地仓库目录
+ vi /var/tmp/maven/conf/settings.xml
+```
+
+```xml
+<localRepository>/var/tmp/maven-repo</localRepository>
+ 
+<pluginGroups>
+    <pluginGroup>com.spotify</pluginGroup>  
+</pluginGroups>
+```
+
+> 持续集成
+
+```shell
+#创建任务，Enter an item name：demo。构建一个mvn项目。
+#源码管理，选择Git
+#Build 
+Root POM：demo_config/pom.xml。
+Goals and options：clean package docker:build ‐DpushImage #用于清除、打包，构建docker镜像
+
+#返回首页，在列表中找到刚才创建的任务。点击右边的绿色箭头按钮，即可执行此任务。
+
+#当日志打印结果：Success时，通过浏览器查看 docker 私有仓库
+http://192.168.5.23:5000/v2/_catalog
+{"repositories":["jdk1.8","demo_config"]}
+
+#对于其他项目，同上操作。
+```
+
+
+
+# 容器管理
+
+## Rancher
+
+> 一个开源的企业级全栈化容器部署及管理平台。
+
+```
+Rancher 为容器提供一揽子基础架构服务：CNI兼容的网络服务、存储服务、主机管理、负载均衡、防护墙...
+Rancher 让上述服务跨越公有云、私有云、虚拟机、物理机环境运行，真正实现一键式应用部署和管理。
+```
+
+> 安装配置
+
+```shell
+docker pull rancher/server
+
+#--restart 重启策略
+#no，默认策略，在容器退出时不重启容器
+#on-failure，在容器非正常退出时（退出状态非0），才会重启容器
+#on-failure:3，在容器非正常退出时重启容器，最多重启3次
+#always，在容器退出时总是重启容器
+#unless-stopped，在容器退出时总是重启容器，但是不考虑在Docker守护进程启动时就已经停止了的容器
+docker run --name rancher -d --restart always -p 9090:8080 rancher/server
+
+#浏览器打开连接，可能有点慢。点击右下角的 English，切换为中文。
+http://192.168.5.23:9090/
+```
+
+> 初始化
+
+```
+Rancher 支持将资源分组归属到多个环境。每个环境具有自己独立的基础架构资源及服务，并由一个或多个用户、团队或组织所管理。
+例如，您可以创建独立的“开发”、“测试”及“生产”环境以确保环境之间的安全隔离，
+将“开发”环境的访问权限赋予全部人员，但限制“生产”环境的访问权限给一个小的团队。
+```
+
+```
+Default - 环境管理 - 添加环境（demo_dev，demo测试） - 创建测试环境。
+生产环境创建（demo_pro，demo生产）同上，左上角可以切换生产环境。
+```
+
+```shell 
+#构建容器所需的镜像库
+基础架构 - 镜像库 -添加镜像库 - Custom - 192.168.5.23（仅添加主机名或IP地址, 不要包含协议 https://) - 用户名密码（可不填）
+
+#构建完成的容器存放位置
+基础架构 - 主机 - 添加主机 - 直接使用默认即可 - ④.填写ip地址：192.168.5.23 - ⑤.点击右侧的拷贝，备用。
+
+sudo docker run -e CATTLE_AGENT_IP="192.168.5.23"  --rm --privileged \
+-v /var/run/docker.sock:/var/run/docker.sock -v /var/lib/rancher:/var/lib/rancher \
+rancher/agent:v1.2.11 http://192.168.5.23:9090/v1/scripts/304DB40722A32FF5FA63:1546214400000:rHPvYtXon5y3mC1YKbnAmOIMk
+
+#将以上的脚本拷贝到 192.168.5.23 执行。
+#点击关闭按钮后，会看到界面中显示此主机。可以很方便地管理主机的每个容器的开启和关闭。
+```
+
+## 应用部署
+
+> 添加应用
+
+```
+应用 - 添加应用 - 名称：demo-dev - 描述：demo微服务应用
+```
+
+> mysql容器
+
+```shell
+应用 - 选择应用'demo' - 添加服务
+
+名称：mysql8，描述：mysql8.0
+选择镜像：mysql:latest（镜像名通过 docker images 读取。取消勾选：创建前总是拉取镜像）
+端口映射：33306 + 3306
+拉到最下面，添加环境变量：MYSQL_ROOT_PASSWORD=123456
+
+#以上步骤，等同于以下命令
+docker run ‐‐name mysql8 -d ‐p 33306:3306 ‐e MYSQL_ROOT_PASSWORD=123456 mysql
+```
+
+> rabbitMQ容器
+
+```shell
+名称：rabbitmq，描述：rabbitmq
+选择镜像：rabbitmq
+端口映射：5671 5672 4369 15671 15672 25672
+```
+
+> Eureka容器
+
+```shell
+名称：demo-eureka，描述：demo-eureka
+选择镜像：192.168.5.23:5000/demo_config:1.0-SNAPSHOT（从 docker images 读取）
+端口映射：8761 + 8761
+
+http://192.168.5.23:8761/ #浏览器测试
+```
+
+
+
+
+
