@@ -568,7 +568,7 @@ CREATE TABLE `tb_friend` (
 若 A，B是双向的好友。删除后，tb_friend 移除一条数据，tb_nofriend 增加一条数据。'并且，将 tb_friend 中B对A的 islike 为0'。
 ```
 
-# Cloud技术
+#------------
 
 > SpringCloud主要框架
 
@@ -580,9 +580,19 @@ CREATE TABLE `tb_friend` (
 分布式配置——Spring Cloud Config
 消息总线——Spring Cloud Bus
 ```
-## Eureka
 
-> `服务发现` Netflix-Eureka
+
+
+
+
+
+
+
+# Eureka
+
+##基础概念
+
+> `服务发现`：遵守AP原则
 
 ```
 Eureka 是 Netflix 开发的服务发现框架，包含两个组件：Eureka-Server 和 Eureka-Client。
@@ -598,17 +608,73 @@ Eureka-Server 之间通过复制的方式完成数据的同步，Eureka 还提�
 客户端依然可以利用缓存中的信息消费其他服务的API。综上，Eureka 通过心跳检查、客户端缓存等机制，确保了系统的高可用性、灵活性和可伸缩性。
 ```
 
+> Eureka三大角色
+
+```
+Eureka Server 提供服务注册和发现
+
+Service Provider服务提供方将自身服务注册到Eureka，从而使服务消费方能够找到
+
+Service Consumer服务消费方从Eureka获取注册服务列表，从而能够消费服务
+```
+
+> 保护模式：某时刻某个微服务不可用，Eureka不会立刻清理，依旧会对该微服务的信息进行保存。`应对网络异常的安全保护措施`
+
+```java
+'EMERGENCY! EUREKA MAY BE INCORRECTLY CLAIMING INSTANCES ARE UP WHEN THEYRE NOT...'
+```
+
+```
+Eureka-Server 在一定时间内没有接收到某个微服务实例的心跳，将会注销该实例（默认90秒，3个心跳周期）。
+
+Eureka-Server 在运行期间，会统计心跳失败的比例在 15 分钟之内是否低于 85%，如果出现低于的情况（在单机调试的时候很容易满足，
+实际在生产环境上通常是由于网络不稳定导致），Eureka-Server 会将当前的实例注册信息保护起来，同时提示这个警告。
+
+保护模式 主要用于一组客户端和 Eureka-Server 之间存在网络分区场景下的保护。
+一旦进入保护模式，Eureka-Server 将会尝试保护其服务注册表中的信息，不再删除服务注册表中的数据（也就是不会注销任何微服务）。
+
+eureka.server.enable-self-preservation=false #禁用自我保护模式
+```
+
+> Eureka & Zookeeper
+
+```
+ 
+作为服务注册中心，Eureka比Zookeeper好在哪里
+著名的CAP理论指出，一个分布式系统不可能同时满足C(一致性)、A(可用性)和P(分区容错性)。由于分区容错性P在是分布式系统中必须要保证的，因此我们只能在A和C之间进行权衡。
+因此
+Zookeeper保证的是CP,
+Eureka则是AP。
+ 
+4.1 Zookeeper保证CP
+当向注册中心查询服务列表时，我们可以容忍注册中心返回的是几分钟以前的注册信息，但不能接受服务直接down掉不可用。也就是说，服务注册功能对可用性的要求要高于一致性。但是zk会出现这样一种情况，当master节点因为网络故障与其他节点失去联系时，剩余节点会重新进行leader选举。问题在于，选举leader的时间太长，30 ~ 120s, 且选举期间整个zk集群都是不可用的，这就导致在选举期间注册服务瘫痪。在云部署的环境下，因网络问题使得zk集群失去master节点是较大概率会发生的事，虽然服务能够最终恢复，但是漫长的选举时间导致的注册长期不可用是不能容忍的。
+ 
+4.2 Eureka保证AP
+Eureka看明白了这一点，因此在设计时就优先保证可用性。Eureka各个节点都是平等的，几个节点挂掉不会影响正常节点的工作，剩余的节点依然可以提供注册和查询服务。而Eureka的客户端在向某个Eureka注册或时如果发现连接失败，则会自动切换至其它节点，只要有一台Eureka还在，就能保证注册服务可用(保证可用性)，只不过查到的信息可能不是最新的(不保证强一致性)。除此之外，Eureka还有一种自我保护机制，如果在15分钟内超过85%的节点都没有正常的心跳，那么Eureka就认为客户端与注册中心出现了网络故障，此时会出现以下几种情况： 
+1. Eureka不再从注册列表中移除因为长时间没收到心跳而应该过期的服务 
+2. Eureka仍然能够接受新服务的注册和查询请求，但是不会被同步到其它节点上(即保证当前节点依然可用) 
+3. 当网络稳定时，当前实例新的注册信息会被同步到其它节点中
+ 
+因此， Eureka可以很好的应对因网络故障导致部分节点失去联系的情况，而不会像zookeeper那样使整个注册服务瘫痪。
+```
+
+
+
+##基础配置
+
 >服务端の微服务：`demo-eureka` 。网页验证：<http://localhost:8761/>
 
 ```properties
 server.port=8761
 
 #euraka
-#是否注册到Eureka服务中，本身就是服务端，勿需注册（不做高可用的前提）
+#是否注册到 Eureka 服务中，本身就是服务端，勿需注册（不做高可用的前提）
 eureka.client.register-with-eureka=false
-#是否从Eureka中获取服务的注册信息
+#是否从 Eureka 中检索服务，同上
 eureka.client.fetch-registry=false
 eureka.client.service-url.defaultZone=http://localhost:${server.port}/eureka
+#服务端实例名
+#eureka.instance.hostname=eureka
 ```
 
 ```xml
@@ -631,22 +697,21 @@ eureka.client.service-url.defaultZone=http://localhost:${server.port}/eureka
 ```
 
 ```java
-@EnableEurekaServer //Eureka-Server启动类
-@SpringBootApplication
-public class EurekaApplication {
-    public static void main(String[] args) {
-        SpringApplication.run(EurekaApplication.class, args);
-    }
-}
+//启动类添加注解
+@EnableEurekaServer
 ```
 
-> 客户端の微服务：`demo-user`
+> 客户端の微服务：以 `demo-user` 为例
 
 ```properties
 #eureka
-eureka.client.service-url.defaultZone=http://localhost:8761/eureka
-#将IP注册到 Eureka-Server。默认注册的是主机名
+#将ip注册到 Eureka。默认注册的是主机名
 eureka.instance.prefer-ip-address=true
+eureka.client.service-url.defaultZone=http://localhost:8761/eureka
+
+#自定义服务名称信息，默认显示 -> 主机名:微服务名:端口号
+#当 多个实例 以相同名字注册到eureka服务中时，只会显示最后一个实例。所以，最好用不同的名字
+#eureka.instance.instance-id=${spring.application.name}:${server.port}
 ```
 
 ```xml
@@ -659,34 +724,173 @@ eureka.instance.prefer-ip-address=true
 
 ```java
 @EnableEurekaClient //可省，默认添加
-@SpringBootApplication
-public class UserApplication { ... }
 ```
 
-> Eureka 保护模式
+> 服务发现
 
 ```java
-如果在 Eureka-Server 的首页看到以下这段提示，则说明Eureka已经进入了保护模式：
-'EMERGENCY! EUREKA MAY BE INCORRECTLY CLAIMING INSTANCES ARE UP WHEN THEYRE NOT...'
+@Autowired
+DiscoveryClient client;
+
+@GetMapping("/discovery")
+public void discovery() {
+    List<String> services = client.getServices();
+    System.out.println("services: " + services);
+
+    List<ServiceInstance> instances = client.getInstances("demo-friend");
+    instances.forEach(x -> System.out.println(x.getServiceId() + " - " + x.getHost() + " - "
+                                              + x.getPort() + " - " + "" + x.getUri()));
+}
 ```
 
-```
-Eureka-Server 在运行期间，会统计心跳失败的比例在 15 分钟之内是否低于 85%，如果出现低于的情况（在单机调试的时候很容易满足，
-实际在生产环境上通常是由于网络不稳定导致），Eureka-Server 会将当前的实例注册信息保护起来，同时提示这个警告。
+##集群配置
 
-保护模式 主要用于一组客户端和 Eureka-Server 之间存在网络分区场景下的保护。
-一旦进入保护模式，Eureka-Server 将会尝试保护其服务注册表中的信息，不再删除服务注册表中的数据（也就是不会注销任何微服务）。
-```
-
-##Feign
-
-> `服务调用` Feign：
+> 基本原理
 
 ```
-Feign 是简化 Java-HTTP 客户端开发的工具（java-to-httpclient-binder），它的灵感来自于 Retrofit、JAXRS-2.0 和 WebSocket。
+服务启动后向 Eureka 注册，Eureka-Server 会将注册信息向其他 Eureka-Server 进行同步，当服务消费者要调用服务提供者，则向服务注册中心获取服务提供者地址，然后会将服务提供者地址缓存在本地，下次再调用时，则直接从本地缓存中取，完成一次调用。
 
-Feign 的初衷是降低统一绑定 Denominator 到 HTTP-API 的复杂度，不区分是否为 restful。
+
+当服务注册中心Eureka Server检测到服务提供者因为宕机、网络原因不可用时，则在服务注册中心将服务置为DOWN状态，并把当前服务提供者状态向订阅者发布，订阅过的服务消费者更新本地缓存。
+
+
+服务提供者在启动后，周期性（默认30秒）向Eureka Server发送心跳，以证明当前服务是可用状态。Eureka Server在一定的时间（默认90秒）未收到客户端的心跳，则认为服务宕机，注销该实例。
 ```
+
+> 三个服务端の微服务：`demo-eureka1`，`demo-eureka2`，`demo-eureka3`
+
+```properties
+server.port=8761
+
+#euraka
+#服务端实例名
+#eureka.instance.hostname=eureka
+eureka.instance.hostname=eureka8761.com
+#是否注册到 Eureka 服务中，本身就是服务端，勿需注册（不做高可用的前提）
+eureka.client.register-with-eureka=false
+#是否从 Eureka 中检索服务，同上
+eureka.client.fetch-registry=false
+#eureka.client.service-url.defaultZone=http://${eureka.instance.hostname}:${server.port}/eureka
+eureka.client.service-url.defaultZone=http://eureka8762.com:8762/eureka, http://eureka8763.com:8763/eureka
+```
+
+```properties
+server.port=8762
+
+eureka.instance.hostname=eureka8762.com
+eureka.client.register-with-eureka=false
+eureka.client.fetch-registry=false
+eureka.client.service-url.defaultZone=http://eureka8761.com:8761/eureka, http://eureka8763.com:8763/eureka
+```
+
+```properties
+server.port=8763
+
+eureka.instance.hostname=eureka8763.com
+eureka.client.register-with-eureka=false
+eureka.client.fetch-registry=false
+eureka.client.service-url.defaultZone=http://eureka8761.com:8761/eureka, http://eureka8762.com:8762/eureka
+```
+
+> 客户端の微服务：`demo-friend`
+
+```properties
+#eureka
+#将ip注册到 Eureka。默认注册的是主机名
+eureka.instance.prefer-ip-address=true
+#eureka.client.service-url.defaultZone=http://localhost:8761/eureka
+eureka.client.service-url.defaultZone=http://eureka8761.com:8761/eureka, http://eureka8762.com:8762/eureka, \
+  http://eureka8763.com:8763/eureka
+```
+
+> 修改hosts文件，模拟三台主机：`C:\Windows\System32\drivers\etc\hosts`
+
+```
+127.0.0.1 eureka8761.com
+127.0.0.1 eureka8762.com
+127.0.0.1 eureka8763.com
+```
+
+> 集群启动
+
+```shell
+demo-eureka1，demo-eureka2，demo-eureka3，demo-user，demo-friend #依次启动
+
+http://eureka8761.com:8761 #浏览器查看 Eureka集群版 的注册情况
+http://eureka8762.com:8762
+http://eureka8763.com:8763
+
+GET http://localhost:9002/friend/1 #接口测试
+```
+
+# Ribbon
+
+> RestTemplate 和注解 @LoadBalanced
+
+```java
+@Bean //主配置类中注入bean
+@LoadBalanced //开启负载均衡
+public RestTemplate restTemplate(){ 
+    return new RestTemplate();
+}
+```
+
+```java
+@RunWith(SpringRunner.class)
+@SpringBootTest(classes = FriendApplication.class)
+public class FriendTest {
+
+    @Autowired
+    RestTemplate restTemplate;
+
+    @Test
+    public void test01() {
+        //RPC远程调用服务，两种方式：1.名称（可以负载均衡），2.域名（不可以负载均衡）
+        
+        // String url = "http://demo-user/user/1";
+        String url = "http://192.168.5.23:9001/user/1";
+
+        Result result = restTemplate.getForObject(url, Result.class);
+        System.out.println("Result: " + result);
+    }
+}
+```
+
+
+# Feign
+
+## 基础概念
+
+>`服务调用`：一个声明式的 WebService（Web服务）客户端
+
+```java
+//Feign使用方法：定义一个接口，然后在上面添加注解即可。
+
+Feign 也支持可拔插式的编码器和解码器。SpringCloud 对 Feign 进行了封装，使其支持了 SpringMVC 标准注解和 HttpMessageConverters。
+Feign 可以与 Eureka 和 Ribbon 组合使用以支持负载均衡。
+ 
+//Feign能干什么？
+Feign旨在使编写 Java-Http 客户端变得更容易。
+前面在使用 Ribbon + RestTemplate 时，利用 RestTemplate 对http请求的封装处理，形成了一套模版化的调用方法。
+实际开发中，由于对服务依赖的调用可能不止一处，往往一个接口会被多处调用，所以通常都会针对每个微服务自行封装一些客户端类来包装这些依赖服务的调用。
+所以，Feign在此基础上做了进一步封装，由他来帮助我们定义和实现依赖服务接口的定义。
+在Feign的实现下，我们只需创建一个接口并使用注解的方式来配置它（以前是Dao接口上面标注Mapper注解,现在是一个微服务接口上面标注一个Feign注解即可），
+即可完成对服务提供方的接口绑定，简化了使用 Spring-cloud-Ribbon 时，自动封装服务调用客户端的开发量。
+ 
+//Feign集成了Ribbon
+利用 Ribbon 维护了 MicroServiceCloud-Dept 的服务列表信息，并且通过轮询实现了客户端的负载均衡。
+而与Ribbon不同的是，通过 Feign 只需要定义服务绑定接口且以声明式的方法，优雅而简单的实现了服务调用。
+```
+
+> Feign & Ribbon
+
+```
+Feign 通过接口的方法调用Rest服务，Ribbon 是通过 RestTemplate
+
+请求发送给 Eureka服务器，通过 Feign 直接找到服务接口，由于在进行服务调用的时候融合了 Ribbon 技术，所以也支持负载均衡作用。
+```
+
+##基础配置
 
 > 交友微服务 `demo-friend` 调用用户微服务 `demo-user` 。所以，在 `demo-friend` 中添加依赖
 
@@ -708,14 +912,8 @@ Feign 的初衷是降低统一绑定 Denominator 到 HTTP-API 的复杂度，不
 ```
 
 ```java
-@EnableFeignClients
-@EnableDiscoveryClient //添加注解feign，开启服务发现功能
-@SpringBootApplication
-public class FriendApplication {
-    public static void main(String[] args) {
-        SpringApplication.run(FriendApplication.class, args);
-    }
-}
+@EnableFeignClients //添加注解feign
+@EnableDiscoveryClient //开启服务发现功能
 ```
 
 > `请求头转发`，默认过滤请求头（还有问题，待解决？？）。
@@ -749,7 +947,7 @@ public class FeignConfig implements RequestInterceptor {
 public interface UserClient {
 
     //"/user"不可省，用于对被调用的微服务进行地址映射
-    //@PathVariable注解一定要指定参数名称，否则出错
+    //@PathVariable 注解一定要指定参数名称，否则出错
     @GetMapping("/user/{userId}")
     Result getUser(@PathVariable("userId") String userId);
 }
@@ -758,10 +956,16 @@ public interface UserClient {
 > `demo-user`中的元接口
 
 ```java
-@GetMapping("/{userId}")
-public Result getUser(@PathVariable("userId") String userId) {
-    //... ...
-    return new Result(true, StatusCode.OK, "查询成功", user);
+@Slf4j
+@RequestMapping("/user")
+@RestController
+public class UserController {
+    
+    @GetMapping("/{userId}")
+    public Result getUser(@PathVariable("userId") String userId) {
+        //... ...
+        return new Result(true, StatusCode.OK, "查询成功", user);
+    }
 }
 ```
 
@@ -791,52 +995,21 @@ public class FriendController {
 注意：'demo-base'最好排除依赖'spring-boot-devtools'
 ```
 
-> RestTemplate 和注解 @LoadBalanced
+#Hystrix
+
+##基础概念
+
+> `熔断器`：用于处理分布式系统的延迟和容错的开源库
 
 ```java
-@Bean //主配置类中注入bean
-@LoadBalanced //开启负载均衡
-public RestTemplate restTemplate(){ 
-    return new RestTemplate();
-}
-```
+Hystrix [hɪstrɪks]，中文含义是豪猪，因其背上长满棘刺，从而拥有了自我保护的能力。
 
-```java
-@RunWith(SpringRunner.class)
-@SpringBootTest(classes = FriendApplication.class)
-public class FriendTest {
-
-    @Autowired
-    RestTemplate restTemplate;
-
-    @Test
-    public void test01() {
-        //RPC远程调用服务，两种方式：1.名称（可以负载均衡），2.域名（不可以负载均衡）
-        
-        // String url = "http://demo-user/user/1";
-        String url = "http://192.168.5.23:9001/user/1";
-
-        Result result = restTemplate.getForObject(url, Result.class);
-        System.out.println("Result: " + result);
-    }
-}
-```
-
-![](assets/cloud4.png)
-
-##Hystrix
-
-> `熔断器` Netflix-Hystrix：？
-
-```
-Hystrix [hɪst'rɪks]，中文含义是豪猪，因其背上长满棘刺，从而拥有了自我保护的能力。
-
-Hystrix设计目标：
-对来自依赖的延迟和故障进行防护和控制——这些依赖通常都是通过网络访问的
-阻止故障的连锁反应
-快速失败并迅速恢复
-回退并优雅降级
-提供近实时的监控与告警
+在分布式系统里，许多依赖不可避免的会调用失败，比如超时、异常等。
+Hystrix 能够保证在一个依赖出问题的情况下，不会导致整体服务失败，避免级联故障，以提高分布式系统的弹性。
+ 
+'熔断器' 本身是一种开关装置，当某个服务单元发生故障之后，通过熔断器的故障监控（类似熔断保险丝），
+向调用方返回一个符合预期的、可处理的备选响应（FallBack），而不是长时间的等待或者抛出调用方无法处理的异常，
+这样就保证了服务调用方的线程不会被长时间、不必要地占用，从而避免了故障在分布式系统中的蔓延，乃至雪崩。
 ```
 
 > 雪崩效应
@@ -845,8 +1018,38 @@ Hystrix设计目标：
 在微服务架构中通常会有多个服务层调用，基础服务的故障可能会导致级联故障，进而造成整个系统不可用的情况，这种现象被称为服务雪崩效应。
 服务雪崩效应是一种因'服务提供者'的不可用导致'服务消费者'的不可用，并将不可用逐渐放大的过程。
 
-如果下图所示：A作为服务提供者，B为A的服务消费者，C和D是B的服务消费者。A不可用引起了B的不可用，并将不可用像滚雪球一样放大到C和D时，雪崩效应就形成了。
+如：A作为服务提供者，B为A的服务消费者，C和D是B的服务消费者。A不可用引起了B的不可用，并将不可用像滚雪球一样放大到C和D时，雪崩效应就形成了。
 ```
+
+> 主要作用
+
+```java
+//服务降级
+其实就是线程池中单个线程障处理，防止单个线程请求时间太长，导致资源长期被占有而得不到释放，从而导致线程池被快速占用完，导致服务崩溃。
+
+Hystrix能解决如下问题：
+1.请求超时降级，线程资源不足降级，降级之后可以返回自定义数据
+2.线程池隔离降级，分布式服务可以针对不同的服务使用不同的线程池，从而互不影响
+3.自动触发降级与恢复
+4.实现请求缓存和请求合并 
+```
+
+```java
+//服务熔断
+熔断机制是应对雪崩效应的一种微服务链路保护机制。
+当'扇出'链路的某个微服务不可用或者响应时间太长时，会进行服务的降级，进而熔断该节点微服务的调用，快速返回"错误"的响应信息。
+当检测到该节点微服务调用响应正常后恢复调用链路。
+
+Hystrix 会监控微服务间调用的状况，当失败的调用到一定阈值，缺省是5秒内20次调用失败就会启动熔断机制。熔断机制的注解是 @HystrixCommand。
+```
+
+```java
+//服务限流
+主要是提前对各个类型的请求设置最高的QPS阈值，若高于设置的阈值则对该请求直接返回，不再调用后续资源。
+这种模式不能解决服务依赖的问题，只能解决系统整体资源分配问题，因为没有被限流的请求依然有可能造成雪崩效应。
+```
+
+##熔断Feign
 
 > Feign 本身支持Hystrix，不需要额外引入依赖。`demo-friend`中开启Hystrix
 
@@ -872,66 +1075,145 @@ public class UserClientImpl implements UserClient {
 
 ```java
 @Component //加不加都行，无意义
-//指定微服务名，不能包含下划线。fallback 指定熔断类
-@FeignClient(name = "demo-user", configuration = FeignConfig.class, fallback = UserClientImpl.class)
-public interface UserClient {}
+@FeignClient(name = "demo-user" //指定微服务名，不能包含下划线
+        , configuration = FeignConfig.class
+        , fallback = UserClientImpl.class //接口的实现类
+        // , fallbackFactory = UserClientFallBackFactory.class //接口实现 FallbackFactory，不推荐
+)
+public interface UserClient {
+
+    //"/user"不可省，用于对被调用的微服务进行地址映射
+    //@PathVariable注解一定要指定参数名称，否则出错
+    @GetMapping("/user/{userId}")
+    Result getUser(@PathVariable("userId") String userId);
+}
 ```
+##熔断Hystrix
 
-![](assets/cloud5.png)
+> `服务熔断`：某个微服务不可用或者响应时间太长时，会进行服务熔断，快速返回"错误"的响应信息。
 
-## Zuul
-
-> `服务网关`：（1）微服务工程统一入口，方便前端调用。（2）集中处理权限问题。
-
-```java
-不同的微服务一般有不同的网络地址，而外部的客户端可能需要调用多个服务的接口才能完成一个业务需求。
-比如一个电影购票的收集APP,可能回调用电影分类微服务，用户微服务，支付微服务等。如果客户端直接和微服务进行通信，会存在一下问题：
-
-# 客户端会多次请求不同微服务，增加客户端的复杂性
-# 存在跨域请求，在一定场景下处理相对复杂
-# 认证复杂，每一个服务都需要独立认证
-# 难以重构，随着项目的迭代，可能需要重新划分微服务，如果客户端直接和微服务通信，那么重构会难以实施
-# 某些微服务可能使用了其他协议，直接访问有一定困难
-
-上述问题，都可以借助微服务网关解决。'微服务网关是介于客户端和服务器端之间的中间层，所有的外部请求都会先经过微服务网关'。
+```xml
+<!-- 引入熔断器 hystrix -->
+<dependency>
+    <groupId>org.springframework.cloud</groupId>
+    <artifactId>spring-cloud-starter-netflix-hystrix</artifactId>
+</dependency>
 ```
-
-```
-Zuul 是 Netflix 开源的微服务网关，他可以和 Eureka，Ribbon，Hystrix 等组件配合使用。
-Zuul组件的核心是一系列的过滤器，这些过滤器可以完成以下功能：
-
-# 身份认证和安全: 识别每一个资源的验证要求，并拒绝那些不符的请求
-# 审查与监控：
-# 动态路由：动态将请求路由到不同后端集群
-# 压力测试：逐渐增加指向集群的流量，以了解性能
-# 负载分配：为每一种负载类型分配对应容量，并弃用超出限定值的请求
-# 静态响应处理：边缘位置进行响应，避免转发到内部集群
-# 多区域弹性：跨域AWS Region进行请求路由，旨在实现ELB（ElasticLoad Balancing）使用多样化
-```
-
-> 网关微服务：`demo-zuul`
 
 ```properties
-server.port=9011
-spring.application.name=demo-zuul
+#配置说明：https://www.jianshu.com/p/39763a0bd9b8
+#https://www.e-learn.cn/content/qita/1592490
+#https://blog.csdn.net/chengqiuming/article/details/81568234
 
-#eureka
-eureka.client.service-url.defaultZone=http://localhost:8761/eureka
-#将IP注册到 Eureka-Server。默认注册的是主机名
-eureka.instance.prefer-ip-address=true
-
-#zuul
-#配置请求URL的请求规则，指定Eureka注册中心中的服务id，转发请求头（默认过滤请求头）
-zuul.routes.demo-user.path=/user/**
-zuul.routes.demo-user.service-id=demo-user
-zuul.routes.demo-user.custom-sensitive-headers=true
-zuul.routes.demo-friend.path=/friend/**
-zuul.routes.demo-friend.service-id=demo-friend
-zuul.routes.demo-friend.custom-sensitive-headers=true
-
-#jwt
-jwt.config.key=bluecard
+#hystrix
+#执行超时时间，默认 1000ms
+hystrix.command.default.execution.isolation.thread.timeoutInMilliseconds=2000
 ```
+
+```java
+@EnableHystrix //熔断器注解，主启动类
+```
+
+```java
+@RequestMapping("/friend")
+@RestController
+public class FriendController {
+
+    @Autowired
+    UserClient userClient;
+
+    @HystrixCommand(fallbackMethod = "fallBack", //指定降级方法，在熔断和异常时会走降级方法
+                    /*略去N个参数*/
+                    commandProperties = { //超时时间，不起作用？？
+                        @HystrixProperty(name = "execution.isolation.thread.timeoutInMilliseconds", value = "3000")
+                    })
+    @GetMapping("/{userId}")
+    public Result getUser(@PathVariable("userId") String userId) {
+        System.out.println("getUser: " + LocalTime.now());
+        return userClient.getUser(userId);
+    }
+
+    public Result fallBack(String userId) { //降级方法
+        System.out.println("fallBack: " + LocalTime.now());
+        return new Result(false, StatusCode.REMOTE_ERROR, "熔断机制的降级方法");
+    }
+}
+```
+
+##服务监控
+
+> 服务监控の微服务`demo-hystrix`
+
+```xml
+<artifactId>demo_hystrix</artifactId>
+
+<dependencies>
+    <dependency>
+        <groupId>org.springframework.cloud</groupId>
+        <artifactId>spring-cloud-starter-netflix-hystrix-dashboard</artifactId>
+    </dependency>
+</dependencies>
+```
+
+```properties
+server.port=8070
+```
+
+```java
+@EnableHystrixDashboard //启动类
+```
+
+> 服务消费者`demo-friend`
+
+```properties
+#actuator
+#暴露所有端口
+management.endpoints.web.exposure.include=*
+```
+
+> 监控测试
+
+```java
+//浏览器打开以下页面，出现豪猪，则证明启动成功
+http://localhost:8070/hystrix
+
+//第一个输入框填写 服务消费者的 ip:端口/...
+http://localhost:9002/actuator/hystrix.stream
+
+Delay：该参数用来控制服务器上轮询监控信息的延迟时间，默认 2000ms。可通过配置该属性来降低客户端的网络和CPU消耗。
+Title：该参数对应了头部标题 Hystrix-Stream 之后的内容，默认会使用具体监控实例的URL，可以通过配置该信息来展示更合适的标题。 
+```
+
+```java
+实心圆：共有两种含义。它通过颜色的变化代表了实例的健康程度，它的健康度从 '绿色 < 黄色 < 橙色 < 红色' 递减。
+
+该实心圆除了颜色的变化之外，它的大小也会根据实例的请求流量发生变化，流量越大该实心圆就越大。
+所以通过该实心圆的展示，就可以在大量的实例中 '快速的发现故障实例和高压力实例'。
+
+曲线：用来记录2分钟内流量的相对变化，可以通过它来观察到流量的上升和下降趋势。
+```
+
+
+
+
+
+# Zuul
+
+## 基础概念
+
+> `服务网关`：对请求的 路由 + 过滤
+
+```java
+路由：负责将外部请求转发到具体的微服务实例上，是实现外部访问统一入口的基础。
+过滤：负责对请求的处理过程进行干预，是实现请求校验、服务聚合等功能的基础（集中处理权限问题）。
+
+Zuul 和 Eureka 进行整合，'将Zuul自身注册为Eureka服务治理下的应用'，同时从Eureka中获得其他微服务的消息，
+也即以后的访问微服务都是通过Zuul跳转后获得。
+```
+
+##基本配置
+
+> 网关微服务：`demo-zuul`
 
 ```xml
 <artifactId>demo_zuul</artifactId>
@@ -950,15 +1232,33 @@ jwt.config.key=bluecard
 </dependencies>
 ```
 
+```properties
+server.port=9011
+spring.application.name=demo-zuul
+
+#eureka
+eureka.client.service-url.defaultZone=http://localhost:8761/eureka
+#将IP注册到 Eureka-Server。默认注册的是主机名
+eureka.instance.prefer-ip-address=true
+
+#zuul
+#配置请求URL的请求规则，指定Eureka注册中心中的服务id，转发请求头（默认过滤请求头）
+zuul.routes.demo-user.path=/users/**
+zuul.routes.demo-user.service-id=demo-user
+zuul.routes.demo-user.custom-sensitive-headers=true
+zuul.routes.demo-friend.path=/friends/**
+zuul.routes.demo-friend.service-id=demo-friend
+zuul.routes.demo-friend.custom-sensitive-headers=true
+#忽略所有微服务
+#zuul.ignored-services=*
+
+#jwt
+jwt.config.key=bluecard
+```
+
 ```java
-@EnableZuulProxy //zuul注解
-@EnableEurekaClient
-@SpringBootApplication
-public class ZuulApplication {
-    public static void main(String[] args) {
-        SpringApplication.run(ZuulApplication.class, args);
-    }
-}
+@EnableZuulProxy //zuul
+@EnableEurekaClient //eureka-client
 ```
 
 > 配置网关后，使用 IDEA 的 REST_API 测试
@@ -968,7 +1268,7 @@ public class ZuulApplication {
 GET http://localhost:9002/friend/1
 
 ###获取 user 的id为1信息（zuul）
-GET http://localhost:9011/friend/friend/1
+GET http://localhost:9011/friends/friend/1
 Authorization: Bearer eyJhbGciOiJIUzI1NiJ9.*.*
 ```
 
@@ -980,7 +1280,7 @@ Content-Type: application/json
 {"loginName": "aaa","password": "111"}
 
 ###登陆（zuul）
-POST http://localhost:9011/user/user/login
+POST http://localhost:9011/users/user/login
 Content-Type: application/json
 
 {"loginName": "aaa","password": "111"}
@@ -992,9 +1292,11 @@ DELETE http://localhost:9001/user/5
 Authorization: Bearer eyJhbGciOiJIUzI1NiJ9.*.*
 
 ###删除用户（zuul）
-DELETE http://localhost:9011/user/user/5
+DELETE http://localhost:9011/users/user/5
 Authorization: Bearer eyJhbGciOiJIUzI1NiJ9.*.*
 ```
+#C
+
 ##Config
 
 > `分布式配置`：将配置文件放到云端，方便后期维护
