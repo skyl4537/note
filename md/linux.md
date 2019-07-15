@@ -140,7 +140,7 @@ timeout=5
 reboot 或 shutdown -r now
 ```
 
-
+##定时任务
 
 > nano编辑器
 
@@ -318,15 +318,34 @@ locate mysql.cnf #查找 mysql.cnf 文件
 find . -name 'sm*' #（递归）查找当前目录下名为 sm* 的文件及文件夹
 ```
 
+##业务相关
 
-
-> 
+> linux查询pid
 
 ```shell
-
+jps -l #列出所有java进程的 pid + 项目名
 ```
 
+```shell
+ps -ef | grep webpark.war #ps相关
 
+#C：cpu占用率；STIME：开始时间；TIME：进程运行的总时间；CMD：启动命令
+#UID       PID     PPID  C    STIME  TTY        TIME    CMD
+#parkman+  6315     1    0    7月10    ?     01:07:46    /usr/java/jdk1.8.0_191/bin/java -jar webpark.war
+
+netstat -anp | grep 8080 #显示网络状态，过滤端口
+
+lsof -t -i:8080 #lsof相关
+```
+
+> windows查询pid
+
+```shell
+netstat -aon | findstr 8080  #根据端口查找pid
+taskkill -f /pid 9984        #强制杀死pid 9984
+
+tasklist | findstr 10876     #根据pid查找进程名
+```
 
 
 
@@ -545,7 +564,7 @@ split -b 100k test.log test -d #切割文件并指定前缀为test，后缀为�
 
 ## sort
 
-> 将结果进行排序
+> 将文件内容进行排序
 
 ```shell
 #-n: 按数值大小，正序排序（默认正序）
@@ -557,10 +576,13 @@ split -b 100k test.log test -d #切割文件并指定前缀为test，后缀为�
 #+<起始栏位>-<结束栏位>: 以指定的栏位来排序，范围由起始栏位到结束栏位的前一栏位
 ```
 ```shell
-sort (-r) file #以默认的方式将文本文件的第一列以 ASCII码的次序排列，并将结果输出到标准输出
+sort (-r) file #以默认的方式（ASCII码的次序）将文本文件的第一列排列，并将结果输出到标准输出
 
-ls -l | sort -n -k 5       #以默认的空格 分割为例，按照第5列的数值大小进行排序
-sort -t $'\t' -k 2.7 file  #以 TAB 分割为列，对第2列的第7个字符进行排序
+ls -l | sort -n -k 5 #以默认的分隔符（空格）分割，按照第5列（即文件大小）的数值大小进行排序
+
+sort -t $'\t' -k 2.7 file #以 TAB 分割为列，对第2列的第7个字符进行排序
+
+sort -t ' ' -k 2 -r file #以空格分割为列，对第2列进行倒序排列
 ```
 
 ## uniq
@@ -573,7 +595,15 @@ sort -t $'\t' -k 2.7 file  #以 TAB 分割为列，对第2列的第7个字符进
 #-w<字符位置>: 指定要比较的字符
 #-u: 仅显示出一次的行列
 
-sort file | uniq -c | sort -r
+sort file | uniq -c #统计重复行，在行首显示重复次数
+#2 apple a
+#1 orange o
+#2 pear p
+
+sort file | uniq -c | sort -r #以倒序方式排列重复次数
+#2 pear p
+#2 apple a
+#1 orange o
 ```
 ```shell
 
@@ -596,11 +626,11 @@ touch file   #新建空文件file
 ```shell
  > file            #使用重定向方法
 true > file        #使用true命令重定向清空文件
-echo -n "" > file  #要加上"-n"参数，默认情况下会有"\n"，即有个空行
+echo -n "" > file  #必须加上"-n"参数，默认情况下会有"\n"，即有个空行
 ```
 ##echo
 
-> 显示普通字符串，或转义字符。" "会将内容转义，' '不会转义，原样输出
+> 显示普通字符串，或转义字符。`""会将内容转义，''不会转义，原样输出`
 
 ```shell
 echo "$(date)"   #输出当前时间
@@ -634,12 +664,6 @@ echo $DATE '---' $CLOSE >> close #变量
 echo -n "OK!" #-n表示不换行，即只输出一行
 echo "It is a test"
 ```
-
-
-
-
-
-
 
 ## cp
 
@@ -717,6 +741,35 @@ tail -f -n 3 file #循环查看文件的最后 3 行内容
 tail -c 10 file   #最后 10 个字符
 ```
 
+## cat
+
+
+
+
+
+## cut
+
+> 用于显示每行从开头算起 num1 到 num2 的文字
+
+```shell
+#-b: 仅显示行中指定范围的【字节】。这些字节位置将忽略多字节字符边界，除非也指定了 -n 标志。
+#-c: 仅显示行中指定范围的【字符】
+#-d: 指定字段的分隔符，默认的字段分隔符为“TAB”；
+#-f: 显示指定字段的内容
+
+cat cut.log
+#No Name Mark Percent
+#01 tom 69 91
+#02 jack 71 87
+#03 alex 68 98
+
+cut -d ' ' -f 2,3 cut.log #显示每行的第2，3列
+cut -d ' ' -f 2,3 --complement cut.log #显示每行的2，3以外的列，即1,4列
+
+cut -b 2,5 cut.log #显示每行的第2个字节到第5个字节
+cut -b 2- cut.log  #显示每行的第2个字节到结尾
+```
+
 
 
 
@@ -748,6 +801,90 @@ df -lh
 du -h --max-depth=1 /var/lib/webpark/logs | sort -nr  #相结合使用,查看磁盘情况
 ```
 
+## zip
+
+>压缩和解压（unzip）
+
+```shell
+#-d: 从压缩文件内删除指定的文件
+#-q: 不显示指令执行过程
+#-r: 递归处理，将指定目录下的所有文件和子目录一并处理
+#-l: 在不解压的前提下，显示压缩文件内所包含的文件
+
+zip -qr err.zip ./err*   #将当前目录下所有以'err'开头的文件压缩到'err.zip'
+zip -qr sm.zip /logs/sm  #将目录 /logs/sm 下所有文件夹和文件压缩到'sm.zip'
+
+zip -d sm.zip a.log    #从压缩文件中删除文件 a.log    
+
+unzip -l sm.zip         #查看压缩包中的文件信息（不解压）
+
+unzip sm.zip            #解压到当前目录
+unzip err.zip -d ./err  #......指定目录    
+
+j=0; for i in ./*; do unzip $i -d $j; let j++; done #批量解压
+```
+
+## tar
+
+> 打包压缩, 用于备份文件！（相比zip更优）
+
+```shell
+#-z: 通过gzip指令处理备份文件（gzip）
+#-v: 显示指令执行过程（verbose）
+#-f: 指定备份文件（file）
+#-t: 列出备份文件的内容（list）
+#-r: 新增文件到已备份文件的尾部（append）
+#-g: 增量备份
+
+#-c: （压缩）建立新的备份文件（create）
+#-x: （解压）从备份文件中还原文件（extrac）
+
+tar -zcvf test.tar.gz test     #压缩文件test
+
+tar -zxvf test.tar.gz          #解压到【当前】目录
+tar -zxvf test.tar.gz -C test/ #.....【指定】....
+
+tar -ztvf test.tar.gz          #列出归档文件的内容
+
+echo -n "123" > test           #-n表示不换行，即结尾没有换行符
+tar -g snapshot -zcvf test0.tar.gz test    #第1次归档(123)
+
+echo "456" >> test        #追加test末尾
+tar -g snapshot -zcvf test1.tar.gz test    #第2次归档(123456)
+tar -g snapshot -zcvf test2.tar.gz test    #第3次归档(空的，因为没有修改)
+```
+
+
+
+
+
+##wget
+
+>从指定的URL下载文件，可以在后台下载
+
+```shell
+#-b: 进行后台的方式运行wget
+#-c: 继续执行上次终端的任务（断点续传）。
+#-o: 下载信息写入日志，而非显示控制台
+#-O: 下载并以不同的文件名保存。（默认以最后一个/后面的字符来命名，动态链接文件名会不正确）
+#-i<文件>: 从指定文件获取要下载的URL地址
+
+wget -o download.log URL 
+wget -O wordpress.zip http://www.linuxde.net/download.aspx?id=1080 #下载并自定义文件名
+wget -c http://www.linuxde.net/testfile.zip #断点续传
+
+wget -b http://www.linuxde.net/testfile.zip #后台下载
+tail -f wget-log #配合以上命令，察看下载进度
+
+wget --spider www.baidu.com #不下载任何文件，只是会检查是否网站是否好着。‘200 OK’
+wget -S www.baidu.com #模拟下载，打印服务器响应
+
+wget -r --tries=2 www.baidu.com #指定尝试2次，2次后不再尝试
+wget -r --tries=2 -q www.baidu.com #指定尝试，且不打印中间结果
+```
+
+
+
 ## tcpdump
 
 > 用于网络数据抓包，配合 Wireshark 使用。必须以管理员权限使用。
@@ -764,11 +901,17 @@ tcpdump tcp port 5232 -w /tmp/tcp5232.cap #抓取 TCP 协议的 5232 端口相�
 
 
 
+# 业务相关
+
+> 
+
+```shell
 
 
 
+```
 
-
+>
 
 
 

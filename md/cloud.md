@@ -1251,6 +1251,8 @@ zuul.routes.demo-friend.service-id=demo-friend
 zuul.routes.demo-friend.custom-sensitive-headers=true
 #忽略所有微服务
 #zuul.ignored-services=*
+#所有访问都加前缀
+zuul.prefix=/demo
 
 #jwt
 jwt.config.key=bluecard
@@ -1268,7 +1270,7 @@ jwt.config.key=bluecard
 GET http://localhost:9002/friend/1
 
 ###获取 user 的id为1信息（zuul）
-GET http://localhost:9011/friends/friend/1
+GET http://localhost:9011/demo/friends/friend/1
 Authorization: Bearer eyJhbGciOiJIUzI1NiJ9.*.*
 ```
 
@@ -1280,7 +1282,7 @@ Content-Type: application/json
 {"loginName": "aaa","password": "111"}
 
 ###登陆（zuul）
-POST http://localhost:9011/users/user/login
+POST http://localhost:9011/demo/users/user/login
 Content-Type: application/json
 
 {"loginName": "aaa","password": "111"}
@@ -1292,18 +1294,46 @@ DELETE http://localhost:9001/user/5
 Authorization: Bearer eyJhbGciOiJIUzI1NiJ9.*.*
 
 ###删除用户（zuul）
-DELETE http://localhost:9011/users/user/5
+DELETE http://localhost:9011/demo/users/user/5
 Authorization: Bearer eyJhbGciOiJIUzI1NiJ9.*.*
 ```
-#C
+## 性能调优
 
-##Config
+><https://github.com/leonzm/springcloud_zuul>
+
+```properties
+#zuul内部路由可以理解为使用一个线程池去发送路由请求，所以需要扩大这个线程池的容量。默认：20,200
+zuul.host.max-per-route-connections=1000
+zuul.host.max-total-connections=1000
+zuul.host.connect-timeout-millis=60000
+zuul.host.socket-timeout-millis=60000
+
+#同时，设置SpringBoot内嵌Tomcat的并发。默认：100,200,10000
+server.tomcat.accept-count=1000
+server.tomcat.max-threads=1000
+server.tomcat.max-connections=2000
+```
+
+# Config
+
+##基础概念
 
 > `分布式配置`：将配置文件放到云端，方便后期维护
 
-```
+```java
 在分布式系统中，由于服务数量巨多，为了方便服务配置文件统一管理，实时更新，所以需要分布式配置中心组件。
-Spring-Cloud-Config 支持配置服务放在配置服务的内存中（即本地），也支持放在远程Git仓库中。两个角色：Config-Server，Config-Client。
+Spring-Cloud-Config 支持配置服务放在配置服务的内存中（即本地），也支持放在远程Git仓库中。
+
+//主要功能：
+集中管理配置文件
+不同环境不同配置，动态化的配置更新，分环境部署比如：dev/test/prod/beta/release
+运行期间动态调整配置，不再需要在每个服务部署的机器上编写配置文件，服务会向配置中心统一拉取配置自己的信息
+当配置发生变动时，服务不需要重启即可感知到配置的变化并应用新的配置
+将配置信息以REST接口的形式暴露
+```
+
+```
+两个角色：Config-Server，Config-Client。
 
 Config-Server 是一个可横向扩展、集中式的配置服务器，它用于集中管理应用程序各个环境下的配置，
 默认使用Git存储配置文件内容，也可以使用SVN存储，或者是本地文件存储。
@@ -1311,13 +1341,15 @@ Config-Server 是一个可横向扩展、集中式的配置服务器，它用于
 Config-Client 用于操作存储在 Config-Server 中的配置内容。微服务在启动时会请求 Config-Server 获取配置文件的内容，请求到后再启动容器。
 ```
 
+##基础配置
+
 > 服务端の微服务：`demo-config`。页面测试：<http://192.168.5.23:12000/user-dev.properties>
 
 ```java
 将项目中的配置文件重命名为： '{application}-{profile}.yml' 或 '{application}-{profile}.properties'。
 如'user-dev.properties'，'eureka-dev.properties'等
 
-码云上新建仓库 'demo-config'，然后上传以上的配置文件（除了'demo-config'）。
+码云上新建仓库 'demo-config'，然后上传以上的配置文件（除了'demo-config.properties'）。
 ```
 
 ```properties
@@ -1341,25 +1373,30 @@ spring.cloud.config.server.git.uri=https://gitee.com/skyl4537/demo-config.git
 ```
 
 ```java
-@EnableConfigServer
-@SpringBootApplication
-public class ConfigApplication {
-    public static void main(String[] args) {
-        SpringApplication.run(ConfigApplication.class, args);
-    }
-}
+@EnableConfigServer //启动类
 ```
 
 > 客户端の微服务：`demo-user`。
 
-```properties
-#添加配置文件 bootstrap.properties（优先级比原有的高），删除原有配置文件
+```java
+//添加配置文件 bootstrap.properties，删除原有配置文件
+applicaiton.yml //是用户级的资源配置项
+bootstrap.yml   //是系统级的，优先级更加高
 
+Spring-Cloud 会创建一个 'Bootstrap Context'，作为Spring应用的 'Application Context'的父上下文。
+初始化的时候，Bootstrap Context 负责从'外部源'加载配置属性并解析配置。这两个上下文共享一个从外部获取的 'Environment'。
+Bootstrap 属性有高优先级，默认情况下，它们不会被本地配置覆盖。
+
+Bootstrap context 和 Application Context 有着不同的约定，所以新增了一个 'bootstrap.yml'文件，
+保证 Bootstrap Context 和 Application Context 配置的分离。
+```
+
+```properties
 #config
-#12000为 demo-config 的端口号
 spring.cloud.config.name=user
 spring.cloud.config.profile=dev
 spring.cloud.config.label=master
+#12000为 demo-config 的端口号
 spring.cloud.config.uri=http://localhost:12000
 #spring.cloud.config.discovery.enabled=true
 #spring.cloud.config.discovery.service-id=demo-config
@@ -1372,13 +1409,17 @@ spring.cloud.config.uri=http://localhost:12000
     <artifactId>spring-cloud-starter-config</artifactId>
 </dependency>
 ```
-##Bus
+# Bus
+
+##基础概念
 
 > `消息总线`：可以在不重启微服务的情况下，更新码云中的配置文件，让其立刻生效
 
 ```java
 事件、消息总线，用于在集群（例如，配置变化事件）中传播状态变化，可与 Spring-Cloud-Config 联合实现热部署。
 ```
+
+##基础配置
 
 > 服务端の微服务：Bus 配合 Config 使用，在 `demo-config` 中配置
 

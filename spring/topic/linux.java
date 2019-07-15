@@ -18,7 +18,7 @@
 
 //}
 
-//{--------<<<单一指令>>>--------------------------------
+//{--------<<<单一指令>>>--------------------------------X
  // kill -9 `lsof -t -i:8090`
     // #kill -9 `lsof -i:8090 | awk '{print $2}' | sed -n '2p'`        //等同于上面命令
     // #nohup java -jar blue.jar > ./logs/blue.log >/dev/null 2>&1 &    //不再输出日志
@@ -174,38 +174,38 @@
     
     // ls -lhtr s*        //列出目录下所有名称 s 开头的文件,以最后修改时间升序排列.(r代表排序取反)
 
-#wget: 从指定的URL下载文件
-    #-o: 下载信息写入日志,而非显示控制台
-    #-O: 下载并以不同的文件名保存.(默认以最后一个/后面的字符来命名,动态链接文件名会不正确)
-    #-c: 继续执行上次终端的任务.(断点续传)
-    #-b: 进行后台的方式运行wget
-    #-i<文件>: 从指定文件获取要下载的URL地址
+// #wget: 从指定的URL下载文件
+    // #-o: 下载信息写入日志,而非显示控制台
+    // #-O: 下载并以不同的文件名保存.(默认以最后一个/后面的字符来命名,动态链接文件名会不正确)
+    // #-c: 继续执行上次终端的任务.(断点续传)
+    // #-b: 进行后台的方式运行wget
+    // #-i<文件>: 从指定文件获取要下载的URL地址
     
-    wget -o download.log URL 
-    wget -O wordpress.zip http://www.linuxde.net/download.aspx?id=1080
-    wget -c http://www.linuxde.net/testfile.zip
+    // wget -o download.log URL 
+    // wget -O wordpress.zip http://www.linuxde.net/download.aspx?id=1080
+    // wget -c http://www.linuxde.net/testfile.zip
     
-    wget -b http://www.linuxde.net/testfile.zip
-        //Continuing in background, pid 1840.
-        //Output will be written to `wget-log'.
-    tail -f wget-log //后台下载,使用以下命令来察看下载进度
+    // wget -b http://www.linuxde.net/testfile.zip
+        // //Continuing in background, pid 1840.
+        // //Output will be written to `wget-log'.
+    // tail -f wget-log //后台下载,使用以下命令来察看下载进度
     
-    wget -i filelist.txt //先将各url写入文件.(一行一个??)
+    // wget -i filelist.txt //先将各url写入文件.(一行一个??)
     
-#ulimit: 限制系统用户对shell资源的访问
-    #-a: 显示当前所有的资源限制
-    #-n <size>: 指定(显示)同一时间最多打开文件数
-    #-u <size>: 指定(显示)用户最多可开启的程序数目
+// #ulimit: 限制系统用户对shell资源的访问
+    // #-a: 显示当前所有的资源限制
+    // #-n <size>: 指定(显示)同一时间最多打开文件数
+    // #-u <size>: 指定(显示)用户最多可开启的程序数目
     
-    sudo nano /etc/security/limits.conf //最大句柄数(永久生效)
-    //追加: *                -       nofile          10240
+    // sudo nano /etc/security/limits.conf //最大句柄数(永久生效)
+    // //追加: *                -       nofile          10240
 
-#uniq 统计重复行,一般与 sort 结合使用
-    #-u: 仅显示出一次的行列
-    #-c: 在行首显示该行重复出现的次数
+// #uniq 统计重复行,一般与 sort 结合使用
+    // #-u: 仅显示出一次的行列
+    // #-c: 在行首显示该行重复出现的次数
 
-    //当重复的行并不相邻时, uniq 命令不起作用. 此时必须配合 sort 使用.
-    sort file | uniq -c | sort -r
+    // //当重复的行并不相邻时, uniq 命令不起作用. 此时必须配合 sort 使用.
+    // sort file | uniq -c | sort -r
     
 // #sort 将文件内容进行排序
     // #-n: 正序排序(按数值大小,默认正序)
@@ -216,13 +216,13 @@
     // sort (-r) file    //正序(倒序)排列
     // sort -t $'\t' -k 2.7 file    //以 TAB 分割为列,对第2列的第7个字符进行排序
     
-#cut 用于显示每行从开头算起 num1 到 num2 的文字
-    #-b: 以字节为单位进行分割. 这些字节位置将忽略多字节字符边界,除非也指定了 -n 标志。
-    #-c: 以字符为单位进行分割.
-    #-d: 自定义分隔符,默认为制表符.
+// #cut 用于显示每行从开头算起 num1 到 num2 的文字
+    // #-b: 以字节为单位进行分割. 这些字节位置将忽略多字节字符边界,除非也指定了 -n 标志。
+    // #-c: 以字符为单位进行分割.
+    // #-d: 自定义分隔符,默认为制表符.
     
-    who|cut -b 3    //提取每一行的第3个字节
-    who|cut -b 3-    //.....................到行尾
+    // who|cut -b 3    //提取每一行的第3个字节
+    // who|cut -b 3-    //.....................到行尾
 
 //}
 
@@ -471,38 +471,38 @@ awk是一种处理文本文件的语言,是一个强大的文本分析工具.
 
 
 
-//{--------<<<123>>>-------------------------------------
-#查询PID
-    1.jps -l ///列出所有java进程的 pid + 项目名
-        16874 webpark.war 
+//{--------<<<123>>>-------------------------------------X
+// #查询PID
+    // 1.jps -l ///列出所有java进程的 pid + 项目名
+        // 16874 webpark.war 
         
-    2.ps -ef | grep webpark
-        // C        --> CPU占用率            STIME    --> 开始时间
-        // TIME        --> 进程运行的总时间    CMD        --> 启动命令
-        UID            PID        PPID    C    STIME    TTY        TIME    CMD
-        parkman+    16874        1    11    11:01    ?    00:20:51    /usr/java/jdk1.8.0_191/bin/java -jar webpark.war
+    // 2.ps -ef | grep webpark
+        // // C        --> CPU占用率            STIME    --> 开始时间
+        // // TIME        --> 进程运行的总时间    CMD        --> 启动命令
+        // UID            PID        PPID    C    STIME    TTY        TIME    CMD
+        // parkman+    16874        1    11    11:01    ?    00:20:51    /usr/java/jdk1.8.0_191/bin/java -jar webpark.war
         
-    3.netstat ///显示网络状态 -> 过滤端口
-        netstat -anp | grep 8080
+    // 3.netstat ///显示网络状态 -> 过滤端口
+        // netstat -anp | grep 8080
 
-    4.lsof ///
-        lsof -t -i:8080
+    // 4.lsof ///
+        // lsof -t -i:8080
         
         
-#Windows
-    netstat -aon | findstr 8080        //根据端口查找pid
-    taskkill -f /pid 9984            //强制杀死pid 9984
+// #Windows
+    // netstat -aon | findstr 8080        //根据端口查找pid
+    // taskkill -f /pid 9984            //强制杀死pid 9984
     
-    tasklist | findstr 10876        //根据pid查找进程名
+    // tasklist | findstr 10876        //根据pid查找进程名
     
-#kill 杀死某个进程
-    kill -9 16874 //杀死进程
+// #kill 杀死某个进程
+    // kill -9 16874 //杀死进程
     
     
 
 //}
 
-//{--------<<<ABC>>>-------------------------------------
+//{--------<<<ABC>>>-------------------------------------X
 #常用参数
     -l    //除文件名称外,亦将文件型态,权限,拥有者,文件大小等资讯详细列出.
     -h    //以方便阅读方式显示,如以MB为单位显示存储
@@ -536,66 +536,61 @@ awk是一种处理文本文件的语言,是一个强大的文本分析工具.
     
     // mv /student/_* .         //批量移动
     
-#zip 压缩和解压(unzip)
-    #-q: 不显示压缩过程信息
-    #-l: 在不解压的前提下,显示压缩文件内所包含的文件
+// #zip 压缩和解压(unzip)
+    // #-q: 不显示压缩过程信息
+    // #-l: 在不解压的前提下,显示压缩文件内所包含的文件
     
-    zip -qr err.zip ./err*    //将当前目录下所有以'err'开头的文件压缩到'err.zip'
-    zip -qr sm.zip /logs/sm    //将目录 /logs/sm 下所有文件夹和文件压缩到'sm.zip'
+    // zip -qr err.zip ./err*    //将当前目录下所有以'err'开头的文件压缩到'err.zip'
+    // zip -qr sm.zip /logs/sm    //将目录 /logs/sm 下所有文件夹和文件压缩到'sm.zip'
         
-    zip -d sm.zip a.log        //从压缩文件中删除文件a.log    
+    // zip -d sm.zip a.log        //从压缩文件中删除文件a.log    
     
-    unzip sm.zip            //解压到当前目录
-    unzip err.zip -d ./err    //......指定目录    
+    // unzip sm.zip            //解压到当前目录
+    // unzip err.zip -d ./err    //......指定目录    
     
-    unzip -l sm.zip            //查看压缩包中的文件信息(不解压)
+    // unzip -l sm.zip            //查看压缩包中的文件信息(不解压)
     
-    j=0; for i in ./_*; do unzip $i -d $j; let j++; done //批量解压
+    // j=0; for i in ./_*; do unzip $i -d $j; let j++; done //批量解压
     
-#tar 打包压缩, 用于备份文件!!!(相比zip更优)
-    #-z: 通过gzip指令处理备份文件    ->    gzip
-    #-v: 显示指令执行过程            ->    verbose
-    #-f: 指定备份文件                ->    file
-    #-t: 列出备份文件的内容            ->    list
-    #-r: 新增文件到已备份文件的尾部    ->    append
-    #-g: 增量备份
+// #tar 打包压缩, 用于备份文件!!!(相比zip更优)
+    // #-z: 通过gzip指令处理备份文件    ->    gzip
+    // #-v: 显示指令执行过程            ->    verbose
+    // #-f: 指定备份文件                ->    file
+    // #-t: 列出备份文件的内容            ->    list
+    // #-r: 新增文件到已备份文件的尾部    ->    append
+    // #-g: 增量备份
     
-    #-c: (压缩)建立新的备份文件        ->    create
-    #-x: (解压)从备份文件中还原文件    ->    extrac
+    // #-c: (压缩)建立新的备份文件        ->    create
+    // #-x: (解压)从备份文件中还原文件    ->    extrac
 
-    tar -zcvf test.tar.gz test        //压缩文件test
+    // tar -zcvf test.tar.gz test        //压缩文件test
     
-    tar -zxvf test.tar.gz            //解压到'当前'目录
-    tar -zxvf test.tar.gz -C test/    //......'指定'....
+    // tar -zxvf test.tar.gz            //解压到'当前'目录
+    // tar -zxvf test.tar.gz -C test/    //......'指定'....
     
-    tar -ztvf test.tar.gz            //列出归档文件的内容
+    // tar -ztvf test.tar.gz            //列出归档文件的内容
     
-    echo -n "123" > test    //-n表示不换行,即结尾没有换行符
-    tar -g snapshot -zcvf test0.tar.gz test    //第1次归档(123)
-    echo "456" >> test        //追加test末尾
-    tar -g snapshot -zcvf test1.tar.gz test    //第2次归档(123456)
-    tar -g snapshot -zcvf test2.tar.gz test    //第3次归档(空的,因为没有修改)
+    // echo -n "123" > test    //-n表示不换行,即结尾没有换行符
+    // tar -g snapshot -zcvf test0.tar.gz test    //第1次归档(123)
+    // echo "456" >> test        //追加test末尾
+    // tar -g snapshot -zcvf test1.tar.gz test    //第2次归档(123456)
+    // tar -g snapshot -zcvf test2.tar.gz test    //第3次归档(空的,因为没有修改)
     
-#find 根据 [文件属性] 进行 [递归] 查找
-    #-name: 根据文件名查找.(-iname: 忽略大小写)
-    #-size: 文件大小    
-    #-user: 所属用户
-    #-empty: 空文件
+// #find 根据 [文件属性] 进行 [递归] 查找
+    // #-name: 根据文件名查找.(-iname: 忽略大小写)
+    // #-size: 文件大小    
+    // #-user: 所属用户
+    // #-empty: 空文件
 
-    find . -name 'sm*'        //(递归)-当前目录下名为 'sm' 或 'sm*' 的文件及文件夹
-    find . -empty 　　        //(递归)-.......... '空' 文件或者文件夹
-    find . -size +10M        //(递归)-.......... 大于10MB的文件(c:字节, w:双字, k:KB, M:MB, G:GB) (+:大于,-:小于)
+    // find . -name 'sm*'        //(递归)-当前目录下名为 'sm' 或 'sm*' 的文件及文件夹
+    // find . -empty 　　        //(递归)-.......... '空' 文件或者文件夹
+    // find . -size +10M        //(递归)-.......... 大于10MB的文件(c:字节, w:双字, k:KB, M:MB, G:GB) (+:大于,-:小于)
 
-    ///混合查找 ---> !(非); -and(且); -or(或)
-    find /tmp -size +10000c -and -mtime +2    //在/tmp目录下查找大于10000字节并在最后2分钟内修改的文件
-    find / -user fred -or -user george        //在/目录下查找用户是fred或者george的文件文件
-    find /tmp ! -user panda                    //在/tmp目录中查找所有不属于panda用户的文件
+    // ///混合查找 ---> !(非); -and(且); -or(或)
+    // find /tmp -size +10000c -and -mtime +2    //在/tmp目录下查找大于10000字节并在最后2分钟内修改的文件
+    // find / -user fred -or -user george        //在/目录下查找用户是fred或者george的文件文件
+    // find /tmp ! -user panda                    //在/tmp目录中查找所有不属于panda用户的文件
 
-    
-    
-    
-    
-    
         
 //}
 
@@ -732,7 +727,7 @@ awk是一种处理文本文件的语言,是一个强大的文本分析工具.
 //}
 
 
-//{--------<<<CMD>>>-------------------------------------
+//{--------<<<CMD>>>-------------------------------------X
 // #nohup command>/dev/null 2>&1 &
     // 1.nohup
         // 该命令可以在 '退出帐户/关闭终端' 之后继续运行相应的进程.
