@@ -127,7 +127,7 @@ public ScheduledFuture<?> scheduleWithFixedDelay(Runnable command,
 
 ```java
 @Component // 获取bean的工具类
-public class MyApplicationContextAware implements ApplicationContextAware {
+public class ApplicationUtils implements ApplicationContextAware {
 
     private static ApplicationContext context;
 
@@ -566,9 +566,35 @@ public class WebMvcConfig extends WebMvcConfigurationSupport {
 }
 ```
 
+#JackJson
 
+>ObjectMapper是JSON操作的核心，Jackson的所有JSON操作都是在ObjectMapper中实现
 
+```java
+ObjectMapper mapper = new ObjectMapper();
+```
 
+```java
+String json = mapper.writeValueAsString(employee); //X -> String
+```
+
+```java
+String jsonArrary = mapper.writeValueAsString(employees); //list -> String
+```
+
+```java
+Employee value = mapper.readValue(json, Employee.class); //String -> X
+```
+
+```java
+JavaType list = mapper.getTypeFactory().constructParametricType(List.class, Employee.class); //String -> list/map
+//JavaType map = mapper.getTypeFactory().constructParametricType(HashMap.class, String.class, Employee.class);
+List<Employee> employees = mapper.readValue(jsonArrary, list);
+```
+
+```java
+List<Employee> values = mapper.readValue(jsonArrary, new TypeReference<List<Employee>>() {}); //String -> list/map
+```
 
 # HttpClient
 

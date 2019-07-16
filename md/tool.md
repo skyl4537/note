@@ -269,7 +269,7 @@ https://blog.csdn.net/small_mouse0/article/details/77506060
 |                 输出控制台                 |            sout             |         syso         |
 |               for普通 / 增强               |         fori / iter         |   for（Alt+/选择）   |
 |                 try/catch                  |         Ctrl+Alt+T          |          *           |
-|            自动生成Get/实现方法            |         Alt+Insert          |          *           |
+|          自动生成Get/Set/实现方法          |         Alt+Insert          |          *           |
 |                                            |                             |                      |
 |              抽取变量（方法）              |      Ctrl+Alt+V （M）       |   Shift+Alt+L（M）   |
 |                   格式化                   |         Ctrl+Alt+L          |     Ctrl+Shift+F     |
@@ -285,13 +285,14 @@ https://blog.csdn.net/small_mouse0/article/details/77506060
 |            整行复制（整行删除）            |      Ctrl+D（Ctrl+X）       | Ctrl+Alt+↓（Ctrl+D） |
 |                                            |                             |                      |
 |                 大小写转化                 |        Ctrl+Shift+U         |                      |
-|                返回上次修改                |    Ctrl+Shift+BackSpace     |                      |
+|            跳转到上次编辑的地方            |    Ctrl+Shift+BackSpace     |                      |
 |           当前工作空间查找java类           |      Ctrl+Shift+Alt+N       |                      |
 |                 查看类结构                 |            Alt+7            |                      |
-|   跳到下(上)一个选择项（配合Ctrl+F使用）   |       F3（Shift+F3）        |                      |
+|  跳到下（上）一个选择项（配合Ctrl+F使用）  |       F3（Shift+F3）        |                      |
 | 在全局（当前类）查找方法调用，可配合F3使用 |      Alt+F7（Ctrl+F7）      |      Ctrl+Alt+H      |
 |             折叠（展开）代码块             |   Shift+Ctrl+减号（加号）   | Shift+Ctrl+/（*号）  |
 |                                            |                             |                      |
+|                 创建测试类                 |        Ctrl+Shift+T         |                      |
 |        调试：跳到下一步（进入代码）        |          F8（F7）           |       F6（*）        |
 
 > 基本设置

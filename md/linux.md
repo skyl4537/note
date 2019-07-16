@@ -140,6 +140,44 @@ timeout=5
 reboot 或 shutdown -r now
 ```
 
+> 系统目录
+
+```shell
+/etc #存放系统的配置文件。包括账号与密码（/etc/passwd，/etc/shadow），开机时各项设定值（/etc/sysconfig/*）...
+
+/usr/local #将自己开发或自行额外安装的软件放置在 /usr/local 或 /opt.
+
+/var #存放系统运作过程中的中间暂存数据（/var/lib，/var/log，/var/run），以及部分最终数据，如邮件（/var/spool/mail）
+     #另外，几乎所有服务的登录文件（可以记录谁，什么时候，由哪里登入主机，做了什么事等等信息）都放在 /var/log 这个目录下
+
+/tmp #存放临时文件
+```
+
+```shell
+#磁盘分配
+/      #根目录可以分配 1GB
+/boot  #大概在 50MB 就可以了，因为开机档案并不大
+/var   #至少需要 1GB 以上，因为 mail，proxy 预设的储存区都在这个目录中，除非要将一些设定改变
+/usr   #因为所安装的软件和数据都是在 /usr/ 当中，所以 /usr 大概 10G 左右
+/home  #用户数据放置在 /home 当中，因此通常建议你将所剩下的磁盘空间分配给这个目录
+```
+
+```shell
+#启动级别（7）
+0      #关机，机器关闭。即开机之后马上又关机 
+1      #单用户模式。就像 Win9x 下的安全模式类似
+2      #多用户模式，但是没有NFS支持
+3      #完整的多用户模式，标准的运行级。默认使用
+4      #一般不用，特殊情况下使用。例如，在笔记本电脑的电池用尽时，可以切换到这个模式来做一些设置
+5      #就是 X11，进到 X-Window 图形界面。 默认使用
+6      #重启。即开机之后，马上又重启
+***    #使用命令 runlevel 查看当前的运行级别
+```
+
+
+
+
+
 ##定时任务
 
 > nano编辑器
@@ -347,6 +385,14 @@ taskkill -f /pid 9984        #强制杀死pid 9984
 tasklist | findstr 10876     #根据pid查找进程名
 ```
 
+> webpark异常
+
+```shell
+pstree -p <pid> | wc -l #查询某程序的线程或进程数
+
+pstree -p | wc -l #查询当前整个系统已用的线程或进程数
+```
+
 
 
 
@@ -404,6 +450,127 @@ o - 光标[下]插入新行    O - 光标[上]插入新行
 
 :e! - 将档案还原到最原始的状态！
 ```
+
+## shell
+
+>文件第一行必须是 `#!/bin/sh`，注释符号为`#`。
+
+```shell
+#变量：不需要声明。只能由字母，数字，下划线组成，不能以数字开头。
+echo $JAVA_HOME #输出变量的值
+
+#单引号不解析变量
+echo '$JAVA_HOME' #输出："$JAVA_HOME"
+
+#双引号会解析变量
+echo "$JAVA_HOME" #输出："/usr/local/jdk1.8.0_181"
+
+#飘号为执行内容，类似于$(...)
+echo `$JAVA_HOME` #输出"/usr/local/jdk1.8.0_181"
+
+#执行脚本时，传入的参数按照先后顺序使用 $1，$2 等顺序引用变量值（$0 就是文件名）
+test.sh abc 123 #在 test.sh 中，可通过 $2 读取 123
+
+#重定向
+'>>': 追加更新； '>': 覆盖更新
+```
+
+> 时间格式化
+
+```shell
+date '+%Y-%m-%d %H:%M:%S' #格式化输出
+
+date '+%S'                #提取当前时间的秒数
+date '+%s'                #自 1970-01-01 00:00:00 以来的总秒数
+
+echo $(date '+%Y-%m-%d %H:%M:%S')   #shell中输出日期
+echo `date '+%Y-%m-%d %H:%M:%S'`    #同上
+
+date --date='3 days ago'  #3天以前
+date --date="3 days ago" "+%Y-%m-%d %H:%M:%S" #3天以前,并格式化
+
+#shell中以日期命名文件
+FILE=$(date '+%Y%m%d-%H%M%S')
+sudo zip -qr slow-$FILE.zip slow.log >/dev/null 2>&1
+```
+
+> if
+
+```shell
+file="/var/lib/webpark/logs/sm/task/file/lsof"
+
+if [ -e $file ] #if 和 fi 是一对闭合体，少一个则报语法错误
+then
+   echo "文件存在"
+else
+   echo "文件不存在"
+fi
+```
+
+> fori（3种风格）
+
+```shell
+for i in {1..10}; do echo $i; done        #行内风格-1
+
+for ((i=1; i<11; i++)); do echo $i; done  #行内风格-2
+
+for((i=1; i<11; i++))  #shell脚本风格
+do
+   echo $i
+done
+```
+
+>foreach（2种风格）
+
+```shell
+for file in /var/tmp/*; do echo FILE_PATH: $file; done #行内风格
+
+for file in /var/tmp/*; #脚本风格
+do
+    echo FILE_PATH: $file
+done
+```
+
+>引用其他shell
+
+```shell
+#定义SHELL（func.sh）
+#!/bin/bash
+count=$1 #取值第一个参数
+
+echo $(date --date="$count days ago" "+%Y-%m-%d %H:%M:%S")
+```
+
+```shell
+#引用SHELL（test.sh）
+#!/bin/bash
+source ./func.sh 3 #引用shell，并传参3
+```
+
+>自定义函数
+
+```shell
+#函数定义（func.sh）
+#!/bin/bash
+function daysAgo(){
+    date --date="$1 days ago" "+%Y-%m-%d %H:%M:%S"
+}
+
+function daysAfter(){
+    date --date="-$1 days ago" "+%Y-%m-%d %H:%M:%S"
+}
+```
+
+```shell
+#调用函数（test.sh）
+#!/bin/bash
+source ./func.sh
+
+echo "3 daysAgo  :" $(daysAgo 3)
+echo "3 daysAfter:" $(daysAfter 3) #调用函数 daysAfter()
+```
+
+
 
 ## ls
 
@@ -605,9 +772,21 @@ sort file | uniq -c | sort -r #以倒序方式排列重复次数
 #2 apple a
 #1 orange o
 ```
-```shell
+## date
 
+```shell
+date '+%Y-%m-%d %H:%M:%S' #格式化输出当前时间
 ```
+
+## alias
+
+> 临时简化命令，重新打开CMD则不起作用
+
+```shell
+alias datef='date "+%Y-%m-%d %H:%M:%S"' #''不可省，"="不可省
+```
+
+
 
 
 
@@ -854,6 +1033,19 @@ tar -g snapshot -zcvf test1.tar.gz test    #第2次归档(123456)
 tar -g snapshot -zcvf test2.tar.gz test    #第3次归档(空的，因为没有修改)
 ```
 
+##ln
+
+>为某一个文件在另外一个位置建立一个同步的链接
+
+```shell
+#-f: 强制执行
+#-s: 软链接（符号链接）。硬-软链接：无论软还是硬，文件都保持同步变化
+
+ln src dest    #在选定的位置上生成一个和源文件大小相同的文件
+
+ln –s src dest #只在指定的位置上生成一个文件的镜像，不会占用磁盘空间，类似"快捷方式"
+```
+
 
 
 
@@ -883,6 +1075,49 @@ wget -r --tries=2 www.baidu.com #指定尝试2次，2次后不再尝试
 wget -r --tries=2 -q www.baidu.com #指定尝试，且不打印中间结果
 ```
 
+## ps
+
+>用于显示当前进程 （process） 的状态
+
+```shell
+#-A   列出所有的行程
+#-e   等于“-A”
+#-a   显示现行终端机下的所有进程，包括其他用户的进程；
+#-u   以用户为主的进程状态 ；
+#-x   通常与 a 这个参数一起使用，可列出较完整信息。
+#-w   显示加宽可以显示较多的资讯
+#-au  显示较详细的资讯
+#-aux 显示所有包含其他使用者的行程
+#-f   做一个更为完整的输出
+```
+
+```shell
+ps -A | grep java #显示所有进程信息
+
+ps -ef | grep java #显示所有进程信息，连带命令行（grep 过滤）
+
+ps aux | grep java #列出目前所有的正在内存当中的程序
+
+ps xH | wc -l #查看linux所有存在的线程数
+
+ps -mp <pid> | wc -l   #查看一个进程的线程数
+pstree -p <pid> | wc -l #同上
+
+cat /proc/${pid}/status  #查看一个进程的所有相关信息
+```
+
+## pstree
+
+>将所有行程以树状图显示
+
+```shell
+#-p: 列出每個 process 的 PID；
+
+pstree -p <pid> | wc -l #查询某程序的线程或进程数
+
+pstree -p | wc -l #查询当前整个系统已用的线程或进程数
+```
+
 
 
 ## tcpdump
@@ -900,8 +1135,6 @@ tcpdump tcp port 5232 -w /tmp/tcp5232.cap #抓取 TCP 协议的 5232 端口相�
 ```
 
 
-
-# 业务相关
 
 > 
 

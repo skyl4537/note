@@ -1169,7 +1169,7 @@ e1[ e2 ]              //对于List，数组和Map，按索引取值
 
 
 
-#-------------------
+#------jpa------
 
 
 
@@ -1514,5 +1514,94 @@ public void saveMany2Many() {
 public void findMany2Many() {
     Optional<Employee> optional = employeeDao.findById(12);
     System.out.println(optional.get().getRoles());
+}
+```
+# ---mapper---
+
+## 基础配置
+
+> 什么是通用Mapper？
+
+```
+通用Mapper就是为了解决单表增删改查，基于Mybatis的插件。
+开发人员不需要编写SQL，不需要在DAO中增加方法，只要写好实体类，就能支持相应的增删改查方法。
+```
+
+> 基础配置
+
+```xml
+<!-- https://mvnrepository.com/artifact/tk.mybatis/mapper-spring-boot-starter -->
+<dependency>
+    <groupId>tk.mybatis</groupId>
+    <artifactId>mapper-spring-boot-starter</artifactId>
+    <version>2.1.5</version>
+</dependency>
+```
+
+```properties
+#mapper
+mapper.mappers=com.example.friend.base.IBaseMapper
+mapper.not-empty=true
+mapper.identity=MYSQL
+
+#mybatis的sql打印
+logging.level.com.example.friend.mapper=debug
+
+#database
+spring.datasource.type=com.alibaba.druid.pool.DruidDataSource
+spring.datasource.driverClassName=com.mysql.cj.jdbc.Driver
+spring.datasource.url=jdbc:mysql://192.168.8.7:33306/demo_friend?useSSL=false&allowMultiQueries=true&serverTimezone=GMT%2B8
+spring.datasource.username=bluecardsoft
+spring.datasource.password=#$%_BC13439677375
+```
+
+```java
+@MapperScan("com.example.friend.mapper") //tk.mybatis.spring.annotation.MapperScan，启动类
+```
+
+> 实体类和接口
+
+```java
+@Data
+@AllArgsConstructor
+@NoArgsConstructor
+@Table(name = "table_emp")
+public class Employee {
+    @Id //主键id
+    @GeneratedValue(strategy = GenerationType.IDENTITY) //自增
+    private Integer empId;
+
+    @Column(name = "emp_name") //指定数据表中的列名
+    private String empName;
+    private Double empSalary;
+    private Integer empAge;
+}
+```
+
+```java
+public interface EmployeeMapper extends Mapper<Employee>, MySqlMapper<Employee> {}
+```
+
+> 测试方法
+
+```java
+public void selectAll() {
+    List<Employee> employees = employeeMapper.selectAll();
+    log.debug("selectAll: {}", JSON.toJSON(employees));
+}
+```
+
+```java
+public void selectByPrimaryKey() { //主键查询
+    Employee employee = employeeMapper.selectByPrimaryKey(5);
+    log.debug("{} - employee: {}", 5, JSON.toJSON(employee));
+}
+```
+
+```java
+public void selectOne() { //使用非空的值生成 WHERE 子句，在条件表达式中使用 "=" 进行比较    
+    Employee emp = new Employee(null, "bob", null, null);
+    Employee employee = employeeMapper.selectOne(emp);
+    log.debug("{} - selectOne: {}", JSON.toJSON(emp), JSON.toJSON(employee));
 }
 ```
