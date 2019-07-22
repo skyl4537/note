@@ -1066,29 +1066,82 @@ new出来的对象再注入其他bean就会 发生获取不到的现象。所以
         释放静态资源.
 
     
+#服务端发现
+    Eureka，负载均衡属于软负载，
+    消费者从服务端（如Eureka-Server）拉取已注册的生产者列表，
+    根据负载均衡策略从中选择一个生产者，然后发送请求。
+    整个过程都在客户端完成，并不需要服务端参与。
+
+#客户端负载均衡
+    
 
 
 
+#ribbon
+    服务发现       
+        
+    
+    服务选择规则
+    
+    
+    服务监听：检测失效服务
+
+@RequestBody 注解必须配合 @PostMapping 使用，不能用 @GetMapping
+
+#多模块
+    product-server：所有业务逻辑
+    
+    product-client：外部暴露接口
+    
+    product-common：公用的对象
+
+#统一配置中心
+    可以通过
 
 
 
+#网关
+    GET http://192.168.8.7:9002/friend/info
+    
+    #zuul端口
+    server.port=9011
+  
+    GET http://192.168.8.7:9011/demo-friend/friend/info
+    
+    
+    #配置网关路由
+    zuul.routes.demo-friend.path=/friends/**
+    zuul.routes.demo-friend.service-id=demo-friend
+    #简写以上配置
+    zuul.routes.demo-friend=/friends/**
 
+    GET http://192.168.8.7:9011/demo-friend/friend/info
+    GET http://192.168.8.7:9011/friends/friend/info
+    
 
+    #Actuator-暴露端点
+    management.endpoints.web.exposure.include=routes
+    
+    #查看已配置的网关路由（后者更为详细）
+    http://localhost:9011/actuator/routes
+    http://localhost:9011/actuator/routes/details
+    
 
+    #排除某些路由的通配
+    zuul.ignored-patterns=/**/friend/info
+    
+    #都不可访问
+    GET http://192.168.8.7:9011/demo-friend/friend/info
+    GET http://192.168.8.7:9011/friends/friend/info
 
+    
+    #排除某些微服务的路由
+    zuul.ignored-services=demo-friend
 
-
-
-
-
-
-
-
-
-
-
-
-
+    #不可访问
+    GET http://192.168.8.7:9011/demo-friend/friend/info
+    #可以访问
+    GET http://192.168.8.7:9011/friends/friend/info
 
 
 

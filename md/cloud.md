@@ -105,6 +105,19 @@ Dubbo 只是实现了服务治理，而 SpringCloud 下面有 21 个子项目（
 
 ```
 
+>随机端口号：采用随机端口的方式来设置各个服务实例
+
+```properties
+#两种方式。
+#只设置 server.port=0，虽然可以随机端口，但是在注册到Eureka时会出现一个问题：所有实例都使用了同样的实例名（如：demo-user）
+server.port=0
+eureka.instance.instance-id=${spring.application.name}:${random.int[1,100]}
+
+#这种方式有问题，将导致 项目端口，Eureka注册端口，Eureka显示端口都不一样。
+server.port=${random.int[10000,19999]}
+eureka.instance.instance-id=${spring.application.name}:${server.port}
+```
+
 ##基础配置
 
 > 父项目打包类型必须选择 pom 类型。
@@ -141,6 +154,24 @@ Dubbo 只是实现了服务治理，而 SpringCloud 下面有 21 个子项目（
     <java.version>1.8</java.version>
 </properties>
 
+<!--父项目锁定 spring-cloud 和 demo-common 版本-->
+<dependencyManagement>
+    <dependencies>
+        <dependency>
+            <groupId>org.springframework.cloud</groupId>
+            <artifactId>spring-cloud-dependencies</artifactId>
+            <version>${spring-cloud.version}</version>
+            <type>pom</type>
+            <scope>import</scope>
+        </dependency>
+        <dependency>
+            <groupId>com.example</groupId>
+            <artifactId>demo_common</artifactId>
+            <version>${demo_common.version}</version>
+        </dependency>
+    </dependencies>
+</dependencyManagement>
+
 <!--公共依赖-->
 <dependencies>
     <dependency>
@@ -165,19 +196,6 @@ Dubbo 只是实现了服务治理，而 SpringCloud 下面有 21 个子项目（
         <artifactId>spring-boot-starter-web</artifactId>
     </dependency>
 </dependencies>
-
-<!--父项目锁定 Spring-Cloud 版本-->
-<dependencyManagement>
-    <dependencies>
-        <dependency>
-            <groupId>org.springframework.cloud</groupId>
-            <artifactId>spring-cloud-dependencies</artifactId>
-            <version>${spring-cloud.version}</version>
-            <type>pom</type>
-            <scope>import</scope>
-        </dependency>
-    </dependencies>
-</dependencyManagement>
 
 <!--SpringBoot打包插件-->
 <build>
@@ -353,7 +371,6 @@ spring.jpa.open-in-view=false
     <dependency>
         <groupId>com.example</groupId>
         <artifactId>demo_common</artifactId>
-        <version>1.0-SNAPSHOT</version>
     </dependency>
 
     <dependency>
@@ -1075,7 +1092,7 @@ public class UserClientImpl implements UserClient {
 
 ```java
 @Component //加不加都行，无意义
-@FeignClient(name = "demo-user" //指定微服务名，不能包含下划线
+@FeignClient(name = "DEMO-USER" //指定微服务名，不能包含下划线
         , configuration = FeignConfig.class
         , fallback = UserClientImpl.class //接口的实现类
         // , fallbackFactory = UserClientFallBackFactory.class //接口实现 FallbackFactory，不推荐
@@ -1148,6 +1165,7 @@ public class FriendController {
 <artifactId>demo_hystrix</artifactId>
 
 <dependencies>
+    <!--引入服务监控-->
     <dependency>
         <groupId>org.springframework.cloud</groupId>
         <artifactId>spring-cloud-starter-netflix-hystrix-dashboard</artifactId>
@@ -1160,24 +1178,35 @@ server.port=8070
 ```
 
 ```java
-@EnableHystrixDashboard //启动类
+@EnableHystrixDashboard //服务监控
 ```
 
-> 服务消费者`demo-friend`
+> 服务监控の消费者`demo-friend`
+
+```xml
+<!-- 引入熔断器 hystrix -->
+<dependency>
+    <groupId>org.springframework.cloud</groupId>
+    <artifactId>spring-cloud-starter-netflix-hystrix</artifactId>
+</dependency>
+```
 
 ```properties
-#actuator
-#暴露所有端口
+#actuator：暴露所有端口
 management.endpoints.web.exposure.include=*
+```
+
+```java
+@EnableHystrix //熔断器
 ```
 
 > 监控测试
 
-```java
-//浏览器打开以下页面，出现豪猪，则证明启动成功
+```shell
+#浏览器打开以下页面，出现豪猪，则证明启动成功
 http://localhost:8070/hystrix
 
-//第一个输入框填写 服务消费者的 ip:端口/...
+#第一个输入框填写 服务消费者的 ip:端口/...
 http://localhost:9002/actuator/hystrix.stream
 
 Delay：该参数用来控制服务器上轮询监控信息的延迟时间，默认 2000ms。可通过配置该属性来降低客户端的网络和CPU消耗。
@@ -1254,6 +1283,9 @@ zuul.routes.demo-friend.custom-sensitive-headers=true
 #所有访问都加前缀
 zuul.prefix=/demo
 
+#查看所有的网关映射
+management.endpoints.web.exposure.include=routes
+
 #jwt
 jwt.config.key=bluecard
 ```
@@ -1262,6 +1294,16 @@ jwt.config.key=bluecard
 @EnableZuulProxy //zuul
 @EnableEurekaClient //eureka-client
 ```
+
+> 查看网关映射
+
+```shell
+#后者更为详细
+http://localhost:9011/actuator/routes
+http://localhost:9011/actuator/routes/details
+```
+
+
 
 > 配置网关后，使用 IDEA 的 REST_API 测试
 
@@ -1332,7 +1374,7 @@ Spring-Cloud-Config 支持配置服务放在配置服务的内存中（即本地
 将配置信息以REST接口的形式暴露
 ```
 
-```
+```shell
 两个角色：Config-Server，Config-Client。
 
 Config-Server 是一个可横向扩展、集中式的配置服务器，它用于集中管理应用程序各个环境下的配置，
@@ -1356,24 +1398,38 @@ Config-Client 用于操作存储在 Config-Server 中的配置内容。微服务
 server.port=12000
 spring.application.name=demo-config
 
+#eureka
+eureka.instance.prefer-ip-address=true
+eureka.client.service-url.defaultZone=http://localhost:8761/eureka
+
 #config
 spring.cloud.config.server.git.uri=https://gitee.com/skyl4537/demo-config.git
+#spring.cloud.config.server.git.username=
+#spring.cloud.config.server.git.password=
+#默认，Config-Server克隆下来的文件保存在 C:/Users/<当前用户>/AppData/Local/Temp 目录下
+#spring.cloud.config.server.git.basedir=/var/tmp
 ```
 
 ```xml
 <artifactId>demo_config</artifactId>
 
 <dependencies>
-    <!--添加依赖 Eureka-Server-->
+    <!--添加依赖 Config-Server-->
     <dependency>
         <groupId>org.springframework.cloud</groupId>
         <artifactId>spring-cloud-config-server</artifactId>
+    </dependency>
+    <!--引入依赖 Eureka-Client-->
+    <dependency>
+        <groupId>org.springframework.cloud</groupId>
+        <artifactId>spring-cloud-starter-netflix-eureka-client</artifactId>
     </dependency>
 </dependencies>
 ```
 
 ```java
-@EnableConfigServer //启动类
+@EnableConfigServer
+@EnableEurekaClient
 ```
 
 > 客户端の微服务：`demo-user`。
@@ -1393,13 +1449,15 @@ Bootstrap context 和 Application Context 有着不同的约定，所以新增�
 
 ```properties
 #config
-spring.cloud.config.name=user
+spring.cloud.config.name=friend
 spring.cloud.config.profile=dev
 spring.cloud.config.label=master
-#12000为 demo-config 的端口号
-spring.cloud.config.uri=http://localhost:12000
-#spring.cloud.config.discovery.enabled=true
-#spring.cloud.config.discovery.service-id=demo-config
+#此种配置可实现高可用，当有多个微服务 demo-config
+spring.cloud.config.discovery.service-id=demo-config
+spring.cloud.config.discovery.enabled=true
+
+#12000为 demo-config 的端口号（无法高可用）
+#spring.cloud.config.uri=http://localhost:12000
 ```
 
 ```xml
@@ -1409,6 +1467,16 @@ spring.cloud.config.uri=http://localhost:12000
     <artifactId>spring-cloud-starter-config</artifactId>
 </dependency>
 ```
+> 结果测试
+
+```properties
+#将 demo-user 模块的配置文件，重命名为 user.properties，上传至 git。可通过以下方式访问：
+http://localhost:12000/user.properties
+http://localhost:12000/user.yml
+http://localhost:12000/user.json         #自动转换格式
+http://localhost:12000/user-a.properties #a换成其他字符也是可以访问的
+```
+
 # Bus
 
 ##基础概念
@@ -1455,10 +1523,6 @@ spring.rabbitmq.port=5672
     <groupId>org.springframework.cloud</groupId>
     <artifactId>spring-cloud-starter-bus-amqp</artifactId>
 </dependency>
-<dependency>
-    <groupId>org.springframework.boot</groupId>
-    <artifactId>spring-boot-starter-actuator</artifactId>
-</dependency>
 ```
 
 > 测试`默认配置`
@@ -1493,7 +1557,7 @@ public class UserController {
 }
 ```
 
-```java
+```shell
 码云上的配置文件 'user-dev.properties'，新增字段 info.msg。
 代码中新增对外接口，获取自定义配置。一定不能忘了类注解 @RefreshScope
 

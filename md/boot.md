@@ -618,23 +618,22 @@ classpath:/static/img/sql.png   ---> http://127.0.0.1:8090/demo/img/sql.png
 >自定义静态资源目录：配置文件方式 + java代码方式
 
 ```properties
-#此配置会覆盖 springboot 默认配置，所以需要手动添加默认配置
-spring.mvc.static-path-pattern=/**
-spring.resources.static-locations=classpath:/static/,classpath:/log/,file:logs/
+spring.mvc.static-path-pattern=/log/**
+#此配置会覆盖 springboot 默认配置，所以需要手动追加默认配置
+spring.resources.static-locations=classpath:/log/,file:logs/,classpath:/META-INF/resources/,classpath:/resources/,classpath:/static/,classpath:/public/
 ```
 
 ```java
 //file:logs/ 表示jar包同级目录下的 /logs 目录
-classpath:/log/demo.log     ---> http://127.0.0.1:8090/demo/logs/demo.log
-jar包同级目录/logs/test.log   ---> http://127.0.0.1:8090/demo/logs/test.log
+//classpath:/log/demo.log     ---> http://127.0.0.1:8090/demo/logs/demo.log
+//jar包同级目录/logs/test.log   ---> http://127.0.0.1:8090/demo/logs/test.log
 
 @Configuration
 public class MyWebMvcConfigurer implements WebMvcConfigurer {
+
     @Override
     public void addResourceHandlers(ResourceHandlerRegistry registry) {
-        //url访问: x/logs/demo.log
-        //类路径/resources/log/demo.log (或) war包所在目录/logs/demo.log
-        registry.addResourceHandler("/**")
+        registry.addResourceHandler("/log/**")
             .addResourceLocations("classpath:/log/", "file:logs/");
     }
 }
@@ -963,9 +962,10 @@ Run Configuration... --> Arguments --> VM argumments填写: -javaagent:.\lib\spr
 ```
 ```properties
 #邮箱开启SMTP功能: https://blog.csdn.net/caimengyuan/article/details/51224269
+#授权码作为密码使用
 spring.mail.host=smtp.163.com
 spring.mail.username=***@163.com
-spring.mail.password=*** //授权码作为密码使用
+spring.mail.password=***
 ```
 > 邮件（普通 + 附件 + 静态资源 + 模板）
 

@@ -1,19 +1,19 @@
 #!/bin/bash
 
-//{--------<<<基础配置>>>--------------------------------
-#putty配置
-    字体大小: Windows -> Appearance -> Font Settings -> Consolas(12)
-    绿色字体: Windows -> Color -> Default Foregroud -> 0 255 0
-    保存配置: Session -> Saved Sessions -> 选中默认 -> Save -> Apply
+//{--------<<<基础配置>>>--------------------------------X
+// #putty配置
+    // 字体大小: Windows -> Appearance -> Font Settings -> Consolas(12)
+    // 绿色字体: Windows -> Color -> Default Foregroud -> 0 255 0
+    // 保存配置: Session -> Saved Sessions -> 选中默认 -> Save -> Apply
 
-#shell命令注意点: 
-    (1).区分大小写; cd和CD表示不同指令. 
-    (2).指令太长,可使用进行换行处理 \
+// #shell命令注意点: 
+    // (1).区分大小写; cd和CD表示不同指令. 
+    // (2).指令太长,可使用进行换行处理 \
 
-#输入(输出)重定向
-    #command > file        //将输出重定向到file
-    #command >> file    //将输出 [追加] 到file
-    #command < file        //将输入重定向到file
+// #输入(输出)重定向
+    // #command > file        //将输出重定向到file
+    // #command >> file    //将输出 [追加] 到file
+    // #command < file        //将输入重定向到file
 
 
 //}
@@ -226,52 +226,47 @@
 
 //}
 
-//{--------<<<常用指令>>>--------------------------------
+//{--------<<<常用指令>>>--------------------------------X
 '常用命令': http://www.runoob.com/w3cnote/linux-useful-command.html
 
 // #touch 新建空文件,或修改文件的时间属性.(ls -l 查看文件的时间属性)
     // touch file        //新建空文件file
-    
-
     
 // #清空文件
     // (1).  > file                //使用重定向方法
     // (2). true > file            //使用true命令重定向清空文件
     // (3). echo -n "" > file    //要加上"-n"参数,默认情况下会有"\n",即有个空行
     
+// #软件相关
+    // apt-get update                //更新安装列表
+
+    // dpkg -l | grep x            //从已安装软件中确定是否安装了软件x 
+    // apt-get --purge remove x    //删除软件及配置
+    // apt-get autoremove x        //卸载软件及其依赖的安装包
+    
+    // wget url //下载指定链接
+    
+// #系统相关
+    // lsb_release -a //系统相关信息
+    
+// #防火墙
+    // sudo apt-get install ufw            //安装ufw
+    // sudo ufw status/enable/disable        //查看/开启/关闭 (active / inactive)
+    // sudo ufw default deny        //开启防火墙,并随系统启动同时关闭所有外部对本机的访问. (本机访问外部正常)
+    
+    // sudo ufw allow 80            //允许外部访问80端口
+    // sudo ufw delete allow 80    //禁止外部访问80 端口
+    
+    // sudo ufw allow from 192.168.1.1    //允许此IP访问所有的本机端口
     
 
     
-#软件相关
-    apt-get update                //更新安装列表
-
-    dpkg -l | grep x            //从已安装软件中确定是否安装了软件x 
-    apt-get --purge remove x    //删除软件及配置
-    apt-get autoremove x        //卸载软件及其依赖的安装包
-    
-    wget url //下载指定链接
-    
-#系统相关
-    lsb_release -a //系统相关信息
-    
-#防火墙
-    sudo apt-get install ufw            //安装ufw
-    sudo ufw status/enable/disable        //查看/开启/关闭 (active / inactive)
-    sudo ufw default deny        //开启防火墙,并随系统启动同时关闭所有外部对本机的访问. (本机访问外部正常)
-    
-    sudo ufw allow 80            //允许外部访问80端口
-    sudo ufw delete allow 80    //禁止外部访问80 端口
-    
-    sudo ufw allow from 192.168.1.1    //允许此IP访问所有的本机端口
-    
-
-    
-#free -> 当前内存的使用.(-m: 以MB为单位)
-        parkmanager@bc-ai-server:/var/lib/webpark/logs/sm/task$ free -h
-                     total       used       free     shared    buffers     cached
-        Mem:          7.7G       7.3G       450M       176M       251M       3.7G
-        -/+ buffers/cache:       3.3G       4.4G
-        Swap:         7.9G       148M       7.7G
+// #free -> 当前内存的使用.(-m: 以MB为单位)
+        // parkmanager@bc-ai-server:/var/lib/webpark/logs/sm/task$ free -h
+                     // total       used       free     shared    buffers     cached
+        // Mem:          7.7G       7.3G       450M       176M       251M       3.7G
+        // -/+ buffers/cache:       3.3G       4.4G
+        // Swap:         7.9G       148M       7.7G
 
 //}
 
@@ -389,7 +384,7 @@ fi
 
 //}
 
-//{--------<<<awk命令>>>---------------------------------
+//{--------<<<awk命令>>>---------------------------------X
 awk是一种处理文本文件的语言,是一个强大的文本分析工具.
 
 #-F 相当于内置变量FS,指定分割字符, 默认'任何空格'

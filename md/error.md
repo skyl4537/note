@@ -258,13 +258,99 @@ windows - proferences - java – Installed JREs设置jdk为1.8
 2、'waiting on <0x000000076bf62500>'说明线程执行了wait方法之后，释放了monitor，进入到"Wait Set"队列，等待其它线程执行地址为'<0x000000076bf62500>'对象的notify方法，并唤醒自己，具体实现可以参考深入分析Object.wait/notify实现机制；
 ```
 
+## tomcat日志
 
+>取消Tomcat自动生成的日志
 
+```
+tomcat有五类日志 ：catalina、localhost、manager、admin、host-manager
 
+日志文件过大，且为问题排查不使用的日志，导致磁盘空间不足，项目异常关闭
+```
 
+> **catalina.out**
 
+```
+记录标准输出和标准出错。包含 tomcat 运行自己输出的日志以及应用里向 console 输出的日志。
 
+默认这个日志文件是不会进行自动切割的，需要借助其他工具进行切割。
+```
 
+```
+19-Sep-2018 09:53:30.082 INFO [main] org.apache.coyote.AbstractProtocol.start Starting ProtocolHandler ["http-nio-8080"]
+19-Sep-2018 09:53:30.099 INFO [main] org.apache.coyote.AbstractProtocol.start Starting ProtocolHandler ["ajp-nio-8009"]
+19-Sep-2018 09:53:30.106 INFO [main] org.apache.catalina.startup.Catalina.start Server startup in 1360 ms
+2018-09-19 16:52:10
+ [] [] [INFO]-[Thread: DefaultQuartzScheduler_Worker-7] 开始检查系统
+```
+
+>**catalina.YYYY-MM-DD.log**
+
+```
+记录tomcat自己运行的一些日志，这些日志还会输出到 catalina.out，但是应用向 console 输出的日志不会输出到此处，是tomcat的启动和暂停时的运行日志。
+
+注意，它和 catalina.out 里面的内容是不一样的。
+```
+
+```
+19-Sep-2018 09:53:30.064 INFO [localhost-startStop-1] org.apache.catalina.startup.HostConfig.deployDirectory Deployment of web application directory /opt/tomcat/webapps/manager has finished in 29 ms
+19-Sep-2018 09:53:30.082 INFO [main] org.apache.coyote.AbstractProtocol.start Starting ProtocolHandler ["http-nio-8080"]
+19-Sep-2018 09:53:30.099 INFO [main] org.apache.coyote.AbstractProtocol.start Starting ProtocolHandler ["ajp-nio-8009"]
+19-Sep-2018 09:53:30.106 INFO [main] org.apache.catalina.startup.Catalina.start Server startup in 1360 ms
+```
+
+> **localhost.YYYY-MM-DD.log**
+
+```
+主要是应用初始化（listener，filter，servlet）未处理的异常最后被 tomcat 捕获而输出的日志。
+也包含 tomcat 的启动和暂停时的运行日志,但它没有 catalina.2018-09-19.log 日志全。它只是记录了部分日志。
+```
+
+```
+19-Sep-2018 03:57:15.287 INFO [localhost-startStop-1] org.apache.catalina.core.ApplicationContext.log ContextListener: contextInitialized()
+19-Sep-2018 03:57:15.287 INFO [localhost-startStop-1] org.apache.catalina.core.ApplicationContext.log SessionListener: contextInitialized()
+19-Sep-2018 03:57:15.288 INFO [localhost-startStop-1] org.apache.catalina.core.ApplicationContext.log ContextListener: attributeAdded('StockTicker', 'async.Stockticker@2f62fc5f')
+```
+
+> **localhost_access_log.YYYY-MM-DD.txt**
+
+```
+访问 tomcat 的日志，请求时间和资源，状态码都有记录。
+```
+
+```
+192.168.1.220 - - [19/Sep/2018:03:57:42 -0400] "GET / HTTP/1.1" 200 11286
+192.168.1.220 - - [19/Sep/2018:03:57:42 -0400] "GET /tomcat.css HTTP/1.1" 200 5581
+192.168.1.220 - - [19/Sep/2018:03:57:42 -0400] "GET /tomcat.png HTTP/1.1" 200 5103
+```
+
+> **host-manager.YYYY-MM-DD.log**
+
+```
+记录 tomcat 自带的 manager 项目的日志信息的，未看到有什么重要的日志信息。
+```
+
+>**manager.YYYY-MM-DD.log**
+
+```
+tomcat 的 manager 项目专有的日志文件
+```
+
+> tomcat日志文件切割：这个文件大于 2G 时，会影响 tomcat 的运行。
+
+```properties
+#在tomcat根目录下建立 common/classes/log4j.properties，内容如下
+log4j.rootLogger=INFO, R 
+log4j.appender.R=org.apache.log4j.RollingFileAppender 
+log4j.appender.R.File=${catalina.home}/logs/tomcat.newlog  #设定日志文件名
+log4j.appender.R.MaxFileSize=100KB   #设定文件到100kb即分割
+log4j.appender.R.MaxBackupIndex=10   #设定日志文件保留的序号数
+log4j.appender.R.layout=org.apache.log4j.PatternLayout 
+log4j.appender.R.layout.ConversionPattern=%p %t %c - %m%n
+
+#在tomcat根目录下的 common/lib 下加入 log4j.jar 和 commons-logging.jar
+#重新启动tomcat即可。
+```
 
 
 

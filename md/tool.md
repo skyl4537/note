@@ -358,6 +358,34 @@ Build,Exe... - Build Tools - Gradle - Offline work
 
 
 
+# 常用工具
+
+## WinScp
+
+> 代理上网
+
+```
+登陆时，高级 - 连接 - 隧道 - (√)通过SSH隧道进行连接
+主机名：192.168.5.88；端口号：33022；用户名：sysman；密码：999999
+```
+
+## SecurityCRT
+
+> 代理上网
+
+```
+打开CRT界面，选项 - 全局选项 - 防火墙 - 添加（二者任选其一）
+名称：5.88；类型：SOCKES V5(username/pwd)；主机IP:192.168.5.88；端口号：33022；用户名：sysman；密码：999999
+
+名称：5.19；类型：HTTP(no auth)；用户名IP：192.168.5.19；密码：808
+```
+
+```
+打开连接页面，在待选连接点上右键 - 属性 - SSH2 - 防火墙：选择 5.88 或 5.19
+```
+
+
+
 
 
 #log
@@ -919,16 +947,21 @@ mvn site          #生成站点
 
 >依赖的范围：Scope 
 
-```
-compile  缺省值，适用于所有阶段，会随着项目一起发布。
-provided 类似compile，该依赖参与编译，测试，运行等阶段，但打包时不会打包进去，期望JDK、容器或使用者会提供这个依赖。如：servlet.jar，lombok。
-test     只在测试时使用，用于编译和运行测试代码。不会随项目发布。 
-runtime  无需参与项目的编译，只在后期的测试和运行时使用，如JDBC驱动，适用运行和测试阶段。
+```shell
+compile  #缺省值，适用于所有阶段，会随着项目一起发布。编译范围依赖在所有的 classpath 中可用，同时它们也会被打包。
+
+provided #类似compile，但期望JDK、容器或使用者会提供这个依赖。如：servlet.jar，lombok。
+         #例如，在开发 web 应用时，编译期需要一个 servlet.jar 来编译程序中的 servlet，但打包时，不需要此 servlet.jar。
+         #因为，程序运行时，由servlet容器（tomcat）来提供 servlet.jar。
+
+runtime #只在运行时使用，适用运行和测试阶段。如：JDBC驱动，
+
+test    #只在测试时使用，用于编译和运行测试代码。不会随项目发布。如：junit
 ```
 
 ```properties
 compile  #编译阶段(√); 测试阶段(√); 打包(√); 部署(√); 如: spring-core
-provied  #编译阶段(√); 测试阶段(√); 打包(x); 部署(x); 如: servlet-api（tomcat提供），lomboklombok
+provied  #编译阶段(√); 测试阶段(√); 打包(x); 部署(x); 如: servlet-api（tomcat提供），lombok
 test     #编译阶段(x); 测试阶段(√); 打包(x); 部署(X); 如: junit
 runtime  #编译阶段(x); 测试阶段(√); 打包(√); 部署(√); 如: mysql-connector-java
 ```
@@ -973,35 +1006,82 @@ true 该依赖只能在本项目中传递，不会传递到引用该项目的父
 
 ## 安装配置
 
-> 安装测试：https://maven.apache.org/download.cgi
+> 安装Mvn
 
- ```java
-配置系统环境变量，cmd命令验证'mvn -version'
- ```
+```shell
+下载解压：https://maven.apache.org/download.cgi
 
->eclipse使用mvn
-
-```java
-本地mvn：window - preferences - maven - installations - add - External - 本地maven路径，如：'D:/apache-maven-3.3.9'
-
-mvn仓库: window - preferences - maven - user_settings - add Global_Settings 和 User_Settings 都选择本地mvn的"settings.xml"文件
-如：'D:\apache-maven-3.3.9\conf\settings.xml'
+#Eclipse配置
+window - preferences - maven：
+    - installations - add - External - 本地maven路径  #如：'D:/apache-maven-3.3.9'
+    - user_settings - add Global_Settings 和 User_Settings 都选择本地mvn的"settings.xml"文件
+    #如：'D:\apache-maven-3.3.9\conf\settings.xml'
 ```
 
-> 配置mvn：配置文件 settings.xml
+> 搭建私服
+
+```shell
+将'nexus-2.12.0-01-bundle.zip'解压到任意非中文目录中。
+进入' 进入 nexus-2.12.0-01\bin\jsw\windows-x86-64'（对应自己系统）
+    - install-nexus.bat   #安装服务
+    - start-nexus.bat     #开启服务
+    - stop-nexus.bat      #停止服务
+    - uninstall-nexus.bat #卸载服务
+
+修改nexus端口（默认8081）：'nexus-2.12.0-01\conf\nexus.properties'中的'application-prot=8081'
+
+以用户名'admin'，密码'admin123'登陆网址： http://localhost:8081/nexus
+```
+
+>配置Mvn：`D:\apache-maven-3.3.9\conf\settings.xml`
 
 ```xml
 <!--配置本地仓库-->
 <localRepository>D:\apache-maven-3.3.9-repo</localRepository>
+```
 
-<!--配置阿里云镜像加速下载-->
+```xml
+<!--配置阿里云镜像加速下载（可选）-->
 <mirror> 
     <id>alimaven</id>
     <name>aliyun maven</name> 
     <url>http://maven.aliyun.com/nexus/content/groups/public/</url> 
     <mirrorOf>central</mirrorOf> 
 </mirror>
+```
 
+```xml
+<!--配置jdk-->
+<profile>    
+    <id>jdk-1.8</id>    
+    <activation>    
+        <activeByDefault>true</activeByDefault>    
+        <jdk>1.8</jdk>    
+    </activation>    
+    <properties>    
+        <maven.compiler.source>1.8</maven.compiler.source>    
+        <maven.compiler.target>1.8</maven.compiler.target>    
+        <maven.compiler.compilerVersion>1.8</maven.compiler.compilerVersion>    
+    </properties>    
+</profile>
+```
+
+```xml
+<!--配置私服-->
+<profile>  
+    <id>nexus</id>  
+    <repositories>
+        <repository>  
+            <id>central</id>
+            <url>http://192.168.102.20:8081/nexus/content/groups/public</url>  
+            <releases><enabled>true</enabled></releases>  
+            <snapshots><enabled>true</enabled></snapshots>  
+        </repository>  
+    </repositories>  
+</profile>
+```
+
+```xml
 <!--配置下载jar包源码和文档-->
 <!--相应jar包或整个项目，右键'Maven->Download_Sources/javaDoc'，即可下载-->
 <profile>  
@@ -1011,27 +1091,59 @@ mvn仓库: window - preferences - maven - user_settings - add Global_Settings �
         <downloadJavadocs>true</downloadJavadocs>             
     </properties>  
 </profile>
+```
 
-<!--配置mvn私服-->
-<profile>  
-    <id>nexus</id>  
-    <repositories> //<!--私服库地址-->
-        <repository>  
-            <id>central</id>
-            <url>http://192.168.102.20:8081/nexus/content/groups/public</url>  
-            <releases><enabled>true</enabled></releases>  
-            <snapshots><enabled>true</enabled></snapshots>  
-        </repository>  
-    </repositories>  
-    <pluginRepositories> //<!--插件库地址-->
-        <pluginRepository>  
-            <id>central</id>  
-            <url>http://maven.com:8081/nexus/content/groups/public</url>  
-            <releases><enabled>true</enabled></releases>  
-            <snapshots><enabled>true</enabled></snapshots>  
-        </pluginRepository>  
-    </pluginRepositories>  
-</profile>
+```xml
+<!--激活私服和下载源码的profile-->
+<activeProfiles>
+    <activeProfile>nexus</activeProfile>
+    <activeProfile>downloadSources</activeProfile>  
+</activeProfiles>
+```
+
+```xml
+<!--配置镜像，maven连接私服-->
+<mirror>
+    <id>nexus-releases</id>
+    <mirrorOf>*</mirrorOf>
+    <url>http://192.168.102.20:8081/nexus/content/groups/public</url>
+</mirror>
+<mirror>
+    <id>nexus-snapshots</id>
+    <mirrorOf>*</mirrorOf>
+    <url>http://192.168.102.20:8081/nexus/content/repositories/apache-snapshots/</url>
+</mirror>
+```
+
+> 将项目发布到私服，完成以下配置，然后项目右键：`run maven - deploy`
+
+```xml
+<!--pom文件配置，与<build>节点同级-->
+<distributionManagement>
+    <repository>
+        <id>releases</id>
+        <url>http://192.168.102.20:8081/nexus/content/repositories/releases</url>
+    </repository>
+    <snapshotRepository>
+        <id>snapshots</id>
+        <url>http://192.168.102.20:8081/nexus/content/repositories/snapshots</url>
+    </snapshotRepository>
+</distributionManagement>
+```
+
+```xml
+<!--maven的settings配置-->
+<!--其中，其中，<server>节点的<id>和 pom.xml 中<repository>节点的<id>相对应-->
+<server>
+    <id>releases</id>
+    <username>admin</username>
+    <password>admin123</password>
+</server>
+<server>
+    <id>snapshots</id>
+    <username>admin</username>
+    <password>admin123</password>
+</server>
 ```
 
 >配置nexus的阿里云仓库
@@ -1052,22 +1164,26 @@ Remote Storage Location: http://maven.aliyun.com/nexus/content/groups/public/
 >加入第三方jar
 
 ```xml
-<!--（1）配置mvn-->
+<!--配置settings-->
 <server>
     <id>thirdparty</id>
     <username>admin</username>
     <password>admin123</password>
 </server>
+```
 
-<!--（2）使用cmd命令将第三方包加入私服-->
-<!--其中，-DgroupId="随意指定"; -DartifactId="第三方jar包名"; -Dversion="版本号"; -Dfile="jar所在本地路径"; -Durl="私服路径"-->
+```shell
+#使用以下cmd命令将第三方包加入私服
+#其中，-DgroupId="随意指定"; -DartifactId="第三方jar包名"; -Dversion="版本号"; -Dfile="jar所在本地路径"; -Durl="私服路径"
 mvn deploy:deploy-file -DgroupId=com.bluecard -DartifactId=wxpay-sdk-0.0.3 -Dversion=0.0.3 -Dpackaging=jar -Dfile=G:\wxpay-sdk-0.0.3.jar -Durl=http://192.168.102.20:8081/nexus/content/repositories/thirdparty/ -DrepositoryId=thirdparty
+```
 
+```xml
 <!--项目pom.xml添加引用-->
 <dependency>
-    <groupId>com.bluecard</groupId> <!--同上文 -DgroupId-->
-    <artifactId>wxpay-sdk-0.0.3</artifactId> <!--同上文 -DartifactId-->
-    <version>0.0.3</version> <!--同上文 -Dversion-->
+    <groupId>com.bluecard</groupId> <!--同上文 -DgroupId，-DartifactId，-Dversion-->
+    <artifactId>wxpay-sdk-0.0.3</artifactId>
+    <version>0.0.3</version>
 </dependency>
 ```
 
@@ -1078,24 +1194,30 @@ mvn deploy:deploy-file -DgroupId=com.bluecard -DartifactId=wxpay-sdk-0.0.3 -Dver
 ```xml
 使用标签<dependency>把另一个项目的 jar 引入到当前项目，自动下载另一个项目所依赖的其他项目
 ```
+> 继承 & 聚合
+
+```shell
+#都是统一管理各个子项目的依赖版本（子项目GV默认继承自父项目）。
+1、聚合项目：可在父项目的 pom.xml 中查看所有子项目。
+2、继承项目：必须得先 install 父项目，再 install 子项目。'聚合'则可以直接 install 子项目
+```
+
 >继承关系
 
 ```xml
 <!--pom类型表示逻辑父项目，只要一个项目有子项目，则它必须是 pom 类型-->
-<!--父项目必须是 pom 类型，如果子项目(jar/war)还是其他项目的父项目，子项目也必须是 pom 类型-->
 
-<!--(1)继承-父项目：pom.xml 中看不到有哪些子项目（只在逻辑上具有父子关系）-->
-
-<!--(2)继承-子项目：出现<parent>标签，GV标签同父项目，即可省-->
+<!--(1)继承の父项目：pom.xml 中看不到有哪些子项目（只在逻辑上具有父子关系）-->
+<!--(2)继承の子项目：出现<parent>标签，GV标签同父项目，即可省-->
 <parent>
     <groupId>com.example</groupId>
     <artifactId>parent</artifactId>
     <version>0.0.1-SNAPSHOT</version>
 </parent>
 
-<!-- <groupId>com.example</groupId> --> 可省
+<!-- <groupId>com.example</groupId> -->
 <artifactId>child</artifactId>
-<!-- <version>0.0.1-SNAPSHOT</version> --> 可省
+<!-- <version>0.0.1-SNAPSHOT</version> -->
 ```
 > 聚合关系（多模块模式，微服务项目推荐）
 
@@ -1103,32 +1225,29 @@ mvn deploy:deploy-file -DgroupId=com.bluecard -DartifactId=wxpay-sdk-0.0.3 -Dver
 <!--前提是继承关系，父项目会把子项目包含到父项目中-->
 <!--新建聚合项目的子项目时，点击父项目右键新建 "Maven Module"，而不是 "maven project"-->
 
-<!--(1)聚合-父项目：可在 pom.xml 中查看所有子项目-->
+<!--(1)聚合の父项目：可在 pom.xml 中查看所有子项目-->
 <groupId>com.example</groupId>
-<artifact>parent-module</artifact>
-<version>1.0.0-SNAPSHOT</version>
-<packaging>pom</packaging> <!--打包方式必须是 pom 类型-->
-<name>My Parent Module</name>
+<artifactId>demo_parent</artifactId>
+<version>1.0-SNAPSHOT</version>
+<packaging>pom</packaging> <!--父项目的打包类型必须设置为 pom-->
+
 <modules>
-    <module>child-module-1</module>
-    <module>child-module-2</module>
+    <module>demo_common</module>
+    <module>demo_user</module>
+    <module>demo_friend</module>
 </modules>
 
-<!--(2)聚合-子项目：可在 pom.xml 中查看父项目-->
+<!--(2)聚合の子项目：可在 pom.xml 中查看父项目-->
 <parent>
+    <artifactId>demo_parent</artifactId>
     <groupId>com.example</groupId>
-    <artifactId>parent-module</artifactId>
-    <version>0.0.1-SNAPSHOT</version>
+    <version>1.0-SNAPSHOT</version>
 </parent>
-<artifactId>child-module-1</artifactId>
+<modelVersion>4.0.0</modelVersion>
+
+<artifactId>demo_user</artifactId>
 ```
-> 继承和聚合的意义和区别
-
-    意义: 统一管理各个子项目的依赖版本.（子项目GV默认继承自父项目）
-    区别: (1).聚合项目 可在父项目的 pom.xml 中查看所有子项目.
-         (2).'继承'必须得先install父项目，再install子项目； '聚合'则可以直接install子项目
-
-> 依赖管理：将父项目中的<dependencies>和<plugin>，用<dependencyManagement>和<pluginManagement>管理起来。
+> 依赖管理：`dependencyManagement`和`pluginManagement`
 
 ```xml
 <!--(1).父项目中，声明所有可能用到的jar； 再使用<properties>抽取版本,方便集中管理-->
@@ -1146,7 +1265,7 @@ mvn deploy:deploy-file -DgroupId=com.bluecard -DartifactId=wxpay-sdk-0.0.3 -Dver
     </dependencies>
 </dependencyManagement>
 
-<!--(2)子项目中，也不是立即引用，也得写GAV，不过<Version>继承自父项目，即可省-->
+<!--(2)子项目中，也不是立即引用，也得写GA，<Version>继承自父项目，可省-->
 <dependencies>
     <dependency>
         <groupId>org.springframework</groupId>
@@ -1164,9 +1283,16 @@ mvn deploy:deploy-file -DgroupId=com.bluecard -DartifactId=wxpay-sdk-0.0.3 -Dver
 <resources>
     <resource>
         <directory>src/main/java</directory>
+        <includes>
+            <include>**/*.xml</include>
+        </includes>
     </resource>
     <resource>
         <directory>src/main/resources</directory>
+        <includes>
+            <include>**/*.xml</include>
+            <include>**/*.properties</include>
+        </includes>
     </resource>
 </resources>
 ```

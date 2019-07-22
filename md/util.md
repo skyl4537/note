@@ -471,6 +471,46 @@ int[] insert = ArrayUtils.insert(3, array, 0, 69); //在 index 为3的位置添�
 ```java
 ArrayUtils.reverse(array); //数组反转
 ```
+## BeanUtils
+
+>copyProperties
+
+```java
+//原理 target.set + source的属性名（source.get + source的属性名）：所有source必须有get方法，target必须有set方法
+
+springframework.beans.BeanUtils.copyProperties(A， B); //赋值：A->B
+
+commons.beanutils.BeanUtils.copyProperties(A, B)       //赋值：B->A
+```
+
+```
+1、属性名相同，类型相同。可以被复制
+
+2、基本类型 与 其对应的封装类型。可以被复制
+
+3、封装类型 与 其对应的基本类型。可以被复制
+
+4、其他统统不行
+```
+
+```java
+//如果希望哪个属性不被复制，使用重载方法。ignoreProperties 传属性名称
+public static void copyProperties(Object source, Object target, String... ignoreProperties) throws BeansException
+```
+
+```java
+//BeanUtils.copyProperties()对bean属性进行复制，属于浅复制。且不能复制集合和数组
+
+//对于 list，map，数组等，不能通过以上方法进行复制的，可通过 JSON 工具实现。前提是需要有无参构造
+List<Dog> A = new ArrayList<>();
+List<Dog> B = new ArrayList<>();
+B = JSON.parseArray(JSON.toJSONString(A), Dog.class);
+```
+
+
+
+
+
 # fastjson
 
 ##基础概念
@@ -595,6 +635,21 @@ List<Employee> employees = mapper.readValue(jsonArrary, list);
 ```java
 List<Employee> values = mapper.readValue(jsonArrary, new TypeReference<List<Employee>>() {}); //String -> list/map
 ```
+
+> 自定义JSON的key值
+
+```java
+@Data
+public class Employee {
+    @JsonProperty("emp_id") //默认，JSON的key为属性名，即id。{"id":1,"name":"小王"}
+    private Integer id;
+    
+    @JsonProperty("emp_name") //自定义JSON的key值。{"emp_id":1,"emp_name":"小王"}
+    private String name;
+}
+```
+
+
 
 # HttpClient
 

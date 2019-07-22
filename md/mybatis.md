@@ -1199,10 +1199,11 @@ Spring Data Redis  -> //通过简单配置，实现对reids各种操作，异常
 ```properties
 spring.jpa.database=mysql
 spring.jpa.show-sql=true
+spring.jpa.generate-ddl=true
 
 #可选参数-create: 每次启动都会删除旧表，新建一个空表
 #可选参数-update: 根据实体类创建/更新数据库表
-spring.jpa.hibernate.ddl-auto=update
+#spring.jpa.hibernate.ddl-auto=update
 ```
 > 实体类
 
@@ -1286,7 +1287,7 @@ public interface EmployeeRepoDao extends Repository<Employee, Integer> {
 
 #常用接口
 
-> `Repository`：Spring-Data-JPA 顶层接口，标识接口，空接口。
+> `Repository`：Spring-Data-JPA 顶层接口，标识接口，空接口。`常用接口：JpaRepository`
 
 > `CrudRepository`：最基础的CRUD，extends Repository
 
@@ -1518,7 +1519,7 @@ public void findMany2Many() {
 ```
 # ---mapper---
 
-## 基础配置
+# 基础配置
 
 > 什么是通用Mapper？
 
@@ -1582,26 +1583,55 @@ public class Employee {
 public interface EmployeeMapper extends Mapper<Employee>, MySqlMapper<Employee> {}
 ```
 
+#常用方法
+
 > 测试方法
 
 ```java
-public void selectAll() {
-    List<Employee> employees = employeeMapper.selectAll();
-    log.debug("selectAll: {}", JSON.toJSON(employees));
-}
-```
+//xxxByPrimaryKey()：需要使用 @Id 注解标明主键，否则，通用 Mapper 会将所有实体类字段作为联合主键。
 
-```java
 public void selectByPrimaryKey() { //主键查询
     Employee employee = employeeMapper.selectByPrimaryKey(5);
-    log.debug("{} - employee: {}", 5, JSON.toJSON(employee));
 }
 ```
 
 ```java
-public void selectOne() { //使用非空的值生成 WHERE 子句，在条件表达式中使用 "=" 进行比较    
-    Employee emp = new Employee(null, "bob", null, null);
-    Employee employee = employeeMapper.selectOne(emp);
-    log.debug("{} - selectOne: {}", JSON.toJSON(emp), JSON.toJSON(employee));
+//xxxSelective：非主键字段如果为 null 值，则不加入到 SQL 语句中。
+UPDATE table_emp SET emp_salary = ? WHERE emp_id = ?
+
+public void updateByPrimaryKeySelective() {
+    Employee employee = new Employee(7, null, 2222.22, null);    
+    int update = employeeMapper.updateByPrimaryKeySelective(employee);
 }
 ```
+
+```java
+//自增主键直接赋值到 employee
+INSERT INTO table_emp ( emp_id,emp_name,emp_salary,emp_age ) VALUES( ?,?,?,? )
+SELECT LAST_INSERT_ID()
+
+public void insert() { 
+    Employee employee = new Employee(null, "xiao3", 5555.55, 20);
+    int insert = employeeMapper.insert(employee);
+}
+```
+
+```java
+//使用非空的值生成 WHERE 子句，在条件表达式中使用 "=" 进行比较
+
+public void selectOne() {
+    Employee emp = new Employee(null, "bob", null, null);
+    Employee employee = employeeMapper.selectOne(emp);
+}
+```
+
+```java
+//同上。使用非空的值生成 WHERE 子句。特别注意，当参数为 null 或者 参数字段都为 null 时，将生成可怕的sql
+DELETE FROM table_emp
+
+public void delete() {
+    Employee employee = null;
+    int delete = employeeMapper.delete(employee);
+}
+```
+

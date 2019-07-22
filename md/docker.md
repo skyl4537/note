@@ -641,7 +641,8 @@ loopback_users.guest = false #false：远程访问；true：本地访问
 #rabbitmq
 spring.rabbitmq.host=192.168.5.23
 spring.rabbitmq.port=5672
-spring.rabbitmq.username=guest //默认，可省
+#默认，可省
+spring.rabbitmq.username=guest
 spring.rabbitmq.password=guest
 ```
 
@@ -744,7 +745,7 @@ rabbitTemplate.convertAndSend("exchange", "routing key", new Object());
 
 > 三种模式的区别
 
-```
+```shell
 fanout（广播）：Queue 只要连上 Exchange，就能收到其中的 Msg
 
 direct（直接）：Queue 不仅要连上 Exchange，并且 E Q 之间 Binding 的 RK 还必须和 Msg 的 RK 完全一致
@@ -888,7 +889,7 @@ public class ErrorConsumer {
 
 需要将 Queue 绑定到 Exchange 上，要求该消息与 Routing Key完全匹配。如果一个队列绑定到该交换机上要求路由键 “dog”，则只有被标记为“dog”的消息才被转发，不会转发dog.puppy，也不会转发dog.guard，只会转发dog。 
 
-```
+```shell
 1.这种模式，可以自定义 Exchange，也可以使用自带的”"（该Exchange的名字为空字符串，下文称其为 Default Exchange）
 
 2.这种模式下不需要将Exchange进行任何绑定(binding)操作
@@ -982,14 +983,14 @@ public class InfoConsumer {
 
 > Topic：多对多，任何发送到 Topic Exchange 的消息都会被转发到所有关心 Routing Key 中指定话题的Queue上。
 
-```
+```shell
 1.每个队列都有其关心的主题，所有的消息都带有一个标题（RouteKey），Exchange会将消息转发到所有关注主题能与RouteKey模糊匹配的队列。
 
 2.这种模式需要RouteKey，也许要提前绑定Exchange与Queue。
 
-3.在进行绑定时，要提供一个该队列关心的主题，如“#.log.#”表示该队列关心所有涉及log的消息(一个RouteKey为”MQ.log.error”的消息会被转发到该队列)。
+3.在进行绑定时，要提供一个该队列关心的主题，如“\#.log.\#”表示该队列关心所有涉及log的消息(一个RouteKey为”MQ.log.error”的消息会被转发到该队列)。
 
-4.“#”表示0个或若干个关键词，“*”表示一个关键词。如“log.*”能与“log.warn”匹配，无法与“log.warn.timeout”匹配；但是“log.#”能与上述两者匹配。
+4.“\#”表示0个或若干个关键词，“*”表示一个关键词。如“log.*”能与“log.warn”匹配，无法与“log.warn.timeout”匹配；但是“log.\#”能与上述两者匹配。
 
 5.同样，如果Exchange没有发现能够与RouteKey匹配的Queue，则会抛弃此消息。
 ```

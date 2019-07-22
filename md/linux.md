@@ -2,13 +2,40 @@
 
 
 
-# shell基础
+# 基础命令
 
 ## 系统相关
 
 > 命令格式
 
-linux区分大小写；命令过长，则使用 \ 进行换行。
+```shell
+linux区分大小写 "；" 命令过长，则使用 \ 进行换行
+
+cmd > file ： #将输出重定向【覆盖】到file
+cmd >> file： #将输出重定向【追加】到file 
+cmd < file ： #读取file作为输入
+```
+
+> putty配置
+
+```
+字体大小: Windows -> Appearance -> Font Settings -> Consolas(12)
+绿色字体: Windows -> Color -> Default Foregroud -> 0 255 0
+保存配置: Session -> Saved Sessions -> 选中默认 -> Save -> Apply
+```
+
+> 系统相关信息
+
+```shell
+hostname          #查看主机名
+
+uname -a          #显示电脑以及操作系统的相关信息
+cat /proc/version #查看正在运行的内核版本
+
+lsb_release -a    #ubuntu-系统
+
+cat /proc/version #内核版本
+```
 
 > 关机重启（reboot）
 
@@ -78,6 +105,48 @@ w: #当目录有写入（w）权限时，将具有移动该目录结构清单的
    (2). 删除已经存在的档案与目录（不论该档案是属于谁）
    (3). 将已存在的档案或目录进行更名
    (4). 搬移该目录内的档案，目录位置
+```
+
+> 防火墙
+
+```shell
+firewall-cmd --state                 #CentOS -> 防火墙状态
+
+service firewalld start/restart/stop #开启
+
+firewall-cmd --list-all              #查看防火墙规则
+
+firewall-cmd --query-port=8080/tcp                #查询端口是否开放
+firewall-cmd --permanent --add-port=80/tcp        #开放80端口
+firewall-cmd --permanent --add-port=8080-8085/tcp #开发8080到8085之间的端口
+firewall-cmd --permanent --remove-port=8080/tcp   #移除端口
+
+firewall-cmd --permanent --list-ports             #查看防火墙的开放的端口
+firewall-cmd --reload                             #重启防火墙（修改配置后要重启防火墙）
+```
+
+```shell
+sudo apt-get install ufw        #ubuntu -> 安装ufw
+
+sudo ufw status/enable/disable  #查看/开启/关闭（active/inactive）
+sudo ufw default deny           #开启防火墙，并随系统启动同时关闭所有外部对本机的访问。(本机访问外部正常)
+
+sudo ufw allow 80               #允许外部访问80端口
+sudo ufw delete allow 80        #禁止外部访问80 端口
+
+sudo ufw allow from 192.168.1.1 #允许此IP访问所有的本机端口
+```
+
+> 软件相关
+
+```shell
+apt-get update             #更新安装列表
+
+dpkg -l | grep x           #从已安装软件中确定是否安装了软件x 
+apt-get --purge remove x   #删除软件及配置
+apt-get autoremove x       #卸载软件及其依赖的安装包
+
+wget url                   #下载指定链接
 ```
 
 > RPM软件包管理器（RPM Package Manager）用于联网下载安装包
@@ -980,6 +1049,21 @@ df -lh
 du -h --max-depth=1 /var/lib/webpark/logs | sort -nr  #相结合使用,查看磁盘情况
 ```
 
+##free
+
+> 用于显示内存状态
+
+```shell
+#-m： 以MB为单位显示内存使用情况
+#-h： 以合适的单位显示内存使用情况，最大为三位数，自动计算对应的单位值
+#-s<间隔秒数>： 持续观察内存使用状况
+#-t： 显示内存总和列
+
+free -hts 3 #3s刷新一次，内存的使用情况
+```
+
+
+
 ## zip
 
 >压缩和解压（unzip）
@@ -1044,6 +1128,39 @@ tar -g snapshot -zcvf test2.tar.gz test    #第3次归档(空的，因为没有�
 ln src dest    #在选定的位置上生成一个和源文件大小相同的文件
 
 ln –s src dest #只在指定的位置上生成一个文件的镜像，不会占用磁盘空间，类似"快捷方式"
+```
+
+## awk
+
+> 一种处理文本文件的语言，一个强大的文本分析工具
+
+```shell
+#-F：相当于内置变量FS，指定分割字符，默认"任何空格"
+
+awk '{print $1,$3}' file                #每行按默认进行分割，输出分割后的第1，3项
+awk '{printf "%3s %-2s\n",$1,$3}' file  #格式化输出，%3s显示长度最小为3个字符，不足右侧补空格；%-2s左侧补
+
+awk -F',' '{print $1,$3}' file          #自定义按','分割，默认不起作用
+awk -F'[, ]' '{print $1}' file          #多个分隔符使用 [] 括起来；先用','分割，再用' '分割
+awk 'BEGIN{FS="[, ]"} {print $1}' file  #使用内建变量，效果同上
+```
+
+```shell
+#-v 设置变量
+awk -va=1 '{print $1,$1+a}' file  #分割后第1项和变量a相加
+
+1 2 3
+A B C #源文件
+
+1 2
+A 1 #处理后输出。（第一项为数字则直接相加，第一项不为数字则当做0进行相加）
+
+awk -va=1 -vb=s '{print $1,$1+a,$1b}' file #分割后，第1项和变量a相加，第1项和变量b拼接
+```
+
+```shell
+#运算符
+awk '$1>0 && $2=="#" {print $1,$3}' file #过滤第1列大于0，且第2列等于字符串"#"的行，再输出结果的第1，3列。（对于非数字，按照ASCII进行比较）
 ```
 
 
