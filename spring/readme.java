@@ -1127,7 +1127,7 @@ new出来的对象再注入其他bean就会 发生获取不到的现象。所以
     http://localhost:9011/actuator/routes/details
     
 
-    #排除某些路由的通配
+    #排除某些路由的通配，如排除路径中包含'/friend/info'
     zuul.ignored-patterns=/**/friend/info
     
     #都不可访问
@@ -1135,7 +1135,7 @@ new出来的对象再注入其他bean就会 发生获取不到的现象。所以
     GET http://192.168.8.7:9011/friends/friend/info
 
     
-    #排除某些微服务的路由
+    #忽略原真实服务名（忽略全部使用*）
     zuul.ignored-services=demo-friend
 
     #不可访问
@@ -1146,18 +1146,135 @@ new出来的对象再注入其他bean就会 发生获取不到的现象。所以
 
 
 
+#zuul
+#配置请求URL的请求规则，指定Eureka注册中心中的服务id，转发请求头（默认过滤请求头）
+zuul.routes.demo-user.path=/users/**
+zuul.routes.demo-user.service-id=demo-user
+zuul.routes.demo-user.custom-sensitive-headers=true
+zuul.routes.demo-friend.path=/friends/**
+zuul.routes.demo-friend.service-id=demo-friend
+zuul.routes.demo-friend.custom-sensitive-headers=true
+#忽略所有微服务
+#zuul.ignored-services=*
+#所有访问都加前缀
+zuul.prefix=/demo
+
+#查看所有的网关映射
+management.endpoints.web.exposure.include=routes
 
 
+// ##maven
+// #一个项目就是一个工程
+// 如果项目非常庞大，就不适合使用package来划分模块，最好是每一个模块对应一个工程，利于分工协作。
+// 借助于maven就可以将一个项目拆分成多个工程
+
+// #项目中使用jar包，需要 复制+粘贴 项目的lib中
+// 同样的jar包重复的出现在不同的项目工程中，你需要做不停的复制粘贴的重复工作。
+// 借助于maven，可以将jar包保存在“仓库”中，不管在哪个项目只要使用引用即可就行。
+
+// #jar包需要的时候每次都要自己准备好或到官网下载
+// 借助于maven我们可以使用统一的规范方式下载jar包，规范
+
+// #jar包版本不一致的风险
+// 不同的项目在使用jar包的时候，有可能会导致各个项目的jar包版本不一致，导致未执行错误。
+// 借助于maven，所有的jar包都放在“仓库”中，所有的项目都使用仓库的一份jar包。
+
+// #一个jar包依赖其他的jar包需要自己手动的加入到项目中
+// 借助maven，它会自动的将依赖的jar包导入进来。
 
 
+// 构建：把动态的Web工程经过编译得到的编译结果部署到服务器上的整个过程。
 
 
+// 清理clean：将以前编译得到的旧文件class字节码文件删除
+// 编译compile：将java源程序编译成class字节码文件
+// 测试test：自动测试，自动调用junit程序
+// 报告report：测试程序执行的结果
+// 打包package：动态Web工程打War包，java工程打jar包
+// 安装install：Maven特定的概念-----将打包得到的文件复制到“仓库”中的指定位置
+// 部署deploy：将动态Web工程生成的war包复制到Servlet容器下，使其可以运行
+
+// #执行maven命令必须进入到 pom.xml 的目录中进行执行
+// mvn clean：清理
+// mvn compile：编译主程序
+// mvn test-compile：编译测试程序
+// mvn test：执行测试
+// mvn package：打包
+// mvn install：安装
 
 
+// #依赖
+// 如果依赖的是自己或者团队开发的maven工程，需要先使用install命令把被依赖的maven工程的jar包导入到本地仓库中
 
 
-
-
-
-
+// #依赖范围
+// compile，默认值，适用于所有阶段（开发、测试、部署、运行），本jar会一直存在所有阶段。
+// provided，只在开发、测试阶段使用，目的是不让Servlet容器和你本地仓库的jar包冲突 。如servlet.jar。
+// runtime，只在运行时使用，如JDBC驱动，适用运行和测试阶段。
+// test，只在测试时使用，用于编译和运行测试代码。不会随项目发布。
+// system，类似provided，需要显式提供包含依赖的jar，Maven不会在Repository中查找它。
     
+// #生命周期
+
+// compile  #缺省值，适用于所有阶段，会随着项目一起发布。编译范围依赖在所有的 classpath 中可用，同时它们也会被打包。
+
+// provided #类似compile，但期望JDK、容器或使用者会提供这个依赖。如：servlet.jar，lombok。
+         // #例如，在开发 web 应用时，编译期需要一个 servlet.jar 来编译程序中的 servlet，但打包时，不需要此 servlet.jar。
+         // #因为，程序运行时，由servlet容器（tomcat）来提供 servlet.jar。
+
+// runtime #只在运行时使用，适用运行和测试阶段。如：JDBC驱动，
+
+// test    #只在测试时使用，用于编译和运行测试代码。不会随项目发布。如：junit
+
+// compile  #编译阶段(√); 测试阶段(√); 打包(√); 部署(√); 如: spring-core
+// provied  #编译阶段(√); 测试阶段(√); 打包(x); 部署(x); 如: servlet-api（tomcat提供），lombok
+// test     #编译阶段(x); 测试阶段(√); 打包(x); 部署(X); 如: junit
+// runtime  #编译阶段(x); 测试阶段(√); 打包(√); 部署(√); 如: mysql-connector-java
+
+// 依赖的传递：Optional
+
+// true 该依赖只能在本项目中传递，不会传递到引用该项目的父项目中，父项目需要主动引用该依赖才行。
+
+// //A依赖B，B依赖C，A能否使用C呢？
+// '非compile'范围的依赖不能传递，必须在有需要的工程 A 中单独加入 C.
+
+// 依赖的排除
+ 
+// <dependency>
+    // <groupId>org.springframework.boot</groupId>
+    // <artifactId>spring-boot-starter-web</artifactId>
+    // <exclusions>
+        // <exclusion>
+            // <artifactId>spring-boot-starter-logging</artifactId> <!--排除'sp默认logback包'-->
+            // <groupId>org.springframework.boot</groupId>
+        // </exclusion>
+    // </exclusions>
+// </dependency>
+
+#!/bin/bash
+cd /var/tmp
+chmod 777 demo.jar
+
+nohup java -jar demo.jar >/dev/null 2>&1 &
+echo $! > demo.pid #记录进程号，方便后续使用
+echo "start OK!~!"
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+

@@ -782,9 +782,7 @@ boolean saveBatch(List<Flower> list);
 
 #分页查询
 
-## 插件版
-
->  在插件的拦截方法内拦截待执行的sql，然后重写sql，添加对应的物理分页语句和分页参数。
+>  插件版：在插件的拦截方法内拦截待执行的sql，然后重写sql，添加对应的物理分页语句和分页参数。
 
 ```xml
 <dependency>
@@ -799,18 +797,16 @@ boolean saveBatch(List<Flower> list);
 public PageInfo<Person> listByPage(@PathVariable int pageNum, @PathVariable int pageSize) {
     PageHelper.startPage(pageNum, pageSize); //查询之前设置：页码数，页容量
     List<Person> list = service.listAll();
-    
+
     //PageInfo包含了非常全面的分页属性: isFirstPage,hasPreviousPage,prePage,pages,startRow....
     PageInfo<Person> pageInfo = new PageInfo<>(res);//包含导航页码的PageInfo结果集 - 详见附表
     //int[] nums = pageInfo.getNavigatepageNums();//导航页码
-    
+
     return pageInfo;
 }
 ```
 
-##非插件版
-
-> xml占位符 ? 不允许在关键字前后进行数学运算，所以需要在代码中完成计算，然后再传递到 xml 中
+> 非插件版：xml占位符 ? 不允许在关键字前后进行数学运算，所以需要在代码中完成计算，然后再传递到 xml 中
 
 ```java
 int pageSize = 2, pageNum = 2;
@@ -821,13 +817,12 @@ List<People> list = service.listPage(map);
 
 <select id="listPage" resultType="com.x.People">
     select * from people limit #{pageStart}, #{pageSize}
-</select>        
+</select>
 ```
 
-## PageHelper
+> PageHelper 中默认 PageInfo 的成员变量
 
 ```java
-//PageHelper中默认 PageInfo 的成员变量
 public class PageInfo<T> extends PageSerializable<T> {
     //当前页
     private int pageNum;
@@ -859,7 +854,7 @@ public class PageInfo<T> extends PageSerializable<T> {
     private boolean hasPreviousPage = false;
     //是否有下一页
     private boolean hasNextPage = false;
-    
+
     //导航页码数
     private int navigatePages;
     //所有导航页号

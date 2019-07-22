@@ -909,101 +909,158 @@ Service方法中对于 系统/业务 状态的变更
 
 `约定 > 配置 > 编码` ==》 能用配置解决的问题就不编码，能基于约定的就不进行配置
 
-## 基本概念
+## 基础概念
 
->什么是构建？ `Ant，Maven，Gradle`
-
-```java
-构建并不是创建，创建一个工程并不等于构建一个项目。
-
-构建是以 Java源码，框架配置文件，JSP页面，html，图片...等静态资源作为'原材料'去'生产'出一个可以运行的项目的'过程'。
-```
-
->pom文件（Project Object Model，项目对象模型）
-
-```java
-将Java工程'project'的相关信息封装为对象'object'，作为便于操作和管理的模型'model'，Maven工程的核心配置。
-```
-
->仓库种类
-
-```java
-本地仓库：本机电脑上的 Maven 仓库
-私服仓库：架设在本地局域网内的 Maven 仓库，直连中央仓库
-中央仓库：架设在 Internet 上，为全世界所有 Maven 工程服务
-```
-
->mvn命令：与项目构建相关的命令，必须切换到 pom.xml 同级目录
+>为什么使用Maven这样的构建工具？
 
 ```shell
-mvn clean         #删除以前的编译结果，为重新编译做准备
-mvn compile       #编译主程序
-mvn test-compile  #编译测试程序
-mvn test          #执行测试
-mvn package       #打包
-mvn install       #将打包的结果(jar/war)安装到本地仓库中
-mvn site          #生成站点
+#一个项目就是一个工程
+如果项目非常庞大，就不适合使用 package 来划分模块，最好是每一个模块对应一个工程，利于分工协作。
+借助于maven就可以将一个项目拆分成多个工程。
+
+#项目中使用jar包，需要 复制+粘贴 项目的lib中
+同样的jar包重复的出现在不同的项目工程中，你需要做不停的复制粘贴的重复工作。
+借助于maven，可以将jar包保存在“仓库”中，不管在哪个项目只要使用引用即可就行。
+
+#jar包需要的时候每次都要自己准备好或到官网下载
+借助于maven我们可以使用统一的规范方式下载jar包，规范
+
+#jar包版本不一致的风险
+不同的项目在使用jar包的时候，有可能会导致各个项目的jar包版本不一致，导致未知错误。
+借助于maven，所有的jar包都放在“仓库”中，所有的项目都使用仓库的一份jar包。
+
+#一个jar包依赖其他的jar包需要自己手动的加入到项目中
+借助maven，它会自动的将依赖的jar包导入进来。
 ```
 
->依赖的范围：Scope 
+> 构建：把动态的Web工程经过编译得到的编译结果，并部署到服务器上的整个过程。
 
 ```shell
-compile  #缺省值，适用于所有阶段，会随着项目一起发布。编译范围依赖在所有的 classpath 中可用，同时它们也会被打包。
-
-provided #类似compile，但期望JDK、容器或使用者会提供这个依赖。如：servlet.jar，lombok。
-         #例如，在开发 web 应用时，编译期需要一个 servlet.jar 来编译程序中的 servlet，但打包时，不需要此 servlet.jar。
-         #因为，程序运行时，由servlet容器（tomcat）来提供 servlet.jar。
-
-runtime #只在运行时使用，适用运行和测试阶段。如：JDBC驱动，
-
-test    #只在测试时使用，用于编译和运行测试代码。不会随项目发布。如：junit
+#构建的各个环节
+清理-clean   ：将以前编译得到的旧文件class字节码文件删除
+编译-compile ：将java源程序编译成class字节码文件
+测试-test    ：自动测试，自动调用junit程序
+报告-report  ：测试程序执行的结果
+打包-package ：动态Web工程打War包，java工程打jar包
+安装-install ：Maven特定的概念-----将打包得到的文件复制到“仓库”中的指定位置
+部署-deploy  ：将动态Web工程生成的war包复制到Servlet容器下，使其可以运行
 ```
 
-```properties
-compile  #编译阶段(√); 测试阶段(√); 打包(√); 部署(√); 如: spring-core
-provied  #编译阶段(√); 测试阶段(√); 打包(x); 部署(x); 如: servlet-api（tomcat提供），lombok
-test     #编译阶段(x); 测试阶段(√); 打包(x); 部署(X); 如: junit
-runtime  #编译阶段(x); 测试阶段(√); 打包(√); 部署(√); 如: mysql-connector-java
+> 常用命令：执行mvn命令必须进入到 pom.xml 的目录中进行执行
+
+```shell
+mvn clean        ：清理
+mvn compile      ：编译主程序
+mvn test-compile ：编译测试程序
+mvn test         ：执行测试
+mvn package      ：打包
+mvn install      ：安装
 ```
 
->依赖的传递：Optional
+>依赖：如果依赖的是自己或者团队开发的maven工程，需要先使用 install 命令把被依赖的maven工程的jar包导入到本地仓库中
 
-```java
-true 该依赖只能在本项目中传递，不会传递到引用该项目的父项目中，父项目需要主动引用该依赖才行。
+```shell
+#依赖范围
+compile  ：默认值，适用于所有阶段（开发、测试、部署、运行），本jar会一直存在所有阶段。 #如: spring-core
+provided ：只在开发、测试阶段使用，目的是不让Servlet容器和你本地仓库的jar包冲突 。   #如: servlet-api（tomcat提供），lombok
+runtime  ：只在运行时使用，如JDBC驱动，适用运行和测试阶段。       #如: mysql-connector-java
+test     ：只在测试时使用，用于编译和运行测试代码。不会随项目发布。 #如: junit
+system   ：类似 provided，需要显式提供包含依赖的jar，Maven不会在Repository中查找它。
 
-//A依赖B，B依赖C，A能否使用C呢？
-'非compile'范围的依赖不能传递，必须在有需要的工程 A 中单独加入 C.
+#例如，在开发 web 应用时，编译期需要一个 servlet.jar 来编译程序中的 servlet，但打包时，不需要此 servlet.jar。
+#因为，程序运行时，由servlet容器（tomcat）来提供 servlet.jar。
 ```
 
->依赖的排除
+>依赖的传递性：Optional
 
 ```xml
-<dependency>
-    <groupId>org.springframework.boot</groupId>
-    <artifactId>spring-boot-starter-web</artifactId>
-    <exclusions>
-        <exclusion>
-            <artifactId>spring-boot-starter-logging</artifactId> <!--排除'sp默认logback包'-->
-            <groupId>org.springframework.boot</groupId>
-        </exclusion>
-    </exclusions>
-</dependency>
+<optional>true</optional> <!--true: 依赖不会传递，但是该依赖写在父项目则所有子类都可用。false: 会传递-->
 ```
 
->版本号统一声明
+```shell
+#（1）pom.xml文件配置好依赖关系后，必须首先 mvn install 后，依赖的jar包才能使用。
+Web -> Java1 -> Java2
+
+Web 的 pom.xml 文件想能编译通过，Java1 必须先 mvn install。
+Java1 的 pom.xml 文件想能编译通过，Java2 必须先 mvn install。
+```
+
+```shell
+#（2）【注意】compile 范围以外的依赖不具备传递行。
+Web -> Java1 -> Java2
+
+如果为 Java2 增加一个 spring-core.jar 包后，会惊喜的发现依赖的两个项目（Web，Java1）都自动的增加了这个jar包，这就是依赖的传递性。
+```
+
+>依赖版本的原则
+
+```shell
+#（1）路径最短者优先原则
+Web（log4j-1.2.9.jar） -> Java1（log4j-1.2.9.jar） -> Java2（log4j-1.2.7.jar）
+
+Java2 的 log4j 版本是1.2.7，Java1 排除了此包的依赖，自己加了一个 log4j-1.2.9.jar，
+那么 Web 项目遵守路径最短优先原则，log4j 的版本和 Java1 的版本一致。
+```
+
+```shell
+#（2）路径相同先声明优先原则
+Web（log4j-1.2.9.jar） 
+    -> Java1（log4j-1.2.9.jar）
+    -> Java2（log4j-1.2.7.jar）
+    
+Web 项目依赖 Java1 和 Java2，它俩是同一个路径，那么谁在 Web 的 pom.xml 中先声明的依赖就用谁的版本。
+```
 
 ```xml
+<!--统一管理依赖的版本-->
 <properties>
-    <activemq.version>5.15.4</activemq.version> <!--声明-->
+    <demo_common.version>1.0-SNAPSHOT</demo_common.version> <!--声明版本-->
 </properties>
 
 <dependency>
-    <groupId>org.apache.activemq</groupId>
-    <artifactId>activemq-amqp</artifactId>
-    <version>${activemq.version}</version> <!--使用-->
+    <groupId>com.example</groupId>
+    <artifactId>demo_common</artifactId>
+    <version>${demo_common.version}</version> <!--使用声明-->
 </dependency>
 ```
 
+> build配置
+
+```xml
+<build>
+    <finalName>WebMavenDemo</finalName> <!-- 项目的名字 -->
+
+    <resources> <!-- 资源打包 -->
+        <resource>
+            <directory>src/main/java</directory>
+            <includes> <!-- 包括哪些文件参与打包 -->
+                <include>**/*.xml</include>
+            </includes>
+            <excludes> <!-- 排除：哪些文件不参与打包 -->
+                <exclude>**/*.txt</exclude>
+                <exclude>**/*.doc</exclude>
+            </excludes>
+        </resource>
+    </resources>
+
+    <plugins> <!-- 打包插件 -->
+        <plugin>
+            <groupId>org.springframework.boot</groupId>
+            <artifactId>spring-boot-maven-plugin</artifactId>
+        </plugin>
+
+        <!-- war插件（将项目打成war包）--> 
+        <plugin> 
+            <groupId>org.apache.maven.plugins</groupId> 
+            <artifactId>maven-war-plugin</artifactId> 
+            <version>2.1</version> 
+            <configuration>                
+                <warName>WebMavenDemo1</warName> <!-- war包名字 --> 
+            </configuration> 
+        </plugin> 
+    </plugins>
+</build>
+```
 ## 安装配置
 
 > 安装Mvn
@@ -1320,7 +1377,7 @@ mvn deploy:deploy-file -DgroupId=com.bluecard -DartifactId=wxpay-sdk-0.0.3 -Dver
     <artifactId>jstl</artifactId>
     <version>1.2</version>
 </dependency>
-    
+
 <!--(4)使用 tomcat 插件，而非本地tomcat。可实现不同项目发布到不同的tomcat，端口号不能相同.-->
 <plugin>
     <groupId>org.apache.tomcat.maven</groupId>
@@ -1329,13 +1386,12 @@ mvn deploy:deploy-file -DgroupId=com.bluecard -DartifactId=wxpay-sdk-0.0.3 -Dver
     <configuration>
         <!--本地启动时项目的端口号; 热部署到远程服务器则不起作用，以远程tomcat端口号为准-->
         <port>8099</port> 
-
         <!--项目发布到 tomcat 后的名称，只写'/'则名称为 ROOT-->
         <!--测试tomcat http://localhost:8080/ 其访问的是tomcat的 ROOT 项目-->
         <path>/hello</path>
     </configuration>
 </plugin>
-    
+
 <!--(5)项目启动: 右键项目 -> run as -> maven build -> Goals中输入 "clean tomcat7:run"-->
 ```
 
@@ -1358,88 +1414,6 @@ mvn deploy:deploy-file -DgroupId=com.bluecard -DartifactId=wxpay-sdk-0.0.3 -Dver
 (3).右键项目--> run as --> maven build(以前写过,选择第二个) 
     -->输入 tomcat7:deploy(第一次发布); tomcat7:redeploy(非第一次发布).
 ```
-
-
-
-
-# SonarQube
-
-国外版ali开发手册。代码质量管理平台，可以快速的定位代码中潜在的或者明显的错误
-
-## 下载配置
-
-```properties
-#其中汉化包plugins拷入 F:\sonarqube-7.3\extensions\plugins
-server: https://www.sonarqube.org/downloads/
-plugins: https://github.com/SonarQubeCommunity/sonar-l10n-zh/releases
-client(可省): https://docs.sonarqube.org/display/SCAN/Analyzing+with+SonarQube+Scanner
-```
-```properties
-#编辑配置文件：F:\sonarqube-7.3\conf\sonar.properties
-#其中，数据库默认使用内置H2，推荐使用mysql。新建mysql数据库'sonarqube'
-sonar.web.host=0.0.0.0
-sonar.web.port=9000
-sonar.login=admin
-sonar.password=admin
-sonar.jdbc.username=bluecardsoft
-sonar.jdbc.password=#$%_BC13439677375
-sonar.jdbc.url=jdbc:mysql://192.168.8.7:33306/sonarqube?useUnicode=true&characterEncoding=utf8&rewriteBatchedStatements=true&useConfigs=maxPerformance&useSSL=false
-#sonar.web.context=/your_prefix  //非必须，若要在访问sonarqube时加上统一前缀则配置此项
-```
-```properties
-#启动服务
-启动脚本: "F:\sonarqube-7.3\bin\windows-x86-64\StartSonar.bat"
-cmd验证: 屏幕最后出现"xxx SonarQube is up"
-web验证: 默认用户名密码admin，连接 http://localhost:9000
-
-停止服务: 命令行Ctrl+C 或 kill端口'netstat -aon | findstr 9000 ===> taskkill -f /pid xxx'
-异常日志: "F:\sonarqube-7.3\logs\sonar.log"
-```
-```properties
-#分析项目
-项目-->分析新项目-->新建令牌(admin)-->待测项目的pom同级目录执行以下命令
-mvn sonar:sonar \
-  -Dsonar.host.url=http://localhost:9000 \
-  -Dsonar.login=ea23d2ae8d458cf020f8028b7f2b32fca909c83f
-```
-
-## idea插件
-
-```java
-解压安装包，将'SonarLint'文件夹拷贝至'idea安装目录/plugins'
-idea->settings->plugins->Install plugin from disk，选中'sonarlint-intellij-4.0.0.2916.jar'
-
-重启idea，完成安装。以下进行配置sona：
-idea->File-->Settings-->Other Settings-->SonarLint General Settings
-```
-```java
-//配置Client（可省）
-配环境变量: name=SONAR_HOME, value=F:\sonar-scanner-3.2.0.1227-windows
-path前添加: %SONAR_HOME%\bin
-cmd验证: 'sonar-scanner -v'
-
-//在分析项目demo的根目录下新建文件 F:\sp_project\demo\sonar-project.properties
-sonar.projectKey=TGB-demo
-sonar.projectName=demo
-sonar.projectVersion=1.0
-sonar.sources=src
-sonar.language=java
-sonar.sourceEncoding=UTF-8
-sonar.java.binaries=F:/sp_project/demo/target/classes
-
-切换到分析项目demo根目录 "F:\sp_project\demo", 
-使用命令分析项目: 'F:\sonar-scanner-3.2.0.1227-windows\bin\sonar-scanner.bat'
-打开web,查看分析结果: http://localhost:9000/
-```
-
-##常见问题
-
-```properties
-https://blog.csdn.net/happyzwh/article/details/77991095
-https://www.jianshu.com/p/b50f01eeba4d
-```
-
-
 
 
 

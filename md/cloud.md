@@ -1267,27 +1267,7 @@ spring.application.name=demo-zuul
 
 #eureka
 eureka.client.service-url.defaultZone=http://localhost:8761/eureka
-#将IP注册到 Eureka-Server。默认注册的是主机名
 eureka.instance.prefer-ip-address=true
-
-#zuul
-#配置请求URL的请求规则，指定Eureka注册中心中的服务id，转发请求头（默认过滤请求头）
-zuul.routes.demo-user.path=/users/**
-zuul.routes.demo-user.service-id=demo-user
-zuul.routes.demo-user.custom-sensitive-headers=true
-zuul.routes.demo-friend.path=/friends/**
-zuul.routes.demo-friend.service-id=demo-friend
-zuul.routes.demo-friend.custom-sensitive-headers=true
-#忽略所有微服务
-#zuul.ignored-services=*
-#所有访问都加前缀
-zuul.prefix=/demo
-
-#查看所有的网关映射
-management.endpoints.web.exposure.include=routes
-
-#jwt
-jwt.config.key=bluecard
 ```
 
 ```java
@@ -1295,15 +1275,67 @@ jwt.config.key=bluecard
 @EnableEurekaClient //eureka-client
 ```
 
-> 查看网关映射
+> 进阶配置
 
-```shell
-#后者更为详细
-http://localhost:9011/actuator/routes
-http://localhost:9011/actuator/routes/details
+```properties
+#以上最基础的配置，访问可以通过：网关地址+服务名
+
+#原访问url
+GET http://192.168.8.7:9002/friend/info
+#网关地址+服务名访问url
+GET http://192.168.8.7:9011/demo-friend/friend/info
 ```
 
+```properties
+#自定义服务名映射
+zuul.routes.demo-friend.path=/friends/**
+zuul.routes.demo-friend.service-id=demo-friend
+#简写以上配置
+zuul.routes.demo-friend=/friends/**
 
+#配置后的访问方式，两种方式都可以
+GET http://192.168.8.7:9011/demo-friend/friend/info
+GET http://192.168.8.7:9011/friends/friend/info
+```
+
+```properties
+#Actuator
+management.endpoints.web.exposure.include=routes
+
+#查看已定义的访问映射规则（后者更详细）
+http://localhost:9011/actuator/routes
+http://localhost:9011/actuator/routes/details
+{
+    "/friends/**": "demo-friend",
+    "/demo-friend/**": "demo-friend",
+    "/demo-user/**": "demo-user"
+}
+```
+
+```properties
+#忽略某些路由的通配，如路径中包含'/friend/info'
+zuul.ignored-patterns=/**/friend/info
+
+#都不可访问
+GET http://192.168.8.7:9011/demo-friend/friend/info
+GET http://192.168.8.7:9011/friends/friend/info
+```
+```properties
+#忽略通过微服务名进行访问（全部忽略使用 *）
+zuul.ignored-services=demo-friend
+
+#不可访问
+GET http://192.168.8.7:9011/demo-friend/friend/info
+#可以访问
+GET http://192.168.8.7:9011/friends/friend/info
+
+#映射规则中已忽略通过微服务名'demo-friend'进行访问
+http://localhost:9011/actuator/routes
+{
+    "/friends/**": "demo-friend",
+    "/demo-user/**": "demo-user"
+}
+```
 
 > 配置网关后，使用 IDEA 的 REST_API 测试
 

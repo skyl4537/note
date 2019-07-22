@@ -1,30 +1,98 @@
 [TOC]
 
-# BOOT基础
+# 基础功能
 
-## 基础配置
-
-新建项目：https://start.spring.io/
+##pom
 
 >SpringBoot 并不是对 Spring 功能上的增强，而是提供了一种快速使用 Spring 的方式
 
-```java
-简化依赖管理
-    //将各种功能模块进行划分，封装成一个个启动器(Starter)，更容易的引入和使用
-    //提供一系列的Starter，将各种功能性模块进行了划分与封装
-    //更容易的引入和使用，有效避免了用户在构建传统Spring应用时维护大量依赖关系，而引发的jar冲突等问题
+```xml
+<dependencies>
+    <dependency>
+        <groupId>org.mybatis.spring.boot</groupId>
+        <artifactId>mybatis-spring-boot-starter</artifactId>
+        <version>1.3.2</version>
+    </dependency>
+    <dependency>
+        <groupId>mysql</groupId>
+        <artifactId>mysql-connector-java</artifactId>
+        <scope>runtime</scope> <!--只在运行时使用-->
+    </dependency>
+    <dependency>
+        <groupId>com.alibaba</groupId>
+        <artifactId>druid-spring-boot-starter</artifactId>
+        <version>1.1.10</version>
+    </dependency>
 
-自动化配置 //为每一个Starter都提供了自动化的java配置类
-嵌入式容器 //嵌入式tomcat，无需部署war文件
-监控の端点 //通过Actuator模块暴露的http接口，可以轻松的了解和控制 Boot 应用的运行情况
+    <dependency>
+        <groupId>org.projectlombok</groupId>
+        <artifactId>lombok</artifactId>
+        <scope>provided</scope>
+        <optional>true</optional> <!--依赖不会传递，依赖该项目的项目需要重新引入该依赖-->
+    </dependency>
+    <dependency>
+        <groupId>org.springframework.boot</groupId>
+        <artifactId>spring-boot-starter-web</artifactId>
+    </dependency>
+    <dependency>
+        <groupId>org.springframework.boot</groupId>
+        <artifactId>spring-boot-devtools</artifactId>
+        <scope>runtime</scope> <!--只在运行时使用-->
+        <optional>true</optional> <!--只在当前项目生效，不传递-->
+    </dependency>
+    <dependency>
+        <groupId>org.springframework.boot</groupId>
+        <artifactId>spring-boot-starter-test</artifactId>
+        <scope>test</scope> <!--只在测试时使用-->
+    </dependency>
+</dependencies>
+
+<build>
+    <finalName>demo-user</finalName> <!--配置项目打包名-->
+    <plugins>
+        <plugin>
+            <groupId>org.springframework.boot</groupId>
+            <artifactId>spring-boot-maven-plugin</artifactId>
+        </plugin>
+    </plugins>
+    <resources> <!--资源拷贝插件-->
+        <resource>
+            <directory>src/main/java</directory>
+            <includes>
+                <include>**/*.xml</include>
+            </includes>
+        </resource>
+        <resource>
+            <directory>src/main/resources</directory>
+            <includes>
+                <include>**/*.xml</include>
+                <include>**/*.properties</include>
+            </includes>
+        </resource>
+    </resources>
+</build>
 ```
 
-> 常用配置
+> 额外配置
+
+```xml
+<plugin>
+    <groupId>org.springframework.boot</groupId>
+    <artifactId>spring-boot-maven-plugin</artifactId>
+    <configuration>
+        <executable>true</executable> <!--打成的jar包可直接运行-->
+    </configuration>
+</plugin>
+```
+
+##yml
+
+>application.properties
 
 ```properties
 server.port=8090
-server.servlet.context-path=/publisher
-#微服务项目名称：以横岗分割
+server.servlet.context-path=/demo
+#微服务项目名称：以横岗-分割
 #spring.application.name=demo-base
 
 #spring.profiles.active=dev
@@ -35,329 +103,98 @@ spring.datasource.url=jdbc:mysql://127.0.0.1:33306/webpark?useSSL=false&serverTi
 spring.datasource.username=bluecardsoft
 spring.datasource.password=#$%_BC13439677375
 
-#xml路径
+#mybatis
 mybatis.mapper-locations=classpath*:com/example/amqp_publisher/mapper/sqlxml/*.xml
-#驼峰命名
 mybatis.configuration.map-underscore-to-camel-case=true
-#sql打印
+#日志打印（可省）
 logging.level.com.example.amqp_publisher.mapper=debug
 
 spring.thymeleaf.cache=false
-
-debug=true
+#debug=true
 ```
-
-```xml
-<dependencies>
-    <dependency>
-        <groupId>com.alibaba</groupId>
-        <artifactId>fastjson</artifactId>
-        <version>1.2.47</version>
-    </dependency>
-    <dependency>
-        <groupId>org.projectlombok</groupId>
-        <artifactId>lombok</artifactId>
-        <scope>provided</scope>
-        <optional>true</optional>
-    </dependency>
-
-    <!-- Mybatis 启动器 -->
-    <dependency>
-        <groupId>org.mybatis.spring.boot</groupId>
-        <artifactId>mybatis-spring-boot-starter</artifactId>
-        <version>1.3.2</version>
-    </dependency>
-    <!-- mysql 数据库驱动 -->
-    <dependency>
-        <groupId>mysql</groupId>
-        <artifactId>mysql-connector-java</artifactId>
-    </dependency>
-    <!-- druid 数据库连接池 -->
-    <dependency>
-        <groupId>com.alibaba</groupId>
-        <artifactId>druid</artifactId>
-        <version>1.1.17</version>
-    </dependency>
-
-    <dependency>
-        <groupId>org.springframework.boot</groupId>
-        <artifactId>spring-boot-starter-web</artifactId>
-    </dependency>
-    <dependency>
-        <groupId>org.springframework.boot</groupId>
-        <artifactId>spring-boot-devtools</artifactId>
-        <scope>runtime</scope>
-        <optional>true</optional>
-    </dependency>
-    <dependency>
-        <groupId>org.springframework.boot</groupId>
-        <artifactId>spring-boot-starter-test</artifactId>
-        <scope>test</scope>
-    </dependency>
-</dependencies>
-
-<build>
-    <finalName>amqp</finalName> <!--默认打包后的jar包名很长，配置此项可指定文件名-->
-    <plugins>
-        <plugin>
-            <groupId>org.springframework.boot</groupId>
-            <artifactId>spring-boot-maven-plugin</artifactId>
-        </plugin>
-    </plugins>
-    <resources> <!--资源拷贝插件，针对mybatis的xml--> 
-        <resource>
-            <directory>src/main/java</directory>
-        </resource>
-        <resource>
-            <directory>src/main/resources</directory>
-        </resource>
-    </resources>
-</build>
-```
-
-## 常用接口
-
-> 匹配带后缀url访问：http://192.168.8.7:8090/spring/test.do，其中 .do 可以省略
-
-```java
-@Configuration
-public class MyWebMvcConfigurer implements WebMvcConfigurer {
-    @Override
-    public void configurePathMatch(PathMatchConfigurer configurer) {
-        //boot2.x默认将'/test'和'/test.do'作为2个url
-        configurer.setUseRegisteredSuffixPatternMatch(true); //true，统一以上两个url
-    }
-}
-```
-```java
-@Bean
-public ServletRegistrationBean servletRegistrationBean(DispatcherServlet dispatcherServlet) {
-    ServletRegistrationBean<DispatcherServlet> bean = new ServletRegistrationBean<>(dispatcherServlet);
-    
-    bean.addUrlMappings("*.do"); //拦截'.do'结尾的url
-    return bean;
-}
-```
-
->CommandLineRunner：用于在应用初始化完成后执行代码（可使用任何依赖），这段代码在整个应用生命周期内只会执行一次。
-
-```java
-//使用方式1：配合 @Component
-@Component
-public class ApplicationStartupRunner implements CommandLineRunner { }
-```
-```java
-//使用方式2：配合 @SpringBootApplication
-@SpringBootApplication
-public class SpringBootWebApplication implements CommandLineRunner { }
-```
-```java
-//使用方式3：声明一个实现了 CommandLineRunner 接口的Bean
-public class ApplicationStartupRunner implements CommandLineRunner { }
-
-@SpringBootApplication
-public class SpringBootWebApplication {
-    @Bean
-    public ApplicationStartupRunner schedulerRunner() {
-        return new ApplicationStartupRunner();
-    }
-    ... ...
-}
-```
-
-```java
-//两个注意点：
-（1）.如果实现类的 run(String… args)方法内抛出异常，会直接导致应用启动失败。所以，一定要记得将危险的代码放在 try-catch 代码块里。
-
-（2）.对于多个实现类，使用 @Order(value=n) 设置它们的执行顺序。n越小，越先执行。
-```
-
->SpringBootServletInitializer：使用外置的tomcat启动时，项目启动类继承该类，并复写configure()方法。`待证`
-
-```java
-@SpringBootApplication
-public class MyApplication extends SpringBootServletInitializer {
-
-    public static void main(String[] args) {
-        SpringApplication.run(MyApplication.class, args);
-    }
-
-    @Override
-    protected SpringApplicationBuilder configure(SpringApplicationBuilder builder) {
-        return super.configure(builder);
-    }
-}
-```
-
->普通类中获取注解类对象 `如Demo类中获取service对象`
-
-```java
-@Component
-public class SpringUtils implements ApplicationContextAware {
-
-    private static ApplicationContext context;
-
-    // 设置上下文环境
-    @Override
-    public void setApplicationContext(ApplicationContext context) throws BeansException {
-        SpringUtils.context = context;
-    }
-
-    public static Object getBean(String name) {
-        return context.getBean(name);
-    }
-
-    public static <T> T getBean(Class<T> requiredType) {
-        return context.getBean(requiredType);
-    }
-
-    public static <T> T getBean(String name, Class<T> requiredType) {
-        return context.getBean(name, requiredType);
-    }
-}
-```
-
-## 启动方式
-
-
->shell脚本启动
-
-```shell
-#!/bin/bash
-cd /var/tmp
-chmod 777 demo.jar
-
-nohup java -jar demo.jar >/dev/null 2>&1 &
-echo $! > demo.pid #记录进程号，方便后续使用
-echo "start OK!~!"
-```
->linux服务启动
-
-```xml
-<plugin>
-    <groupId>org.springframework.boot</groupId>
-    <artifactId>spring-boot-maven-plugin</artifactId>
-    <configuration>
-        <executable>true</executable> <!--可执行，必不可少。将导致jar包不可修改（快压修改）-->
-    </configuration>
-</plugin>
-```
-```shell
-#将jar包部署到linux，并赋予可执行权限
-chmod +x /var/tmp/blue/demo.jar
-
-#将jar包软连接到 /etc/init.d 目录。其中，/etc/init.d/demo 结尾 demo 为该服务的别名
-ln -s /var/tmp/blue/demo.jar /etc/init.d/demo
-
-#通过 linux 服务命令形式：启动/关闭/重启/查询 该服务
-service demo start|stop|restart|status
-
-#该服务日志默认的存储路径： /var/log/demo.log
-#使用自定义 *.conf 更改默认配置，jar包同路径下新建配置文件 demo.conf
-JAVA_HOME=/usr/jdk1.7.0_79/bin
-JAVA_OPTS=-Xmx1024M
-LOG_FOLDER=/var/tmp/blue/logs/ #该目录必须存在，配置日志目录
-```
-
-## Config
-
-> properties
 
 ```properties
-server.port=8090
-server.servlet.context-path=/demo
-
-#主要用于是spring-cloud项目
-spring.application.name=amqp-publisher
-
-spring.datasource.driverClassName=com.mysql.cj.jdbc.Driver
-spring.datasource.type=com.alibaba.druid.pool.DruidDataSource
-spring.datasource.url=jdbc:mysql://192.168.8.7:33306/test0329?useSSL=false&allowMultiQueries=true&serverTimezone=GMT%2B8
-spring.datasource.username=bluecardsoft
-spring.datasource.password=#$%_BC13439677375
-
-#(1).引用配置变量(无则使用默认值 spring)
+#(1).引用配置变量（无则使用默认值 spring）
 info.msg=hello ${server.servlet.context-path : /spring}
 
-#(2).随机值；微服务中不需要记录 ip:prot，所以可随机指定端口
+#(2).随机值。微服务中不需要记录 ip:prot，所以可随机指定端口
 info.random=${random.int[1000,9999]}
-
-#动态web修改 context-path -> 项目右键 -> properties -> 搜索web -> 修改 Web Project Settings
 ```
 
-> yaml
+> applicatopn.yml
 
 ```yaml
-k:(空格)v #表示一对键值对(空格必须有)，其中属性和值大小写敏感
+k:(空格)v #表示一对键值对(空格必须有)，其中属性和值大小写敏感。
 
 #1.数组(List/Set)的标准写法：
 pets: 
  - cat
  - dog
 
-#行内写法：
+#数组的行内写法：
 pets: [cat,dog,pig]
 
 #2.随机数 
 ${random.int}; ${random.int(10)}; ${random.int(10,100)}
 
-#3.引用配置变量
+#3.引用配置变量（无则取默认值）
 person.age = ${random.int}
 person.last_name = 张三${person.age:18}
 
-#4.转义
+#4.转义（层级关系使用 2个或4个 空格）
 spring:
- datasource:
-  url: jdbc:mysql://192.168.8.7:33306/test0329?useSSL=false&allowMultiQueries=true
-  username: bluecardsoft
-  password: "#$%_BC13439677375" #""双引号里的内容不会转义符，''单括号则会
-  driver-class-name: com.mysql.jdbc.Driver
-  type: com.alibaba.druid.pool.DruidDataSource
+  datasource:
+    url: jdbc:mysql://192.168.8.7:33306/test0329?useSSL=false&allowMultiQueries=true
+    username: bluecardsoft
+    password: "#$%_BC13439677375" #""双引号里的内容不会转义符，''单括号则会
+    driver-class-name: com.mysql.jdbc.Driver
+    type: com.alibaba.druid.pool.DruidDataSource
 ```
 
-> 加载顺序：配置文件应该放置在jar包同级的 /config/*.yml
+## config
 
-```java
-– classpath:/            //路径src/main/resources
+> 加载顺序：配置文件应该放置在jar包同级的 `/config/*.yml`
+
+```shell
+– classpath:/            #路径src/main/resources
 – classpath:/config/
-– file:./                //当前项目的根路径，与pom同级（jar包同级目录）。
+– file:./                #当前项目的根路径，与pom同级（jar包同级目录）。
 – file:./config/
 
-//优先级别: 低--->高. 高优先级覆盖低优先级.
-//加载顺序: 先--->后. (由里到外). 后加载的覆盖先加载的. [互补配置]
+#优先级别: 低--->高. 高优先级覆盖低优先级.
+#加载顺序: 先--->后. (由里到外). 后加载的覆盖先加载的. [互补配置]
 ```
-```java
-（0）以上是开发时配置文件位置，对于打成jar包：由于 classpath 会被打成jar包，而 file 目录不会，所以应该把配置文件放到jar包同级目录。
-    //jar包同级 '/config/*.yml' 优先级最高，jar包内部默认位置的 '*.yml' 优先级最低！
 
-（1）配置外部log
-    //在配置文件中指定log位置（内部或外部yml都可以）。
-    //推荐外部 -> logback的 scan 和 scanPeriod 两个属性保证了 热部署，即改即生效！
-    logging.config=file:./config/logback-spring.xml
-```
->不同环境加载不同配置，`profile特性`
+> profile特性：不同环境加载不同配置
 
-```java
-//以下文件与 application.yml 存放在同级目录下。其中，前者配置特殊信息；后者配置公用信息。二者相互补充
-application-dev.yml     ->    开发环境
-application-test.yml    ->    测试环境 
-application-prod.yml    ->    生产环境
+```shell
+#以下文件与 application.yml 存放在同级目录下。其中，前者配置特殊信息；后者配置公用信息。二者相互补充
+application-dev.yml   #开发环境
+application-test.yml  #测试环境
+application-prod.yml  #生产环境
+
+#在默认配置文件 application.properties 中激活
+spring.profiles.active=dev
 ```
+
+> 外部配置log
+
 ```properties
-#激活profile特性的三种方法.
-(1).在默认配置文件中激活: spring.profiles.active=dev
-(2).(略)命令行: java -jar demo.jar --spring.profiles.active=dev
-(3).(略)虚拟机参数(VM argumments): -Dspring.profiles.active=dev
+#配置文件中指定log位置（内部或外部yml都可以）
+#推荐外部 -> logback的 scan 和 scanPeriod 两个属性保证了 热部署，即改即生效
+logging.config=file:./config/logback-spring.xml
 ```
+
+> log的 profile 特性
+
 ```xml
-<!--log的profile特性-->
-<springProfile name="dev"> //<!-- 控制台 * 测试环境 -->
+<springProfile name="dev"> <!-- 控制台 * 测试环境 -->
     <root level="info">
         <appender-ref ref="console" />
     </root>
 </springProfile>
 
-<springProfile name="prod"> //<!-- 控制台 * 生产环境 -->
+<springProfile name="prod"> <!-- 控制台 * 生产环境 -->
     <root level="warn">
         <appender-ref ref="console" />
     </root>
@@ -373,6 +210,7 @@ application-prod.yml    ->    生产环境
     <optional>true</optional>
 </dependency>
 ```
+
 ```properties
 voice.in=欢迎光临
 
@@ -382,40 +220,54 @@ info.security.username=user
 info.security.password=pwd
 info.security.roles=USER,ADMIN
 ```
->（1）批量读取，将配置文件转成javabean
+
+> 单个属性读取：@value 和 env
 
 ```java
-//@PropertySource: 加载指定的配置文件
-//value: 设置需要加载的属性文件，可以一次性加载多个（默认参数）。
-//encoding: 编码格式，默认""
-//ignoreResourceNotFound: 当指定的配置文件不存在是否报错，默认 false
-//name: 在Springboot的环境中必须唯一。默认"class path resource [config/my.properties]"
+@Value("${info.enabled}") //(1).@Value
+public String infoEnabled;
+```
 
-//@ConfigurationProperties: 用于批量读取属性值
-//prefix: 属性前缀，通过 'prefix+字段名' 匹配属性，默认''
-//ignoreUnknownFields: 是否忽略未知的字段
-//ignoreInvalidFields: 是否忽略验证失败(类型转换异常)的字段
-//-----------<<<<<<一定要有GET/SET方法>>>>--------------------
+```java
+@Autowired //(2).Environment
+Environment env;
 
-@Data// lombok插件，自动生成 GET/SET
+String pwd = env.getProperty("spring.mail.password");
+```
+
+>批量属性读取：必须使用静态内部类
+
+```java
+@Data //lombok
 @Component
-@ConfigurationProperties(/* prefix = "info", */ ignoreUnknownFields = true, ignoreInvalidFields = true)
-@PropertySource(value = { "file:./my.properties", "classpath:my.properties" }, 
-                encoding = "utf-8", ignoreResourceNotFound = false, name = "my.properties")
+/**
+ * prefix: 属性前缀，通过 'prefix+字段名' 匹配属性，默认""
+ * ignoreUnknownFields: 是否忽略未知的字段，默认 true
+ * ignoreInvalidFields: 是否忽略验证失败（类型转换异常）的字段，默认 false
+ */
+@ConfigurationProperties(/*prefix = "info",*/ ignoreUnknownFields = true, ignoreInvalidFields = true)
+/**
+ * value: 需要加载的属性文件，可以一次性加载多个。
+ * encoding: 编码格式，默认""
+ * ignoreResourceNotFound: 当指定的配置文件不存在是否报错，默认 false
+ * name: 唯一标识，整个项目中唯一。
+ */
+@PropertySource(value = {/*"file:./my.properties",*/ "classpath:my.properties"}, encoding = "utf-8",
+                ignoreResourceNotFound = false, name = "my.properties")
 public class MyProperties {
     public Voice voice; //voice开头
     public Info info; //info开头
 
     @Data
-    public static class Voice {
+    public static class Voice { //必须使用静态内部类
         public String in;
     }
 
     @Data
     private static class Info {
         private boolean enabled;
-        private InetAddress remoteAddress;// 下划线语法，驼峰语法等都能匹配属性
-        
+        private InetAddress remoteAddress; //下划线语法，驼峰语法等都能匹配属性
+
         private Security security;
     }
 
@@ -426,100 +278,89 @@ public class MyProperties {
         private List<String> roles = new ArrayList<>(Collections.singleton("USER"));
     }
 }
-
-//通过 @Autowired 方式取值 MyProperties
-logger.info("MyProperties--res: {}", JSON.toJSON(myProperties));
-{
-    "info": {
-        "enabled": false,
-        "remoteAddress": "192.168.1.1",
-        "security": {
-            "password": "pwd",
-            "roles": [
-                "USER",
-                "ADMIN"
-            ],
-            "username": "user"
-        }
-    },
-    "voice": {
-        "in": "欢迎光临"
-    }
-}
 ```
 
-> （2）单个属性读取，两种方式：@value 和 env
+> 通过IO读取
 
 ```java
-@Value("${info.enabled}") //(1). @Value
-public String infoEnabled;
-
-@Autowired //(2). Environment
-Environment env;
-
-String pwd = env.getProperty("spring.mail.password");
-```
-
-> （3）通过IO读取
-
-```java
-// 默认从此类所在包下读取,path需要添加前缀"/"
+// 默认从此类所在包下读取，path需要添加前缀"/"
 // InputStream in = getClass().getResourceAsStream("/my.properties");
 
-// 默认从ClassPath下读取,path不需要添加前缀
+// 默认从ClassPath下读取，path不需要添加前缀
 InputStream in = getClass().getClassLoader().getResourceAsStream("my.properties");
 Properties properties = new Properties();
 properties.load(new InputStreamReader(in, "UTF-8")); //U8方式读取
 properties.forEach((key, value) -> log.info(key + " - " + value));
 ```
 
->`@Value("#{}") 与 @Value("${}")的区别`
+>区别：`@Value("#{}") 与 @Value("${}")`
 
 ```java
-//（1）@Value("#{}") -> 通过SpEl表达式获取：常量，bean属性值，调用bean的某个方法
-@Value("#{1}")
-private int number; //获取常量数字1
-
-@Value("#{'Spring Expression Language'}") //获取字符串常量
-private String language;
-
-@Value("#{info.remoteAddress}") //获取bean的属性
-InetAddress address;
+//${}：获取配置文件中配置的属性
+@Value("${info.enabled:'false'}")
+String enabled; //默认'false'
 ```
 ```java
-//（2）@Value("${}") -> 获取属性文件中定义的属性值    
-@Value("${info.enabled:}")
-public String enabled; //获取配置属性，默认空字符串
+//#{} -> 通过SpEl表达式获取：常量，bean属性值，调用bean的某个方法
+@Value("#{‘abc’}")
+int str; //获取字符串常量'abc'
+
+@Value("#{info.remoteAddress？:'127.0.0.1'}") //获取bean的属性，默认'127.0.0.1'
+String address;
 ```
+##常用接口
+
+>匹配带后缀url访问：http://192.168.8.7:8090/spring/test.do，其中 .do 可以省略
+
 ```java
-//（3）总结
-${ property : default_value }
-#{ obj.property? : default_value } //二者取默认值时，语法不同(多个?)
-#{ '${}' } //二者可以结合使用，注意单引号！但不能反过来，如: ${ '#{}' }
-```
->@PostConstruct
-
-
-
-#BOOT高级
-
-##跨域
-
-```
-跨域是什么？
-浏览器从一个域名的网页去请求另一个域名的资源时，域名、端口、协议任一不同，都是跨域。采用前后端分离开发，前后端分离部署，必然会存在跨域问题。
-
-怎么解决跨域？
-很简单，只需要在 Controller 类上添加注解 @CrossOrigin 即可！这个注解其实是CORS的实现。
-
-CORS（Cross-Origin Resource Sharing，跨源资源共享）是W3C出的一个标准，其思想是使用自定义的HTTP头部让浏览器与服务器进行沟通，
-从而决定请求或响应是应该成功，还是应该失败。因此，要想实现CORS进行跨域，需要服务器进行一些设置，同时前端也需要做一些配置和分析。
-本文简单的对服务端的配置和前端的一些设置进行分析。
+@Configuration
+public class MyWebMvcConfigurer implements WebMvcConfigurer {
+    @Override
+    public void configurePathMatch(PathMatchConfigurer configurer) {
+        //boot2.x默认将'/test'和'/test.do'作为2个url
+        configurer.setUseRegisteredSuffixPatternMatch(true); //true，统一以上两个url
+    }
+}
 ```
 
+```java
+@Bean
+public ServletRegistrationBean servletRegistrationBean(DispatcherServlet dispatcherServlet) {
+    ServletRegistrationBean<DispatcherServlet> bean = new ServletRegistrationBean<>(dispatcherServlet);
+    bean.addUrlMappings("*.do"); //拦截'.do'结尾的url
+    return bean;
+}
+```
 
+> `CommandLineRunner`：用于在应用初始化完成后执行代码逻辑（可使用任何依赖），代码逻辑在整个应用生命周期内只会执行一次。
 
-## druid
+```java
+@Order(value=n) //对于多个该配置的情况，设置执行顺序。n越小，越先执行。
+@Component
+public class ApplicationStartupRunner implements CommandLineRunner { }
+```
+
+> `SpringBootServletInitializer`：使用外置的tomcat启动时，项目启动类继承该类，并复写configure()方法。`待证`
+
+```java
+@SpringBootApplication
+public class MyApplication extends SpringBootServletInitializer {
+    public static void main(String[] args) {
+        SpringApplication.run(MyApplication.class, args);
+    }
+
+    @Override
+    protected SpringApplicationBuilder configure(SpringApplicationBuilder builder) {
+        return super.configure(builder);
+    }
+}
+```
+
+#高级功能
+
+##druid
+
+><https://github.com/alibaba/druid/tree/master/druid-spring-boot-starter>
 
 ```xml
 <dependency>
@@ -529,58 +370,104 @@ CORS（Cross-Origin Resource Sharing，跨源资源共享）是W3C出的一个�
 </dependency>
 ```
 ```properties
-#sp1.x默认数据源为：org.apache.tomcat.jdbc.pool.DataSource
-#sp2.x默认数据源为：com.zaxxer.hikari.HikariDataSource
+#boot1.x默认数据源为：org.apache.tomcat.jdbc.pool.DataSource
+#boot2.x默认数据源为：com.zaxxer.hikari.HikariDataSource
 spring.datasource.type=com.alibaba.druid.pool.DruidDataSource
-
-spring.datasource.driverClassName=com.mysql.cj.jdbc.Driver
-spring.datasource.url=jdbc:mysql://127.0.0.1:33306/webpark?useSSL=false&serverTimezone=GMT%2B8
-spring.datasource.username=bluecardsoft
-spring.datasource.password=#$%_BC13439677375
 ```
 
->java配置
+> 进阶配置
+
+```properties
+# 连接池的补充设置。初始化大小，最小，最大
+spring.datasource.druid.initial-size=5
+spring.datasource.druid.min-idle=5
+spring.datasource.druid.max-active=20
+# 配置获取连接等待超时的时间，单位是毫秒
+spring.datasource.druid.max-wait=60000
+# 配置间隔多久才进行一次检测，检测需要关闭的空闲连接，单位是毫秒
+spring.datasource.druid.time-between-eviction-runs-millis=60000
+# 配置一个连接在池中最小生存的时间，单位是毫秒
+spring.datasource.druid.min-evictable-idle-time-millis=300000
+spring.datasource.druid.validation-query=SELECT 1 FROM DUAL
+# 空闲时，检测连接的可用性
+spring.datasource.druid.test-while-idle=true
+# 每次获取到连接时，不检测连接的可用性
+spring.datasource.druid.test-on-borrow=false
+spring.datasource.druid.test-on-return=false
+```
+
+```properties
+# 打开PSCache，并且指定每个连接上PSCache的大小
+spring.datasource.druid.pool-prepared-statements=true
+spring.datasource.druid.max-pool-prepared-statement-per-connection-size=20
+# 配置监控统计拦截的filters，去掉后监控界面sql无法统计，'wall'用于防火墙
+spring.datasource.druid.filter.commons-log.connection-logger-name=stat,wall,log4j
+# 合并多个DruidDataSource的监控数据
+spring.datasource.druid.use-global-data-source-stat=true
+# 慢SQL记录
+spring.datasource.druid.filter.stat.log-slow-sql=true
+spring.datasource.druid.filter.stat.slow-sql-millis=2000
+# 通过connectProperties属性来打开mergeSql功能，慢SQL记录
+#spring.datasource.druid.connect-properties.=druid.stat.mergeSql=true;druid.stat.slowSqlMillis=5000
+```
+
+```properties
+# 是否启用StatFilter，默认值true
+spring.datasource.druid.web-stat-filter.enabled=true
+#spring.datasource.druid.web-stat-filter.url-pattern=
+spring.datasource.druid.web-stat-filter.exclusions=*.js,*.gif,*.jpg,*.png,*.css,*.ico,/druid/*
+
+# StatViewServlet配置，说明请参考Druid Wiki，配置_StatViewServlet配置
+# 是否启用StatViewServlet，默认值true
+spring.datasource.druid.stat-view-servlet.enabled=true
+spring.datasource.druid.stat-view-servlet.url-pattern=/druid/*
+spring.datasource.druid.stat-view-servlet.login-username=admin
+spring.datasource.druid.stat-view-servlet.login-password=123456
+#spring.datasource.druid.stat-view-servlet.allow=
+spring.datasource.druid.stat-view-servlet.deny=192.168.8.8
+spring.datasource.druid.stat-view-servlet.reset-enable=false
+```
+
+##静态资源
+
+>默认目录：存放在以下目录的资源都可以直接访问
+
+```properties
+classpath:/public/
+classpath:/resources/
+classpath:/static/
+classpath:/META-INFO/resouces/
+```
+
+```properties
+classpath:/static/a.html        ---> http://127.0.0.1:8090/demo/a.html
+classpath:/static/abc/c.html    ---> http://127.0.0.1:8090/demo/abc/c.html
+classpath:/static/img/sql.png   ---> http://127.0.0.1:8090/demo/img/sql.png
+```
+
+> 自定义目录：配置文件方式 + java代码方式
+
+```properties
+spring.mvc.static-path-pattern=/log/**
+#此配置会覆盖 springboot 默认配置，所以需要手动追加默认配置
+spring.resources.static-locations=classpath:/log/,file:logs/,classpath:/public/
+```
 
 ```java
+//file:logs/ 表示jar包同级目录下的 /logs 目录
+//classpath:/log/demo.log     ---> http://127.0.0.1:8090/demo/logs/demo.log
+//jar包同级目录/logs/test.log   ---> http://127.0.0.1:8090/demo/logs/test.log
+
 @Configuration
-public class DruidConfig {
-    
-    // @Bean
-    // @ConfigurationProperties(prefix = "spring.datasource")
-    // public DataSource druid() {
-    //     return new DruidDataSource();
-    // }
+public class MyWebMvcConfigurer implements WebMvcConfigurer {
 
-    // 1.配置一个管理后台的Servlet
-    @Bean
-    public ServletRegistrationBean statViewServlet() {
-        ServletRegistrationBean bean = new ServletRegistrationBean(new StatViewServlet(), "/druid/*");
-
-        Map<String, String> initParams = new HashMap<>();
-        initParams.put("loginUsername", "admin");
-        initParams.put("loginPassword", "123456");
-        initParams.put("allow", ""); //允许所有访问
-        initParams.put("deny", "192.168.15.21"); //黑名单阻止访问（共存时，deny优先于allow）
-        bean.setInitParameters(initParams);
-        return bean;
-    }
-
-    // 2.配置一个web监控的filter
-    @Bean
-    public FilterRegistrationBean webStatFilter() {
-        FilterRegistrationBean bean = new FilterRegistrationBean();
-
-        bean.setFilter(new WebStatFilter());
-        Map<String, String> initParams = new HashMap<>();
-        initParams.put("exclusions", "*.js,*.css,/druid/*");
-        bean.setInitParameters(initParams); //添加需要忽略的格式信息
-        bean.setUrlPatterns(Collections.singletonList("/*")); //添加过滤规则
-        return bean;
+    @Override
+    public void addResourceHandlers(ResourceHandlerRegistry registry) {
+        registry.addResourceHandler("/log/**")
+            .addResourceLocations("classpath:/log/", "file:logs/");
     }
 }
 ```
-
-## 静态资源
 
 > webjars：将前端资源（js，css等）打成jar包，使用Maven统一管理。http://www.webjars.org/
 
@@ -601,42 +488,19 @@ public class DruidConfig {
     <version>3.3.1</version>
 </dependency>
 ```
->默认静态资源目录：默认情况下。存放在以下目录的资源都可以直接访问
 
-```properties
-classpath:/public/
-classpath:/resources/
-classpath:/static/
-classpath:/META-INFO/resouces/
-```
-```properties
-classpath:/static/a.html        ---> http://127.0.0.1:8090/demo/a.html
-classpath:/static/abc/c.html    ---> http://127.0.0.1:8090/demo/abc/c.html
-classpath:/static/img/sql.png   ---> http://127.0.0.1:8090/demo/img/sql.png
-```
+##跨域
 
->自定义静态资源目录：配置文件方式 + java代码方式
+```shell
+跨域是什么？
+浏览器从一个域名的网页去请求另一个域名的资源时，域名、端口、协议任一不同，都是跨域。采用前后端分离开发，前后端分离部署，必然会存在跨域问题。
 
-```properties
-spring.mvc.static-path-pattern=/log/**
-#此配置会覆盖 springboot 默认配置，所以需要手动追加默认配置
-spring.resources.static-locations=classpath:/log/,file:logs/,classpath:/META-INF/resources/,classpath:/resources/,classpath:/static/,classpath:/public/
-```
+怎么解决跨域？
+很简单，只需要在 Controller 类上添加注解 @CrossOrigin 即可！这个注解其实是CORS的实现。
 
-```java
-//file:logs/ 表示jar包同级目录下的 /logs 目录
-//classpath:/log/demo.log     ---> http://127.0.0.1:8090/demo/logs/demo.log
-//jar包同级目录/logs/test.log   ---> http://127.0.0.1:8090/demo/logs/test.log
-
-@Configuration
-public class MyWebMvcConfigurer implements WebMvcConfigurer {
-
-    @Override
-    public void addResourceHandlers(ResourceHandlerRegistry registry) {
-        registry.addResourceHandler("/log/**")
-            .addResourceLocations("classpath:/log/", "file:logs/");
-    }
-}
+CORS（Cross-Origin Resource Sharing，跨源资源共享）是W3C出的一个标准，其思想是使用自定义的HTTP头部让浏览器与服务器进行沟通，
+从而决定请求或响应是应该成功，还是应该失败。因此，要想实现CORS进行跨域，需要服务器进行一些设置，同时前端也需要做一些配置和分析。
+本文简单的对服务端的配置和前端的一些设置进行分析。
 ```
 
 ##login
@@ -646,32 +510,32 @@ public class MyWebMvcConfigurer implements WebMvcConfigurer {
 ```html
 <!DOCTYPE html>
 <html lang="en" xmlns:th="http://www.thymeleaf.org">
-<head>
-    <meta charset="UTF-8">
-    <title>login page</title>
+    <head>
+        <meta charset="UTF-8">
+        <title>login page</title>
 
-    <!--小叶子图标，存放目录 /static/ico/favicon.ico-->
-    <link rel="shortcut icon" th:href="@{/img/favicon.ico}"/>
+        <!--小叶子图标，存放目录 /static/ico/favicon.ico-->
+        <link rel="shortcut icon" th:href="@{/img/favicon.ico}"/>
 
-    <!--webjars-locator: 页面引用时，可省略版本号.(如 3.3.1)-->
-    <!--省略前: <script th:src="@{/webjars/jquery/3.3.1/jquery.min.js}"/>-->
-    <script th:src="@{/webjars/jquery/jquery.min.js}"></script>
-    <script th:src="@{/webjars/bootstrap/js/bootstrap.min.js}"></script>
-    <link rel="stylesheet" th:href="@{/webjars/bootstrap/css/bootstrap.min.css}"/>
-</head>
-<body>
-<!--th:action 表单提交-->
-<form method="post" th:action="@{/login}">
-    <!--th:value name为null则不显示-->
-    账户：<input type="text" th:name="userName" th:value="${uName}"/>
-    密码：<input type="password" th:name="userPwd"/>
-    <center>
-        <button type="submit" class="btn btn-primary">登陆</button>
-        <!--th:if errorMsg为空则不显示-->
-        <p th:if="${! #strings.isEmpty(errMsg)}" th:text="${errMsg}"></p>
-    </center>
-</form>
-</body>
+        <!--webjars-locator: 页面引用时，可省略版本号.(如 3.3.1)-->
+        <!--省略前: <script th:src="@{/webjars/jquery/3.3.1/jquery.min.js}"/>-->
+        <script th:src="@{/webjars/jquery/jquery.min.js}"></script>
+        <script th:src="@{/webjars/bootstrap/js/bootstrap.min.js}"></script>
+        <link rel="stylesheet" th:href="@{/webjars/bootstrap/css/bootstrap.min.css}"/>
+    </head>
+    <body>
+        <!--th:action 表单提交-->
+        <form method="post" th:action="@{/login}">
+            <!--th:value name为null则不显示-->
+            账户：<input type="text" th:name="userName" th:value="${uName}"/>
+            密码：<input type="password" th:name="userPwd"/>
+            <center>
+                <button type="submit" class="btn btn-primary">登陆</button>
+                <!--th:if errorMsg为空则不显示-->
+                <p th:if="${! #strings.isEmpty(errMsg)}" th:text="${errMsg}"></p>
+            </center>
+        </form>
+    </body>
 </html>
 ```
 
@@ -707,7 +571,7 @@ public class LoginInterceptor implements HandlerInterceptor {
     //在目标方法之前被调用。适用于权限，日志，事务等
     @Override
     public boolean preHandle(HttpServletRequest request, HttpServletResponse response, Object handler)
-            throws Exception {
+        throws Exception {
         StringBuffer requestURL = request.getRequestURL();
         Object userName = request.getSession().getAttribute("userName");
         log.info("{} {}", requestURL, userName);
@@ -741,38 +605,19 @@ public class MyWebMvcConfig implements WebMvcConfigurer {
     @Override
     public void addResourceHandlers(ResourceHandlerRegistry registry) {
         registry.addResourceHandler("/**") //与 /static 同级的 /log 目录
-                .addResourceLocations("classpath:/static/", "classpath:/log/");
+            .addResourceLocations("classpath:/static/", "classpath:/log/");
     }
 
     //注册拦截器
     @Override
     public void addInterceptors(InterceptorRegistry registry) {
         registry.addInterceptor(new LoginInterceptor())
-                .addPathPatterns("/**")
-                .excludePathPatterns("/webjars/**", "/img/**", "/html/**", "/log/**") //不拦截：静态资源
-                .excludePathPatterns("/", "/login"); //不拦截：登陆接口
+            .addPathPatterns("/**")
+            .excludePathPatterns("/webjars/**", "/img/**", "/html/**", "/log/**") //不拦截：静态资源
+            .excludePathPatterns("/", "/login"); //不拦截：登陆接口
     }
 }
 ```
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
 
 ##文件上传
 

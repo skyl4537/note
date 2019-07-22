@@ -215,8 +215,10 @@ boolean empty = StringUtils.isEmpty(" "); //false
 
 //null和""，以及" "
 boolean blank = StringUtils.isBlank(""); //true
+```
 
-//删除所有空格（空格+制表符+换行）
+```java
+//清除空白字符（空格+制表符+换行）
 String deleteWhitespace = StringUtils.deleteWhitespace("   ab   c  "); //abc
 
 //trim()的升级版，去除前导和后续的指定字符，不再限于空白符
@@ -225,6 +227,52 @@ String trim = StringUtils.strip("01 2 30", "0"); //1 2 3
 //stripAll：去除字符串数组中每个元素中的指定字符
 String[] strs = {"010", "02", "30"};
 String[] stripAll = StringUtils.stripAll(strs, "0"); //1 2 3
+```
+
+```java
+//字符串的缩写（第二个参数必须大于4，因为省略号占3个字符）
+String str = "1234567890";
+String abbreviate = StringUtils.abbreviate(str, 5); //12...
+String abbreviate1 = StringUtils.abbreviate(str, 5, 9); //...678...
+```
+
+```java
+//劈分字符串
+String str = "12.34|56,78.90";
+String[] array1 = StringUtils.split(str, " .|,");
+```
+
+```java
+//查找嵌套字符串
+String htmlContent = "ABC123DEF456-123000456";
+String between = StringUtils.substringBetween(htmlContent, "123", "456"); //DEF，找不到返回 null
+```
+
+```java
+//重复字符串
+String repeat = StringUtils.repeat("*", 5); //*****
+
+//把 args0 插入将 args2 重复多次后的字符串中间，得到字符串的总长为 args1
+String center = StringUtils.center("China", 11, "*"); //***China***
+```
+
+```java
+//颠倒字符串
+String reverse = StringUtils.reverse("ABCDE"); //EDCBA
+```
+
+```java
+//判断字符串内容的类型（该方法不识别有小数点和 请注意）
+String state = "Virginia";
+boolean numeric = StringUtils.isNumeric(state); //全由数字组成: false
+boolean alpha = StringUtils.isAlpha(state);     //全由字母组成: true
+boolean alphanumeric = StringUtils.isAlphanumeric(state); //全由数字或数字组成: true
+boolean alphaSpace = StringUtils.isAlphaSpace(state);     //全由字母或空格组成: true
+```
+
+```java
+//取得某字符串在另一字符串中出现的次数
+int matches = StringUtils.countMatches("Chinese People", "e"); //4
 ```
 
 ```java
@@ -243,22 +291,12 @@ String format = String.format("%06d", 123); //jdk自带，不好用。000123
 ```
 
 ```java
-//判断该字符串是不是为数字(0~9)组成，如果是，返回true。但该方法不识别有小数点和 请注意。
-boolean numeric = StringUtils.isNumeric("45453.4");//false
-
 //将数组中的内容以","分隔
 List<String> list = Arrays.asList("a", "b", "c");
 String join = StringUtils.join(list, ","); //a,b,c
 
 //首字母大写
-String capitalize = StringUtils.capitalize("中华人民共和国"); //Abc
-```
-
-```java
-//字符串进行省略操作，省略字符以省略号填充，最小长度为4（省略号占3个字符）
-StringUtils.abbreviate("abcdefg", 6); //abc...
-StringUtils.abbreviate("abcdefg", 4); //a...
-StringUtils.abbreviate("abcdefg", 3); //IllegalArgumentException
+String capitalize = StringUtils.capitalize("abc"); //Abc
 ```
 
 > NumberUtils
