@@ -364,7 +364,7 @@ Build,Exe... - Build Tools - Gradle - Offline work
 
 > 代理上网
 
-```
+```shell
 登陆时，高级 - 连接 - 隧道 - (√)通过SSH隧道进行连接
 主机名：192.168.5.88；端口号：33022；用户名：sysman；密码：999999
 ```
@@ -373,14 +373,14 @@ Build,Exe... - Build Tools - Gradle - Offline work
 
 > 代理上网
 
-```
+```shell
 打开CRT界面，选项 - 全局选项 - 防火墙 - 添加（二者任选其一）
 名称：5.88；类型：SOCKES V5(username/pwd)；主机IP:192.168.5.88；端口号：33022；用户名：sysman；密码：999999
 
 名称：5.19；类型：HTTP(no auth)；用户名IP：192.168.5.19；密码：808
 ```
 
-```
+```shell
 打开连接页面，在待选连接点上右键 - 属性 - SSH2 - 防火墙：选择 5.88 或 5.19
 ```
 

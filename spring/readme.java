@@ -1251,20 +1251,43 @@ management.endpoints.web.exposure.include=routes
     // </exclusions>
 // </dependency>
 
-#!/bin/bash
-cd /var/tmp
-chmod 777 demo.jar
-
-nohup java -jar demo.jar >/dev/null 2>&1 &
-echo $! > demo.pid #记录进程号，方便后续使用
-echo "start OK!~!"
 
 
 
+#sell
+
+-- ----------------------------
+-- Table structure for product_info
+-- ----------------------------
+DROP TABLE IF EXISTS `product_info`;
+CREATE TABLE `product_info` (
+  `product_id` varchar(32) NOT NULL,
+  `product_name` varchar(64) NOT NULL COMMENT '商品名称',
+  `product_price` decimal(8,2) NOT NULL COMMENT '单价',
+  `product_stock` int(11) NOT NULL COMMENT '库存',
+  `product_description` varchar(64) DEFAULT NULL COMMENT '描述',
+  `product_icon` varchar(512) DEFAULT NULL COMMENT '小图',
+  `product_status` tinyint(3) DEFAULT '0' COMMENT '商品状态，0正常1下架',
+  `category_type` int(11) NOT NULL COMMENT '类目编号',
+  `create_time` timestamp NOT NULL DEFAULT CURRENT_TIMESTAMP COMMENT '创建时间',
+  `update_time` timestamp NOT NULL DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP COMMENT '修改时间',
+  PRIMARY KEY (`product_id`)
+) ENGINE=InnoDB DEFAULT CHARSET=utf8 COMMENT='商品表';
 
 
-
-
+-- ----------------------------
+-- Table structure for product_category
+-- ----------------------------
+DROP TABLE IF EXISTS `product_category`;
+CREATE TABLE `product_category` (
+  `category_id` int(11) NOT NULL AUTO_INCREMENT,
+  `category_name` varchar(64) NOT NULL COMMENT '类目名称',
+  `category_type` int(11) NOT NULL COMMENT '类目编号',
+  `create_time` timestamp NOT NULL DEFAULT CURRENT_TIMESTAMP COMMENT '创建时间',
+  `update_time` timestamp NOT NULL DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP COMMENT '更新时间',
+  PRIMARY KEY (`category_id`),
+  UNIQUE KEY `uqe_category_type` (`category_id`)
+) ENGINE=InnoDB DEFAULT CHARSET=utf8 COMMENT='类目表';
 
 
 

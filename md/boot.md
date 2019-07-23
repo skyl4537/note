@@ -503,7 +503,7 @@ CORS（Cross-Origin Resource Sharing，跨源资源共享）是W3C出的一个�
 本文简单的对服务端的配置和前端的一些设置进行分析。
 ```
 
-##login
+## login
 
 >前台表单
 
@@ -753,7 +753,7 @@ public class AmqpPublisherApp extends SpringBootServletInitializer { //新增 ex
 
 ## 热部署
 
-> （0）`DevTools`：Ctrl+F9 重新部署
+> `DevTools`：Ctrl+F9 重新部署
 
 ```properties
 #禁用模板缓存
@@ -767,36 +767,6 @@ spring.thymeleaf.cache=false
     <optional>true</optional> <!-- 依赖只在当前项目生效，不会传递到引用项目中 -->
 </dependency>
 ```
-> （1）SpringLoader插件：只对 java 代码生效，对页面更改无能为力
-
-```xml
-<build>
-    <plugins>
-        <plugin>
-            <groupId>org.springframework.boot</groupId>
-            <artifactId>spring-boot-maven-plugin</artifactId>
-            <dependencies>
-                <dependency>
-                    <groupId>org.springframework</groupId>
-                    <artifactId>springloaded</artifactId>
-                    <version>1.2.5.RELEASE</version>
-                </dependency>
-            </dependencies>
-        </plugin>
-    </plugins>
-</build>
-```
-```java
-//使用maven命令启动项目：其中，maven插件起作用，必须使用maven命令进行启动
-//缺点：mvn插件形式的热部署程序是在系统后台以进程的形式来运行。需要手动关闭该进程(java.exe *32)
-Run As... --> mvn build... ---> Main --> Goals填写: spring-boot:run
-```
->（2）项目中直接使用 springloader 的jar包
-
-```java
-Run Configuration... --> Arguments --> VM argumments填写: -javaagent:.\lib\springloaded-1.2.5.RELEASE.jar -noverify
-```
-
 ##email
 
 ```xml

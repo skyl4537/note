@@ -4,52 +4,6 @@
 
 # Utils
 
-包名统一使用小写，点分隔符之间有且仅有一个自然语义的英语单词。**包名统一使用单数形式**，但是类名如果有复数含义，**类名可以使用复数形式**。`com.example.spring.util.CommonUtils`
-
-## 常用包
-
-> apache
-
-```xml
-<!-- 该版本完全支持 Java5 的特性，如泛型和可变参数。该版本无法兼容以前的版本，简化很多平时经常要用到的写法，如判断字符串是否为空等等 -->
-<dependency>
-    <groupId>org.apache.commons</groupId>
-    <artifactId>commons-lang3</artifactId>
-    <version>3.8.1</version>
-</dependency>
-
-<!-- IO工具类，文件操作及字符串比较功能 -->
-<dependency>
-    <groupId>org.apache.commons</groupId>
-    <artifactId>commons-io</artifactId>
-    <version>1.3.2</version>
-</dependency>
-
-<!-- 对象池的实现，显著的提升了性能和可伸缩性，特别是在高并发加载的情况下 -->
-<dependency>
-    <groupId>org.apache.commons</groupId>
-    <artifactId>commons-pool2</artifactId>
-    <version>2.4.2</version>
-</dependency>
-
-<!-- email -->
-<dependency>
-    <groupId>org.apache.commons</groupId>
-    <artifactId>commons-email</artifactId>
-    <version>1.4</version>
-</dependency>
-<!-- spring-boot email -->
-<dependency>
-    <groupId>org.springframework.boot</groupId>
-    <artifactId>spring-boot-starter-mail</artifactId>
-</dependency>
-```
-
-> Spring
-
-```xml
-
-```
 ## 工具类
 
 > 命名规则
@@ -59,8 +13,6 @@
 
 正例：应用工具类包名为 com.alibaba.ai.util、类名为 MessageUtils（此规则参考 spring 的框架结构）
 ```
-
-
 
 > 常用方法
 

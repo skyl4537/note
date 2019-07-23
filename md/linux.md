@@ -311,80 +311,6 @@ grep -d skip -n 'Init---args' ../_* > ztj
 
 
 
-
-## 组合命令
-
->`nohup java -jar springboot.jar > /dev/null 2>&1 &` 后台启动java项目
-
-```shell
-nohup java -jar blue.jar > ./logs/blue.log 2>&1 &               #输出日志
-nohup java -jar blue.jar > ./logs/blue.log >/dev/null 2>&1 &    #不再输出日志
-
-nohup：该命令可以在 '退出帐户/关闭终端' 之后继续运行相应的进程。默认情况，该作业的所有输出都被重定向到一个名为'nohup.out'的文件中
-```
-```shell
-&：表示在后台运行。nohup COMMAND & #命令永久的在后台执行
-```
-```shell
-2>&1：默认，0表示标准输入，1表示标准输出，2表示标准错误。
-
-nohup command > myout.file 2>&1 &
-#表示将标准错误(2)重定向到标准输出(&1),标准输出(&1)再被重定向输入到 'myout.file' 文件中
-```
-
-```shell
-/dev/null：表示空设备，这里就是把日志记录到空设备里，就是不记录日志。
-
-/dev/null 2>&1 #将产生的所有信息丢弃
-```
-
-> SpringBoot项目启动脚本
-
-```shell
-#!/bin/bash
-PID=$(lsof -t -i:8090) #查看8090端口程序的pid
-
-#-gt greaterthan,大于; -lt lessthan,小于; -eq equal,等于; -a and,且; -o or,或
-if [ $PID ]
-then
-	echo "8090 PID: $PID"
-	kill -9 $PID
-else
-	echo "8090 NO PID!"
-fi
-
-cd /var/tmp
-chmod 777 demo.jar
-nohup jdk1.8.0_181/bin/java -jar demo.jar >/dev/null 2>&1 &  #赋权，并以后台启动
-echo "start OK!~!"
-```
-
->kill -9 \`lsof -t -i:8090\`
-
-```shell
-kill -9 `lsof -i:8090 | awk '{print $2}' | sed -n '2p'`         #等同于上面命令
-
-（1）用``表示，引用命令的执行结果
-（2）awk '{print $2}' #表示输出第二列内容
-（3）sed -n '2p'      #表示输出第二行
-（4）nohup cmd &      #表示后台执行命令cmd。nohup是不挂起的意思(no hang up)，它保证在退出帐户之后继续运行相应的进程
-（5）/dev/null        #表示文件黑洞，起到'禁止输出'功能
-
-cmd > /dev/null 2>&1 #屏蔽指令的 stdout 和 stderr
-
-#一般情况下，每个 Unix/Linux 命令运行时都会打开三个文件:
-（a）标准输入文件(stdin): stdin的文件描述符为0, Unix程序默认从stdin读取数据。
-（b）标准输出文件(stdout): stdout 的文件描述符为1, Unix程序默认向stdout输出数据。
-（c）标准错误文件(stderr): stderr的文件描述符为2, Unix程序会向stderr流中写入错误信息。
-
-# 2>&1 -> 表示stderr的输出方式同stdout，都是禁止输出
-```
-
-
-
-
-
-
 ##相似命令
 
 > 文件读取
@@ -424,44 +350,6 @@ locate mysql.cnf #查找 mysql.cnf 文件
 
 find . -name 'sm*' #（递归）查找当前目录下名为 sm* 的文件及文件夹
 ```
-
-##业务相关
-
-> linux查询pid
-
-```shell
-jps -l #列出所有java进程的 pid + 项目名
-```
-
-```shell
-ps -ef | grep webpark.war #ps相关
-
-#C：cpu占用率；STIME：开始时间；TIME：进程运行的总时间；CMD：启动命令
-#UID       PID     PPID  C    STIME  TTY        TIME    CMD
-#parkman+  6315     1    0    7月10    ?     01:07:46    /usr/java/jdk1.8.0_191/bin/java -jar webpark.war
-
-netstat -anp | grep 8080 #显示网络状态，过滤端口
-
-lsof -t -i:8080 #lsof相关
-```
-
-> windows查询pid
-
-```shell
-netstat -aon | findstr 8080  #根据端口查找pid
-taskkill -f /pid 9984        #强制杀死pid 9984
-
-tasklist | findstr 10876     #根据pid查找进程名
-```
-
-> webpark异常
-
-```shell
-pstree -p <pid> | wc -l #查询某程序的线程或进程数
-
-pstree -p | wc -l #查询当前整个系统已用的线程或进程数
-```
-
 
 
 
@@ -576,6 +464,16 @@ else
 fi
 ```
 
+```shell
+if 条件0 then 
+  命令0
+elif 条件1 then
+  命令1
+else
+  命令2
+fi
+```
+
 > fori（3种风格）
 
 ```shell
@@ -637,6 +535,83 @@ source ./func.sh
 
 echo "3 daysAgo  :" $(daysAgo 3)
 echo "3 daysAfter:" $(daysAfter 3) #调用函数 daysAfter()
+```
+
+> 算术运算符：原生bash不支持简单的数学运算，可通过其他命令来实现。如：expr
+
+```shell
+#!/bin/bash
+a=10; b=20;
+val1=`expr $a + $b`
+val2=`expr $a \* $b` #转义符\
+if [ $a != $b ]; then #运算符 == 前后都有空格，且 [ 之后也得有空格
+  echo "$val1"
+  echo "$val2"
+fi
+```
+
+> 关系运算符：关系运算符只支持数字，不支持字符串。除非字符串的值是数字，如ASCII表。
+
+```shell
+#常用: gt(>); lt(<); eq(==); ne(!=); ge(>=); le(<=); o(||); a(&&)
+a=10; b=20;
+
+if(a>0 && (b>0 || c>0))  
+if [ $b -gt 0 || $c -gt 0 -a && -gt 0 ]; then #同上
+if [ $b -gt 0 -o $c -gt 0 -a $a -gt 0 ]; then #同上
+```
+
+>字符串运算符：
+
+```shell
+a="abc"; b="efg";
+
+if [ $a = $b ]  #两个字符串是否相等
+if [ -z $a ]    #长度是否为0
+if [ -n "$a" ]  #长度是否不为0
+if [ $a ]       #检测是否不为空
+```
+> 文件测试运算符：用于检测 Unix 文件的各种属性
+
+```shell
+if [ -e $file ] //文件存在
+if [ -r $file ] //可读
+if [ -w $file ] //可写
+if [ -x $file ] //可执行
+
+if [ -d $file ] //是否为目录
+if [ -s $file ] //不为空
+if [ -f $file ] //是否为普通文件(既不是目录,也不是设备文件)
+```
+
+> 常见DEMO
+
+```shell
+#!/bin/bash
+DEMO_JAR="./demo-eureka.jar"
+DEMO_PID_FILE="./demo.pid"
+
+chmod 777 "$DEMO_JAR"
+
+nohup java -jar "$DEMO_JAR" >/dev/null 2>&1 &
+if [ ! -f "$DEMO_PID_FILE" ]; then
+  touch "$DEMO_PID_FILE"
+fi
+echo $! > "$DEMO_PID_FILE" #记录进程号，方便后续使用
+echo "start OK!~!"
+```
+
+```shell
+#!/bin/bash
+DEMO_JAR="./demo-eureka.jar"
+DEMO_PID_FILE="./demo.pid"
+
+if [ -f "$DEMO_PID_FILE" ]; then #-f: 是否为普通文件(既不是目录，也不是设备文件)
+  PID=`cat "$DEMO_PID_FILE"`
+  echo "Killing Demo with the PID: $PID"
+  kill -9 $PID
+  > "$DEMO_PID_FILE"
+fi
 ```
 
 
@@ -1253,15 +1228,161 @@ tcpdump tcp port 5232 -w /tmp/tcp5232.cap #抓取 TCP 协议的 5232 端口相�
 
 
 
-> 
+# 补充命令
+
+## 组合命令
+
+>`nohup java -jar springboot.jar > /dev/null 2>&1 &` 后台启动java项目
 
 ```shell
+nohup java -jar blue.jar > ./logs/blue.log 2>&1 &               #输出日志
+nohup java -jar blue.jar > ./logs/blue.log >/dev/null 2>&1 &    #不再输出日志
 
+nohup：该命令可以在 '退出帐户/关闭终端' 之后继续运行相应的进程。默认情况，该作业的所有输出都被重定向到一个名为'nohup.out'的文件中
+```
+```shell
+&：表示在后台运行。nohup COMMAND & #命令永久的在后台执行
+```
+```shell
+2>&1：默认，0表示标准输入，1表示标准输出，2表示标准错误。
 
-
+nohup command > myout.file 2>&1 &
+#表示将标准错误(2)重定向到标准输出(&1),标准输出(&1)再被重定向输入到 'myout.file' 文件中
 ```
 
->
+```shell
+/dev/null：表示空设备，这里就是把日志记录到空设备里，就是不记录日志。
+
+/dev/null 2>&1 #将产生的所有信息丢弃
+```
+
+>kill -9 \`lsof -t -i:8090\`
+
+```shell
+kill -9 `lsof -i:8090 | awk '{print $2}' | sed -n '2p'`         #等同于上面命令
+
+（1）用``表示，引用命令的执行结果
+（2）awk '{print $2}' #表示输出第二列内容
+（3）sed -n '2p'      #表示输出第二行
+（4）nohup cmd &      #表示后台执行命令cmd。nohup是不挂起的意思(no hang up)，它保证在退出帐户之后继续运行相应的进程
+（5）/dev/null        #表示文件黑洞，起到'禁止输出'功能
+
+cmd > /dev/null 2>&1 #屏蔽指令的 stdout 和 stderr
+
+#一般情况下，每个 Unix/Linux 命令运行时都会打开三个文件:
+（a）标准输入文件(stdin): stdin的文件描述符为0, Unix程序默认从stdin读取数据。
+（b）标准输出文件(stdout): stdout 的文件描述符为1, Unix程序默认向stdout输出数据。
+（c）标准错误文件(stderr): stderr的文件描述符为2, Unix程序会向stderr流中写入错误信息。
+
+# 2>&1 -> 表示stderr的输出方式同stdout，都是禁止输出
+```
+> linux查询pid
+
+```shell
+jps -l #列出所有java进程的 pid + 项目名
+```
+
+```shell
+ps -ef | grep webpark.war #ps相关
+
+#C：cpu占用率；STIME：开始时间；TIME：进程运行的总时间；CMD：启动命令
+#UID       PID     PPID  C    STIME  TTY        TIME    CMD
+#parkman+  6315     1    0    7月10    ?     01:07:46    /usr/java/jdk1.8.0_191/bin/java -jar webpark.war
+
+netstat -anp | grep 8080 #显示网络状态，过滤端口
+
+lsof -t -i:8080 #lsof相关
+```
+
+> windows查询pid
+
+```shell
+netstat -aon | findstr 8080  #根据端口查找pid
+taskkill -f /pid 9984        #强制杀死pid 9984
+
+tasklist | findstr 10876     #根据pid查找进程名
+```
+
+> webpark异常
+
+```shell
+pstree -p <pid> | wc -l #查询某程序的线程或进程数
+
+pstree -p | wc -l #查询当前整个系统已用的线程或进程数
+```
+> 查看不同状态的连接数数量
+
+```shell
+netstat -n | awk '/^tcp/ {++y[$NF]} END {for(w in y) print w, y[w]}'
+
+CLOSE_WAIT 2
+ESTABLISHED 58
+FIN_WAIT1 1
+TIME_WAIT 29
+```
+
+>查看每个ip跟服务器建立的连接数
+
+```shell
+netstat -nat|awk '{print$5}'|awk -F : '{print$1}'|sort|uniq -c|sort -rn
+#显示第5列; [-F :]以:分割; [sort]排序; [uniq -c]统计排序过程中的重复行; [sort -rn]按纯数字进行逆序排序
+
+31 45.116.147.178 
+20 45.116.147.186
+12 23.234.45.34
+```
+
+>查看每个ip建立的（ESTABLISHED / TIME_OUT）状态的连接数
+
+```shell
+netstat -nat|grep ESTABLISHED|awk '{print$5}'|awk -F : '{print$1}'|sort|uniq -c|sort -rn
+
+94 127.0.0.1
+22 192.168.8.93
+20 192.168.8.66
+```
+
+
+
+
+
+##vmstat
+
+> 给定时间间隔的服务器的状态值，包括内存、cpu、虚拟交换、IO读写等使用情况
+
+```shell
+vmstat 2 1 #2秒采集一次，一共采集1次（默认0，1）。
+
+procs -----------memory---------- ---swap-- -----io---- -system-- ------cpu-----
+ r  b   swpd   free   buff  cache   si   so    bi    bo   in   cs us sy id wa st
+ 1  0 608348 1926876 451916 1590688    0    0     1    25    3    3  3  1 95  2  0
+```
+
+```shell
+r: #运行队列(即多少个进程真的分配到CPU).
+b: #阻塞的进程.
+
+swpd:  #虚拟内存已使用的大小. //大于0,表示物理内存不足,不是程序内存泄露,就该升级内存,或把耗内存的任务迁移到其他机器
+free:  #空闲的物理内存的大小. 我的机器内存总共8G,剩余3415M
+buff:  #缓冲大小,一般对块设备的读写才需要缓冲
+cache: #cpu和内存之间的缓冲. 一般作为文件系统进行缓冲,频繁访问的文件都会被缓存,如果cache值非常大说明缓存文件比较多,
+       #如果此时io中的bi比较小,说明文件系统效率比较好
+
+si: #每秒从磁盘读入虚拟内存的大小. 如果这个值大于0,表示物理内存不够用或者内存泄露了,要查找耗内存进程解决掉
+so: #每秒虚拟内存写入磁盘的大小. 如果这个值大于0,同上
+bi: #块设备每秒接收的块数量. 这里的块设备是指系统上所有的磁盘和其他块设备,默认块大小是1024byte,(4MB)
+bo: #块设备每秒发送的块数量. 例如读取文件,bo就要大于0. bi和bo一般都要接近0,不然就是IO过于频繁,需要调整
+
+in: #每秒CPU的中断次数,包括时间中断
+cs: #每秒上下文切换次数. 这两个值越大,会看到由内核消耗的cpu时间会越多
+
+us: #用户CPU时间. 超过50%的使用,就该考虑优化程序算法或其他措施了
+sy: #系统CPU时间. 如果太高,表示系统调用时间长,例如是IO操作频繁。sy的值过高时,说明系统内核消耗的cpu资源多
+id: #空闲CPU时间.
+wa: #等待IO CPU时间. 一般来说, us + sy + id + wa = 100;
+```
+
+
 
 
 
