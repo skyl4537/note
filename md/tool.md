@@ -18,7 +18,7 @@
 maven插件，可右键启动、打包、测试mvn项目
 ```
 
-> `Alibaba Java Coding Guidelines-1.0.6`
+> `Alibaba-Java-Coding-Guidelines-1.0.6`
 
 ```
 ali开发手册的插件版，约束开发习惯
@@ -35,18 +35,18 @@ ali开发手册的插件版，约束开发习惯
 </dependency>
 ```
 
-```java
-//eclipse-安装
+```shell
+#eclipse-安装
 下载: https://projectlombok.org/download
 将 lombok.jar 放在eclipse安装目录下，与 eclipse/sts.ini 同级
 当前目录打开cmder，使用命令: "java -jar ./lombok.jar"，弹框选择 Install/Update
 成功标识: sts.ini最后一行：-javaagent:F:\sts-bundle\sts-3.9.3.RELEASE\lombok.jar
 ```
 
-```java
-//idea-安装
+```shell
+#idea-安装
 下载: https://github.com/mplushnikov/lombok-intellij-plugin/releases
-Settings-Plugins-'install from disk'，选择下载的*.zip，即可安装成功 
+Settings -> Plugins -> install from disk -> 选择下载的*.zip，即可安装成功 
 ```
 
 ```java
@@ -55,7 +55,7 @@ Settings-Plugins-'install from disk'，选择下载的*.zip，即可安装成功
 @NonNull: 调用字段的setter方法时,传参为null，则报空指针异常。
 @Data: 组合注解，包含 @Getter; @Setter; @ToString, @EqualsAndHashCode; 无参构造函数.
 
-@Accessors: 定制化@Getter与@Setter
+@Accessors: 定制化 @Getter 与 @Setter
 //(chain = true): 链式编写setter方法,如 Person hua = new Person().setName("HUA").setAge(18);
 //(fluent  = true): 流式编写setter方法,如 Person wang = new Person().name("WANG").age(18);
 
@@ -271,7 +271,11 @@ https://blog.csdn.net/small_mouse0/article/details/77506060
 |                 try/catch                  |         Ctrl+Alt+T          |          *           |
 |          自动生成Get/Set/实现方法          |         Alt+Insert          |          *           |
 |                                            |                             |                      |
-|              抽取变量（方法）              |      Ctrl+Alt+V （M）       |   Shift+Alt+L（M）   |
+|                  抽取方法                  |         Ctrl+Alt+M          |     Shift+Alt+M      |
+|                抽取局部变量                |         Ctrl+Alt+V          |     Shift+Alt+L      |
+|        抽取成员变量（静态+非静态）         |         Ctrl+Alt+C          |                      |
+|            局部变量 -> 成员变量            |         Ctrl+Alt+F          |                      |
+|                                            |                             |                      |
 |                   格式化                   |         Ctrl+Alt+L          |     Ctrl+Shift+F     |
 |               代码提示/补全                |       Ctrl+Alt+Space        |        Alt+/         |
 |                  导包优化                  |         Ctrl+Alt+O          |     Ctrl+Shift+O     |
@@ -394,17 +398,17 @@ Build,Exe... - Build Tools - Gradle - Offline work
 
 > `TRACE < DEBUG < INFO < WARN < ERROR`
 
-```
-日志门面：日志的接口，如slf4j，jcl，jboss-logging
+```shell
+日志门面 #日志的接口，如：slf4j（√），jcl，jboss-logging
 
-日志实现：具体实现类，如logback，log4j，log4j2，jul
+日志实现 #具体实现类，如：logback（√），log4j，log4j2（apache），jul
 ```
 
 > 配置文件
 
-```java
-logback.xml //直接被日志框架加载
-logback-spring.xml //跳过日志框架，直接被 SpringBoot 加载，可以使用高级特性 Profile
+```shell
+logback.xml        #直接被日志框架加载
+logback-spring.xml #跳过日志框架，直接被 SpringBoot 加载，可以使用高级特性 Profile
 ```
 
 > 配置多环境
@@ -439,9 +443,7 @@ log4j.logger.com.x.controller = ${logging.level}, ctrl
 %l -> 日志发生位置: 包括类目名,发生的线程,以及在代码中的行数
 ```
 
-> 输出线程id
-
-slf4j默认不提供线程id输出，不过可利用 'MDC' 特性实现。
+> 输出线程id：slf4j默认不提供线程id输出，不过可利用 'MDC' 特性实现。
 
 ```java
 //1.配置拦截器：在线程开始时加入 ThreadId; 在线程结束时删除 ThreadId

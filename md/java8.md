@@ -1,3 +1,5 @@
+[TOC]
+
 
 
 
@@ -168,6 +170,208 @@ Instant instant = date.toInstant();// 2018-10-20T06:35:01.958Z
 Timestamp timestamp = Timestamp.from(instant);//2018-10-20 14:52:12.611
 Instant instant2 = timestamp.toInstant();//2018-10-20T06:52:12.611Z
 ```
+# lambda
+
+##基础概念
+
+>一个语法糖，底层实现还是匿名内部类。
+
+```shell
+#匿名内部类使用同级别的成员变量，需要将变量定义为 final，lambda 也是如此。
+只不过 jdk1.7 之前必须显示指定 final，1.8以后则可省 final，由底层自动添加.
+```
+
+```java
+//(1).可省-参数类型：可由编译器推断得出，称为"类型推断"
+//(2).可省-参数括号：当只有一个参数时
+//(3).可省-方法体的大括号 和 return：当 lambda 体只有一条语句
+list.forEach(new Consumer<String>() {
+
+    @Override
+    public void accept(String x) {
+        System.out.println(x);
+    }
+});
+```
+```java
+list.forEach(x -> System.out.println(x));
+list.forEach(System.out::println); //进一步更新（待讲）
+```
+
+##方法引用
+
+> 当要传递给lambda体的操作，已经有方法实现了，可以直接使用方法引用！
+
+```shell
+使用操作符 '::' 将方法名和对象或类的名字分隔开来。
+引用方法的参数列表 和 返回值，与函数式接口的一致，就可以方法引用
+```
+
+>类の静态方法
+
+```java
+Comparator<Integer> com0 = (x, y) -> Integer.compare(x, y);
+Comparator<Integer> com1 = Integer::compare;
+```
+
+>类の实例方法（1）
+
+```java
+//当lambda参数 arg0 是引用方法的调用者，arg1 是引用方法的参数（或无参数），可用 ClassName::methodName
+Comparator<Integer> com2 = (x, y) -> x.compareTo(y);
+Comparator<Integer> com3 = Integer::compareTo;
+```
+
+>类の实例方法（2）
+
+```java
+x -> System.out.println(x);
+System.out::println; //PrintStream ps = System.out; 对象
+```
+##构造器引用
+
+>无参构造器
+
+```java
+Supplier<Flower> supplier = () -> new Flower();
+
+Supplier<Flower> supplier = Flower::new;
+Flower flower = supplier.get();
+```
+
+> 有参构造器
+
+```java
+BiFunction<Integer, String, Flower> biFunction = (x, y) -> new Flower(x, y);
+
+BiFunction<Integer, String, Flower> biFunction = Flower::new;
+Flower flower = biFunction.apply(5, "55");
+```
+
+## 数组引用
+
+```java
+//返回长度x的String数组
+Function<Integer, String[]> function = (x) -> new String[x];
+
+Function<Integer, String[]> function = String[]::new;
+String[] res = function.apply(10);
+```
+## 函数式接口
+
+>只包含一个抽象方法的接口
+
+```java
+可以在任意接口上使用注解 @FunctionalInterface，来检查是否是函数式接口。
+同时 javadoc 也会包含一条声明，说明这个接口是一个函数式接口。
+```
+
+>四大函数式接口
+
+```java
+//（1）.供给型接口（无入，有出）
+Supplier<T> { T get(); }
+```
+```java
+//（2）.消费型接口（有入，无出）
+Consumer<T> { void accept(T t); }
+
+list.forEach(person -> System.out.println(person.age)); //输出每个人的年龄
+```
+
+```java
+//（3）.函数型接口（有入，有出）
+Function<T, R> { R apply(T t); }
+
+list.stream().map(person -> {
+    return person.age; //取出每个人的年龄
+}).forEach(age -> System.out.println(age));
+```
+
+```java
+//（4）.断定型接口（有入，有出，返回boolean）
+Predicate<T> { boolean test(T t); }
+
+list.stream().filter(person -> {
+    return person.age > 20; //过滤 age>20
+}).forEach(person -> System.out.println(person));
+```
+
+#Stream
+
+>Stream是数据管道，用于操作数据源（集合，数组等），产生新的元素集合。`集合讲的是存储，Stream讲的是操作`
+
+```shell
+Stream 不会存储元素
+Stream 不会改变源对象。相反，它会返回一个持有结果集的新 Stream。
+Stream 操作是延迟执行的。意味着它会等到需要结果时才执行。#详见Demo
+```
+
+`创建流（转化数据源） --> 中间操作（定义中间操作链，但不会立即执行） --> 终止操作（执行中间操作链，并产生结果）`
+
+## 创建流
+
+> 数据准备
+
+```java
+@Data
+@NoArgsConstructor
+@AllArgsConstructor
+public class Person {
+    public int id;
+    public String name;
+    public int age;
+    public double height;
+    public Gender gender;
+}
+```
+
+```java
+Person p1 = new Person(1, "zhao", 17, 197.5, Gender.MAN);
+Person p2 = new Person(2, "qian", 18, 187.5, Gender.MAN);
+Person p3 = new Person(3, "sui", 19, 177.5, Gender.MAN);
+Person p4 = new Person(4, "li", 20, 167.5, Gender.WOMEN);
+Person p5 = new Person(5, "wang", 21, 157.5, Gender.WOMEN);
+List<Person> list = Arrays.asList(p1, p2, p3, p4, p5);
+```
+
+> 创建流的几种方式
+
+```java
+//Collection.stream() 或 parallelStream()
+Stream<Person> stream = list.stream();
+Stream<Person> parallelStream = list.parallelStream(); //并行流
+
+//Arrays.stream()
+Stream<Person> stream = Arrays.stream(array);
+
+//Stream.of()
+Stream<Person> stream = Stream.of(p1, p2, p3); //可变参数,也可传数组
+
+//创建无限流(迭代+生成)
+Stream<Integer> stream0 = Stream.iterate(1, x -> x + 3).limit(10); //迭代(必须限制大小)
+Stream<Double> stream1 = Stream.generate(Math::random).limit(10); //生成
+```
+##操作流
+
+> 中间操作的特点
+
+```shell
+惰性求值: 中间操作不会立即执行，只有执行了终止操作（如forEach()），中间操作才会执行
+内部迭代: 迭代操作 forEach 是由 Stream-API 自动完成
+短路操作: 以下 age=21 不打印，体现了短路操作。
+```
+
+>筛选与切片
+
+
+
+
+
+
+
+
+
 # 接口变动
 
 接口中变量的修饰符默认是 `public static final`，方法的修饰符默认是 `public abstract`。`都只能是`。
@@ -226,10 +430,12 @@ Optional<T> 是一个容器类，代表一个值存在或不存在。原来用 n
 > 常用方法
 
 ```java
-Optional.of(obj); //参数不能为null，否则 NPE
 Optional.empty(); //空实例
 
+Optional.of(obj);         //参数不能为null，否则 NPE
 Optional.ofNullable(obj); //obj不为 null，创建实例；否则创建空实例。【常用】
+
+public void ifPresent(Consumer<? super T> consumer)
 ```
 
 ```java
@@ -245,11 +451,10 @@ public<U> Optional<U> map(Function<? super T, ? extends U> mapper)
 
 public T orElse(T other)
 public T orElseGet(Supplier<? extends T> other)
-public void ifPresent(Consumer<? super T> consumer)
+public <X extends Throwable> T orElseThrow(Supplier<? extends X> exceptioSupplier) throws X
 
 public Optional<T> filter(Predicate<? super T> predicate)
 public<U> Optional<U> flatMap(Function<? super T, Optional<U>> mapper)
-public <X extends Throwable> T orElseThrow(Supplier<? extends X> exceptioSupplier) throws X
 ```
 > 优雅判 null
 
@@ -271,11 +476,11 @@ public String getDogName0(Person person) throws IllegalArgumentException { //繁
 ```java
 public String getDogName1(Person person) throws IllegalArgumentException { //优雅
     return Optional.ofNullable(person)
-            .map(x -> x.getPet())
-            .map(x -> x.getDog())
-            .map(x -> x.getName())
-            // .orElse("Unknown") //以上都为null，则设置默认值 或 抛出异常
-            .orElseThrow(() -> new IllegalArgumentException("param isn't available."));
+        .map(x -> x.getPet())
+        .map(x -> x.getDog())
+        .map(x -> x.getName())
+        // .orElse("Unknown") //以上都为null，则设置默认值 或 抛出异常
+        .orElseThrow(() -> new IllegalArgumentException("param isn't available."));
 }
 ```
 

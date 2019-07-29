@@ -1290,14 +1290,84 @@ CREATE TABLE `product_category` (
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8 COMMENT='类目表';
 
 
+##手动设置cookies
+    5-4 00:18:13
+    
+#
+    
 
 
 
+#taotao-02
+##声明式事务
+    1.service
+        @Override
+        public int insTbItemDesc(TbItem tbItem, TbItemDesc desc) throws Exception {
+            int index =0;
+            try {
+                index= tbItemMapper.insertSelective(tbItem);
+                index+= tbItemDescMapper.insertSelective(desc);
+            } catch (Exception e) {
+                e.printStackTrace();
+            }
+            
+            //当出错时继续运行
+            if(index==2){
+                return 1;
+            }else{
+                //通过手动抛出异常，可以使用 dubbo 的 provider 和 consumer 交互的问题.
+                throw new Exception("新增失败,数据还原");
+            }
+        }
+    
+        //使用注解
+        @Transactional(rollbackFor = Exception.class)
 
+    2.controller
+        @RequestMapping("item/save")
+        @ResponseBody
+        public EgoResult insert(TbItem item,String desc){
+            EgoResult er = new EgoResult();
+            int index;
+            try {
+                index = tbItemServiceImpl.save(item, desc);
+                System.out.println("controler:index:"+index);
+                if(index==1){
+                    er.setStatus(200);
+                }
+            } catch (Exception e) {
+                // e.printStackTrace();
+                er.setData(e.getMessage());
+            }
+            return er;
+        }
+    
 
+    
+    
+// #控制层也往外抛异常 ---> 异常全局处理器 GlobalExceptionConfig
 
+#时间格式化
+    https://blog.csdn.net/zhou520yue520/article/details/81348926
 
+#返回值为null
+    @Data
+    @NoArgsConstructor
+    @AllArgsConstructor
+    public class ResultVO {
+        private Integer code;
 
+        //如果此字段是必须返回字段，则可以赋初始值 ""
+        //不然，就会被下面的配置影响，无此字段返回
+        private String msg;
 
+        //全局配置 - 配置文件 - spring.jackson.default-property-inclusion=non_null
+        // @JsonInclude(JsonInclude.Include.NON_NULL) //值为 null 则不参加序列化
+        private Object data;
 
+        public ResultVO(Integer code, String msg) {
+            this.code = code;
+            this.msg = msg;
+        }
+    }
 

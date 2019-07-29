@@ -463,24 +463,12 @@ ArrayUtils.reverse(array); //数组反转
 ```
 ## BeanUtils
 
->copyProperties
+>`copyProperties()原理：source.get() + target.set()`
 
 ```java
-//原理 target.set + source的属性名（source.get + source的属性名）：所有source必须有get方法，target必须有set方法
-
-springframework.beans.BeanUtils.copyProperties(A， B); //赋值：A->B
-
-commons.beanutils.BeanUtils.copyProperties(A, B)       //赋值：B->A
-```
-
-```
-1、属性名相同，类型相同。可以被复制
-
-2、基本类型 与 其对应的封装类型。可以被复制
-
-3、封装类型 与 其对应的基本类型。可以被复制
-
-4、其他统统不行
+//属性名相同，类型相同（包括基本类型和封装类型）。可以被复制
+springframework.beans.BeanUtils.copyProperties(source， target);
+commons.beanutils.BeanUtils.copyProperties(target, source); //赋值方向不同
 ```
 
 ```java
@@ -490,8 +478,8 @@ public static void copyProperties(Object source, Object target, String... ignore
 
 ```java
 //BeanUtils.copyProperties()对bean属性进行复制，属于浅复制。且不能复制集合和数组
-
 //对于 list，map，数组等，不能通过以上方法进行复制的，可通过 JSON 工具实现。前提是需要有无参构造
+
 List<Dog> A = new ArrayList<>();
 List<Dog> B = new ArrayList<>();
 B = JSON.parseArray(JSON.toJSONString(A), Dog.class);
@@ -502,8 +490,6 @@ B = JSON.parseArray(JSON.toJSONString(A), Dog.class);
 
 
 # fastjson
-
-##基础概念
 
 ```xml
 <dependency>
@@ -520,32 +506,27 @@ json.getInteger("a"); //null --->对于空的key
 json.getIntValue("a"); //0
 ```
 
-##相互转化
-
-> X ---> JSONString 
+> 相互转化
 
 ```java
+//X ---> JSONString 
 String json = JSON.toJSONString(list / map / javabean);
 String json = JSON.toJSONString(list, true);//args1: json是否格式化(有空格和换行).
 ```
 
-> JSONString --->X `必须有空构造方法`
-
 ```java
+//JSONString --->X（必须有空构造方法）
 Dog dog = JSON.parseObject(json, Dog.class);
 Map map = JSON.parseObject(json, Map.class);
 List<Dog> list = JSON.parseArray(json, Dog.class);
 ```
 
-> X ---> JSONObject，先转换为JSONString。其中，`javabean必须有get/set`
-
 ```java
+//X ---> JSONObject（先转换为JSONString，javabean必须有 get/set）
 JSONObject obj = JSON.parseObject(JSON.toJSONString(dog));//javabean
 JSONObject obj = JSON.parseObject(JSON.toJSONString(map));//map
 JSONArray array = JSON.parseArray(JSON.toJSONString(list));//list
 ```
-##Null值处理
-
 > null值处理：list ---> JSONString
 
 ```java
@@ -567,8 +548,6 @@ List<Dog> list = Arrays.asList(new Dog("11", 11), new Dog(null, 22));
 // [{"age":11,"name":"11"},{"age":22,"name":""}]
 String json = JSON.toJSONString(list, SerializerFeature.WriteNullStringAsEmpty);
 ```
-
-##Boot配置
 
 > SpringBoot2.x默认使用 jacksonJson 解析，现转换为 fastjson，并且解决中文乱码问题。
 
@@ -631,11 +610,46 @@ List<Employee> values = mapper.readValue(jsonArrary, new TypeReference<List<Empl
 ```java
 @Data
 public class Employee {
-    @JsonProperty("emp_id") //默认，JSON的key为属性名，即id。{"id":1,"name":"小王"}
-    private Integer id;
-    
-    @JsonProperty("emp_name") //自定义JSON的key值。{"emp_id":1,"emp_name":"小王"}
-    private String name;
+    @JsonProperty("id") //默认，JSON的key为属性名，即empId。{"empId":1,"empName":"小王"}
+    private Integer empId;
+
+    @JsonProperty("name") //自定义JSON的key值。{"id":1,"name":"小王"}
+    private String empName;
+}
+```
+
+> 工具类
+
+```java
+public class JsonUtils {
+    private static ObjectMapper objectMapper = new ObjectMapper();
+
+    public static String toJson(Object object) {
+        try {
+            return objectMapper.writeValueAsString(object);
+        } catch (JsonProcessingException e) {
+            e.printStackTrace();
+        }
+        return null;
+    }
+
+    public static <T> T fromJson(String string, Class<T> clazz) { //泛型
+        try {
+            return objectMapper.readValue(string, clazz);
+        } catch (IOException e) {
+            e.printStackTrace();
+        }
+        return null;
+    }
+
+    public static <T> T fromJson(String string, TypeReference typeReference) {
+        try {
+            return (T) objectMapper.readValue(string, typeReference);
+        } catch (IOException e) {
+            e.printStackTrace();
+        }
+        return null;
+    }
 }
 ```
 

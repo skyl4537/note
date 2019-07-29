@@ -2,6 +2,19 @@
 
 # 基础功能
 
+> 基础概念
+
+```shell
+简化依赖管理
+    #将各种功能模块进行划分，封装成一个个启动器(Starter)，更容易的引入和使用
+    #提供一系列的Starter，将各种功能性模块进行了划分与封装
+    #更容易的引入和使用，有效避免了用户在构建传统Spring应用时维护大量依赖关系，而引发的jar冲突等问题
+
+自动化配置 #为每一个Starter都提供了自动化的java配置类
+嵌入式容器 #嵌入式tomcat，无需部署war文件
+监控の端点 #通过 Actuator 模块暴露的http接口，可以轻松的了解和控制应用的运行情况
+```
+
 ##pom
 
 >SpringBoot 并不是对 Spring 功能上的增强，而是提供了一种快速使用 Spring 的方式
@@ -25,14 +38,14 @@
     </dependency>
 
     <dependency>
+        <groupId>org.springframework.boot</groupId>
+        <artifactId>spring-boot-starter-web</artifactId>
+    </dependency>
+    <dependency>
         <groupId>org.projectlombok</groupId>
         <artifactId>lombok</artifactId>
         <scope>provided</scope>
         <optional>true</optional> <!--依赖不会传递，依赖该项目的项目需要重新引入该依赖-->
-    </dependency>
-    <dependency>
-        <groupId>org.springframework.boot</groupId>
-        <artifactId>spring-boot-starter-web</artifactId>
     </dependency>
     <dependency>
         <groupId>org.springframework.boot</groupId>
@@ -64,10 +77,6 @@
         </resource>
         <resource>
             <directory>src/main/resources</directory>
-            <includes>
-                <include>**/*.xml</include>
-                <include>**/*.properties</include>
-            </includes>
         </resource>
     </resources>
 </build>
@@ -104,13 +113,18 @@ spring.datasource.username=bluecardsoft
 spring.datasource.password=#$%_BC13439677375
 
 #mybatis
-mybatis.mapper-locations=classpath*:com/example/amqp_publisher/mapper/sqlxml/*.xml
+mybatis.mapper-locations=classpath*:com/example/demo/mapper/sqlxml/*.xml
 mybatis.configuration.map-underscore-to-camel-case=true
 #日志打印（可省）
 logging.level.com.example.amqp_publisher.mapper=debug
 
 spring.thymeleaf.cache=false
 #debug=true
+
+#boot日志，默认只打印控制台。配置保存到文件，及日志级别
+logging.file=sell.log
+#logging.level.ROOT=debug
+logging.pattern.console=%d - %msg%n
 ```
 
 ```properties
@@ -489,6 +503,41 @@ public class MyWebMvcConfigurer implements WebMvcConfigurer {
 </dependency>
 ```
 
+## 启动脚本
+
+> 启动脚本
+
+```shell
+#!/bin/bash
+DEMO_DIR="/var/tmp/demo"
+DEMO_JAR="demo-eureka.jar"
+DEMO_PID_FILE="demo.pid"
+
+cd $DEMO_DIR
+chmod 777 $DEMO_JAR
+
+nohup java -jar $DEMO_JAR >/dev/null 2>&1 &
+echo $! > $DEMO_PID_FILE #记录进程号，方便后续使用
+
+PID=`cat "$DEMO_PID_FILE"`
+echo "START AT PID: "$PID
+```
+
+> 停止脚本
+
+```shell
+#!/bin/bash
+DEMO_JAR="demo-eureka.jar"
+DEMO_PID_FILE="demo.pid"
+
+if [ -f "$DEMO_PID_FILE" ]; then #-f: 是否为普通文件(既不是目录，也不是设备文件)
+  PID=`cat "$DEMO_PID_FILE"`
+  echo "STOP PID: "$PID
+  kill -9 $PID
+  true>$DEMO_PID_FILE #清空文件
+fi
+```
+
 ##跨域
 
 ```shell
@@ -546,7 +595,8 @@ CORS（Cross-Origin Resource Sharing，跨源资源共享）是W3C出的一个�
 public class UserController {
 
     @PostMapping("/login")
-    public String login(@RequestParam("userName") String uName, @RequestParam("userPwd") String uPwd,
+    public String login(@RequestParam("userName") String uName,
+                        @RequestParam("userPwd") String uPwd,
                         HttpSession session, Model model) {
         if (StringUtils.isNotBlank(uPwd)) {
             session.setAttribute("userName", uName); //缓存Session，用于后续验证
@@ -871,7 +921,7 @@ public class MailController {
 
 ## junit
 
->`@SpringBootTest`
+>单元测试：`@SpringBootTest`
 
 ```xml
 <dependency>
@@ -1002,11 +1052,7 @@ druid: { //Spring应用程序上下文中的Bean名称或ID
 
 ##Admin
 
-https://github.com/codecentric/spring-boot-admin
-
-SpringBoot-Admin 用于监控BOOT项目，基于 Actuator 的可视化 WEB UI
-
-> 客户端（被监控者）
+> 客户端（被监控者）：SpringBoot-Admin 用于监控BOOT项目，基于 Actuator 的可视化 WEB UI
 
 ```xml
 <dependency>
@@ -1395,7 +1441,7 @@ public class MyWebSocket {
 
 > sts的html代码提示
 
-```xml
+```shell
 (0).下载STS插件: https://github.com/thymeleaf/thymeleaf-extras-eclipse-plugin/releases
 (1).在STS安装目录dropins下新建文件夹: thymeleaf-2.1.2
 (2).只将压缩包中的 features 和 plugins 文件夹拷贝到以上目录并重启eclise!!!
@@ -1421,8 +1467,8 @@ public class MyWebSocket {
 ```
 > thymeleaf 模板文件存放位置：src/main/resources/templates
 
-```
-templates 目录是安全的，意味着该目录下的内容不允许外界直接访问，必须经过服务器的渲染
+```shell
+templates 目录是安全的，意味着该目录下的内容不允许外界直接访问，必须经过服务器的渲染。
 ```
 
 ##常用符号
@@ -1783,8 +1829,6 @@ Application: <span th:text="${application.app}"></span>
 
 ```
 
->
-
 
 
 # CRUD
@@ -1793,9 +1837,9 @@ Application: <span th:text="${application.app}"></span>
 
 >restful是对于同一个服务器资源的一组不同的操作，包括：GET，POST，PUT，DELETE，PATCH，HEAD，OPTIONS
 
-```java
+```shell
 http请求的安全和幂等，是指多次调用同一个请求对资源状态的影响。
-'安全' -> 请求不会影响资源的状态。只读的请求：GET,HEAD,OPTIONS
+'安全' -> 请求不会影响资源的状态。只读的请求：GET，HEAD，OPTIONS
 '幂等' -> 多次相同的请求，目的一致。
 ```
 | 请求方式 |  请求url  |                             说明                             |    是否幂等    |
@@ -2084,229 +2128,134 @@ public String delete(@PathVariable Integer id) {
 
 
 
+#Exception
 
+> 异常统一处理：`返回json数据 或 错误页面`
 
-
-# exception
-
-Boot对于异常处理提供了五种处理方式，`推荐使用方式 3 或 5` http://blog.51cto.com/13902811/2170945?source=dra
-
-##五种方式
-
-> （1）自定义错误页面（默认）
-
-```java
-一旦程序出现异常，SpringBoot 会向url '/error' 发送请求。
-通过默认的 BasicExceptionController 来处理请求 '/error'，然后跳转到默认异常页面，显示异常信息。
-
-所以，如果需要将所有异常统一跳转到自定义错误页面，需新建页面 '/templates/error.html'，必须叫 error.html
-缺点：不符合实际需求，应该对于不同错误跳转不同页面。
+```shell
+#以下配置，可以实现两种需求：
+当 username 为空时，返回json数据
+当 username 以0开头时，返回错误页
 ```
 
->（2）注解处理异常 @ExceptionHandler
+> 异常处理の优先级
 
->（3）注解处理异常 @ExceptionHandler + @ControllerAdvice
-
-```java
+```shell
 当执行过程中出现异常，首先在本类中查找 @ExceptionHandler 标识的方法。
 找不到，再去查找 @ControllerAdvice 标识类中的 @ExceptionHandler 标识方法来处理异常。
 
-//处理优先级：异常的最近继承关系
+#处理优先级：异常的最近继承关系
 例如发生异常 NullPointerException; 但是声明的异常有 RuntimeException 和 Exception
 此时，根据异常的最近继承关系，找到继承深度最浅的那个，即 RuntimeException 的声明方法
 ```
 
-```java
-@ControllerAdvice //异常处理类
-public class GlobalException {
-    /**
-     * 参数(可选):
-     *         异常参数(包括自定义异常);
-     *         请求或响应对象(HttpServletRequest; ServletRequest; PortleRequest/ActionRequest/RenderRequest) 
-     *         Session对象(HttpSession; PortletSession) 
-     *         WebRequest; NativeWebRequest; Locale; 
-     *         InputStream/Reader; OutputStream/Writer; Model
-     * 
-     * 返回值(可选):
-     *         ModelAndView; Model; Map; View; String; @ResponseBody;
-     *         HttpEntity<?>或ResponseEntity<?>; 以及void
-     */
-    @ExceptionHandler(ArithmeticException.class) //ex对应发生的异常对象
-    public ModelAndView arithmeticException(HttpServletRequest request, ArithmeticException ex) {
-        
-        //区分 URL & URI： http://ip:port/demo/hello/hello & /demo/hello/hello
-        log.info("{} & {}", request.getRequestURL(), request.getRequestURI());
+>异常处理の方法的常用参数
 
-        ModelAndView mv = new ModelAndView("/error/airth");
-        mv.addObject("errMsg", ex.getLocalizedMessage());
-        return mv; //跳转异常页，并携带异常信息
+```java
+/**
+ * @param e 异常参数(包括自定义异常);
+ *          请求或响应对象(HttpServletRequest; ServletRequest; PortleRequest/ActionRequest/RenderRequest)
+ *          Session对象(HttpSession; PortletSession)
+ *          WebRequest; NativeWebRequest; Locale;
+ *          InputStream/Reader; OutputStream/Writer; Model
+ * @return ModelAndView; Model; Map; View; String; @ResponseBody; HttpEntity<?>或ResponseEntity<?>; 以及void
+ */
+```
+
+> 异常处理类：`不仅可以处理 controller 异常，也可以处理 service 异常`
+
+```java
+@Slf4j
+@ControllerAdvice //异常处理类，AOP切面类
+// @RestControllerAdvice //类中所有方法，都返回json
+public class ExceptionConfig {
+
+    //异常处理，返回错误json数据
+    @ResponseBody
+    @ExceptionHandler(MyException.class)
+    public ResultVO myException(MyException e) {
+        log.info("【异常处理类】方法1");
+        return new ResultVO(e.getCode(), e.getMessage());
     }
-    
-    @ExceptionHandler(RuntimeException.class)
-    public ModelAndView runtimeException(HttpServletRequest request, RuntimeException ex) {                
-        ModelAndView mv = new ModelAndView("/error/runtime");
-        mv.addObject("errMsg", ex.getLocalizedMessage());
-        return mv;
+
+    @ResponseStatus(HttpStatus.NOT_FOUND) //自定义浏览器返回状态码为404，默认200
+    @ExceptionHandler(UserException.class)
+    public ModelAndView userException(UserException e) {
+        // 区分 URL & URI： http://ip:port/demo/hello/hello & /demo/hello/hello
+        // log.info("{} & {}", HttpServletRequest.getRequestURL(), HttpServletRequest.getRequestURI());
+
+        Integer code = e.getCode();
+        ModelAndView modelAndView = new ModelAndView("/error/" + code); //
+        modelAndView.addObject("errMsg", e.getMessage());
+
+        log.info("【异常处理类】方法2");
+        return modelAndView; //结合 thymeleaf 模板使用
     }
 }
 ```
-> （4）配置 SimpleMappingExceptionResolver （3的简化）
+
+> Controller方法
 
 ```java
-//优点：在全局异常类的一个方法中完成所有异常的统一处理
-//缺点：只能进行异常与视图的映射，不能传递异常信息
+@Slf4j
+@RestController
+@RequestMapping("/hello")
+public class HelloController {
 
-@Configuration //（1）此处的注解不同
-public class GlobalException {
-    
-    //（2）方法必须有返回值。返回值类型必须是：SimpleMappingExceptionResolver
-    @Bean
-    public SimpleMappingExceptionResolver getSimpleMappingExceptionResolver() {
-        SimpleMappingExceptionResolver resolver = new SimpleMappingExceptionResolver();
-        Properties mappings = new Properties();
+    @Autowired
+    HelloService helloService;
 
-        //arg0：异常的类型，注意必须是异常类型的全名； arg1：视图名称
-        mappings.put("java.lang.ArithmeticException", "error1");
-        mappings.put("java.lang.RuntimeException", "error2");
-
-        //（3）设置异常与视图的映射，但不能传递异常信息
-        resolver.setExceptionMappings(mappings);
-        return resolver;
-    }
-}
-```
-> （5）自定义类处理异常 HandlerExceptionResolver
-
-```java
-@Configuration
-public class GlobalException implements HandlerExceptionResolver {
-
-    @Override
-    public ModelAndView resolveException(
-            HttpServletRequest request, HttpServletResponse response, @Nullable Object handler, Exception ex) {
-        ModelAndView mv = new ModelAndView();
-
-        //不同异常类型，不同视图跳转
-        if (ex instanceof ArithmeticException) {
-            mv.setViewName("error1");
+    @GetMapping("/world")
+    public ResultVO world(@RequestParam("username") String username) {
+        if (StringUtils.isEmpty(username)) {
+            log.error("参数不正确");
+            throw new MyException(501, "参数不正确");
         }
-        if (ex instanceof NullPointerException) {
-            mv.setViewName("error2");
+
+        helloService.login(username);
+        return new ResultVO(0, "成功", username);
+    }
+}
+```
+
+> Service方法
+
+```java
+@Slf4j
+@Service
+public class HelloService {
+
+    public void login(String username) {
+        if (username.startsWith("0")) {
+            log.error("用户名不存在 ");
+            throw new UserException(502, "用户名不存在");
         }
-        //并传递异常信息
-        mv.addObject("errMsg", ex.toString());
-        return mv;
     }
 }
 ```
-## 自动处理
 
-参照 ErrorMvcAutoConfiguration，错误处理的自动配置
 
-> 一旦系统出现 4xx 或 5xx 之类的错误，ErrorPageCustomizer 就会生效，它会发送 /error 请求
 
-```java
-@Value("${error.path:/error}")    
-private String path = "/error";
-```
->/error 请求会被 BasicErrorController 处理，它有两种处理机制：浏览器 + 接口
+
+
+# 声明式事务
 
 ```java
-@Controller
-@RequestMapping("${server.error.path:${error.path:/error}}")
-public class BasicErrorController extends AbstractErrorController {
-    // 针对浏览器请求的响应页面，产生html类型的数据
-    @RequestMapping(produces = "text/html")
-    public ModelAndView errorHtml(HttpServletRequest request, HttpServletResponse response) { }
-
-    // 针对其他客户端请求的响应数据，产生json数据
-    @RequestMapping
-    @ResponseBody 
-    public ResponseEntity<Map<String, Object>> error(HttpServletRequest request) { }
-}
-```
->其中，html类型数据由 DefaultErrorViewResolver 解析产生，规则为
-
-    （1）有模板引擎的情况下： error/状态码。如：error/404.html
-    （2）没有模板引擎（模板引擎找不到这个错误页面），静态资源文件夹下找
-    （3）以上都没有错误页面，就使用 SpringBoot 默认的错误提示页面
-> json类型数据由 DefaultErrorAttributes 提供，其中包括
-
-    timestamp：时间戳;    status：状态码; 
-    error：错误提示;      exception：异常对象
-    message：异常消息;    errors：JSR303数据校验的错误都在这里
-##定制错误
-
-> 定制错误页面
-
-```java
-将错误页面命名为 '错误状态码.html'，存放路径: 'templates/error/*.html'，发生错误就会来到 对应状态码的页面
-文件名也可以使用 4xx 和 5xx 来模糊匹配状态码，当然精确匹配优先考虑！！
-```
->第1版：接口和浏览器返回皆为json，没有做到自适应!!!
-
-```java
-//controller 的一个辅助类，最常用作全局异常处理的AOP切面类
-@ControllerAdvice
-public class GlobalExceptionHandler {
-
-    @ResponseBody //返回json
-    @ExceptionHandler(BlueException.class)
-    private Map<Object, Object> notFound(BlueException e) {
-        Map<Object, Object> map = new HashMap<>();
-        map.put("errMsg", e.errMsg);
-        return map;
+@RequestMapping("item/save")
+@ResponseBody
+public EgoResult insert(TbItem item,String desc){
+    EgoResult er = new EgoResult();
+    int index;
+    try {
+        index = tbItemServiceImpl.save(item, desc);
+        System.out.println("controler:index:"+index);
+        if(index==1){
+            er.setStatus(200);
+        }
+    } catch (Exception e) {
+        er.setData(e.getMessage());
     }
-}
-```
->第2版：转发到 /error，进行自适应响应处理。未能显示用户自定义的异常信息
-
-```java
-@ExceptionHandler(BlueException.class)
-private String notFound(HttpServletRequest req, BlueException e) {
-    Map<Object, Object> map = new HashMap<>();
-    map.put("errMsg", e.errMsg);
-
-    // 传入自定义的错误状态码 4xx 5xx,否则就不会进入定制错误页面的解析流程
-    req.setAttribute("javax.servlet.error.status_code", 500);
-
-    // 转发到/error
-    return "forword:/error";
-}
-```
->第3版：错误请求的自适应反馈（转发到定制错误页面或返回json），以及携带自定义的数据内容
-
-```java
-@ExceptionHandler(BlueException.class)
-private String notFound(HttpServletRequest req, BlueException e) {
-    Map<Object, Object> map = new HashMap<>();
-    map.put("errCode", e.errCode);
-    map.put("errMsg", e.errMsg);
-
-    req.setAttribute("javax.servlet.error.status_code", 500);
-    req.setAttribute("err", map);
-
-    return "forward:/error";
-}
-```
->配合第3版共同使用：给容器中加入我们自己定义的 ErrorAttributes。`待完善`
-
-```java
-'再次强调：错误页面的数据集合由 DefaultErrorAttributes#getErrorAttributes() 提供!!!'
-@Component
-class BlueErrorAttributes extends DefaultErrorAttributes {
-    @Override
-    public Map<String, Object> getErrorAttributes(RequestAttributes requestAttributes, 
-                                                  boolean includeStackTrace) {
-        Map<String, Object> map = super.getErrorAttributes(requestAttributes, includeStackTrace);
-
-        // 取出上述方法的'err'，放入错误页面的数据集合
-        // 第二个参数：0代表从 request 中读取数据， 1代表从 session 中
-        map.put("data", requestAttributes.getAttribute("err", 0));
-
-        // 此map就是页面和json都能获取到的所有字段
-        return map;
-    }
+    return er;
 }
 ```
 

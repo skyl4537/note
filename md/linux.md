@@ -253,10 +253,14 @@ reboot 或 shutdown -r now
 
 ```shell
 yum -y install nano #安装
-nano 路径+文件名      #新建/打开
+nano file           #新建/打开
 
 退出: Ctrl+x （y确认）   保存修改: Ctrl+o    取消返回: Ctrl+c
 剪贴/删除整行: Ctrl+k    复制整行: Alt+6        粘贴: Ctrl+U 
+
+#在编辑状态下退出请按 Ctrl+X，会有两种情形：如果文件未修改，直接退出；如果修改了文件，下面会询问是否需要保存修改。
+#输入 Y 确认保存，输入 N 不保存，按 Ctrl+C 取消返回。如果输入了 Y，下一步会提示输入想要保存的文件名。
+#如果不需要修改文件名直接回车就行；若想要保存成别的名字（也就是另存为）则输入新名称然后确定，这个时候也可用 Ctrl+C 来取消返回。
 ```
 > linux 定时任务 crontab
 
@@ -1310,15 +1314,16 @@ pstree -p <pid> | wc -l #查询某程序的线程或进程数
 
 pstree -p | wc -l #查询当前整个系统已用的线程或进程数
 ```
+##维护相关
+
 > 查看不同状态的连接数数量
 
 ```shell
 netstat -n | awk '/^tcp/ {++y[$NF]} END {for(w in y) print w, y[w]}'
 
-CLOSE_WAIT 2
-ESTABLISHED 58
-FIN_WAIT1 1
-TIME_WAIT 29
+#CLOSE_WAIT 2
+#ESTABLISHED 58
+#FIN_WAIT1 1
 ```
 
 >查看每个ip跟服务器建立的连接数
@@ -1327,9 +1332,9 @@ TIME_WAIT 29
 netstat -nat|awk '{print$5}'|awk -F : '{print$1}'|sort|uniq -c|sort -rn
 #显示第5列; [-F :]以:分割; [sort]排序; [uniq -c]统计排序过程中的重复行; [sort -rn]按纯数字进行逆序排序
 
-31 45.116.147.178 
-20 45.116.147.186
-12 23.234.45.34
+#31 45.116.147.178 
+#20 45.116.147.186
+#12 23.234.45.34
 ```
 
 >查看每个ip建立的（ESTABLISHED / TIME_OUT）状态的连接数
@@ -1337,10 +1342,21 @@ netstat -nat|awk '{print$5}'|awk -F : '{print$1}'|sort|uniq -c|sort -rn
 ```shell
 netstat -nat|grep ESTABLISHED|awk '{print$5}'|awk -F : '{print$1}'|sort|uniq -c|sort -rn
 
-94 127.0.0.1
-22 192.168.8.93
-20 192.168.8.66
+#94 127.0.0.1
+#22 192.168.8.93
+#20 192.168.8.66
 ```
+
+>查看占用cpu最多的进程（两种方法）
+
+```shell
+ps H -eo pid,pcpu | sort -nk2 | tail #方法2
+top -> shift + t #方法1
+
+ps aux | fgrep pid #根据 pid 查找进程名
+```
+
+
 
 
 
