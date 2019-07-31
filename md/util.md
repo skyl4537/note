@@ -34,6 +34,25 @@ public static String newline() {
 }
 ```
 
+> 页面返回类
+
+```java
+public class ResultVOUtils {
+
+    public static ResultVO success() {
+        return new ResultVO(0, "成功");
+    }
+
+    public static <T> ResultVO success(T data) {
+        return new ResultVO<>(0, "成功", data);
+    }
+
+    public static ResultVO fail(MyException e) {
+        return new ResultVO(e.getCode(), e.getMessage());
+    }
+}
+```
+
 > 使用占位符拼接字符串
 
 ```java
@@ -667,12 +686,12 @@ public class JsonUtils {
 ```
 > 区别 GET & POST
 
-```java
-超链接<a/>    ---> //只能用 GET 提交HTTP请求
-表单<form/>   ---> //可以用 GET，POST .......
+```shell
+超链接<a/>    #只能用 GET 提交HTTP请求
+表单<form/>   #可以用 GET，POST .......
 
-GET          ---> //参数只能在请求行（request-line）
-POST         ---> //参数可在请求行，亦可在请求体（request-body）
+GET          #参数只能在请求行（request-line）
+POST         #参数可在请求行，亦可在请求体（request-body）
 ```
 > 区别 URL & URI：http://ip:port/demo/hello/hello & /demo/hello/hello
 
@@ -692,7 +711,7 @@ HttpGet httpGet = new HttpGet(uri);
 ```java
 //(2).通过 URIUtils 工具类生成带参数的 URI
 String param = "name=中国&age=70";
-// String param = "name=" + URLEncoder.encode("中国", "UTF-8") + "&age=70"; //中文参数,encode
+// String param = "name=" + URLEncoder.encode("中国", "UTF-8") + "&age=70"; //中文参数，encode
 URI uri = URIUtils.createURI("http", "127.0.0.1", 8090, "/demo/http/get", param, null);
 HttpGet httpGet = new HttpGet(uri);
 ```
@@ -771,7 +790,7 @@ httpPost.setEntity(entity);
 ```java
 //后台逻辑
 MultipartEntityBuilder builder = MultipartEntityBuilder.create();
-ContentType contentType = ContentType.create("text/plain","UTF-8");//中文乱码,默认"ISO-8859-1"
+ContentType contentType = ContentType.create("text/plain","UTF-8");//中文乱码，默认"ISO-8859-1"
 builder.addTextBody("fileName", "中国", contentType);
 builder.addBinaryBody("file", new File("C:\\Users\\BlueCard\\Desktop\\StatusCode.png"));
 HttpEntity entity = builder.build();
@@ -782,17 +801,15 @@ httpPost.setEntity(entity);
 
 ## 请求结果解析
 
-请求结果解析通用于 GET 和 POST。
+> 请求结果解析通用于 GET 和 POST。
 
 ```java
 String uri = "http://127.0.0.1:8090/demo/http/get?name=中国&age=70";
 HttpGet httpGet = new HttpGet(uri); //组装请求-GET
 // HttpPost httpPost = new HttpPost(uri); //组装请求-POST
 
-try (CloseableHttpResponse httpResponse =
-             HttpClients.createDefault().execute(httpGet)) { //发送请求，连接自动关闭
-    if (null != httpResponse && HttpStatus.SC_OK ==
-            httpResponse.getStatusLine().getStatusCode()) {
+try (CloseableHttpResponse httpResponse = HttpClients.createDefault().execute(httpGet)) { //发送请求，连接自动关闭
+    if (null != httpResponse && HttpStatus.SC_OK == httpResponse.getStatusLine().getStatusCode()) {
         String res = EntityUtils.toString(httpResponse.getEntity(), "UTF-8"); //获取结果
         System.out.println(res);
     }

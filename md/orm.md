@@ -233,6 +233,48 @@ SELECT * FROM user WHERE name LIKE '%#{name}%' -- 张 -> "%'张'%" --> 错误
 </select>
 ```
 
+> 存储过程
+
+```xml
+<!-- 使用标签<select/> && statementType="CALLABLE" -->
+<select id="get_park_free_count0" resultType="java.util.Map" statementType="CALLABLE">
+    {call get_park_free_count(#{parkId})}
+</select>
+```
+
+> 特殊符号
+
+```shell
+#{}：预编译处理，防止SQL注入，安全。自动对传入参数添加一个单（双）引号。可以通过OGNL方式取值：参数.属性。
+     原理是将sql中的 #{} 替换为 ?，然后调用 PreparedStatement.set() 方法来赋值。
+```
+
+```shell
+${}：sql字符串拼接。需手动添加单（双）引号。也可以通过OGNL方式取值：参数.属性。
+     配合使用 statementType="STATEMENT"，原理是把 ${} 替换成变量的值。
+```
+
+```sql
+-- 如果使用#{}，那么生成的SQL为：
+select name from student where xCode = ?       --传值为'S123456'；
+
+-- 如果使用${}，那么生成的SQL为：
+select name from student where xCode = S123456 --直接字符串拼接
+
+--所以，如果 xCode 的数据类型为varchar,那么使用${}就会报错。
+```
+
+```xml
+<!--一般，建议使用#{}；特殊情况必须要用${}。如：动态传入字段，表名-->
+<!--用 #{} order by 'id,name'，变为根据字符串排序，与需求不符-->
+<!--用 ${} order by id,name，符合需求-->
+<select id="get_res_by_field" resultType="map" statementType="STATEMENT">
+    SELECT * FROM person ORDER BY ${field} DESC LIMIT 10
+</select>
+```
+
+
+
 ##分页查询
 
 > `插件版`：在插件的拦截方法内拦截待执行的sql，然后重写sql，添加对应的物理分页语句和分页参数。

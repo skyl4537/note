@@ -2130,21 +2130,176 @@ public String delete(@PathVariable Integer id) {
 
 #Exception
 
-> 异常统一处理：`返回json数据 或 错误页面`
+> 问题需求
 
 ```shell
-#以下配置，可以实现两种需求：
-当 username 为空时，返回json数据
-当 username 以0开头时，返回错误页
+#当前问题
+当程序出现错误，如获取值为空或出现异常时，并不希望用户看到异常的具体信息，而是希望对对应的错误和异常做相应提示
+在MVC框架中很多时候会出现执行异常，那我们就需要加 try/catch 进行捕获，如果 service 层和 controller 层都加上，那就会造成代码冗余
+
+#解决方法
+编程时，先进行参数校验，有问题则'直接抛出异常'；没问题则继续执行具体的业务操作，最后返回成功信息。
+在'异常处理类'中捕获异常，统一处理，向用户返回规范的响应信息（如 json），无需在代码中 try/catch。
+
+#异常处理流程
+自定义异常类型，错误码，以及错误信息。
+对于可预知的异常由程序员在代码中（controller、service、dao）主动抛出；框架异常则由框架自行抛出
+在'异常处理类'中，统一处理异常：对于程序员抛出的异常，捕捉自定义异常处理。对于框架异常，则捕捉 Exception 处理。
+```
+
+> 自定义返回值类型
+
+```java
+@Getter
+@NoArgsConstructor
+@AllArgsConstructor
+public enum ResultEnum { //枚举
+    SUCCESS(0, "成功"),
+
+    PARAM_ERROR(10, "参数不正确"),
+    USER_NO_FOUND(404, "用户不存在"),
+    SERVER_ERROR(999, "系统繁忙，请稍后再试！");
+
+    private Integer code;
+    private String msg;
+}
+```
+
+```java
+@Data
+@NoArgsConstructor
+@AllArgsConstructor
+public class ResultVO<T> {
+    private Integer code;
+    private String msg;
+    private T data;
+
+    public ResultVO(Integer code, String msg) {
+        this.code = code;
+        this.msg = msg;
+    }
+
+    public ResultVO(ResultEnum resultEnum) {
+        this.code = resultEnum.getCode();
+        this.msg = resultEnum.getMsg();
+    }
+
+    public ResultVO(ResultEnum resultEnum, T data) {
+        this(resultEnum);
+        this.data = data;
+    }
+}
+```
+
+> 自定义异常类型
+
+```java
+@Data
+@NoArgsConstructor
+@EqualsAndHashCode(callSuper = true)
+public class CustomException extends RuntimeException { //异常类型1
+    private ResultEnum resultEnum;
+
+    public CustomException(ResultEnum resultEnum) {
+        this.resultEnum = resultEnum;
+    }
+}
+```
+
+```java
+@NoArgsConstructor
+public class UserException extends CustomException { //异常类型2
+
+    public UserException(ResultEnum resultEnum) {
+        super(resultEnum);
+    }
+}
+```
+
+> 各层抛出异常
+
+```java
+@Slf4j
+@RestController
+@RequestMapping("/hello")
+public class HelloController {
+    @Autowired
+    HelloService helloService;
+
+    @GetMapping("/world")
+    public ResultVO world(@RequestParam("username") String username) {
+        if (StringUtils.isEmpty(username)) {
+            log.error("参数不正确");
+            throw new CustomException(ResultEnum.PARAM_ERROR); //抛出异常1
+        }
+
+        helloService.login(username);
+        return ResultVOUtil.success(username);
+    }
+}
+```
+
+```java
+@Slf4j
+@Service
+public class HelloService {
+    @Autowired
+    HelloMapper helloMapper;
+
+    public void login(String username) {
+        if (username.startsWith("0")) {
+            log.error("用户名不存在");
+            throw new UserException(ResultEnum.USER_NO_FOUND); //抛出异常2
+        }
+
+        helloMapper.findByCategoryIdAndCategoryType(6, 4);
+    }
+}
+```
+
+> 异常处理类：原理是AOP切面。`不仅可以处理 controller 异常，也可以处理 service 异常`
+
+```java
+@Slf4j
+@ControllerAdvice
+// @RestControllerAdvice
+public class ExceptionConfig {
+
+    @ResponseStatus(HttpStatus.NOT_FOUND) //返回错误页面。自定义浏览器返回状态码为404，默认200
+    @ExceptionHandler(CustomException.class)
+    public ModelAndView userException(CustomException e) {
+        Integer code = e.getResultEnum().getCode();
+        ModelAndView modelAndView = new ModelAndView("/error/" + code);
+        modelAndView.addObject("errMsg", e.getMessage());
+
+        log.error("【异常处理类】处理异常: CustomException");
+        return modelAndView; //结合 thymeleaf 模板使用
+    }
+
+    @ResponseBody //返回json，默认返回错误页面
+    @ExceptionHandler(UserException.class)
+    public ResultVO customException(UserException e) {
+        log.error("【异常处理类】处理异常: UserException");
+        return ResultVOUtil.fail(e.getResultEnum());
+    }
+
+    @ResponseBody
+    @ExceptionHandler(Exception.class) //捕获未知错误
+    public ResultVO exception(Exception e) {
+        log.error("【异常处理类】处理异常: Exception");
+        return ResultVOUtil.fail(ResultEnum.SERVER_ERROR);
+    }
+}
 ```
 
 > 异常处理の优先级
 
 ```shell
+#查找-优先级
 当执行过程中出现异常，首先在本类中查找 @ExceptionHandler 标识的方法。
 找不到，再去查找 @ControllerAdvice 标识类中的 @ExceptionHandler 标识方法来处理异常。
 
-#处理优先级：异常的最近继承关系
+#继承-优先级
 例如发生异常 NullPointerException; 但是声明的异常有 RuntimeException 和 Exception
 此时，根据异常的最近继承关系，找到继承深度最浅的那个，即 RuntimeException 的声明方法
 ```
@@ -2161,80 +2316,6 @@ public String delete(@PathVariable Integer id) {
  * @return ModelAndView; Model; Map; View; String; @ResponseBody; HttpEntity<?>或ResponseEntity<?>; 以及void
  */
 ```
-
-> 异常处理类：`不仅可以处理 controller 异常，也可以处理 service 异常`
-
-```java
-@Slf4j
-@ControllerAdvice //异常处理类，AOP切面类
-// @RestControllerAdvice //类中所有方法，都返回json
-public class ExceptionConfig {
-
-    //异常处理，返回错误json数据
-    @ResponseBody
-    @ExceptionHandler(MyException.class)
-    public ResultVO myException(MyException e) {
-        log.info("【异常处理类】方法1");
-        return new ResultVO(e.getCode(), e.getMessage());
-    }
-
-    @ResponseStatus(HttpStatus.NOT_FOUND) //自定义浏览器返回状态码为404，默认200
-    @ExceptionHandler(UserException.class)
-    public ModelAndView userException(UserException e) {
-        // 区分 URL & URI： http://ip:port/demo/hello/hello & /demo/hello/hello
-        // log.info("{} & {}", HttpServletRequest.getRequestURL(), HttpServletRequest.getRequestURI());
-
-        Integer code = e.getCode();
-        ModelAndView modelAndView = new ModelAndView("/error/" + code); //
-        modelAndView.addObject("errMsg", e.getMessage());
-
-        log.info("【异常处理类】方法2");
-        return modelAndView; //结合 thymeleaf 模板使用
-    }
-}
-```
-
-> Controller方法
-
-```java
-@Slf4j
-@RestController
-@RequestMapping("/hello")
-public class HelloController {
-
-    @Autowired
-    HelloService helloService;
-
-    @GetMapping("/world")
-    public ResultVO world(@RequestParam("username") String username) {
-        if (StringUtils.isEmpty(username)) {
-            log.error("参数不正确");
-            throw new MyException(501, "参数不正确");
-        }
-
-        helloService.login(username);
-        return new ResultVO(0, "成功", username);
-    }
-}
-```
-
-> Service方法
-
-```java
-@Slf4j
-@Service
-public class HelloService {
-
-    public void login(String username) {
-        if (username.startsWith("0")) {
-            log.error("用户名不存在 ");
-            throw new UserException(502, "用户名不存在");
-        }
-    }
-}
-```
-
-
 
 
 

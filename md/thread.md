@@ -1652,6 +1652,35 @@ ScheduledFuture<?> future = scheduled.scheduleWithFixedDelay(task1, 1, 1, TimeUn
 future.cancel(true); //取消单个任务
 pool.shutdown(); //取消整体任务
 ```
+> 停止任务时，任务是否已放入任务集map？
+
+```java
+public static void main(String[] args) {
+    String key = "JOB_KEY";
+    final Map<String, Future> futures = new HashMap<>(); //job_map
+
+    LocalTime init = LocalTime.now();
+    System.out.println("init: " + init);
+
+    ScheduledExecutorService pool = Executors.newScheduledThreadPool(5);
+    ScheduledFuture<?> future = pool.scheduleWithFixedDelay(() -> {
+        LocalTime now = LocalTime.now();
+        System.out.println("now : " + now);
+
+        if (ChronoUnit.MILLIS.between(init, now) > 3 * 1000) { //启动3s后，停止任务
+            futures.get(key).cancel(true);
+            pool.shutdown();
+            System.out.println("-------------");            
+        }
+    }, 0, 3, TimeUnit.SECONDS);
+
+    //先于任务执行，即任务执行过程中，future肯定已放入Map
+    System.out.println(LocalTime.now() + " 0 " + futures.size());
+    futures.put(key, future);
+    System.out.println(LocalTime.now() + " 1 " + futures.size());
+}
+```
+
 ##@Scheduled
 
 > `@Scheduled`：Spring内置的定时线程池

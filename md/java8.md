@@ -364,13 +364,266 @@ Stream<Double> stream1 = Stream.generate(Math::random).limit(10); //生成
 
 >筛选与切片
 
+```java
+list.stream()
+        .filter(x -> {
+            System.out.println("比较: " + x.age);
+            return x.age > 17; //过滤条件
+        })
+        .limit(3) //结果集大小
+        .skip(1) //跳过结果集中的前n个元素; 当n大于元素总数,返回空流.
+        .distinct() //通过 hashCode() 和 equals() 去重
+        .forEach(System.out::println);//终止操作 -> 最终结果集为 3-1 个
 
+// 比较: 17 -> 不满足
+// 比较: 18 -> 满足，但挑过
+// 比较: 19 -> 满足，输出
+// 比较: 20 -> 满足，输出
+// ***: 21 -> 虽然满足，但是 limit(3) 以满足，则不再比较 
+```
 
+> 映射
 
+```java
+//map()入参为 ：函数型接口，有入有出。
+<R> Stream<R> map(Function<? super T, ? extends R> mapper);
 
+//peek()入参为：消费型接口，只有入参，没有出参。更多情况用于 debug 逻辑是否正确。
+Stream<T> peek(Consumer<? super T> action);
+```
 
+```java
+list.stream()
+    .map(person -> {
+        person.age += 5;
+        return person;
+    })
+    .forEach(System.out::println);
 
+list.stream().peek(person -> person.age += 5) //逻辑等同，互相替换
+    .forEach(System.out::println);
+```
 
+```java
+//map() 和 flatmap() 类比于： list.add() 和 addAll()
+
+List<String> list0 = Arrays.asList("a", "b");
+
+List list1 = new ArrayList<>();
+list1.add("aa");
+
+list1.add(list0); //list0作为list1中的一个元素。[aa, [a, b]]
+
+list1.addAll(list0); //list0中的元素融入list1中。[aa, a, b]
+```
+
+>排序
+
+```java
+list.stream()
+    //.sorted() //自然排序(调用compare()方法); 非自然排序(自定义排序方法)
+    //.sorted((x, y) -> (x.name).compareTo(y.name)) //按名字排序
+    //.sorted((x, y) -> Double.compare(x.height, y.height)) //按身高排序
+    
+    .sorted((x, y) -> { //先按年龄排序，再按性别排序
+        if (x.age == y.age) {
+            return x.gender.compareTo(y.gender);
+        } else {
+            return Integer.compare(x.age, y.age);
+        }
+    }).forEach(System.out::println);
+```
+
+##终止流
+
+>从流的流水线生成结果，结果可以是非流的任何值。如：List，Integer，甚至void
+
+```shell
+短路操作  #forEach(); forEachOrdered(); collect(); toArray(); reduce(); min(); max(); count();
+非短路..  #findFirst(); findAny(); allMatch(); anyMatch(); noneMatch();
+```
+
+>forEach 和 forEachOrdered
+
+```java
+String str = "my name is 007";
+
+//并行流: 输出的顺序不一定(效率更高)
+str.chars().parallel().forEach(x -> System.out.print((char) x)); //is 070 anemy m
+//并行流: 输出的顺序与元素的顺序严格一致
+str.chars().parallel().forEachOrdered(x -> System.out.print((char) x)); //my name is 007
+
+//非并行流: forEach() == forEachOrdered() == parallel.forEachOrdered()
+str.chars().forEach(x -> System.out.print((char) x)); //my name is 007
+```
+
+>查找和匹配
+
+```java
+// allMatch / anyMatch / noneMatch(): 是否都满足 / 有一个满足 / 都不满足.
+boolean allMatch = list.stream().allMatch((x) -> x.age > 30);
+
+// findFirst(): 返回第一个元素. (Optional表示结果可能为空)
+// findAny(): 返回任意一个. (多用于并行流)
+Optional<Person> findFirst = list.stream().findFirst();
+
+// count(): 返回流中元素总个数
+long count = list.stream().filter(person -> person.age > 18).count();
+System.out.println("count: " + count);
+
+// max(): 返回流中最大值. min(): 最小值
+// Optional<Person> max = list.stream() //获取最高身高者的所有属性
+//         .max((x, y) -> Double.compare(x.height, y.height));
+
+Optional<Person> max = list.stream() //获取最高身高者的所有属性 -> 简化版
+        .max(Comparator.comparingDouble(x -> x.height));
+
+Optional<Double> min = list.stream() //只获取最低身高的值
+        .map(x -> x.height)
+        .min(Double::compare);
+```
+
+>归约
+
+```java
+//reduce(): 将流中元素反复结合,最终生成一个值        
+Optional<Double> reduce = list.stream()
+    .map(x -> x.height)
+    .reduce((x, y) -> x + y);
+
+//有初始值,所以肯定不为空,即不用Optional<T>
+//参数列表 -> arg0: 初始值; arg1: 求和操作
+Double reduce2 = list.stream()
+    .map(Person::getHeight)
+    .reduce(1.0, Double::sum);
+```
+
+>收集
+
+```java
+//collect(): 将流中元素转化为 -> <R, A> R collect(Collector<? super T, A, R> collector);
+
+// (1).Collector 接口定义了如何对流执行收集操作(如收集到List,Set,Map等).
+// (2).Collectors 实用类提供了系统实现的收集器实例.
+// (3).类似: Executor,Executors; Collection<E>,Collections;
+
+// toList(); toSet(); toCollection(); 
+List<String> collect = list.stream()
+        .map(Person::getName)
+        .collect(Collectors.toList());//转化list
+
+Long collect2 = list.stream()
+        .filter(person -> person.age > 18)
+        // .count()
+        .collect(Collectors.counting());//计算流中元素的个数
+
+//summingInt(); averagingInt(); summingDouble(); averagingDouble(); ...
+int collect3 = list.stream()
+        // .mapToInt(Person::getAge).sum();
+        .collect(Collectors.summingInt(Person::getAge));//对流中元素的int属性求和
+
+//summarizingInt(); summarizingDouble();
+DoubleSummaryStatistics collect4 = list.stream()
+        .collect(Collectors.summarizingDouble(Person::getHeight));
+//收集流中Double属性的统计值.如: 元素个数, 总和, 最小值, 平均值, 最大值.
+//DoubleSummaryStatistics包含属性: {count=5, sum=887.500000, min=157.500000, average=177.500000, max=197.500000}
+System.out.println(collect4.getAverage());
+
+//joining(): 连接流中每个字符串
+//参数列表 -> delimiter: 连接符; prefix: 结果的前缀; suffix: 结果的后缀.
+String collect5 = list.stream()
+        .map(Person::getName)
+        .collect(Collectors.joining("-", "(", ")"));//(zhao-qian-sui)
+
+//maxBy(); minBy();
+Optional<Person> collect6 = list.stream()
+        // .max(Comparator.comparingDouble(Person::getHeight));
+        .collect(Collectors.maxBy((x, y) -> Double.compare(x.getHeight(), y.getHeight())));
+
+//reducing();
+Optional<Double> collect7 = list.stream()
+        .map(Person::getHeight)
+        .collect(Collectors.reducing(Double::sum));
+
+//参数列表 -> arg0: 初始值; arg1: 哪个属性; arg2: 求和操作.
+Double collect8 = list.stream()
+        .collect(Collectors.reducing(0.0, Person::getHeight, Double::sum));
+
+//collectingAndThen(); 包裹另一个收集器,对其结果转换函数
+Integer collect9 = list.stream()
+        .collect(Collectors.collectingAndThen(Collectors.toList(), List::size));
+
+//groupingBy();
+Map<Gender, List<Person>> collect10 = list.stream()
+        .collect(Collectors.groupingBy(Person::getGender));//分组: 性别
+
+Map<Gender, Map<Integer, List<Person>>> collect12 = list.stream() //多级分组: 先性别,再年龄
+        .collect(Collectors.groupingBy(Person::getGender, Collectors.groupingBy(Person::getAge)));
+
+Map<Gender, Map<String, List<Person>>> collect13 = list.stream() //多级分组: 先性别,再年龄
+        .collect(Collectors.groupingBy(Person::getGender, Collectors.groupingBy((x) -> {
+            if (((Person) x).age < 18) {
+                return "少年";
+            } else if (((Person) x).age < 30) {
+                return "青年";
+            } else {
+                return "中年";
+            }
+        })));
+collect13.forEach((x, y) -> {
+    System.out.println(x); //x -> MAN | WOMAN
+    y.forEach((m, n) -> System.out.println(m + " - " + n)); // m -> 少年,青年，中年
+});
+
+//partitioningBy(); 根据条件进行分区
+//false:[{"age":17...},{"age":18...}],true:[{"age":21...}]}
+Map<Boolean, List<Person>> collect14 = list.stream()
+        .collect(Collectors.partitioningBy(x -> x.age > 20));
+```
+
+##并行流
+
+> 就是把一个数据集分成多个数据块，并用不同的线程分别处理每个数据块的流
+
+```shell
+#Fork/Join框架：在必要的情况下，先将一个大任务拆分(fork)成若干小任务，然后再将小任务运算结果进行 join 汇总。
+
+#Fork/Join框架与传统线程池的区别
+(1)."工作窃取"模式 (work-stealing)
+当执行新任务时，它可以将其拆分成更小的任务执行，并将小任务加到线程队列中。
+当某个线程的任务队列全都完成时，它会从一个随机线程的队列中偷一个放到自己的队列中。
+
+(2).相对于一般的线程池实现，fork/join框架的优势体现在对其中包含任务的处理方式上。
+在一般的线程池中，如果一个线程正在执行的任务由于某些原因无法继续运行，那么该线程会处于等待状态。
+而在fork/join框架实现中，如果某个子问题由于等待另外一个子问题的完成而无法继续运行。
+那么处理该子问题的线程会主动寻找其他尚未运行的子问题来执行。这种方式减少了线程的等待时间，提高了性能。
+```
+##结论
+
+```shell
+(1).所有操作是链式操作，一个元素迭代一次。
+(2).每一个中间操作返回一个新的流，流里面有一个属性 sourceStage 指向同一个地方，即链表的头 Head。
+(3).Head -> peek -> filter -> ... -> null
+
+(4).有状态操作会把无状态操作截断，单独处理。先peek+filter，再sorted，最后peek
+#(5).有状态操作的入参为2个，无状态为1个
+
+(6).并行环境下，有状态的中间操作不一定能并行操作
+```
+
+```java
+long count = Stream.generate(() -> new Random().nextInt())
+        .limit(50)
+        .peek(x -> System.out.println("peek: " + x)) //无状态操作
+        .filter(x -> {
+            System.out.println("filter: " + x); //无状态
+            return x > 1000;
+        }).sorted((x, y) -> {
+            System.out.println("sorted: " + x); //有状态
+            return x.compareTo(y);
+        }).peek(x -> System.out.println("peek: " + x)) //无状态
+        .count();
+```
 
 # 接口变动
 
