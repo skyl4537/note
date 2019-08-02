@@ -283,6 +283,372 @@ DOCKER_OPTS="--insecure-registry juandapc:5000"
 
 # RabbitMQ
 
+## 基础概念
+
+
+
+
+
+## 安装配置
+
+>docker启动，网页登陆
+
+```shell
+#4369：erlang发现；5672：client通信；15672：UI管理界面；25672：server间内部通信    
+docker run --name rabbitmq -d -p 5671:5671 -p 5672:5672 -p 4369:4369 -p 15671:15671 -p 15672:15672 \
+-p 25672:25672 -p 15674:15674 rabbitmq
+
+/etc/rabbitmq     #配置文件
+/var/lib/rabbitmq #数据存储
+/var/log/rabbitmq #日志目录
+```
+
+```shell
+docker exec -it rabbitmq /bin/bash           #进入容器
+
+rabbitmq-plugins list                        #查看已启动的插件
+rabbitmq-plugins enable rabbitmq_management  #开启 UI 插件
+
+http://localhost:15672/                      #登陆UI，默认用户名 密码都是: guest
+```
+
+> guest用户远程登录，新建用户
+
+```shell
+#（1）对于低版本，修改docker里的 /etc/rabbitmq/rabbitmq.config
+[
+        { rabbit, [
+                { loopback_users, ["guest"] }, #增加"guest"用户
+                { tcp_listeners, [ 5672 ] },
+                { ssl_listeners, [ ] },
+                { hipe_compile, false }
+        ] },
+        { rabbitmq_management, [ { listener, [
+                { port, 15672 },
+                { ssl, false }
+        ] } ] }
+]
+#（2）对于高版本，修改 /etc/rabbitmq/rabbitmq.conf
+loopback_users.guest = false #false：远程访问；true：本地访问
+```
+
+```shell
+rabbitmqctl list_users                                   #查看用户列表
+rabbitmqctl add_user admin 123456                        #添加用户
+rabbitmqctl set_permissions -p "/" admin ".*" ".*" ".*"  #赋权，访问vhost的权限
+rabbitmqctl list_permissions -p /                        #查看是否成功赋予vhost权限
+rabbitmqctl set_user_tags admin administrator            #赋予 administrator 权限
+```
+
+> js 连接 RabbitMq，通过 stomp 实现消息实时推送
+
+```shell
+docker exec -it rabbitmq /bin/bash  #进入容器
+rabbitmq-plugins enable rabbitmq_web_stomp rabbitmq_stomp rabbitmq_web_stomp_examples rabbitmq_mqtt #启动相关插件
+docker restart rabbitmq             #重启容器
+
+#打开 RabbitMq的主页 OverView，会发现 Ports and contexts 多了2个端
+http/web-stomp  ::  15674
+stomp           ::  61613
+```
+
+##BOOT整合
+
+> 基础配置
+
+```xml
+<dependency>
+    <groupId>org.springframework.boot</groupId>
+    <artifactId>spring-boot-starter-amqp</artifactId>
+</dependency>
+```
+
+```properties
+#rabbitmq
+spring.rabbitmq.host=192.168.5.23
+spring.rabbitmq.port=5672
+#默认，可省
+spring.rabbitmq.username=guest
+spring.rabbitmq.password=guest
+```
+
+```java
+@EnableRabbit //全局注解
+```
+
+> 序列化器：默认以java序列化，现配置json序列化
+
+```java
+@Configuration
+public class AppConfig {
+    @Bean
+    public MessageConverter messageConverter() {
+        return new Jackson2JsonMessageConverter();
+    }
+}
+```
+
+> `队列`の创建和删除
+
+```java
+/**
+ * @param name       队列名称。
+ * @param durable    是否持久化。即 rabbitmq 服务重启，队列是否还存在？ 默认 true
+ * @param exclusive  是否排外及私有private。默认 false
+ *                   true：私有队列，其他通道channel不能访问，强制访问抛异常。并且该channel的conn断开后，队列将自动删除
+ *                         包括里面的msg
+ *                   false：非排外及私有，可以使用两个消费者同时访问同一个队列，没有任何问题，
+ * @param autoDelete 当所有消费客户端连接断开后，是否自动删除队列？ 默认 false
+ * @param arguments  额外参数。
+ */
+Queue queue = new Queue("queue.expires", true, false, false, args);
+
+String res = amqpAdmin.declareQueue(queue); //创建队列，返回队列名
+boolean deleteQueue = amqpAdmin.deleteQueue("queue.expires.999"); //删除队列
+```
+
+> `队列`の额外属性
+
+```java
+Map<String, Object> args = new HashMap<>();
+
+//3分钟内，没有消费者消费 msg，则自动删除该队列
+args.put("x-expires", 3 * 60 * 1000);
+
+//队列中 msg 被丢弃前能够存活的时间
+args.put("x-message-ttl", 5 * 60 * 1000);
+
+//队列的最大长度。超过最大长度，后面的消息会顶替前面的
+args.put("x-max-length", 5);
+
+//队列的最大容量。作用同上，但这个是靠队列大小（bytes）来达到限制
+args.put("x-max-length-bytes", 5);
+
+//队列的优先级。建议使用1到10之间，表示队列应该支持的最大优先级。
+args.put("x-max-priority", 5);
+
+//取值范围：default 和 lazy
+//lazy：先将消息保存到磁盘上，不放在内存中，当消费者开始消费的时候才加载到内存中
+args.put("x-queue-mode", "lazy");
+
+Queue queue = new Queue("queue.expires", true, false, false, args);
+```
+
+> `交换器`の创建和删除
+
+```java
+/**
+ * @param name       交换器名称
+ * @param durable    是否持久化，即 rabbitmq 重启是否还存在？ 默认 true
+ * @param autoDelete 当所有绑定队列都不在使用时，是否自动删除交换器。默认 false
+ */
+FanoutExchange exchange = new FanoutExchange("exchange.fanout", true, false);
+
+amqpAdmin.declareExchange(exchange); //创建交换器
+boolean deleteExchange = amqpAdmin.deleteExchange("exchange.fanout"); //删除交换器
+```
+
+> `绑定关系`の创建和删除
+
+```java
+/**
+ * @param destination     目的地，队列名 或 交换器名
+ * @param destinationType 目的地类型（可选值 QUEUE，EXCHANGE）
+ * @param exchange        交换器
+ * @param routingKey      路由键
+ * @param arguments       额外参数
+ */
+Binding binding = new Binding("queue.admin.0", Binding.DestinationType.QUEUE,
+        "exchange.admin", "admin.#", null);
+
+amqpAdmin.declareBinding(binding); //声明绑定关系（队列，交换器，路由键）
+amqpAdmin.removeBinding(binding); //删除绑定关系
+```
+
+> `发送消息`の两种方式
+
+```java
+//msg需要自己构造，自定义消息头和消息体
+amqpTemplate.send("exchange", "routing key", new Message("".getBytes(), null));
+
+//【推荐】只需传入要发送的对象 obj，系统自动将其当成消息体，并自动序列化。
+amqpTemplate.convertAndSend("exchange", "routing key", new Object());
+```
+
+## 广播：fanout
+
+> 三种模式的区别
+
+```shell
+'fanout'：Queue 只要连上 Exchange，就能收到其中的 Msg
+
+'direct'：Queue 不仅要连上 Exchange，而且 RoutingKey 还得和 Msg 的完全一致
+
+'topic' ：... ...RoutingKey 和 Msg 的模糊匹配即可
+```
+
+> 基础概念：`任何发送到 E 的消息，都会转发到与其绑定的所有 Q 中`
+
+```shell
+Q 与 E 直接相连，不经过 RoutingKey。
+
+#E 与 Q 的绑定是多对多的关系。一个 E 可以绑定多个 Q，一个 Q 可以同多个 E 进行绑定。
+```
+
+> 发送端：直接发送 Msg 到 E，不指定 RK
+
+```java
+for (int i = 0; i < 10; i++) {
+    String exchange = "exchange.fanout";
+    String routingKey = ""; //路由键：不指定，E与Q直接绑定，多对多
+    String msg = "fanout-" + i;
+    amqpTemplate.convertAndSend(exchange, routingKey, msg);
+}
+```
+
+> 接收端：两个消费者
+
+```java
+//@QueueBinding --> value: 绑定队列的名称；exchange: 配置交换器；key: 路由键(fanout模式不需要指定)
+@RabbitListener(bindings = {
+    @QueueBinding(
+        // value = @Queue(value = "${queue.fanout.info}"), //可以使用 ${} 直接从配置文件读取
+        value = @Queue(value = "queue.fanout.info"),
+        exchange = @Exchange(value = "exchange.fanout", type = ExchangeTypes.FANOUT),
+        key = ""
+    )
+    /*, @QueueBinding()*/ //也可以实现：一个Queue绑定多个Exchange
+})
+@Slf4j
+@Component
+public class InfoConsumer {
+
+    @RabbitHandler //接收消息的方法。采用消息队列监听机制
+    public void recv(String msg) {
+        log.info("【接收消息】FANOUT-INFO: " + msg);
+    }
+}
+```
+
+```java
+@RabbitListener(bindings = {
+    @QueueBinding(
+        value = @Queue(value = "queue.fanout.error"),
+        exchange = @Exchange(value = "exchange.fanout", type = ExchangeTypes.FANOUT),
+        key = ""
+    )
+})
+@Slf4j
+@Component
+public class ErrorConsumer {
+
+    @RabbitHandler
+    public void recv(String msg) {
+        log.info("【接收消息】FANOUT-ERROR: " + msg);
+    }
+}
+```
+
+##直接：direct
+
+> 基础概念：`任何发送到 E 的消息，都会被转发到 Routing-Key 完全一致的 Q 中`
+
+```shell
+Q 与 E 通过确定的 RoutingKey 相绑定，即只支持完全匹配，不支持模糊匹配
+如，绑定的RK为 "rk.info"，则只会转发标记为 "rk.info" 的消息，不会转发 "rk.debug"，"rk.info.log" 等
+
+对于这种情况，发送消息时，也必须得指定 RoutingKey。可以使用系统自带的 Default-Exchange，即空字符串。
+```
+
+> 发送端：发送3种消息
+
+```java
+String exchange = "exchange.direct";
+
+String routingKey = "rk.debug";
+String msg = "direct-rk-debug";
+amqpTemplate.convertAndSend(exchange, routingKey, msg); //msg-01
+
+routingKey = "rk.info";
+msg = "direct-rk-info";
+amqpTemplate.convertAndSend(exchange, routingKey, msg); //msg-02
+
+routingKey = "rk.info.log";
+msg = "direct-rk-info-log";
+amqpTemplate.convertAndSend(exchange, routingKey, msg); //msg-03
+```
+
+> 接收端：只能收到第2种消息
+
+```java
+@RabbitListener(bindings = {
+    @QueueBinding(
+        value = @Queue(value = "queue.direct.info"),
+        exchange = @Exchange(value = "exchange.direct", type = ExchangeTypes.DIRECT),
+        key = "rk.info"
+    )
+})
+@Slf4j
+@Component
+public class DirectConsumer {
+
+    @RabbitHandler //接收消息的方法。采用消息队列监听机制
+    public void recv(String msg) {
+        log.info("【接收消息】DIRECT: " + msg);
+    }
+}
+```
+
+##主题：topic
+
+> 基础概念：`任何发送到 E 的消息，都会被转发到 Routing-Key 模糊匹配的 Q 中`
+
+```shell
+Q 与 E 之间的绑定通过 RoutingKey 进行模糊匹配
+
+模糊匹配规则："#"表示0个或若干个关键词，"*"表示1个关键词
+所以，如 "rk.*" 能与 "rk.info" 匹配，无法与 "rk.info.log" 匹配；但是 "rk.#" 能与上述两者匹配。
+```
+
+> 发送端
+
+```java
+String exchange = "exchange.topic";
+
+String routingKey = "rk.info";
+String msg = "topic-rk-info";
+amqpTemplate.convertAndSend(exchange, routingKey, msg);
+
+routingKey = "rk.info.log";
+msg = "topic-rk-info-log";
+amqpTemplate.convertAndSend(exchange, routingKey, msg);
+```
+
+> 接收端
+
+```java
+@RabbitListener(bindings = {
+    @QueueBinding(
+        value = @Queue(value = "queue.topic.info"),
+        exchange = @Exchange(value = "exchange.topic", type = ExchangeTypes.TOPIC),
+        key = "rk.#"
+    )
+})
+@Slf4j
+@Component
+public class TopicConsumer {
+
+    @RabbitHandler //接收消息的方法。采用消息队列监听机制
+    public void recv(String msg) {
+        log.info("【接收消息】TOPIC: " + msg);
+    }
+}
+```
+
+
+
+#MQ
+
 常用消息队列中间件：ActiveMQ（√），RabbitMQ（√），Kafka（√），ZeroMq，MetaMQ，RocketMQ
 
 执行速度：Kafka > RabbitMQ > ActiveMQ。安全性则相反。
@@ -533,569 +899,11 @@ spring.rabbitmq.listener.simple.retry.enabled=true
 spring.rabbitmq.listener.simple.retry.max-attempts=3
 ```
 
-## 安装配置
-
-> docker启动
-
-```shell
-#4369：erlang发现；5672：client通信；15672：UI管理界面；25672：server间内部通信    
-docker run --name rabbitmq -d -p 5671:5671 -p 5672:5672 -p 4369:4369 -p 15671:15671 -p 15672:15672 \
--p 25672:25672 -p 15674:15674 rabbitmq
-
-#开启 UI管理页面
-docker exec -it rabbitmq /bin/bash
-rabbitmq-plugins enable rabbitmq_management
-
-#登陆UI，默认用户名 密码都是: guest
-http://localhost:15672/
-```
-
-```shell
-#docker 里的 RabbitMQ 相关目录
-docker exec -it rabbitmq /bin/bash
-
-配置文件目录：/etc/rabbitmq
-数据存储目录：/var/lib/rabbitmq
-日志目录：/var/log/rabbitmq
-```
-
-> 添加用户
-
-```shell
-#获得容器的bash
-docker exec -it rabbitmq /bin/bash
-
-#查看已有用户
-rabbitmqctl list_users
-
-#添加用户
-rabbitmqctl add_user admin 123456
-
-#赋权，访问vhost的权限
-rabbitmqctl set_permissions -p "/" admin ".*" ".*" ".*"
-
-#查看是否成功赋予vhost权限
-rabbitmqctl list_permissions -p /
-
-#赋予 administrator 权限
-rabbitmqctl set_user_tags admin administrator
-```
-
-> 开启插件 & 配置权限：js连接RabbitMq通过stomp实现消息实时推送
-
-```shell
-#获得容器的bash
-docker exec -it rabbitmq /bin/bash
-
-#查看已启动了哪些RabbitMQ插件
-rabbitmq-plugins list
-
-#开启 rabbitmq 的图形化界面
-rabbitmq-plugins enable rabbitmq_management
-
-#手动开启 MQTT 插件
-rabbitmq-plugins enable rabbitmq_mqtt
-
-#手动开启 STOMP 有关的一系列插件
-rabbitmq-plugins enable rabbitmq_management rabbitmq_web_stomp rabbitmq_stomp rabbitmq_web_stomp_examples
-
-#重启RabbitMQ（可选）
-docker restart rabbitmq
-
-#打开 RabbitMq的主页 OverView，会发现 Ports and contexts 多了2个端
-http/web-stomp  ::  15674
-stomp           ::  61613
-
-#赋予 guest 用户远程登录权限
-#（1）对于低版本，修改docker里的 /etc/rabbitmq/rabbitmq.config
-[
-        { rabbit, [
-                { loopback_users, ["guest"] }, #增加"guest"用户
-                { tcp_listeners, [ 5672 ] },
-                { ssl_listeners, [ ] },
-                { hipe_compile, false }
-        ] },
-        { rabbitmq_management, [ { listener, [
-                { port, 15672 },
-                { ssl, false }
-        ] } ] }
-].
-#（2）对于高版本，修改 /etc/rabbitmq/rabbitmq.conf
-loopback_users.guest = false #false：远程访问；true：本地访问
-```
-
-![](assets/RabbitMQ4.jpg)
-
-##BOOT整合
-
->基础配置
-
-```xml
-<dependency>
-    <groupId>org.springframework.boot</groupId>
-    <artifactId>spring-boot-starter-amqp</artifactId>
-</dependency>
-```
+> 
 
 ```properties
-#rabbitmq
-spring.rabbitmq.host=192.168.5.23
-spring.rabbitmq.port=5672
-#默认，可省
-spring.rabbitmq.username=guest
-spring.rabbitmq.password=guest
+
 ```
-
-```java
-//全局注解   + 监听注解
-@EnableRabbit + @RabbitListener
-```
->序列化器：默认以java序列化，现配置json序列化
-
-```java
-@Configuration
-public class AMQPConfig {
-    @Bean
-    public MessageConverter messageConverter() {
-        return new Jackson2JsonMessageConverter(); 
-    }
-}
-```
-> 队列相关属性
-
-```java
-Map<String, Object> args = new HashMap<>();
-//控制queue被自动删除前可以处于未使用状态的时间。单位毫秒，不能为0
-//队列中就算有还未消费的msg，也会删除。服务器启动后，持久化的queue的超时时间将重新计算。
-//未使用：queue上没有任何consumer, queue 没有被重新声明，并且在过期时间段内为调用过 basic.get 命令
-//常用于：RPC-style 的回复 queue,其中许多queue会被创建出来，但是却从未被使用
-args.put("x-expires", 10 * 60 * 1000);
-
-//queue中 msg 被丢弃前能够存活的时间，对于已发送给 consumer 的 msg 不失效，单位毫秒，可以为0
-//设为0，则表示 msg 在到达 queue 之后，但尚未被立即投递到 consumer 的情况下，判定为过期
-//注意：当一个 msg 被路由到多个queue中时，其可以在不同的时间死掉，或者出现有的queue中 msg 不死掉的情况
-args.put("x-message-ttl", 60 * 1000);
-
-//队列最大长度，超过最大长度后面的消息会顶替前面的消息
-args.put("x-max-length", 5);
-
-//队列最大容量，作用同上，但这个是靠队列大小（bytes）来达到限制
-args.put("x-max-length-bytes", 5);
-
-//声明优先级队列。该参数应该是一个整数，表示队列应该支持的最大优先级
-//建议使用1到10之间。目前使用更多的优先级将消耗更多的资源（Erlang进程）
-//设置该参数同时设置死信队列时，或造成已过期的低优先级消息会在未过期的高优先级消息后面执行。 
-//该参数会造成额外的CPU消耗。
-args.put("x-max-priority", 5);
-
-//先将消息保存到磁盘上，不放在内存中，当消费者开始消费的时候才加载到内存中
-//取值范围：default 和 lazy
-args.put("x-queue-mode", "lazy");
-
-//延迟结束后指向交换机（死信收容交换机）
-args.put("x-dead-letter-exchange", "exchange.dead");
-//延迟结束后指向队列（死信收容队列），可直接设置queue name也可以设置routing-key
-args.put("x-dead-letter-routing-key", "queue.dead");
-amqpAdmin.declareQueue(new Queue("queue.args", true, false, false, args)); //创建queue
-```
-
->代码创建和删除，及发送消息
-
-```java
-/**
- * @param name       队列名称
- * @param durable    是否持久化，即 rabbitmq 重启是否还存在？ 默认 true
- * @param exclusive  是否排外及私有private。
- *                   true：私有队列，其他通道channel不能访问，强制访问抛异常。并且该channel的conn断开后，队列将自动删除
- *                         包括里面的msg，默认 false
- *                   false：非排外及私有，可以使用两个消费者同时访问同一个队列，没有任何问题，
- * @param autoDelete 当所有消费客户端连接断开后，是否自动删除队列？ 默认 false
- */
-Map<String, Object> args = new HashMap<>();
-args.put("x-max-length", 5); //队列长度
-args.put("x-expires", 30*60*1000); //queue自动过期，30min
-amqpAdmin.declareQueue(new Queue("queue.direct.0", true, false, false, args)); //创建
-
-amqpAdmin.deleteQueue("queue.admin.0"); //移除
-
-/**
- * @param name 交换器名称
- * @param durable 是否持久化，即 rabbitmq 重启是否还存在？ 默认 true
- * @param autoDelete 当所有绑定队列都不在使用时，是否自动删除交换器。默认 false
- */
-amqpAdmin.declareExchange(new FanoutExchange("exchange.admin", true, true)); //交换器
-
-/**
- * @param destination 目的地，队列名
- * @param destinationType 目的地类型（可选值 QUEUE,EXCHANGE）
- * @param exchange 交换器
- * @param routingKey 路由键
- * @param arguments null
- */
-amqpAdmin.declareBinding(new Binding("queue.admin.0", Binding.DestinationType.QUEUE,
-        "exchange.admin", "admin.#", null)); //绑定（通道，交换器，路由键）
-```
-```java
-//msg需要自己构造，自定义消息头和消息体
-rabbitTemplate.send("exchange", "routing key", new Message("".getBytes(), null));
-
-//只需传入要发送的对象 obj；系统自动将其当成消息体，并自动序列化
-rabbitTemplate.convertAndSend("exchange", "routing key", new Object());
-```
-
-> 三种模式的区别
-
-```shell
-fanout（广播）：Queue 只要连上 Exchange，就能收到其中的 Msg
-
-direct（直接）：Queue 不仅要连上 Exchange，并且 E Q 之间 Binding 的 RK 还必须和 Msg 的 RK 完全一致
-
-topic（主题）：... ... Binding 的 RK 和 Msg 的 RK 模糊匹配即可
-```
-
-## 广播：fanout
-
-![](assets/RabbitMQ1.png)
-
->广播模式（fanout）：多对多，发送到 E 的消息都会被转发到与该 E 绑定的所有 Q 上。`不处理 RK`
-
-```java
-0.很像子网广播，每台子网内的主机都获得了一份复制的消息。Fanout交换机转发消息是最快的。 
-
-1.可以理解为路由表的模式，这种模式不需要RouteKey
-
-2./*这种模式需要提前将 Exchange 与 Queue 进行绑定*/，一个Exchange可以绑定多个Queue，一个Queue可以同多个Exchange进行绑定。
-
-3.如果接受到消息的Exchange没有与任何Queue绑定，则消息会被抛弃。
-```
-
-> 生产者：直接发送 Msg 到 Exchange，不指定 RK
-
-```properties
-spring.rabbitmq.host=192.168.5.23
-spring.rabbitmq.port=8672
-spring.rabbitmq.username=guest
-spring.rabbitmq.password=guest
-
-mq.config.exchange=log.fanout
-```
-
-```java
-@Autowired
-AmqpTemplate amqpTemplate;
-
-@Value("${mq.config.exchange}")
-String exchange;
-
-public void sendFanout(String msg) {
-    //
-    /**
-     * @param exchange    交换器
-     * @param routingKey  路由键：不处理，E直接与Q绑定，多对多
-     * @param object      消息对象
-     */
-    amqpTemplate.convertAndSend(exchange, "", msg);
-}
-```
-
-```java
-@Autowired
-Publisher publisher;
-
-@Test
-public void sendFanout() {
-    for (int i = 0; i < 10; i++) {
-        String msg = "log_info_" + i;
-        publisher.sendFanout(msg);
-    }
-}
-```
-
-> 消费者：将 Exchange 分别和两个队列 Queue 进行绑定
-
-```properties
-spring.rabbitmq.host=192.168.5.23
-spring.rabbitmq.port=8672
-spring.rabbitmq.username=guest
-spring.rabbitmq.password=guest
-
-spring.rabbitmq.listener.simple.retry.max-attempts=3
-spring.rabbitmq.listener.simple.retry.enabled=true
-
-mq.config.exchange=log.fanout
-
-mq.config.queue.info=log.info
-mq.config.queue.error=log.error
-```
-
-```java
-@Component
-/**
- * @RabbitListener - bindings: 绑定队列
- * @QueueBinding - value: 绑定队列的名称；exchange: 配置交换器；key: RoutingKey
- *
- * @Queue - value: 队列名称；autoDelete: 当所有消费客户端连接断开后，是否自动删除队列
- *
- * @Exchange - value: 交换器名称；type: 交换器类型；autoDelete: 当所有绑定队列都不在使用时，是否自动删除交换器
- */
-//durable: 默认将消息存储在内存中，若rabbitMQ宕机，那么所有数据就会丢失，所以在声明队列的时候可以声明将数据持久化。
-//但是如果已经声明了一个未持久化的队列，那么不能修改，只能将这个队列删除或重新声明一个持久化数据
-@RabbitListener(
-        bindings = {
-                @QueueBinding(
-                        value = @Queue(value = "${mq.config.queue.info}", autoDelete = "false", durable = "false"),
-                        exchange = @Exchange(value = "${mq.config.exchange}", type = ExchangeTypes.FANOUT,
-                                autoDelete = "false"),
-                        key = "" //fanout模式不处理RK，直接将 Q 与 E 绑定
-                )
-                /*, @QueueBinding()*/ //也可以实现：一个Queue绑定多个Exchange
-        }
-)
-public class InfoConsumer {
-
-    @RabbitHandler //接收消息的方法。采用消息队列监听机制
-    public void recv(String msg) {
-        System.out.println(LocalTime.now() + " INFO: " + msg);
-    }
-}
-```
-
-```java
-@Component
-@RabbitListener(
-        bindings = {
-                @QueueBinding(
-                        value = @Queue(value = "${mq.config.queue.error}", autoDelete = "false", durable = "false"),
-                        exchange = @Exchange(value = "${mq.config.exchange}", type = ExchangeTypes.FANOUT),
-                        key = "" //fanout模式不处理RK，直接将 Q 与 E 绑定
-                )
-                /*, @QueueBinding()*/ //也可以实现：一个Queue绑定多个Exchange
-        }
-)
-public class ErrorConsumer {
-
-    @RabbitHandler
-    public void recv(String msg) {
-        System.out.println(LocalTime.now() + " ERROR: " + msg);
-    }
-}
-```
-
-## 直接：direct
-
-![](assets/RabbitMQ2.png)
-
-> 直接模式（direct）：一对一，`任何发送到Direct Exchange的消息，都会被转发到Routing Key中指定的 Queue`。
-
-需要将 Queue 绑定到 Exchange 上，要求该消息与 Routing Key完全匹配。如果一个队列绑定到该交换机上要求路由键 “dog”，则只有被标记为“dog”的消息才被转发，不会转发dog.puppy，也不会转发dog.guard，只会转发dog。 
-
-```shell
-1.这种模式，可以自定义 Exchange，也可以使用自带的”"（该Exchange的名字为空字符串，下文称其为 Default Exchange）
-
-2.这种模式下不需要将Exchange进行任何绑定(binding)操作
-
-3.消息传递时需要一个“RouteKey”，可以简单的理解为要发送到的队列名字
-
-4.如果vhost中不存在RouteKey中指定的队列名，则该消息会被抛弃
-```
-
-> 生产者：发送 Msg 到 Exchange，并指定 Routing Key
-
-```properties
-mq.config.exchange=log.direct
-
-mq.config.queue.info.routing.key=log.info.routing.key
-mq.config.queue.error.routing.key=log.error.routing.key
-```
-
-```java
-@Component
-public class Publisher {
-
-    @Autowired
-    AmqpTemplate amqpTemplate;
-
-    @Value("${mq.config.exchange}")
-    String exchange;
-
-    @Value("${mq.config.queue.info.routing.key}")
-    String infoRoutingKey;
-
-    @Value("${mq.config.queue.error.routing.key}")
-    String errorRoutingKey;
-
-    public void sendDirect(String msg) {
-        /**
-         * @param exchange     交换器，可以使用默认的Exchange，即""
-         * @param routingKey   路由键
-         * @param object       消息对象
-         */
-        amqpTemplate.convertAndSend(exchange, infoRoutingKey, msg);
-    }
-}
-```
-
-```java
-@Test
-public void sendDirect() {
-    for (int i = 0; i < 10; i++) {
-        String msg = "log_info_" + i;
-        publisher.sendDirect(msg);
-    }
-}
-```
-
-> 消费者：根据 RK 找到`完全匹配`的 Queue
-
-```properties
-mq.config.exchange=log.direct
-
-mq.config.queue.info=log.info
-mq.config.queue.error=log.error
-
-mq.config.queue.info.routing.key=log.info.routing.key
-mq.config.queue.error.routing.key=log.error.routing.key
-```
-
-```java
-@Component
-@RabbitListener(
-        bindings = {
-                @QueueBinding(
-                        value = @Queue(value = "${mq.config.queue.info}", autoDelete = "false", durable = "false"),
-                        exchange = @Exchange(value = "${mq.config.exchange}", type = ExchangeTypes.DIRECT),
-                        key = "${mq.config.queue.info.routing.key}" //Queue 通过 RK 与 Exchange 绑定
-                )
-        }
-)
-public class InfoConsumer {
-
-    @RabbitHandler
-    public void recv(String msg) {
-        System.out.println(LocalTime.now() + " INFO: " + msg);
-    }
-}
-```
-
-## 主题：topic
-
-![](assets/RabbitMQ3.png)
-
-> Topic：多对多，任何发送到 Topic Exchange 的消息都会被转发到所有关心 Routing Key 中指定话题的Queue上。
-
-```shell
-1.每个队列都有其关心的主题，所有的消息都带有一个标题（RouteKey），Exchange会将消息转发到所有关注主题能与RouteKey模糊匹配的队列。
-
-2.这种模式需要RouteKey，也许要提前绑定Exchange与Queue。
-
-3.在进行绑定时，要提供一个该队列关心的主题，如“\#.log.\#”表示该队列关心所有涉及log的消息(一个RouteKey为”MQ.log.error”的消息会被转发到该队列)。
-
-4.“\#”表示0个或若干个关键词，“*”表示一个关键词。如“log.*”能与“log.warn”匹配，无法与“log.warn.timeout”匹配；但是“log.\#”能与上述两者匹配。
-
-5.同样，如果Exchange没有发现能够与RouteKey匹配的Queue，则会抛弃此消息。
-```
-
-> 生产者：发送 Msg 到 Exchange，并指定 Routing Key
-
-```properties
-mq.config.exchange=log.topic
-
-mq.config.queue.info.routing.key=log.info.routing.key
-mq.config.queue.error.routing.key=log.error.routing.key
-```
-
-```java
-@Component
-public class Publisher {
-
-    @Autowired
-    AmqpTemplate amqpTemplate;
-
-    @Value("${mq.config.exchange}")
-    String exchange;
-
-    @Value("${mq.config.queue.info.routing.key}")
-    String infoRoutingKey;
-
-    @Value("${mq.config.queue.error.routing.key}")
-    String errorRoutingKey;
-
-    public void sendTopicInfo(String msg) {
-        amqpTemplate.convertAndSend(exchange, infoRoutingKey, msg);
-    }
-
-    public void sendTopicError(String msg) {
-        amqpTemplate.convertAndSend(exchange, errorRoutingKey, msg);
-    }
-}
-```
-
-```java
-@Test
-public void sendTopic() {
-    for (int i = 0; i < 10; i++) {
-        String msg = "log_info_" + i;
-        publisher.sendTopicInfo(msg + "_info");
-        publisher.sendTopicError(msg + "_error");
-    }
-}
-```
-
-> 生产者：根据 RK 找到`模糊匹配`的 Queue
-
-```properties
-mq.config.exchange=log.topic
-
-mq.config.queue.info=log.info
-mq.config.queue.error=log.error
-mq.config.queue.all=log.all
-
-mq.config.queue.info.routing.key=log.info.routing.key
-mq.config.queue.error.routing.key=log.error.routing.key
-mq.config.queue.all.routing.key=log.*.routing.key
-```
-
-```java
-@Component
-@RabbitListener(
-        bindings = {
-                @QueueBinding(
-                        value = @Queue(value = "${mq.config.queue.all}", autoDelete = "false", durable = "false"),
-                        exchange = @Exchange(value = "${mq.config.exchange}", type = ExchangeTypes.TOPIC),
-                        key = "${mq.config.queue.all.routing.key}"
-                )
-        }
-)
-public class AllConsumer {
-
-    @RabbitHandler
-    public void recv(String msg) {
-        System.out.println(LocalTime.now() + " ALL: " + msg);
-    }
-}
-```
-
-```java
-@Component
-@RabbitListener(
-        bindings = {
-                @QueueBinding(
-                        value = @Queue(value = "${mq.config.queue.info}", autoDelete = "false", durable = "false"),
-                        exchange = @Exchange(value = "${mq.config.exchange}", type = ExchangeTypes.TOPIC),
-                        key = "${mq.config.queue.info.routing.key}"
-                )
-        }
-)
-public class InfoConsumer {
-
-    @RabbitHandler
-    public void recv(String msg) {
-        System.out.println(LocalTime.now() + " INFO: " + msg);
-    }
-}
-```
-
-
 
 # EHCache
 

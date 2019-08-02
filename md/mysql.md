@@ -533,75 +533,7 @@ TRUNCATE TABLE flower; -- 清空表2
 
 ## TCL事务
 
-> Transaction Control Language 事务控制语言
 
-事务是由单独单元的一个或多个SQL语句组成，在这个单元中，每个MySQL语句是相互依赖的。而整个单独单元作为一个不可分割的整体，如果单元中某条SQL语句一旦执行失败或产生错误，整个单元将会回滚。
-
-> 存储引擎
-
-```sql
-show engines; -- 查看当前数据库支持的存储引擎。其中，innodb 支持事务，myisam memory不支持。
-```
-
-> 事务的ACID属性
-
-```sql
--- 原子性（Atomicity）
-事务不可再分，要么都执行成功，要么都执行失败。
-
--- 一致性（Consistency）
-事务执行会使数据从一个一致性状态变换到另外一个一致性状态（转账之前和之后，金钱总额不变）。
-
--- 隔离性（Isolation）
-一个事务的执行不受其他事务的干扰，具体和设置的事务隔离级别有关。包括读未提交（Read uncommitted）、读提交（read committed）、可重复读（repeatable read）和串行化（Serializable）。
-
--- 持久性（Durability）
-一个事务一旦提交，则会永久的改变数据库中的数据，不能撤销。比如，删除一条数据。
-```
-
-> 事务的创建
-
-```sql
--- 隐式事务：事务没有明显的开启和关闭标识。例如 INSERT,UPDATE,DELETE
-SHOW VARIABLES LIKE 'autocommit'; -- 查看'自动提交'功能是否开启
-```
-
-```sql
--- 显示事务：必须先设置 自动提交 功能为禁用状态。
-SET autocommit=0; --关闭'自动提交'，只针对当前会话起作用。所以每条事务都要以这条语句开始。
-START TRANSACTION; --可选语句。
-
--- 编写一组事务语句
-UPDATE trans SET fmoney=fmoney-700 WHERE fname='小李';
-UPDATE trans SET fmoney=fmoney+700 WHERE fname='老王';
-
-COMMIT; -- 提交事务
--- ROLLBACK; --回滚事务，与提交事务，二选一
-```
-
-> 事务的隔离级别
-
-多个并行事务访问数据库中相同的数据时，如果没有采取必要的隔离机制，就会导致各种并发问题：
-
-```sql
-'1.脏读（更新） - 2更新1读2回滚'：对于两个事务 T1 和 T2，T1读取了已经被 T2 更新但还没有被提交的字段。之后，若 T2 回滚，T1 读取的内容就是临时且无效的。
-
-'2.不可重复读 - 1读2提交1读'：对于两个事务 T1 和 T2, T1 读取了一个字段，然后 T2 更新了该字段。之后，T1 再次读取同一个字段, 值就不同了。
-
-'3.幻读（插入） - 1读2插入1读'：对于两个事务T1 和 T2，T1 从一个表中读取了2行数据, 然后 T2 在该表中插入了一些新的行。之后，如果 T1 再次读取同一个表，就会多出几行。
-```
-
-```sql
-SELECT @@tx_isolation; -- 查看当前的隔离级别。默认是：可重复读（repeatable read）
-
-SET transaction isolation level repeatable read; -- 设置隔离级别，仅对当前连接起效
-SET global transaction isolation level read committed; -- 设置全局的隔离级别
-
-读未提交（Read uncommitted）  -- 以上 ③ 种问题都可能发生。
-读提交（read committed）      --可以避免 脏读。
-可重复读（repeatable read）   -- ...... 脏读 + 不可重复读。（默认）
-串行化（Serializable）        -- 以上 ③ 个问题都可以避免。但效率低，推荐使用默认
-```
 
 ## 存储过程
 
