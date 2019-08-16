@@ -309,7 +309,7 @@ docker exec -it rabbitmq /bin/bash           #进入容器
 rabbitmq-plugins list                        #查看已启动的插件
 rabbitmq-plugins enable rabbitmq_management  #开启 UI 插件
 
-http://localhost:15672/                      #登陆UI，默认用户名 密码都是: guest
+http://localhost:15672/                      #登陆UI，默认用户名-密码都是: guest
 ```
 
 > guest用户远程登录，新建用户
@@ -379,6 +379,7 @@ spring.rabbitmq.password=guest
 > 序列化器：默认以java序列化，现配置json序列化
 
 ```java
+//对于传递对象，可配置此项。对于传递JSON字符串，则不用配置
 @Configuration
 public class AppConfig {
     @Bean
@@ -531,13 +532,11 @@ public class InfoConsumer {
 ```
 
 ```java
-@RabbitListener(bindings = {
-    @QueueBinding(
-        value = @Queue(value = "queue.fanout.error"),
-        exchange = @Exchange(value = "exchange.fanout", type = ExchangeTypes.FANOUT),
-        key = ""
-    )
-})
+@RabbitListener(bindings = @QueueBinding(
+    value = @Queue(value = "queue.fanout.error"),
+    exchange = @Exchange(value = "exchange.fanout", type = ExchangeTypes.FANOUT),
+    key = ""
+))
 @Slf4j
 @Component
 public class ErrorConsumer {
@@ -581,13 +580,11 @@ amqpTemplate.convertAndSend(exchange, routingKey, msg); //msg-03
 > 接收端：只能收到第2种消息
 
 ```java
-@RabbitListener(bindings = {
-    @QueueBinding(
-        value = @Queue(value = "queue.direct.info"),
-        exchange = @Exchange(value = "exchange.direct", type = ExchangeTypes.DIRECT),
-        key = "rk.info"
-    )
-})
+@RabbitListener(bindings = @QueueBinding(
+    value = @Queue(value = "queue.direct.info"),
+    exchange = @Exchange(value = "exchange.direct", type = ExchangeTypes.DIRECT),
+    key = "rk.info"
+))
 @Slf4j
 @Component
 public class DirectConsumer {
@@ -627,13 +624,11 @@ amqpTemplate.convertAndSend(exchange, routingKey, msg);
 > 接收端
 
 ```java
-@RabbitListener(bindings = {
-    @QueueBinding(
-        value = @Queue(value = "queue.topic.info"),
-        exchange = @Exchange(value = "exchange.topic", type = ExchangeTypes.TOPIC),
-        key = "rk.#"
-    )
-})
+@RabbitListener(bindings = @QueueBinding(
+    value = @Queue(value = "queue.topic.info"),
+    exchange = @Exchange(value = "exchange.topic", type = ExchangeTypes.TOPIC),
+    key = "rk.#"
+))
 @Slf4j
 @Component
 public class TopicConsumer {

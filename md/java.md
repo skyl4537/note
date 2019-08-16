@@ -273,17 +273,6 @@ static class Add {
 
 ## 基础规约
 
-```java
-包名统一小写，统一单数，类名使用复数。 //com.example.mydemo.util.CommUtils
-常量命名全部大写，单词间用下划线隔开。 //MAX_STOCK_COUNT
-```
-| 修饰符 \ 作用域 | 当前类 | 同一包 | 子孙类 | 其他包 |
-| :-------------: | :----: | :----: | :----: | :----: |
-|     public      |   √    |   √    |   √    |   √    |
-|    protected    |   √    |   √    |   √    |        |
-|     default     |   √    |   √    |        |        |
-|     private     |   √    |        |        |        |
-
 > toString()
 
 ```java
@@ -295,16 +284,7 @@ public String toString() {
 > arraycopy()
 
 ```java
-//数组拷贝，非常高效 ---> 此方法隶属于System
-public void test() {
-    List<String> list = Arrays.asList("a", "b", "c");
-    String[] src = list.toArray(new String[list.size()]); //src
-    String[] dest = new String[2]; //dest
-    
-    //从原数组的第1个开始拷贝，目标数组从第0个位置开始接收，拷贝2个元素
-    System.arraycopy(src, 1, dest, 0, 2);
-    Arrays.stream(dest).forEach(System.out::println); //b-c
-}
+
 ```
 
 ## 运算符
@@ -312,48 +292,13 @@ public void test() {
 > `Math.round(double num);`函数是取整函数，只关注小数点后第一位小数值。
 
 ```java
-long l = Math.round(-1.45); //-1
-long l = Math.round(-1.55); //-2 --> 同sql，先绝对值，再四舍五入，最后加符号
 
-double d = Math.ceil(-1.45);  //-1.0
-double d = Math.floor(-1.45); //-2.0 -->同sql，向下取值，即向x轴负方向取值
-
-double d = Math.floor(-10 / -3); //3.0
-double d = Math.floor(-10 % -3); //-1.0 -->同sql，结果符号位和被除数一致。 a%b = a-a/b*b
 ```
 
 > 保留两位有效小数（两种方式）
 
-```java
-double val0 = (Math.round(1.1249 * 100)) / 100.0;
-double val1 = (Math.round(1.1250 * 100)) / 100.0;
-System.out.println(val0 + " - " + val1); //1.12 - 1.13
-```
-
-```java
-String val0 = String.format("%.2f", 1.1249);
-String val1 = String.format("%.2f", 1.1250);
-System.out.println(val0 + " - " + val1); //1.12 - 1.13
-```
-
-> 
-
-```java
-
-```
-
-```java
-
-```
-
 ```sql
--- 7%4 = 3; 7%-4 = 3; -7%4 = -3; -7%-4 = -3; 7%9 = 7; -7%-9 = -7; -7%-1= 0
-%(取模)      --> 先取绝对值，再进行运算。符号同左。
 
-^(异或)      --> 左右同为 false，左右不同为 true。(和其他差别很大)
-
-<<(位运算-左) --> 乘以 2 的移动位数次幂 //3<<2 = 3 * 2^2 =12
->>(位运算-右) --> 除以 2 ...........  //6>>2 = 6 / 2^2 =1
 ```
 
 
@@ -362,7 +307,7 @@ System.out.println(val0 + " - " + val1); //1.12 - 1.13
 
 >多态原理
 
-```
+```shell
 同一方法可以根据调用者的不同而具有不同的实现。
 
 实现的原理是【动态绑定】，程序调用的方法在运行期才动态绑定。
@@ -374,7 +319,7 @@ System.out.println(val0 + " - " + val1); //1.12 - 1.13
 
 ```java
 (2).共同点：不能实例化；以多态的方式使用
-(3).不通点：单继承；多实现
+(3).不同点：单继承；多实现
 
 (1).二者的定义
     a.声明的方式：抽象类使用关键字 abstract，接口使用关键字 interface.
@@ -571,91 +516,42 @@ public void test() {
 > 基本数据类型：三大类，八小种。引用类型：类，接口，数组。
 
 ```java
-布尔类型： boolean （1bit，1位）
-字符类型： char （1byte，8位，[-128, 127]）
-数值类型-整型： byte （1byte）， short （2byte）， int （4byte）, long （8byte） 
-数值类型-浮点型： float （4byte）， double （8byte）
+
 ```
 
 > 装箱 & 拆箱
 
 ```java
-Integer i0 = new Integer(3);
-Integer i1 = Integer.valueOf(3); //装箱：基本类型 --> 包装类
 
-int num0 = i0.intValue(); //拆箱：包装类 --> 基本类型
-
-Integer i = 4; //自动装箱：相当于Integer i = Integer.valueOf(4);
-
-//自动拆箱：等号右边，将i对象转成基本数值 i.intValue() + 5;
-//加法运算完成后，再次装箱，把基本数值转成对象
-i = i + 5;
 ```
 
 > 使用标准
 
-- 所有 POJO 类属性必须使用`包装数据类型`，并且`不要设定默认值`。不设初值是提醒使用者在使用时必须自己显式地进行赋值。任何 NPE（NullPointerExceptionrn） 问题，或入库检查，都由使用者来保证。
-- RPC 方法的返回值和参数必须使用`包装数据类型`。
-- 所有的局部变量 【推荐】 使用`基本数据类型`。
-
 ```java
-//【反例】设定默认值，会在更新其它字段时，附带更新此字段，导致创建时间被修改成当前时间
-Date editTime = new Date();
+
 ```
 ```java
-//【反例】某业务的交易报表上显示成交总额涨跌情况，即正负 x%，x 为基本数据类型。
-调用的RPC 服务，调用不成功时，返回的是默认值，页面显示：0%，这是不合理的，应该显示成中划线-。
 
-搜索条件对象，一般 null 值表示该字段不做限制，而 0 表示该字段的值必须为0。
-
-所以包装数据类型的 null 值，能够表示额外的信息，如：远程调用失败，异常退出
 ```
 
 >`【强制】`所有的相同类型的包装类对象之间值的比较，全部使用 equals()。
 
 ```java
-Integer m = 128, n = 128;
-System.out.println(m.equals(n)); //true --> 对比【值】
-System.out.println(m == n); //false     -->  对比【内存地址】
 
-Integer m1 = 127, n1 = 127;
-System.out.println(m1.equals(n1)); //true
-System.out.println(m1 == n1); //true
-
-【Integer的缓存策略】jvm启动时，预先创建 [-128,127] 之间整数的 Integer 实例，然后保存到缓存数组 
-IntegerCache。以后再创建此区间整数的包装类实例时，直接从缓存取，不会再 new 新对象，即使用同一个对象。
 ```
 
 > `short s1 = 1; s1=s1+1; 和 s1+=1;`有无区别？
 
-前者，s1+1 运算时会自动提升表达式的类型，所以结果是 int 型。再赋值给 short 类型 s1 时，编译器将报错。
-
-后者，编译器对于 += 运算符会进行特殊处理，因此可以正确编译。
-
 ```java
-double d = 5.1e11;
-float f = 22.2;
-int i = 0.0;
-Double oD = 2;
 
-//（1）5.1e11表示5.1*10^11，在double的取值范围内正确。
-//（2）22.2为double类型，赋值给float类型需要进行强制类型转换否则无法通过编译。
-//（3）0.0虽然看似是0，但是表示的是double类型，赋值给int类型时同样需要强制类型转换，否则无法通过编译。
-//（4）double od = 2可以，但包装类Double接收时不会进行自动类型转换，因此接收整型值2时无法通过编译。
 ```
 
 > char 型变量中能不能存贮一个中文汉字? 
 
-`char 类型变量用来存储 Unicode 编码的字符集`，Unicode 编码字符集中包含了汉字。所以，char 型变量中当然可以存储汉字。不过，如果某个特殊的汉字没有被包含在 Unicode 编码字符集中，那么，这个 char 型变量中就不能存储这个特殊汉字。
-
-**补充：** Unicode 编码占用两个字节,，char 类型的变量也占两个字节。
-
 > 常用方法
 
 ```java
-short i = 4;
-i += 4; //编译通过，+= 底层会进行特殊处理
-i = i + 4; //编译报错，从 int -> short 可能会丢失精度
+
 ```
 
 ```JAVA
@@ -665,14 +561,7 @@ int l = ++i; //先++，再使用
 ```
 
 ```java
-八进制以 0 开头，十六进制以 0x 开头。都是数字 0，而不是字母 O
 
-int i = 0144; //100，八进制表示方式: 4*8^0 + 4*8^1 + 1*8^2 = 4+32+64
-int i = 0x64; //100，十六进制表示方式: 4*16^0 + 6*16^1 = 4+96
-
-
-String octal = Integer.toOctalString(100); //144，十进制转八进制
-String hex = Integer.toHexString(100); //64，十进制转十六进制
 ```
 
 > 十进制 转 二进制：对十进制进行除2运算
@@ -823,51 +712,10 @@ public void test() {
 
 ## switch
 
->switch能否作用在 byte 上，能否作用在 long 上，能否作用在 String 上？
+>
 
 ```java
-switch 作用在 byte，short，char，int 这几个基本数据类型和封装类型 或 enum枚举常量。
-其中，byte，short，char都可以隐含转换为 int。但是不支持 boolean。
 
-另外，java7支持 String类型，其实是通过调用'String.hashCode()'，将String转换为 int。
-```
-
-> **break关键字：** 当遇到break，switch语句终止。如果没有break出现，程序会继续执行下一条case语句，直到出现break语句。
-
-```java
-private int getValue(int i) {
-    int result = 0;
-    switch (i) {
-        case 1:
-            result += i;
-        case 2:
-            result += i * 2;
-        case 3:
-            result += i * 3;
-    }
-    return result;
-}
-
-System.out.println(getValue(2)); //2*2+2*3=10
-```
-
-> 如何跳出当前的多重嵌套循环？`让外层的循环条件表达式的结果，可以受到里层循环体代码的控制。`
-
-```java
-public void test() {
-    int arr[][] = {{1, 2, 3}, {4, 5, 6, 7}, {9}};
-    
-    boolean found = false;        
-    for (int i = 0; i < arr.length && !found; i++) {
-        for (int j = 0; j < arr[i].length; j++) {
-            System.out.println("i =" + i + ", j = " + j);
-            if (arr[i][j] == 5) {
-                found = true;
-                break;
-            }
-        }
-    }
-}
 ```
 
 
@@ -905,154 +753,36 @@ public void test() {
 
 ## Exception
 
-![](assets/exception.png)
+
 
 >Exception 和 Error 都继承自 `Throwable` 类。是异常处理机制的基本组成类型。
 
 ```java
-Error：    一般指与虚拟机相关的问题，程序本身无法恢复，建议程序终止。常见：'系统崩溃，内存溢出等'。
-Exception：是程序正常运行中，可以预料的意外情况，应该捕获并进行相应的处理。
+
 ```
 
 >Exception分类： RuntimeException（运行时异常）和 CheckedException（受检查异常，即编译器异常）。
 
 ```java
-'RuntimeException''：是 RuntimeException 类及其子类，编译时能通过，在运行时出现，出现后程序直接终止。
 
-（1）NullPointerException，（2）ClassCastException，（3）ArithmaticException（除数为0），
-（4）ArrayIndexOutOfBoundsException（数组下标越界），（5）NumberFormatException（数字格式化）
-
-Arrays.asList("a", "b").add("c"); //java.lang.UnsupportedOperationException
-
-list.forEach(x -> {if("b".equals(x)){ list.add("c"); }}); //ConcurrentModificationException
 ```
 
 ```java
-'CheckedException'：是 RuntimeException 以外的异常，类型上都属于Exception类及其子类（'不是具体的类'）。编译时直接报错，必须使用 try-catch 进行异常捕获，或使用 throws 语句声明抛出。
 
-（1）IOException，（2）InterruptedException，（3）SQLException
 ```
 
 ```java
-try {
-    //throw new NullPointerException("NPE"); //try 抛出的异常被 catch 捕获
-    throw new IOException("IOE");
-} catch (RuntimeException e0) {
-    System.out.println("RuntimeException：" + e0.getMessage());
-} catch (Exception e1) {
-    System.out.println("Exception：" + e1.getMessage());
-}
 
-//结果分别输出: RuntimeException：NPE 和 Exception：IOE
-//原因是 NPE 与 RuntimeE 之间的继承关系比 Exception 近，就近捕获原则。
 ```
 > throws & throw
 
 ```java
-throws：通常被应用在'声明方法时'，用来指定可能抛出的异常。多个异常使用逗号隔开。
-throw：通常用在'方法体中'，并且抛出一个异常对象。程序在执行到 throw 语句时立即停止，它后面的语句都不执行。
 
-//throw 抛出异常后，如果想在方法调用处捕获并处理该异常，则需要用 throws 在方法声明中指明要抛出的异常。
-int str2int(String str) throws NumberFormatException {
-    if (str == null) {
-        throw new NumberFormatException("null");
-    }
-    return Integer.parseInt(str);
-}
 ```
 
 > 自定义异常 一般继承`RuntimeException`，待证 ？？？
 
-## SimpleDate...
 
-> `SimpleDateFormat`并不是一个线程安全的类，在多线程情况下，会出现异常。
-
-```java
-private static final SimpleDateFormat sdf = new SimpleDateFormat("yyyy-MM-dd HH:mm:ss");
-
-public void test() throws InterruptedException {
-    ExecutorService service = Executors.newFixedThreadPool(25);
-    for (int i = 0; i < 20; i++) {
-        service.execute(() -> {
-            System.out.println(sdf.parse("2019-04-15 09:45:59"));
-        });
-    }
-    // 等待上述的线程执行完，再关闭线程池。二者配合使用
-    service.shutdown();
-    service.awaitTermination(1, TimeUnit.DAYS);
-}
-```
-
-把 SimpleDateFormat 实例定义为静态变量，在多线程情况下会被多个线程共享。B线程会读取到A线程的时间，就会出现时间差异和其它各种问题。SimpleDateFormat 和它继承的 DateFormat 类都不是线程安全的。
-
-> **方案1：** 只在需要的时候创建实例，不用static修饰。`缺点`：加重了创建对象的负担，会频繁地创建和销毁对象，效率较低。
-
-```java
-public static String formatDate(Date date) throws ParseException {
-    SimpleDateFormat sdf = new SimpleDateFormat("yyyy-MM-dd HH:mm:ss");
-    return sdf.format(date);
-}
-
-public static Date parse(String strDate) throws ParseException {
-    SimpleDateFormat sdf = new SimpleDateFormat("yyyy-MM-dd HH:mm:ss");
-    return sdf.parse(strDate);
-}
-```
-
-> **方案2：** synchronized大法好。`缺点`：并发量大的时候会对性能有影响，线程阻塞。
-
-```java
-private static final SimpleDateFormat sdf = new SimpleDateFormat("yyyy-MM-dd HH:mm:ss");
-
-public static String formatDate(Date date) throws ParseException {
-    synchronized (sdf) {
-        return sdf.format(date);
-    }
-}
-
-public static Date parse(String strDate) throws ParseException {
-    synchronized (sdf) {
-        return sdf.parse(strDate);
-    }
-}
-```
-
-> **【推荐】方案3：** ThreadLocal，确保每个线程单独一个SimpleDateFormat对象。
-
-```java
-private static ThreadLocal<DateFormat> threadLocal = new ThreadLocal<DateFormat>() {
-    @Override
-    protected DateFormat initialValue() {
-        return new SimpleDateFormat("yyyy-MM-dd HH:mm:ss");
-    }
-};
-
-//上式的lambda简化版
-//private static ThreadLocal<DateFormat> threadLocal = 
-//        ThreadLocal.withInitial(() -> new SimpleDateFormat("yyyy-MM-dd HH:mm:ss"));
-
-public static Date parse(String dateStr) throws ParseException {
-    return threadLocal.get().parse(dateStr);
-}
-
-public static String format(Date date) {
-    return threadLocal.get().format(date);
-}
-```
-
-> **`【推荐】方案4：`** 基于JDK1.8的 DateTimeFormatter
-
-```java
-private static final DateTimeFormatter formatter = DateTimeFormatter.ofPattern("yyyy-MM-dd HH:mm:ss");
-
-public static String formatDate2(LocalDateTime date) {
-    return formatter.format(date);
-}
-
-public static LocalDateTime parse2(String dateNow) {
-    return LocalDateTime.parse(dateNow, formatter);
-}
-```
 
 
 
@@ -2154,200 +1884,6 @@ private static void sendMsg(int index) {
         System.out.println("C<-S：" + join);
     } catch (IOException e) {
         e.printStackTrace();
-    }
-}
-```
-
-
-
-
-
-# Reflect
-
-##创建对象
-
-> （1）new创建：传统方式，必须预先知道要使用的类；引用类改变，就必须修改源码。
-
-```java
-Person person = new Person();
-```
-
-> （2）Cloneable方式：不推荐
-
-```java
-public class Person implements Cloneable{
-    @Override
-    protected Object clone() throws CloneNotSupportedException {
-        return super.clone();
-    }
-}
-Person clone = (Person) person.clone(); //克隆
-```
-
-> （3）反射方式：动态创建，效率相对低下，耗时是传统方式的3倍
-
-```java
-//先获取 clazz 对象（4种方式，常用1和2），再创建此 clazz 对象所表示的类的一个新实例
-Class<?> clazz = Class.forName("com.example.reflect.Person"); //1
-Class<?> clazz = getClass().getClassLoader().loadClass("com.example.reflect.Person"); //2
-Class<? extends clazz> clazz = new Person().getClass(); //3
-Class<Person> clazz = Person.class; //4
-
-Object instance = clazz.newInstance(); //创建实例
-```
-
-## 构造器
-
-> 所有构造器
-
-```java
-Constructor<?>[] constructors = clazz.getConstructors(); //public-级别的所有构造器
-Constructor<?>[] constructors = clazz.getDeclaredConstructors(); //all
-```
-
-> 无参构造器
-
-```java
-Constructor<?> constructor = clazz.getConstructor();
-Person p = (Person) constructor.newInstance(); //等同于 new Person();
-```
-
-> 有参构造器
-
-```java
-Constructor<?> constructor = clazz.getConstructor(boolean.class);
-Person p8 = (Person) constructor.newInstance(true); //new Person(true);
-```
-
-## 属性
-
-> 所有属性
-
-```java
-public class Person {
-    public static String city = "SX";
-    public boolean gender;
-    protected String name;
-    int age;
-    private boolean young;
-}
-
-Field[] fields = clazz.getFields(); //public-only
-Field[] fields = clazz.getDeclaredFields(); //all
-```
-
-> 具体属性
-
-```java
-Field gender = clazz.getField("gender"); //public boolean gender;
-Field name = clazz.getDeclaredField("name"); //protected String name;
-```
-
-> 属性操作
-
-```java
-Field city = clazz.getDeclaredField("city"); //static -> 不依赖对象,传参 null
-city.set(null, "BJ");
-System.out.println(city.get(null));
-
-Field gender = clazz.getDeclaredField("gender"); //non static --> 依附于对象 p1
-Object p1 = clazz.newInstance(); 
-gender.set(p1, true);
-System.out.println(gender.get(p1));
-
-Field young = clazz.getDeclaredField("young"); //private --> 依附于对象,并暴力访问
-Object p2 = clazz.newInstance();
-young.setAccessible(true); //暴力膜
-young.set(p2, true);
-System.out.println(young.get(p2));
-```
-## 方法
-
-> 所有方法
-
-```java
-Method[] methods = clazz.getMethods(); //同上
-Method[] methods = clazz.getDeclaredMethods();
-```
-> 无参 public static
-
-```java
-Method staticHello = clazz.getMethod("staticHello");
-Object invoke = staticHello.invoke(null); //invoke为返回值; 调用 --> 不依赖对象
-```
-> 无参 private
-
-```java
-Method privateHello = clazz.getDeclaredMethod("privateHello");
-privateHello.setAccessible(true);
-Object p0 = clazz.newInstance();
-System.out.println("privateHello: " + privateHello.invoke(p0)); //依赖对象 + 暴力膜
-```
-> 有参 private
-
-```java
-Method privateHello1 = clazz.getDeclaredMethod("privateHello", String.class, int.class);
-privateHello1.setAccessible(true);
-Object p3 = clazz.newInstance();
-System.out.println("privateHello1: " + privateHello1.invoke(p3, "SSS", 888)); //依赖+暴力膜
-```
-
-## 两个特殊
-
-> main方法怎样传递参数？ `public static void main(String[] args){}`
-
-按照jdk1.5，整个数组是一个参数； jdk1.4数组中的每一个元素是一个参数。把一个字符串数组作为参数传递到 invoke()，jvm怎么解析？？
-
-jdk1.5肯定没问题，但对于jdk1.4则会将字符串数组打散成一个个字符串作为参数，出现参数个数异常。
-
-**正确做法：** 
-
-1. 将字符串数组转换成Object对象；
-2. 将字符串数组作为Object数组的一个元素
-
-```java
-Class<?> clazz = this.getClass().getClassLoader()
-        .loadClass("com.example.reflect.Person");
-Method helloArray = clazz.getMethod("main", String[].class); //参数类型: String[].class
-
-helloArray.invoke(null, (Object) new String[]{"aaa", "bbb"}); //正确1
-// helloArray.invoke(null, new Object[]{new String[]{"aaa", "bbb"}}); //正确2
-
-// helloArray.invoke(null, new String[]{"aaa", "bbb"}); //错误写法
-```
-
-> 泛型相关
-
-```java
-public Map<Integer, Person> method(Map<String, Person> map, List<Person> list) {
-    return null;
-}
-
-public void doArgs() throws NoSuchMethodException {
-    Method method = getClass().getMethod("method", Map.class, List.class);
-    Type[] types = method.getGenericParameterTypes();
-
-    for (Type paramType : types) {
-        System.out.println("参数-类型: " + paramType);
-
-        if (paramType instanceof ParameterizedType) {
-            Type[] genericTypes = ((ParameterizedType) paramType).getActualTypeArguments();
-            for (Type genericType : genericTypes) {
-                System.out.println("参数-泛型类型：" + genericType);
-            }
-            System.out.println();
-        }
-    }
-
-    Type returnType = method.getGenericReturnType();
-    System.out.println("返回值-类型：" + returnType);
-
-    if (returnType instanceof ParameterizedType) {
-        Type[] genericTypes = ((ParameterizedType) returnType).getActualTypeArguments();
-
-        for (Type genericType : genericTypes) {
-            System.out.println("返回值-泛型类型：" + genericType);
-        }
     }
 }
 ```

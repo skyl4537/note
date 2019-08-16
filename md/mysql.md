@@ -392,15 +392,11 @@ ALTER TABLE `coupon` ADD UNIQUE key (索引名); -- 新增 唯一索引
 > 登陆命令
 
 ```sql
--- [-h] 服务器ip; [-P] 端口号(默认3306,非默认则必须显示指定); [-u] 用户名; [-p] 密码
-mysql -h 192.168.5.25 -P 33306 -u bluecardsoft -p
+
 ```
 
 ```sql
-SELECT VERSION(); -- 数据库版本
-SELECT name, DATABASE() FROM flower; -- 查看当前所在的数据库或表
 
-SELECT ROW_COUNT(); -- 返回受影响的行数
 ```
 
 > sql分类

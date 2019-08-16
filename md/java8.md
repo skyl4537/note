@@ -2,38 +2,271 @@
 
 
 
+# 接口变动
+
+> 接口中变量的修饰符默认是 `public static final`，方法的修饰符默认是 `public abstract`。
+
+```java
+public interface IMyInterface {
+    //java7 --> 只能声明 全局常量 和 抽象方法
+    /*public static final*/ int STATIC_NUM = 7; //默认部分，可省略不写
+
+    /*public abstract*/ void method();
+
+    //java8 --> 声明 静态方法 和 默认方法
+    static void staticMethod() {
+        System.out.println("java8-静态方法");
+    }
+
+    default void defaultMethod() {
+        System.out.println("java8-默认方法");
+    }
+
+    //java9 --> 声明 私有方法（静态和非静态两种）
+    private void privateMethod() {
+        //当有多个 java8的静态方法和默认方法时，可以将冗余代码提取到通用的私有方法中
+        System.out.println("java9-私有方法");
+    }
+
+    private static void privateStaticMethod() {
+        System.out.println("java9-私有静态方法");
+    }
+}
+```
+
+> `类优先原则`：当父类和父接口（default方法）中都实现了相同的方法时，应该以父类中的方法优先。
+
+```java
+public class FatherClass {
+    public void sayHello() {
+        System.out.println("say hello");
+    }
+}
+```
+
+```java
+public interface IFatherInterface {
+    default void sayHello() {
+        System.out.println("default say hello");
+    }
+}
+```
+
+```java
+public class Test extends FatherClass implements IFatherInterface {
+
+    public static void main(String[] args) {
+        Test test = new Test();
+        test.sayHello(); //输出："say hello"
+    }
+}
+```
+
+> `接口冲突`：当实现多个接口，且每个接口中都有同名的 default 方法，就会报错。必须手动选择一个 default 方法作为实现。
+
+```java
+public interface IFatherInterface1 {
+
+    default void sayHi() {
+        System.out.println("默认方法-1");
+    }
+}
+```
+
+```java
+public interface IFatherInterface2 {
+
+    default void sayHi() {
+        System.out.println("默认方法-2");
+    }
+}
+```
+
+```java
+public class Test implements IFatherInterface1, IFatherInterface2 {
+
+    @Override
+    public void sayHi() {
+        IFatherInterface2.super.sayHi(); //手动指定
+    }
+
+    public static void main(String[] args) {
+        Test test = new Test();
+        test.sayHi();
+    }
+}
+```
+# Optional
+
+> 只用于返回类型，而不是参数，也不是字段
+
+```
+是一个容器类，代表一个值存在或不存在。原来用 null 表示一个值不存在，现在 Optional 可以更好的表达这个概念，并且可以避免空指针异常。
+```
+
+> 常用方法
+
+```java
+Optional.empty(); //空实例
+
+Optional.of(obj);         //参数不能为null，否则 NPE
+Optional.ofNullable(obj); //obj不为 null，创建实例；否则创建空实例。【常用】
+
+public void ifPresent(Consumer<? super T> consumer)
+```
+
+```java
+Dog dog = optional.orElse(null); //有则返回，无则为 null
+Dog dog = optional.orElseGet(() -> new Dog(5, "yellow")); //...无则创建
+Dog dog = optional.orElseThrow(() -> new RuntimeException("NPE")); //...无则抛异常
+
+optional.ifPresent(x -> System.out.println(x.getName())); //有则打印
+```
+
+```java
+public<U> Optional<U> map(Function<? super T, ? extends U> mapper)
+
+public T orElse(T other)
+public T orElseGet(Supplier<? extends T> other)
+public <X extends Throwable> T orElseThrow(Supplier<? extends X> exceptioSupplier) throws X
+
+public Optional<T> filter(Predicate<? super T> predicate)
+public<U> Optional<U> flatMap(Function<? super T, Optional<U>> mapper)
+```
+> 优雅判 null
+
+```java
+public String getDogName0(Person person) throws IllegalArgumentException { //繁琐
+    if (null != person) {
+        Person.Pet pet = person.getPet();
+        if (null != pet) {
+            Person.Pet.Dog dog = pet.getDog();
+            if (null != dog) {
+                return dog.getName();
+            }
+        }
+    }
+    throw new IllegalArgumentException("param isn't available.");
+}
+```
+
+```java
+public String getDogName1(Person person) throws IllegalArgumentException { //优雅
+    return Optional.ofNullable(person)
+        .map(x -> x.getPet())
+        .map(x -> x.getDog())
+        .map(x -> x.getName())
+        // .orElse("Unknown") //以上都为null，则设置默认值 或 抛出异常
+        .orElseThrow(() -> new IllegalArgumentException("param isn't available."));
+}
+```
 
 
 # 时间API
 
 ##jdk7弊端
 
-> java8之前 `java.util.Date 和 java.util.Calendar` 的弊端
+> 问题：Date，Calendar，SimpleDateFormat 都是`线程不安全`
 
-【最重要】都是`线程不安全`。星期和月份都是从 0 开始计数。
+```java
+//把 SimpleDateFormat 实例定义为静态变量，在多线程情况下会被多个线程共享。容易出现问题
+private static final SimpleDateFormat sdf = new SimpleDateFormat("yyyy-MM-dd HH:mm:ss");
+
+public void test() throws InterruptedException {
+    ExecutorService service = Executors.newFixedThreadPool(25);
+    for (int i = 0; i < 20; i++) {
+        service.execute(() -> {
+            System.out.println(sdf.parse("2019-04-15 09:45:59"));
+        });
+    }
+    // 等待上述的线程执行完，再关闭线程池。二者配合使用
+    service.shutdown();
+    service.awaitTermination(1, TimeUnit.DAYS);
+}
+```
+
+> 方案1：只在需要的时候创建实例，不用static修饰。`缺点`：加重了创建对象的负担，会频繁地创建和销毁对象，效率较低。
+
+```java
+public static String formatDate(Date date) throws ParseException {
+    SimpleDateFormat sdf = new SimpleDateFormat("yyyy-MM-dd HH:mm:ss");
+    return sdf.format(date);
+}
+
+public static Date parse(String strDate) throws ParseException {
+    SimpleDateFormat sdf = new SimpleDateFormat("yyyy-MM-dd HH:mm:ss");
+    return sdf.parse(strDate);
+}
+```
+
+> 方案2： synchronized大法好。`缺点`：并发量大的时候会对性能有影响，线程阻塞。
 
 ```java
 private static final SimpleDateFormat sdf = new SimpleDateFormat("yyyy-MM-dd HH:mm:ss");
 
-ExecutorService service = Executors.newFixedThreadPool(25);
-for (int i = 0; i < 20; i++) {
-    service.execute(() -> {
-        try {
-            System.out.println(sdf.parse("2019-04-15 09:45:59"));
-        } catch (ParseException e) {
-        }
-    });
+public static String formatDate(Date date) throws ParseException {
+    synchronized (sdf) {
+        return sdf.format(date);
+    }
 }
-// 等待上述的线程执行完，再关闭线程池。二者配合使用
-service.shutdown();
-service.awaitTermination(1, TimeUnit.DAYS);
+
+public static Date parse(String strDate) throws ParseException {
+    synchronized (sdf) {
+        return sdf.parse(strDate);
+    }
+}
 ```
 
+> 方案3：ThreadLocal，确保每个线程单独一个SimpleDateFormat对象。
+
+```java
+private static ThreadLocal<DateFormat> threadLocal = new ThreadLocal<DateFormat>() {
+    @Override
+    protected DateFormat initialValue() {
+        return new SimpleDateFormat("yyyy-MM-dd HH:mm:ss");
+    }
+};
+
+//上式的lambda简化版
+//private static ThreadLocal<DateFormat> threadLocal = 
+//        ThreadLocal.withInitial(() -> new SimpleDateFormat("yyyy-MM-dd HH:mm:ss"));
+
+public static Date parse(String dateStr) throws ParseException {
+    return threadLocal.get().parse(dateStr);
+}
+
+public static String format(Date date) {
+    return threadLocal.get().format(date);
+}
+```
+
+> `方案4`：基于JDK1.8的 DateTimeFormatter
+
+```java
+private static final DateTimeFormatter formatter = DateTimeFormatter.ofPattern("yyyy-MM-dd HH:mm:ss");
+
+public static String formatDate2(LocalDateTime date) {
+    return formatter.format(date);
+}
+
+public static LocalDateTime parse2(String dateNow) {
+    return LocalDateTime.parse(dateNow, formatter);
+}
+```
+
+## 格式化
+
+> 日期格式化，`线程安全`。
+
+```java
+DateTimeFormatter formatter = DateTimeFormatter.ofPattern("yyyy-MM-dd HH:mm:ss.SSS");
+
+String format = formatter.format(LocalDateTime.now()); //format
+LocalDateTime parse = LocalDateTime.parse("2019-04-29 15:59:54.943", formatter); //parse
+```
 ## LocalDate
 
-LocalDate，LocalTime，LocalDateTime：`人读的时间（非时间戳），都是线程安全的`。
-
-> 通过 `now(); parse(); of();` 三种静态方法获取实例对象
+> LocalDate，LocalTime，LocalDateTime：`人读的时间（非时间戳），都是线程安全的`。
 
 ```java
 LocalDateTime now = LocalDateTime.now(); //北京时间：2019-4-29T12:37:46.354
@@ -84,17 +317,6 @@ boolean before = plusDays.isBefore(ldt); //false
 
 ```java
 boolean leapYear = LocalDate.now().isLeapYear();
-```
-
-## 格式化
-
-> 日期格式化，线程安全。
-
-```java
-DateTimeFormatter formatter = DateTimeFormatter.ofPattern("yyyy-MM-dd HH:mm:ss.SSS");
-
-String format = formatter.format(LocalDateTime.now()); //format
-LocalDateTime parse = LocalDateTime.parse("2019-04-29 15:59:54.943", formatter); //parse
 ```
 
 ## Instant
@@ -307,11 +529,17 @@ Stream 不会改变源对象。相反，它会返回一个持有结果集的新 
 Stream 操作是延迟执行的。意味着它会等到需要结果时才执行。#详见Demo
 ```
 
-`创建流（转化数据源） --> 中间操作（定义中间操作链，但不会立即执行） --> 终止操作（执行中间操作链，并产生结果）`
+```shell
+#可以把 Stream 当成一个高级版本的 Iterator。
+
+原始版本的 Iterator，用户只能一个一个的遍历元素并对其执行某些操作；
+高级版本的 Stream，用户只要给出需要对其包含的元素执行什么操作，比如 "过滤掉长度大于10的字符串"、"获取每个字符串的首字母"等，
+具体这些操作如何应用到每个元素上，就给 Stream 就好了！
+```
 
 ## 创建流
 
-> 数据准备
+> `创建流（转化数据源） --> 中间操作（定义中间操作链，但不会立即执行） --> 终止操作（执行中间操作链，并产生结果）`
 
 ```java
 @Data
@@ -625,127 +853,15 @@ long count = Stream.generate(() -> new Random().nextInt())
         .count();
 ```
 
-# 接口变动
-
-接口中变量的修饰符默认是 `public static final`，方法的修饰符默认是 `public abstract`。`都只能是`。
-
-
-
-
-
-
-
-## java8变化
-
-
-
-
-
-> java8之前接口中只允许存在：全局常量 和 抽象方法。java8新增 `默认方法` 和 静态方法（jdk7???）。
-
-
-
-## 类优先原则
-
-> 当 父类F 和 父接口I 都实现了 sayHello() 方法，`子类调用 父类F 实现`。
-
-```java
-@FunctionalInterface
-interface I {
-    public static final String NAME = "D";
-
-    void sayHi();
-
-    default void sayHello() { //jdk8新增默认方法
-        System.out.println("sayHello-I");
-    }
-
-    static void sayHah() { //
-        System.out.println("sayHah-I");
-    }
-}
-```
-
-## 接口冲突
-
-> 当实现多个接口，且每个接口中都有同名default实现方法，就会报错。必须手动选择一个接口的default方法作为实现。
-
-
-
-
-
-
-
-## Optional
-
-Optional<T> 是一个容器类，代表一个值存在或不存在。原来用 null 表示一个值不存在，现在 Optional 可以更好的表达这个概念，并且可以避免空指针异常。`Optional应该只用于返回类型，而不是参数，也不是字段。`
-
-> 常用方法
-
-```java
-Optional.empty(); //空实例
-
-Optional.of(obj);         //参数不能为null，否则 NPE
-Optional.ofNullable(obj); //obj不为 null，创建实例；否则创建空实例。【常用】
-
-public void ifPresent(Consumer<? super T> consumer)
-```
-
-```java
-Dog dog = optional.orElse(null); //有则返回，无则为 null
-Dog dog = optional.orElseGet(() -> new Dog(5, "yellow")); //...无则创建
-Dog dog = optional.orElseThrow(() -> new RuntimeException("NPE")); //...无则抛异常
-
-optional.ifPresent(x -> System.out.println(x.getName())); //有则打印
-```
-
-```java
-public<U> Optional<U> map(Function<? super T, ? extends U> mapper)
-
-public T orElse(T other)
-public T orElseGet(Supplier<? extends T> other)
-public <X extends Throwable> T orElseThrow(Supplier<? extends X> exceptioSupplier) throws X
-
-public Optional<T> filter(Predicate<? super T> predicate)
-public<U> Optional<U> flatMap(Function<? super T, Optional<U>> mapper)
-```
-> 优雅判 null
-
-```java
-public String getDogName0(Person person) throws IllegalArgumentException { //繁琐
-    if (null != person) {
-        Person.Pet pet = person.getPet();
-        if (null != pet) {
-            Person.Pet.Dog dog = pet.getDog();
-            if (null != dog) {
-                return dog.getName();
-            }
-        }
-    }
-    throw new IllegalArgumentException("param isn't available.");
-}
-```
-
-```java
-public String getDogName1(Person person) throws IllegalArgumentException { //优雅
-    return Optional.ofNullable(person)
-        .map(x -> x.getPet())
-        .map(x -> x.getDog())
-        .map(x -> x.getName())
-        // .orElse("Unknown") //以上都为null，则设置默认值 或 抛出异常
-        .orElseThrow(() -> new IllegalArgumentException("param isn't available."));
-}
-```
-
-
-
 # java7
 
-##类型推断
+> Switch新增支持 String 类型
 
-> Switch判断可以是`byte，short，char，int，以及String和枚举类型`，都可以隐式转为int。
+```shell
+switch 支持的'byte，short，char，int，enum'都可以隐式的转换成 int 类型。不支持 boolean。
 
-
+另外，java7支持 String 类型，其实是通过调用'String.hashCode()'，将String转换为 int。
+```
 
 > 泛型实例化时的类型自动推断
 
@@ -753,25 +869,11 @@ public String getDogName1(Person person) throws IllegalArgumentException { //优
 List<String> list = new ArrayList</*String*/>();
 ```
 
-## 资源关闭
+> 资源对象在程序结束之后必须关闭，`try-with-resources`确保在语句的最后每个资源都会被关闭。
 
-资源对象在程序结束之后必须关闭。`try-with-resources`确保在语句的最后每个资源都会被关闭。
-
-> 任何实现了`java.lang.AutoCloseable 和 java.io.Closeable`的对象，在出了 try 大括号范围之后，都会自动关闭。所以，任意 catch 或者 finally 块都是在 `资源被关闭以后才运行的`。
-
-```java
-//jdk7之前
-public static String doIo6(String path) throws IOException {
-    BufferedReader br = null;
-    try {
-        br = new BufferedReader(new FileReader(path));
-        return br.readLine();
-    } finally {// 必须在这里关闭资源
-        if (br != null) {
-            br.close();
-        }
-    }
-}
+```shell
+任何实现了'java.lang.AutoCloseable'和'java.io.Closeable'的对象，在出了 try 大括号范围之后，都会自动关闭。
+所以，任意 catch 或者 finally 块都是在资源被关闭以后才运行的。
 ```
 
 ```java
@@ -788,7 +890,7 @@ public static String doIo7(String path) {
 
 ```java
 //jdk9之后
-public static String doIo8(String path) throws IOException {
+public static String doIo9(String path) throws IOException {
     BufferedReader br = new BufferedReader(new FileReader(path));
     try (br) {
         return br.readLine();
@@ -796,7 +898,12 @@ public static String doIo8(String path) throws IOException {
 }
 ```
 
-> 异常抑制。如果`对资源对象的处理`和`对资源对象的关闭`均遭遇了异常， 则关闭异常将被抑制。处理异常将被抛出，但关闭异常并没有丢失，而是存在处理异常的被抑制的异常列表中。通过异常的 `getSuppressed()`方法，可以提取出被抑制的异常。
+>异常抑制
+
+```shell
+#如果对资源对象的处理和对资源对象的关闭均遭遇了异常，则关闭异常将被抑制，处理异常将被抛出。
+但关闭异常并没有丢失，而是存在处理异常的被抑制的异常列表中。通过异常的 getSuppressed()方法，可以提取出被抑制的异常。
+```
 
 ```java
 try {
@@ -804,6 +911,7 @@ try {
     System.out.println(s);
 } catch (IOException e) {
     System.out.println("资源处理异常：" + e);
+    
     Throwable[] suppressed = e.getSuppressed();
     System.out.println("资源关闭异常：" + Arrays.toString(suppressed));
 }

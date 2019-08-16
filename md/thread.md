@@ -946,12 +946,14 @@ public static void stopThreadsByThreadGroup() throws InterruptedException {
 
 > 线程池优点
 
-    (0).降低资源消耗：通过重复利用已创建的线程，降低线程创建和销毁造成的消耗
-    (1).提高响应速度：当任务到达时，任务可以不需要等待线程的创建就能立即执行
-    (2).提高可管理性：线程是稀缺资源，如果无限制的创建，不仅会消耗系统资源，还会降低系统的稳定性，使用线程池可以进行统一的分配，调优和监控。
+```shell
+降低资源消耗：通过重复利用已创建的线程，降低线程创建和销毁造成的消耗
+提高响应速度：当任务到达时，任务可以不需要等待线程的创建就能立即执行
+提高可管理性：线程是稀缺资源，如果无限制的创建，不仅会消耗系统资源，还会降低系统的稳定性，使用线程池可以进行统一的分配，调优和监控。
+```
 > 生命周期
 
-```
+```shell
 线程池是一个进程级的重量级资源。默认生命周期和 jvm 一致。即从开启线程池开始，到 jvm 关闭为止。
 
 如果手工调用 shutdown() 方法，那么线程池执行所有的任务后，自动关闭。
@@ -980,45 +982,41 @@ TERMINATED ：线程池已结束，即 terminated()方法执行完。
 
 > 线程池初始化
 
-默认，线程池创建之后，池中是没有线程的，需要接收任务之后才会创建线程。如果需要`预创建线程`，可通过以下两个方法实现。
-
 ```java
+默认，线程池创建之后，池中是没有线程的，需要接收任务之后才会创建线程。如果需要预创建线程，可通过以下两个方法实现。
+
 prestartCoreThread();     //初始化  1   个核心线程
 prestartAllCoreThreads(); //初始化 core 个核心线程
 ```
 > 线程池关闭
 
 ```java
-shutdown(); //不再接受新的任务，处理队列任务，以及当前任务
+shutdown();    //不再接受新的任务，处理队列任务，以及当前任务
 
 shutdownNow(); //不再接受新任务，不处理队列任务，并尝试中断正在执行的任务线程
 ```
 
-> `区别：execute() 和 submit()`
+> 区别：execute() 和 submit()
 
 ```java
 //可以接受的任务类型
-execute(); Runnable接口
-submit();  Callable接口，Runnable接口，Runnable接口 + 返回值Result
+execute()：Runnable接口
+submit() ：Callable接口，Runnable接口，Runnable接口 + 返回值Result
 ```
 
 ```java
 //有无返回值
-execute(); 没有返回值
-submit();  有返回值，所以需要返回值的时候必须使用submit
+execute()：没有返回值
+submit() ：有返回值，所以需要返回值的时候必须使用submit
 ```
 
 ```java
 //异常处理
-execute(); 参数是Runnable接口的实现，所以只能使用 try-catch 来捕获Exception
-submit();  不管提交的是Runnable还是Callable类型的任务，如果不对返回值Future调用get()方法，都会吃掉异常。
+execute()：参数是Runnable接口的实现，所以只能使用 try-catch 来捕获Exception
+submit() ：不管提交的是Runnable还是Callable类型的任务，如果不对返回值Future调用get()方法，都会吃掉异常。
 ```
 
-> 
-
-
-
-## 核心相关
+##核心相关
 
 > 核心参数
 
@@ -1036,7 +1034,7 @@ public ThreadPoolExecutor(int corePoolSize,
 ```
 
 ```java
-//corePoolSize：线程池中的最大核心线程数
+//corePoolSize：线程池中的核心线程数
 默认，线程池创建后池中线程总数为 0，只有在有任务提交到线程池中时才会创建线程。当然，也可以预创建线程。
 
 每次新来一个任务，会创建一个线程去执行，直到 poolSize = corePoolSize
@@ -1056,7 +1054,7 @@ public ThreadPoolExecutor(int corePoolSize,
 ```
 
 ```java
-//unit：keepAliveTime 的时间单位,7种取值
+//unit：keepAliveTime 的时间单位，7种取值
 DAYS，HOURS，MINUTES，SECONDS，MILLISECONDS（毫秒），MICROSECONDS（微妙），NANOSECONDS（纳秒）
 ```
 
@@ -1106,8 +1104,6 @@ PriorityBlockingQueue
   - 按照'优先级'进行排序的/*无限队列*/，优先级最高的元素将始终排在队列的头部
   - 存放在其中的元素必须 implements Comparable，这样才能通过实现 compareTo() 进行排序
 ```
-
-
 
 > 核心方法
 
@@ -1164,7 +1160,7 @@ public class ThreadPoolExecutor
 
 >举个栗子：corePoolSize = 10，maximumPoolSize = (10+5)
 
-```java
+```shell
 假如有一个工厂，工厂里面有 10 个工人，每个工人同时只能做一件任务。
 
 因此，只要当10个工人中有工人是空闲的，来了任务就分配给空闲的工人做。当10个工人都有任务在做时，如果还来了任务，就把任务进行排队等待。
@@ -1683,75 +1679,79 @@ public static void main(String[] args) {
 
 ##@Scheduled
 
-> `@Scheduled`：Spring内置的定时线程池
+> Spring内置的定时线程池
 
 ```java
-@EnableScheduling //使用前提，必须配置两个注解
-@Component
-public class ScheduledTask { }
-```
+@Scheduled(fixedRate = 6000)  //上一次开始执行时间点之后6秒再执行
+@Scheduled(fixedDelay = 6000) //.....执行完毕时间点...........
+@Scheduled(initialDelay=1000, fixedRate=6000) //第一次延迟1秒后执行，之后按 fixedRate 的规则每6秒执行一次
 
-```java
-initialDelay  //项目启动后,延迟多少毫秒执行任务
-fixedRate     //每隔多少毫秒执行一次 (当 任务耗时>频率 时,下次开始时间=上次结束时间);
-fixedDelay    //每次执行完毕,延迟多少毫秒再次执行
 @Scheduled(cron = "0/1 * * * * ?")   //详细配置方法执行频率，1s1次
-    
+
 cron表达式: [秒] [分] [时] [日] [月] [周] [年(可省)]
 秒(0~59); 分(0~59); 时(0~23); 日(1~31,和月份有关); 月(1~12); 星期(1~7,1为周日); 年(1970~2099)
 ```
 
-```java
-* 所有字段，表示对应时间域的每一个时刻。如分钟字段，表示"每分钟"
-    
-- .......，表示一个范围。如小时字段'10-12',表示从10到12点, 即 10,11,12
-    
-, .......，表示一个列表值。如星期字段"MON,WED,FRI"，表示星期一、星期三和星期五
+```shell
+* 适用于所有字段。表示对应时间域的'每一个时刻'。如分钟字段，表示每分钟
 
-/ .......，表示一个等步长序列。x/y表示：x为起始值，y 为增量步长值
-  如分钟字段： 0/15表示 0,15,30,45； 5/15表示 5,20,35,50,
-  也可以使用 */y，等同于 0/y，即 y秒触发一次。
-    
-? 日期和星期，通常指定为"无意义的值"，相当于占位符。因为日和星期是有冲突的。
+- 适用于所有字段。表示'一个范围'。如小时字段10-12，表示从10到12点，即 10,11,12
 
-L .........，代表Last的意思，但它在两个字段中意思不同。
-  在日期中，表示这个月的最后一天。如一月的 31 号，非闰年二月的 28 号
-  在星期中，则表示星期六，等同于 7
-  L 出现在星期字段，而且在前面有一个数值 X，则表示"这个月的最后星期 (X-1)"; 如 6L 表示该月最后星期五
+, 适用于所有字段。表示'一个列表值'。如星期字段"MON,WED,FRI"，表示星期一、星期三和星期五
+
+/ 适用于所有字段。表示'一个等步长序列'。x/y表示：x为起始值，y 为增量步长值
+	如，分钟字段： 0/15表示 0,15,30,45； 5/15表示 5,20,35,50。'*/y == 0/y'
+
+? 日期和星期字段。通常指定为'无意义的值'，相当于占位符。因为日和星期是有冲突的
 ```
 > 此注解默认使用`单例线程池`去处理任务
 
 ```java
-@EnableScheduling //全局注解
-@Component //必要注解
-public class ScheduledTask {
+@EnableScheduling //两个必要注解
+@Component
+public class Task {
 
-    @Scheduled(initialDelay = 1 * 1000, fixedRate = 2 * 1000)
+    @Scheduled(initialDelay = 1 * 1000, fixedDelay = 2 * 1000)
     public void test1() throws InterruptedException {
-        System.out.println(SystemUtils.getAll() + " -> task1 - start!");
+        System.out.println(getTimeAndThreadId() + " -> TASK-01 - START!");
         Thread.sleep(3 * 1000);
-        System.out.println(SystemUtils.getAll() + " -> task1 - end !!");
+        System.out.println(getTimeAndThreadId() + " -> TASK-01 - END !!");
     }
 
-    @Scheduled(initialDelay = 1 * 1000, fixedRate = 2 * 1000)
+    @Scheduled(initialDelay = 1 * 1000, fixedRate = 3 * 1000)
     public void test2() throws InterruptedException {
-        System.out.println(SystemUtils.getAll() + " -> task2 - start!");
-        Thread.sleep(3 * 1000);
-        System.out.println(SystemUtils.getAll() + " -> task2 - end !!");
+        System.out.println(getTimeAndThreadId() + " -> TASK-02 - START!");
+        Thread.sleep(5 * 1000);
+        System.out.println(getTimeAndThreadId() + " -> TASK-02 - END !!");
         // int i = 1 / 0;
+    }
+
+    private String getTimeAndThreadId() {
+        return LocalTime.now() + " - " + Thread.currentThread().getId();
     }
 }
 
 //@Scheduled 默认使用'单例线程池'，源码详见：
 //org.springframework.scheduling.concurrent.ThreadPoolTaskScheduler#poolSize=1
-//所以 task1,2 虽然同时启动，但还是顺序执行
-//但是 task2 执行过程出现异常，也不会影响 task1 及 task2的后续执行
-2019-03-04 19:53:19.709 - 29 - scheduling-1 -> task1 - start!
-2019-03-04 19:53:22.710 - 29 - scheduling-1 -> task1 - end !!
-2019-03-04 19:53:22.710 - 29 - scheduling-1 -> task2 - start!
-2019-03-04 19:53:25.711 - 29 - scheduling-1 -> task2 - end !!
+//所以 task01，02 虽然同时启动，但还是顺序执行
+//但是，如果 task02 执行过程出现异常，也不会影响 task01 及 task02 的后续执行
+09:43:21.984 - 43 -> TASK-02 - START!
+09:43:26.985 - 43 -> TASK-02 - END !!
+09:43:26.985 - 43 -> TASK-01 - START!
+09:43:29.985 - 43 -> TASK-01 - END !!
 ```
 > 配置定时任务的线程池大小
+
+```properties
+#线程池大小，默认1
+spring.task.scheduling.pool.size=5
+#线程名前缀，默认 scheduling-
+#spring.task.scheduling.thread-name-prefix=demoscheduling-
+```
+
+
+
+> 异步任务
 
 ```
 1. 使用全局注解开启异步模式 @EnableAsync
@@ -1761,13 +1761,6 @@ public class ScheduledTask {
 3. @Async 也可标记在类上，标志该类中所有的方法均是异步方法
 
 4. 异步方法和调用方法一定要写在不同的类中，同一类中不起效果
-```
-
-```properties
-#线程池大小，默认1
-spring.task.scheduling.pool.size=5
-#线程名前缀，默认 scheduling-
-spring.task.scheduling.thread-name-prefix=demoscheduling-
 ```
 
 ```java
@@ -1781,22 +1774,27 @@ public class ScheduledTask {
 ```
 ## Quartz
 
-任务调度（Job-Scheduling）的开源框架。可以与JavaEE与JavaSE结合，也可以单独使用。可用来创建简单或运行十个、百个、甚至于好几万个 Jobs 复杂的程序。
-
 > 核心概念
 
+```shell
+任务调度（Job-Scheduling）的开源框架。
+可以与JavaEE与JavaSE结合，也可以单独使用。可用来创建简单或运行十个、百个、甚至于好几万个 Jobs 复杂的程序。
+```
+
 ```java
-job       //任务    - 你要做什么事？
-Trigger   //触发器   - 你什么时候去做？
+job       //任务      - 你要做什么事？
+Trigger   //触发器    - 你什么时候去做？
 Scheduler //任务调度  - 你什么时候需要去做什么事？
 ```
-```java
-//DSL：Domain-Specific-Language，领域特定语言，声明式编程。格式为：方法链，例如 StringBuilder。
-@Override
-public StringBuilder append(String str) {
-    super.append(str);
-    return this; //底层实现原理：返回 this
-}
+```xml
+<dependency>
+    <groupId>org.quartz-scheduler</groupId>
+    <artifactId>quartz</artifactId>
+</dependency>
+<dependency>
+    <groupId>org.springframework</groupId>
+    <artifactId>spring-context-support</artifactId>
+</dependency>
 ```
 
 > javaSE
@@ -1835,18 +1833,6 @@ public class JobDemo implements Job {
 }
 ```
 
-> SpringBoot（两种方式）
-
-```xml
-<dependency>
-    <groupId>org.quartz-scheduler</groupId>
-    <artifactId>quartz</artifactId>
-</dependency>
-<dependency>
-    <groupId>org.springframework</groupId>
-    <artifactId>spring-context-support</artifactId>
-</dependency>
-```
 > SpringBoot方式一：创建普通job类，直接调用。灵活，非侵入。
 
 ```java

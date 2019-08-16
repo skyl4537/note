@@ -1,8 +1,31 @@
 
 
+## 基础命令
+
+> 常用命令
+
+```sql
+-- [-h] 服务器ip; [-P] 端口号(默认3306，非默认则必须显示指定); [-u] 用户名; [-p] 密码（#$%_BC13439677375）
+mysql -h 192.168.5.25 -P 33306 -u bluecardsoft -p
+```
+
+```sql
+ select version();   -- 版本
+ 
+ use test0806;       -- 切换数据库
+ show tables;        -- 当前数据库下的所有表
+ select database();  -- 当前所使用的数据库
+ 
+ SELECT ROW_COUNT(); -- 返回受影响的行数
+```
 
 
-# JSON
+
+
+
+
+
+# JSON相关
 
 ## 创建
 
@@ -243,20 +266,19 @@ mysql> SELECT JSON_UNQUOTE(memo -> '$.datas.name') name FROM log WHERE id=470941
 
 
 
-# 事务
+# 事务相关
 
 ##基础概念
 
-> 存储引擎只有 Innodb 支持事务
+> 事务分类：隐式事务 和 显式事务
 
-```sql
--- 事务保证了数据的 完整性 和 一致性
-事务是由一组 sql 语句组成，这些sql语句要么都执行成功，要么都执行失败
-
-show engines; --查看当前数据库支持的存储引擎
+```shell
+事务：一个或一组 sql 语句组成一个执行单元，这个执行单元要么都执行成功，要么都执行失败。
 ```
 
-> 隐式事务 和 显式事务
+```sql
+show engines; --查看当前数据库支持的存储引擎，只有 Innodb 支持事务
+```
 
 ```sql
 -- 【隐式事务】事务没有明显的开启和关闭标识。例如，普通的sql语句：INSERT，UPDATE，DELETE
@@ -267,11 +289,10 @@ show engines; --查看当前数据库支持的存储引擎
 
 SHOW VARIABLES LIKE 'autocommit'; -- 查看《自动提交》功能是否开启
 
-SET autocommit=0; -- 关闭《自动提交》，只针对当前会话起作用。所以每条事务都要以这条语句开始
-
+SET autocommit=0;                 -- 关闭《自动提交》，只针对当前会话起作用。所以每条事务都要以这条语句开始
 START TRANSACTION; -- 可选语句，开始事务
-UPDATE trans SET fmoney=fmoney-700 WHERE fname='小李'; -- 事务正文sql
-UPDATE trans SET fmoney=fmoney+700 WHERE fname='老王';
+UPDATE trans SET fmoney = fmoney - 700 WHERE fname='小李'; -- 事务正文sql
+UPDATE trans SET fmoney = fmoney + 700 WHERE fname='老王';
 COMMIT; -- 提交事务
 -- ROLLBACK; --回滚事务，与提交事务，二选一
 ```
@@ -280,55 +301,123 @@ COMMIT; -- 提交事务
 
 ```sql
 -- 原子性（Atomicity）
-事务中涉及到的多个操作在逻辑上缺一不可，'不可再分'。要么都执行成功，要么都执行失败。
+事务中多条 sql 语句在逻辑上'不可再分'。要么都执行成功，要么都执行失败。
 ```
 
 ```sql
 -- 一致性（Consistency）
-事务执行会使数据从一个一致性状态变换到另外一个一致性状态（转账之前和之后，金钱总额不变）。
+事务执行会使数据从 一个一致性状态 ->（变换到）-> 另外一个一致性状态（转账之前和之后，金钱总额不变）。
+
 执行过程中，如果某一个或某几个操作失败了，则必须将其他所有操作撤销，将数据恢复到事务执行之前的状态，这就是'回滚'。
 ```
 
 ```sql
 -- 隔离性（Isolation）
-事务往往是并发执行的，所以很有可能有许多事务同时处理相同的数据，因此每个事务都应该与其他事务隔离开来，防止数据损坏。
-隔离性原则要求'多个事务在并发执行过程中不会互相干扰'。
+多个事务并发执行，应保证各个事务之间不能互相干扰。
 
 隔离级别：读未提交（Read uncommitted）、读提交（read committed）、可重复读（repeatable read）和串行化（Serializable）。
 ```
 
 ```sql
 -- 持久性（Durability）
-一个事务一旦提交，则会永久的改变数据库中的数据，不能撤销。比如，删除一条数据。
-通常情况下， 事务对数据的修改应该被'写入到持久化存储器中'。
+事务一旦提交，对数据的改变将是永久的，不会被其他操作所影响。比如，删除一条数据。
 ```
 
-##Boot配置
 
-> 
+## 事务管理
+
+>编程式事务管理器：使用原生JDBC
 
 ```sql
-
+--> （1）获取数据库连接 Connection 对象 --> （2）取消事务的自动提交 --> （3）执行操作
+--> （4）正常完成操作时手动提交事务 --> （4）执行失败时回滚事务
+--> （5）关闭相关资源
 ```
 
->
-
 ```sql
+编程式事务管理：需要将事务管理代码'嵌入到业务方法中'来控制事务的提交和回滚。
 
+在使用编程的方式管理事务时，必须在每个事务操作中包含额外的事务管理代码。相对于'核心业务'而言，事务管理的代码显然属于'非核心业务'，
+如果多个模块都使用同样模式的代码进行事务管理，显然会造成较大程度的'代码冗余'。
 ```
 
->
+>声明式事务管理器
 
 ```sql
+声明式事务管理：将事务管理代码从业务方法中分离出来，'以声明的方式来实现事务管理'。
 
+事务管理代码的固定模式作为一种横切关注点，可以通过 AOP 方法模块化，进而借助'Spring AOP'框架实现声明式事务管理。
+Spring 在不同的事务管理 API 之上定义了一个 抽象层，通过 配置的方式使其生效。
+从而让应用程序开发人员不必了解事务管理 API 的底层实现细节，就可以使用 Spring 的事务管理机制。
+```
+
+```sql
+Spring 的核心事务管理抽象是'PlatformTransactionManager'。它为事务管理封装了一组独立于技术的方法。
+
+-- DataSourceTransactionManager：在应用程序中只需要处理一个数据源，而且通过 JDBC 存取。（常用）
+-- JtaTransactionManager       ：在 JavaEE 应用服务器上用 JTA(Java Transaction API)进行事务管理
+-- HibernateTransactionManager ：用 Hibernate 框架存取数据库
+```
+
+> XML配置（二选一）
+
+```xml
+<!-- 配置事务管理器 -->
+<bean id="transactionManager" class="org.springframework.jdbc.datasource.DataSourceTransactionManager">
+    <property name="dataSource" ref="dataSource" />
+</bean>
+
+<!-- 开启事务注解 -->
+<tx:annotation-driven transaction-manager="transactionManager" />
+```
+
+> 注解配置（二选一）
+
+```java
+@EnableTransactionManagement //全局注解
+```
+
+>在需要进行事务控制的方法上加注解
+
+```java
+@Transactional
+public void purchase(int bookId, int bookCount) {
+    //（1）获取书籍信息（单价，库存）
+    Book book = helloMapper.findBookById(bookId);
+    
+    //（2）扣除书籍库存
+    boolean update = helloMapper.updateBookStock(bookId, bookStock);
+
+    //（3）扣除用户金额
+    update = helloMapper.updateUserAccount(1, userAccount);
+}
+```
+
+> @Transactional 注解相关参数
+
+```java
+/**
+ * @param propagation   事务的传播行为。默认：REQUIRED
+ * @param isolation     事务的隔离级别。默认：READ_COMMITED.（和 mysql 默认的隔离不同）
+ *
+ * @param rollbackFor   需要回滚的异常类，可以为多个。默认：捕获到 RuntimeException 或 Error 时回滚，而捕获到编译时异常不回滚
+ * @param noRollbackFor 不需要回滚的异常类，可以为多个
+ * @param readOnly      指定事务是否为只读。表示这个事务只读取数据但不更新数据，这样可以帮助数据库引擎优化事务
+ * @param timeout       事务执行时间超过这个时间就强制回滚。单位：秒
+ */
+@Transactional(propagation = Propagation.REQUIRED, isolation = Isolation.READ_COMMITTED,
+               rollbackFor = RuntimeException.class, noRollbackFor = RuntimeException.class,
+               readOnly = false, timeout = -1)
 ```
 
 ## 隔离级别
 
+> `mysql 默认：REPEATABLE_READ（可重复读）。Spring 默认：READ_COMMITED（读提交）`
+
 > 数据库事务的并发问题
 
 ```sql
--- 脏读（更新场景） --> T2更新 T1读 T2回滚
+-- 脏读（更新场景） --> T2更新未提交 T1读 T2回滚
 
 T1 将某条记录的 AGE 值从 20 修改为 30，但未提交。
 T2 读取了 T1 更新后的值：30。
@@ -337,7 +426,7 @@ T2 读取到的 30 就是一个无效的值。
 ```
 
 ```sql
--- 不可重复读 --> T1读 T2更新提交 T1再读
+-- 不可重复读（更新） --> T1读 T2更新提交 T1再读
 
 T1 读取了 AGE 值为 20。
 T2 将 AGE 值修改为 30。
@@ -365,111 +454,84 @@ T1 读取了 STUDENT 表时，多出了一些行。
 ```
 
 ```sql
--- REPEATABLE_READ（可重复读）:可以避免【脏读】+【不可重复读】。默认配置
+-- REPEATABLE_READ（可重复读）：可以避免【脏读】+【不可重复读】。mysql 的默认配置
 执行 T1 期间，禁止其它事务对这个字段进行更新，确保 T1 可以多次从一个字段中读取到相同的值。
 ```
 
 ```sql
 -- SERIALIZABLE（串行化）：以上③个问题都可以避免，但效率低。不推荐
 在 T1 执行期间，禁止其它事务对这个表进行添加、更新、删除操作。可确保 T1 可以多次从一个表中读取到相同的行，避免任何并发问题，但性能十分低下。
-
 锁定整个范围的键，并一直持有锁，直到事务完成。
 
-在 REPEATABLE_READ 的基础上，增加了在事务完成之前，其他事务不能向事务已读取的范围'插入新行'的限制。
+在 REPEATABLE_READ（可重复读） 的基础上，增加了在事务完成之前，其他事务不能向事务已读取的范围'插入新行'的限制。
 ```
 
 > 设置隔离级别
 
 ```sql
-SELECT @@tx_isolation; -- 查看当前的隔离级别。默认是：可重复读（repeatable read）
+SELECT @@tx_isolation; -- 查看当前的隔离级别。默认是：可重复读（repeatable_read）
 
-SET transaction isolation level repeatable read; -- 设置隔离级别，仅对当前连接起效
+SET transaction isolation level repeatable read;       -- 设置隔离级别，仅对当前连接起效
 SET global transaction isolation level read committed; -- 设置全局的隔离级别
 ```
+##传播行为
 
-## 事务管理
+> 当事务方法被另一个事务方法调用时，必须指定事务应该如何传播？
 
->编程式事务管理器：使用原生JDBC
-
-```sql
---> （1）获取数据库连接 Connection 对象 --> （2）取消事务的自动提交 --> （3）执行操作
---> （4）正常完成操作时手动提交事务 --> （4）执行失败时回滚事务
---> （5）关闭相关资源
-```
-
-```sql
-编程式事务管理：需要将事务管理代码'嵌入到业务方法中'来控制事务的提交和回滚。
-
-在使用编程的方式管理事务时，必须在每个事务操作中包含额外的事务管理代码。相对于'核心业务'而言，事务管理的代码显然属于'非核心业务'，
-如果多个模块都使用同样模式的代码进行事务管理，显然会造成较大程度的'代码冗余'。
-```
-
->声明式事务管理器
-
-```sql
-声明式事务管理：将事务管理代码从业务方法中分离出来，以声明的方式来实现事务管理。
-
-事务管理代码的固定模式作为一种横切关注点，可以通过 AOP 方法模块化，进而借助'Spring AOP'框架实现声明式事务管理。
-
-Spring 在不同的事务管理 API 之上定义了一个 抽象层，通过 配置的方式使其生效。
-从而让应用程序开发人员 不必了解事务管理 API 的底层实现细节，就可以使用 Spring 的事务管理机制。
-```
-
-```sql
-Spring 的核心事务管理抽象是'PlatformTransactionManager'。它为事务管理封装了一组独立于技术的方法。
-
--- DataSourceTransactionManager：在应用程序中只需要处理一个数据源，而且通过 JDBC 存取。（常用）
--- JtaTransactionManager： 在 JavaEE 应用服务器上用 JTA(Java Transaction API)进行事务管理
--- HibernateTransactionManager：用 Hibernate 框架存取数据库
-```
-
-> XML配置
-
-```xml
-<!-- 配置事务管理器 -->
-<bean id="transactionManager" class="org.springframework.jdbc.datasource.DataSourceTransactionManager">
-    <property name="dataSource" ref="dataSource" />
-</bean>
-
-<!-- 开启事务注解 -->
-<tx:annotation-driven transaction-manager="transactionManager" />
+```java
+场景：用户买 5 本书，结账 checkout() 时，调用5次 purchase() 方法，这两个方法都是 声明式事务管理。这就涉及到'事务的传播行为'。
 ```
 
 ```java
-//Spring Boot 使用的全局注解
-@EnableTransactionManagement
-```
+@Service
+public class UserService {
 
-```java
-//在需要进行事务控制的方法上加注解
-@Transactional
-public void buyBook(int bookId, int bookCount) {
-    //（1）获取书籍信息（单价，库存）
-    Book book = helloMapper.findBookById(bookId);
-    
-    //（2）扣除书籍库存
-    boolean update = helloMapper.updateBookStock(bookId, bookStock);
-
-    //（3）扣除用户金额
-    update = helloMapper.updateUserAccount(1, userAccount);
+    @Transactional //结账
+    public void checkout(String userId, List<Integer> bookIds) {
+        for (Integer bookId : bookIds) {
+            bookService.purchase(userId, bookId);
+        }
+    }
 }
 ```
 
-##传播行为
-
-> 当事务方法被另一个事务方法调用时，必须指定事务应该如何传播。
-
 ```java
-//默认配置。如果有事务正在运行，当前方法就在这个事务内运行，否则，就启动一个新的事务运行。
-@Transactional(propagation = Propagation.REQUIRED)
+@Service
+public class BookService {
 
-当 bookService 的 purchase()方法被另一个事务方法 checkout()调用时，它默认会在现有的事务内运行。
-因此在 checkout()方法的开始和终止边界内只有一个事务。
-这个事务只在 checkout()方法结束的时候被提交，结果用户一本书都买不了。
+    @Transactional //买书
+    public void purchase(String userId, Integer bookId) {
+        //（1）获取书籍信息（单价，库存）
+        //（2）扣除书籍库存
+        //（3）扣除用户金额
+    }
+}
 ```
 
+>REQUIRED：默认配置。在当前已有的事务中继续执行
+
 ```java
-//当前的方法必须启动新的事务运行，如果有事务正在运行，就将它挂起。
-@Transactional(propagation = Propagation.REQUIRES_NEW)
+当 purchase() 方法被另一个事务方法 checkout() 调用时，它默认会在 checkout() 方法的事务内运行。
+因此在 checkout() 方法的开始和终止边界内只有一个事务，这个事务只在 checkout() 方法结束的时候被提交。
+
+所以，当用户余额不足购买 5 本书时，整个事务都会回滚，结果导致用户一本书都买不了。
 ```
+
+![](assets/sql01.png)
+
+>REQUIRES_NEW：挂起当前已有的事务，开启新的事务执行
+
+```java
+每一次调用 purchase()方法，都会开启一个新的事务去执行。 checkout()方法会被挂起，直到所有 purchase()方法执行结束，才会提交。
+ 
+所以，当用户余额不足购买 5 本书时，只会导致某一次的 purchase()方法回滚，用户可以买到部分书籍。
+```
+
+![](assets/sql02.png)
+
+
+
+
+
+
 

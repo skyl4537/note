@@ -113,17 +113,12 @@ public class ApplicationUtils implements ApplicationContextAware {
         return context;
     }
 
-    // 通过name获取Bean.
-    public static Object getBean(String name) {
-        return context.getBean(name);
-    }
-
     // 通过clazz获取Bean.
     public static <T> T getBean(Class<T> clazz) {
         return context.getBean(clazz);
     }
 
-    // 通过name及clazz返回指定的Bean
+    // 通过name，clazz返回指定的Bean
     public static <T> T getBean(String name, Class<T> clazz) {
         return context.getBean(name, clazz);
     }
@@ -217,6 +212,12 @@ String[] array1 = StringUtils.split(str, " .|,");
 //查找嵌套字符串
 String htmlContent = "ABC123DEF456-123000456";
 String between = StringUtils.substringBetween(htmlContent, "123", "456"); //DEF，找不到返回 null
+
+//截取从from开始字符串，区分大小写。截取失败返回空字符串""
+String from = StringUtils.substringAfter("SELECT * FROM PERSON", "from"); //""
+
+//截取左边两个字符
+String left = StringUtils.left("中华人民共和国", 2); //中华
 ```
 
 ```java
@@ -249,12 +250,6 @@ int matches = StringUtils.countMatches("Chinese People", "e"); //4
 ```java
 //判断是否包含这个字符
 boolean contains = StringUtils.contains("中华人民共和国", "共和"); //true
-
-//截取从from开始字符串，区分大小写。截取失败返回空字符串""
-String from = StringUtils.substringAfter("SELECT * FROM PERSON", "from"); //""
-
-//截取左边两个字符
-String left = StringUtils.left("中华人民共和国", 2); //中华
 
 //在左边填充指定字符,使之总长度为6
 String x = StringUtils.leftPad("123", 6, '0'); //000123
@@ -759,8 +754,8 @@ System.out.println(EntityUtils.toString(entity)); //name=%E4%B8%AD%E5%9B%BD&age=
 > 传输 JSON
 
 ```java
-String json = "{\"name\":\"中国\",\"age\":\"70\"}";
-StringEntity entity = new StringEntity(json, "UTF-8"); //中文乱码,默认"ISO-8859-1"
+String data = "{\"name\":\"中国\",\"age\":\"70\"}";
+StringEntity entity = new StringEntity(data, "UTF-8"); //中文乱码,默认"ISO-8859-1"
 entity.setContentEncoding("UTF-8");
 entity.setContentType("application/json");//设置contentType --> json
 
@@ -818,23 +813,23 @@ try (CloseableHttpResponse httpResponse = HttpClients.createDefault().execute(ht
 }
 ```
 
-# 雪花算范
+# 雪花算法
 
 >分布式ID生成器
 
-```java
+```shell
 由于数据库在生产环境中要分片部署（MyCat），所以不能使用数据库本身的自增功能来产生主键值，只能由程序来生成唯一的主键值。
-采用开源的 twitter 的 snowflake（雪花）算法，总长度64bit。
+采用开源的 twitter 的 snowflake（雪花）算法，总长度 '64bit'。
 ```
 
-```java
+```shell
 '优点'：（1）整体上按照时间自增排序（2）整个分布式系统内不会产生ID碰撞(由数据中心ID和机器ID作区分) （3）效率较高
 经测试，SnowFlake每秒能够产生26万ID左右。
 
-0        //最高位是符号位,始终为0,不可用.
-1-41     //41 位的时间序列，精确到毫秒级，可使用到2082年。时间位另一作用是可以根据时间进行排序
-42-51    //10 位的机器标识，10位的长度最多支持部署1024个节点（2^10）
-52-63    //12 位的计数序列，是一系列的自增id，支持每个节点每毫秒产生4096个ID序号（2^12）
+0        #最高位是符号位，始终为0，不可用。
+1-41     #41 位的时间序列，精确到毫秒级，可使用到2082年。时间位另一作用是可以根据时间进行排序
+42-51    #10 位的机器标识，10位的长度最多支持部署1024个节点（2^10）
+52-63    #12 位的计数序列，是一系列的自增id，支持每个节点每毫秒产生4096个ID序号（2^12）
 ```
 
 ![](assets/util0.png)

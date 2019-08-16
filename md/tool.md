@@ -6,24 +6,6 @@
 
 ## 相关插件
 
->`MybatisPlugin`
-
-```
-安装方式：Settings -> Plugins -> Intall Plugin from disk -> 选择压缩包即可
-```
-
-> `MavenRunHelper`
-
-```
-maven插件，可右键启动、打包、测试mvn项目
-```
-
-> `Alibaba-Java-Coding-Guidelines-1.0.6`
-
-```
-ali开发手册的插件版，约束开发习惯
-```
-
 > `lombok`：简化POJO的getter/setter/toString；异常处理；I/O流的关闭操作等等
 
 ```xml
@@ -284,6 +266,12 @@ https://blog.csdn.net/small_mouse0/article/details/77506060
 
 > 快捷键
 
+```shell
+Ctrl+Shift+F       #全局查找 
+```
+
+
+
 |                    描述                    |            idea             |       eclipse        |
 | :----------------------------------------: | :-------------------------: | :------------------: |
 |                  main方法                  |            psvm             |  main（Alt+/补全）   |
@@ -450,19 +438,15 @@ public class ThreadIdInterceptor implements HandlerInterceptor {
     private final static String THREAD_ID = "ThreadId";
 
     @Override
-    public boolean preHandle(HttpServletRequest request, HttpServletResponse response,
-                             Object handler) {
-        String ThreadId = java.util.UUID.randomUUID().toString()
-            .replaceAll("-", "").toUpperCase();
+    public boolean preHandle(HttpServletRequest request, HttpServletResponse response, Object handler) {
+        String ThreadId = java.util.UUID.randomUUID().toString().replaceAll("-", "").toUpperCase();
         MDC.put(THREAD_ID, ThreadId); //加入 ThreadId
         return true;
     }
 
     @Override
-    public void afterCompletion(HttpServletRequest request, HttpServletResponse response,
-                                Object handler, Exception ex) {
+    public void afterCompletion(HttpServletRequest request, HttpServletResponse response, Object handler, Exception ex) {
         // .... 其他逻辑代码
-
         MDC.remove(THREAD_ID); //删除 ThreadId
     }
 }
@@ -822,7 +806,7 @@ log4j.appender.CTRL_ERROR.layout.ConversionPattern=%d{HH:mm:ss.SSS} [%5p] [%t] -
 
 >使用场景
 
-```
+```shell
 当你遇到问题的时候，只能通过 debug 功能来确定问题，你应该考虑打日志，良好的系统，是可以通过日志进行问题定为的。
 
 当你碰到 if...else... 或者 switch... 这样的分支时，要在分支的首行打印日志，用来确定进入了哪个分支
@@ -1333,69 +1317,6 @@ mvn deploy:deploy-file -DgroupId=com.bluecard -DartifactId=wxpay-sdk-0.0.3 -Dver
 ```
 ## 使用相关
 
-> 资源拷贝插件
-
-```xml
-<!--mvn默认只把 src/main/resources 里的非java文件编译到classes中-->
-<!--如果希望 src/main/java 下的文件（如mapper.xml）也被编辑到 classes 中，在 pom.xml 中配置-->
-<resources>
-    <resource>
-        <directory>src/main/java</directory>
-        <includes>
-            <include>**/*.xml</include>
-        </includes>
-    </resource>
-    <resource>
-        <directory>src/main/resources</directory>
-        <includes>
-            <include>**/*.xml</include>
-            <include>**/*.properties</include>
-        </includes>
-    </resource>
-</resources>
-```
-
->新建war项目
-
-```xml
-<!--(1)创建 maven project 时，packaging 选择 war-->
-<!--(2)在 webapp 文件夹下新建"META-INF"和"WEB-INF/web.xml"-->
-<!--(3)在 pom.xml 中添加 javaEE 相关的三个 jar-->
-<dependency>
-    <groupId>javax.servlet</groupId>
-    <artifactId>javax.servlet-api</artifactId>
-    <version>3.0.1</version>
-    <scope>provided</scope> <!--依赖的范围，这个必须是provided，因为 tomcat 中自带此jar包-->
-</dependency>
-<dependency>
-    <groupId>javax.servlet.jsp</groupId>
-    <artifactId>jsp-api</artifactId>
-    <version>2.2</version>
-    <scope>provided</scope>
-</dependency>
-<dependency>
-    <groupId>jstl</groupId>
-    <artifactId>jstl</artifactId>
-    <version>1.2</version>
-</dependency>
-
-<!--(4)使用 tomcat 插件，而非本地tomcat。可实现不同项目发布到不同的tomcat，端口号不能相同.-->
-<plugin>
-    <groupId>org.apache.tomcat.maven</groupId>
-    <artifactId>tomcat7-maven-plugin</artifactId>
-    <version>2.2</version>
-    <configuration>
-        <!--本地启动时项目的端口号; 热部署到远程服务器则不起作用，以远程tomcat端口号为准-->
-        <port>8099</port> 
-        <!--项目发布到 tomcat 后的名称，只写'/'则名称为 ROOT-->
-        <!--测试tomcat http://localhost:8080/ 其访问的是tomcat的 ROOT 项目-->
-        <path>/hello</path>
-    </configuration>
-</plugin>
-
-<!--(5)项目启动: 右键项目 -> run as -> maven build -> Goals中输入 "clean tomcat7:run"-->
-```
-
 > 远程部署
 
 ```xml
@@ -1406,7 +1327,6 @@ mvn deploy:deploy-file -DgroupId=com.bluecard -DartifactId=wxpay-sdk-0.0.3 -Dver
 
 (2).在 pom.xml 中 tomcat 插件的<configuration>里配置
     </configuration>
-        //...
         <username>tomcat</username>
         <password>tomcat</password>
         <url>http://192.168.8.8:8080/manager/text</url>

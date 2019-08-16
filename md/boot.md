@@ -66,6 +66,10 @@
         <plugin>
             <groupId>org.springframework.boot</groupId>
             <artifactId>spring-boot-maven-plugin</artifactId>
+            <!--打成的jar包可直接运行-->
+            <!--<configuration>
+                <executable>true</executable> 
+            </configuration>-->
         </plugin>
     </plugins>
     <resources> <!--资源拷贝插件-->
@@ -80,18 +84,6 @@
         </resource>
     </resources>
 </build>
-```
-
-> 额外配置
-
-```xml
-<plugin>
-    <groupId>org.springframework.boot</groupId>
-    <artifactId>spring-boot-maven-plugin</artifactId>
-    <configuration>
-        <executable>true</executable> <!--打成的jar包可直接运行-->
-    </configuration>
-</plugin>
 ```
 
 ##yml
@@ -601,18 +593,18 @@ public class UserController {
         if (StringUtils.isNotBlank(uPwd)) {
             session.setAttribute("userName", uName); //缓存Session，用于后续验证
 
-            //重定向到接口，可以防止表单重复提交！其实质是重定向到 MyWebMvcConfig#addViewControllers()方法
+            //重定向到接口，可以防止表单重复提交！其实质是重定向到 MyWebMvcConfig.addViewControllers() 方法
             return "redirect:/main";
-        } else {
-            model.addAttribute("uName", uName); //用于表单回显
-            model.addAttribute("errMsg", "用户名或密码不正确");
-            return "/index"; //转发到页面：/templates/index.html
         }
+        
+        model.addAttribute("uName", uName); //用于表单回显
+        model.addAttribute("errMsg", "用户名或密码不正确");
+        return "/index"; //转发到页面：/templates/index.html
     }
 }
 ```
 
-> 登陆拦截器：未登录用户不允许访问非登录页面以外的页面
+> 登陆拦截器：未登录用户不允许访问登录页面以外的页面
 
 ```java
 @Slf4j
@@ -641,8 +633,8 @@ public class LoginInterceptor implements HandlerInterceptor {
 @Configuration
 public class MyWebMvcConfig implements WebMvcConfigurer {
 
-    // @GetMapping("/main")
-    // public String main() { return "main"; }
+    // @GetMapping("/toView")
+    // public String view() { return "view"; }
 
     //配置视图映射。等同于以上代码，相当于集合版
     @Override
@@ -667,6 +659,15 @@ public class MyWebMvcConfig implements WebMvcConfigurer {
             .excludePathPatterns("/", "/login"); //不拦截：登陆接口
     }
 }
+```
+
+> 视图映射xml
+
+```xml
+<!--(1).使用此标签后必须配置 <mvc:annotation-driven />，否则会造成所有的 @Controller 注解无法解析，导致404错误-->
+<!--(2).如果请求存在处理器，则这个标签对应的请求处理将不起作用。因为请求是先去找处理器处理，如果找不到才会去找这个标签配置-->
+<mvc:view-controller path="/toView" view-name="view"/>
+<mvc:annotation-driven />
 ```
 
 ##文件上传
@@ -1114,11 +1115,15 @@ public /*static*/ class SecurityPermitAllConfig extends WebSecurityConfigurerAda
 
 > 简介
 
-B/S结构的软件项目中有时客户端需要实时的获得服务器消息，但默认HTTP协议只支持 `请求响应模式`。 对于这种需求可以通过 polling，Long-polling，长连接，Flash-Socket，HTML5中定义的WebSocket 完成。
+````shell
+B/S 结构的软件项目中有时客户端需要实时的获得服务器消息，但默认HTTP协议只支持 请求响应模式。
+对于这种需求可以通过 polling，Long-polling，长连接，Flash-Socket，HTML5中定义的WebSocket 完成。
 
-HTTP模式可以简化Web服务器，减少服务器的负担，加快响应速度，因为服务器不需要与客户端长时间建立一个通信链接。但不容易直接完成实时的消息推送功能（如聊天室，后台信息提示，实时更新数据等）。
+HTTP模式可以简化Web服务器，减少服务器的负担，加快响应速度，因为服务器不需要与客户端长时间建立一个通信链接。
+但不容易直接完成实时的消息推送功能（如聊天室，后台信息提示，实时更新数据等）。
 
 应用程序通过 Socket 向网络发出请求或者应答网络请求。Socket 可以使用TCP/IP协议或UDP协议。
+````
 
 ```java
 TCP协议：面向连接的，可靠的，基于字节流的传输层通信协议，负责数据的可靠性传输问题。
@@ -1129,70 +1134,61 @@ HTTP协议："无状态协议"，通过 Internet 发送请求消息和响应消�
 
 > Http协议
 
+```shell
 HTTP 协议原本是设计用于传输简单的文档和文件，而非实时的交互。
 
-根据 HTTP 协议，一个客户端如浏览器，向服务器打开一个连接，发出请求，等待回应，之后关闭连接。如果客户端需要更多数据，则需要打开一个新连接，以此循环往复。如果服务器有了新的信息，它必须等待客户端发出请求而不是立即发送消息。
+根据 HTTP 协议，一个客户端如浏览器，向服务器打开一个连接，发出请求，等待回应，之后关闭连接。
+如果客户端需要更多数据，则需要打开一个新连接，以此循环往复。如果服务器有了新的信息，它必须等待客户端发出请求而不是立即发送消息。
 
 那么要看到页面中要展示信息的最新情况，应该怎么办？不断刷新！
 
-缺点：这种方式现在已经被完全淘汰，发送了很多不必要的请求，浪费大量带宽，页面不断刷新，用户体验差，而且做不到真正的实时，服务端有了新数据也不能立马推送给客户端，使得秒级的实时信息交互难以实现。
+缺点：这种方式现在已经被完全淘汰，发送了很多不必要的请求，浪费大量带宽，页面不断刷新，用户体验差，
+而且做不到真正的实时，服务端有了新数据也不能立马推送给客户端，使得秒级的实时信息交互难以实现。
+
+HTTP协议决定了服务器与客户端之间的连接方式，无法直接实现消息推送（F5已坏），一些变相的解决办法：
+```
 
 > 双向通信
 
-HTTP协议决定了服务器与客户端之间的连接方式，无法直接实现消息推送（F5已坏），一些变相的解决办法：
+```shell
+#轮询（Polling）
+客户端定时向服务器发送Ajax请求，服务器接到请求后马上返回响应信息并关闭连接。
+优点：后端程序编写比较容易
+缺点：请求中有大半是无用，浪费带宽和服务器资源
+实例：适于小型应用
+```
 
-1. 轮询（Polling）
+```shell
+#长轮询（Long-Polling）
+客户端向服务器发送Ajax请求，服务器接到请求后hold住连接，直到有新消息才返回响应信息并关闭连接。客户端处理完响应信息后再向服务器发送新的请求
+优点：在无消息的情况下不会频繁的请求，耗费资小
+缺点：服务器hold连接会消耗资源，返回数据顺序无保证，难于管理维护
+实例：WebQQ，Hi网页版，Facebook-IM
+```
 
-   客户端定时向服务器发送Ajax请求，服务器接到请求后马上返回响应信息并关闭连接。
+```shell
+#长连接
+在页面里嵌入一个隐蔵iframe，将这个隐蔵iframe的src属性设为对一个长连接的请求或是采用xhr请求，服务器端就能源源不断地往客户端输入数据
+优点：消息即时到达，不发无用请求，管理起来也相对便
+缺点：服务器维护一个长连接会增加开销
+实例：Gmail聊天
+```
 
-   优点：后端程序编写比较容易
+```sh
+#Flash-Socket
+在页面中内嵌入一个使用了Socket类的 Flash 程序，JavaScript通过调用此Flash程序提供的Socket接口，
+与服务器端的Socket接口进行通信，JavaScript在收到服务器端传送的信息后控制页面的显示。
+优点：实现真正的即时通信,而不是伪即时
+缺点：客户端必须安装Flash插件，非HTTP协议，无法自动穿越防火墙
+实例：网络互动游戏
+```
 
-   缺点：请求中有大半是无用，浪费带宽和服务器资源
-
-   实例：适于小型应用
-
-2. 长轮询（Long-Polling）
-
-   客户端向服务器发送Ajax请求，服务器接到请求后hold住连接，直到有新消息才返回响应信息并关闭连接。客户端处理完响应信息后再向服务器发送新的请求
-
-   优点：在无消息的情况下不会频繁的请求，耗费资小
-
-   缺点：服务器hold连接会消耗资源，返回数据顺序无保证，难于管理维护
-
-   实例：WebQQ，Hi网页版，Facebook-IM
-
-3. 长连接
-
-   在页面里嵌入一个隐蔵iframe，将这个隐蔵iframe的src属性设为对一个长连接的请求或是采用xhr请求，服务器端就能源源不断地往客户端输入数据
-
-   优点：消息即时到达，不发无用请求，管理起来也相对便
-
-   缺点：服务器维护一个长连接会增加开销
-
-   实例：Gmail聊天
-
-4. Flash-Socket
-
-   在页面中内嵌入一个使用了Socket类的 Flash 程序，JavaScript通过调用此Flash程序提供的Socket接口，与服务器端的Socket接口进行通信，JavaScript在收到服务器端传送的信息后控制页面的显示。
-
-   优点：实现真正的即时通信,而不是伪即时
-   缺点：客户端必须安装Flash插件，非HTTP协议，无法自动穿越防火墙
-   实例：网络互动游戏
-
-5. Websocket
-
-   Html5提供的一种浏览器与服务器间进行全双工通讯的网络技术。依靠这种技术可以实现客户端和服务器端的长连接，双向实时通信。
-
-   优点：事件驱动，异步，使用ws或者wss协议的客户端socket，能够实现真正意义上的推送功能。
-
-   缺点：少部分浏览器不支持，浏览器支持的程度与方式有区别。
-
-
-> WebSocket
-
-Websocket 允许通过js与远程服务器建立连接，从而实现客户端与服务器间双向的通信。Websocket 的url开头是ws，如果需要ssl加密可以使用wss。
-
-当调用构造方法构建一个 Websocket 对象后，就可以进行即时通信了`（new WebSocket(url)）`。
+```shell
+#Websocket
+Html5 提供的一种通过 js 与远程服务器建立连接，从而实现客户端与服务器间双向的通信。
+优点：事件驱动，异步，使用ws或者wss协议的客户端socket，能够实现真正意义上的推送功能。
+缺点：少部分浏览器不支持，浏览器支持的程度与方式有区别
+```
 
 ## 客户端
 
@@ -1200,38 +1196,30 @@ Websocket 允许通过js与远程服务器建立连接，从而实现客户端�
 <body>
     <input id="text" type="text"/>
     <button onclick="send()">Send</button>
-    <button onclick="closeWebSocket()">Close</button>
     <div id="message"></div>
-</body>
-<script type="text/javascript">
-    var websocket = null;
 
-    //判断当前浏览器是否支持WebSocket
-    if (!'WebSocket' in window) {
-        alert('浏览器不支持WebSocket')
-    } else {
-        var userId = parseInt(Math.random() * (99 + 1), 10); //生成[0,99]的任意随机数
-        websocket = new WebSocket("ws://localhost:8090/demo/websocket?id=" + userId);
+    <script>
+        var websocket = null;
+        if ('WebSocket' in window) {
+            websocket = new WebSocket("ws://localhost:9005/qrcode/webSocket"); //注意大小写
+        } else {
+            alert("浏览器不支持WebSocket!")
+        }
 
-        //监听事件 -> 连接成功建立时触发该事件
+        //连接建立
         websocket.onopen = function (event) {
-            setMessageInnerHTML("open: " + new Date());
+            console.log("连接建立: " + event);
         };
 
-        //监听事件 -> 连接关闭
+        //连接关闭
         websocket.onclose = function (event) {
-            setMessageInnerHTML("close: " + new Date() + " - " + event.code);
+            console.log("连接关闭: " + event);
             websocket.send(event.code);
         };
 
-        //监听事件 -> 接收到服务器发来的消息
-        websocket.onmessage = function (event) {
-            setMessageInnerHTML(event.data);
-        };
-
-        //监听事件 -> 连接发生错误
-        websocket.onerror = function () {
-            setMessageInnerHTML("error: " + new Date());
+        //连接错误
+        websocket.onerror = function (event) {
+            setMessageInnerHTML("连接错误: " + event);
         };
 
         //监听事件 -> 监听窗口关闭事件
@@ -1242,23 +1230,26 @@ Websocket 允许通过js与远程服务器建立连接，从而实现客户端�
             }
         };
 
+        //接收到服务器发来消息
+        websocket.onmessage = function (event) {
+            console.log("接收到服务器发来消息: " + event.data);
+            setMessageInnerHTML(event.data);
+        };
+
         //将消息显示在网页上
         function setMessageInnerHTML(innerHTML) {
             document.getElementById('message').innerHTML += innerHTML + '<br/>';
-        }
-
-        //关闭连接
-        function closeWebSocket() {
-            websocket.close();
+            // $('#message').html(innerHTML);
         }
 
         //向远程服务器发送数据
         function send() {
             var message = document.getElementById('text').value;
             websocket.send(message);
+            // websocket.send($('#text'));
         }
-    }
-</script>
+    </script>
+</body>
 ```
 
 ## 服务端
@@ -1279,156 +1270,90 @@ public class WebSocketConfig {
 
 ```java
 // 使用 SpringBoot 要使用注解 @Component
-// 使用独立容器(tomcat)是由容器自己管理 WebSocket，但在 SpringBoot 中连容器都是 Spring 管理。
+// 使用独立容器(tomcat)是由容器自己管理 WebSocket，但在 SpringBoot 中连容器都是 Spring 管理
 //
 // 虽然 @Component 默认是单例模式的
-// 但 SpringBoot 还是会为每个 WebSocket 连接初始化一个bean,所以可以用一个静态 Set/Map 保存起来.
+// 但 SpringBoot 还是会为每个 WebSocket 连接初始化一个bean,所以可以用一个静态 Set/Map 保存起来
 @Component
 
 // 使用注解 @ServerEndpoint 可以将一个普通Java类作为 WebSocket 服务器的端点
 // 使用 ServerEndpoint 注解的类必须有一个公共的无参数构造函数.
 //
-// WebSocket 服务端运行在 ws://[Server端IP或域名]:[Server端口]/项目/push
-// 客户端浏览器已经可以对WebSocket客户端API发起 <<<HTTP长连接>>>.
-@ServerEndpoint("/push")
-public class EchoEndpoint {
+// WebSocket 服务端运行在 ws://[Server端IP或域名]:[Server端口]/项目/websocket
+// 客户端浏览器已经可以对WebSocket客户端API发起 <<<HTTP长连接>>>
+@Slf4j
+@ServerEndpoint("/webSocket")
+public class Websocket {
+
+    //区别: 静态变量 和 非静态变量
+    //与某个客户端的连接会话，需要通过它来给客户端发送数据
+    private Session session;
+
+    // 旧版：concurrent包的线程安全Set，用来存放每个客户端对应的 MyWebSocket 对象
+    private static CopyOnWriteArraySet<Websocket> webSocketSet = new CopyOnWriteArraySet<>();
 
     //客户端注册时调用
     @OnOpen
-    public void onOpen(Session session) {}
-
-    //客户端关闭
-    @OnClose
-    public void onClose(Session session, CloseReason reason) {}
-
-    //客户端异常
-    @OnError
-    public void onError(Throwable t) {}
-
-    //收到浏览器客户端消息后调用
-    @OnMessage
-    public void onMessage(String message) {}
-
-    //更高级的注解，MaxMessageSize 属性可以被用来定义消息字节最大限制，
-    //在示例程序中，如果超过6个字节的信息被接收，就报告错误和连接关闭。
-    // @Message(maxMessageSize = 6)
-    // public void receiveMessage(String s) {
-    // }
-}
-```
-
-## 后台Demo
-
-```java
-@Component
-@ServerEndpoint(value = "/websocket")
-public class MyWebSocket {
-    
-    // 静态变量，用来记录当前在线连接数。应该把它设计成线程安全的
-    private static int onlineCount = 0;
-
-    // 旧版：concurrent包的线程安全Set，用来存放每个客户端对应的 MyWebSocket 对象
-    // private static CopyOnWriteArraySet<MyWebSocket> webSocketSet =
-    //         new CopyOnWriteArraySet<>();
-
-    //新版：使用map对象，便于根据 userId 来获取对应的 MyWebSocket
-    private static Map<String, MyWebSocket> webSocketMap = new ConcurrentHashMap<>();
-
-    //区别: 非静态变量 和 静态变量
-    //与某个客户端的连接会话,需要通过它来给客户端发送数据
-    private Session session;
-
-    //当前会话session对应的显式id
-    private String userId;
-
-    //客户端注册
-    @OnOpen
     public void onOpen(Session session) {
-        String id = this.userId = session.getRequestParameterMap().get("id").get(0);
         this.session = session;
-        addOnlineCount(); //在线数加1
-        webSocketMap.put(id, this); //加入Map
-        System.out.println("有新连接加入: " + this.userId + " 当前在线人数为: "
-                + getOnlineCount());
-
-        sendMsg2All(this.userId + " - 已上线! 欢迎");
+        webSocketSet.add(this);
+        log.info("【WebSockt消息】 有连接建立，总连接数: {}", webSocketSet.size());
     }
 
     //客户端关闭
     @OnClose
-    public void onClose() {
-        if (null != webSocketMap.get(this.userId)) {
-            subOnlineCount(); //在线数减1
-            webSocketMap.remove(this.userId); //从Map中删除
-            System.out.println("有一连接关闭: " + this.userId + " 当前在线人数为: " 
-                    + getOnlineCount() + reason);
-
-            sendMsg2All(this.userId + " - 已下线! 再见");
-        }
+    public void onClose(Session session, CloseReason reason) {
+        webSocketSet.remove(this);
+        log.info("【WebSockt消息】 有连接断开，总连接数: {}", webSocketSet.size());
     }
 
     //客户端异常
     @OnError
     public void onError(Session session, Throwable error) {
-        System.out.println("发生错误: " + error);
-        error.printStackTrace();
+        log.error("【WebSockt消息】 有连接异常: {}", error);
     }
 
-    ///收到浏览器客户端消息后调用的方法
+    //收到浏览器客户端消息后调用的方法
     @OnMessage
-    public void onMessage(String message, Session session) {
-        System.out.println("来自客户端的消息: " + this.userId + " - " + message);
+    public void onMessage(Session session, String message) {
+        log.info("【WebSockt消息】 收到客户端消息: {}", message);
 
-        if (message.contains("-")) {
-            String[] split = message.split("-");
-            webSocketMap.keySet().forEach(x -> {
-                if (split[0].equalsIgnoreCase(x))
-                    sendMsg2One(this.userId + "->" + x + " - " + split[1], x); //点对点
-            });
-        } else {
-            sendMsg2All(userId + " - " + message); //群发
-        }
+        // sendMsg2One("服务器->客户端: " + message);
+        sendMsg2All("服务器->客户端: " + message);
     }
 
-    ///群发消息
-    public static void sendMsg2All(String message) {
-        webSocketMap.values().forEach(x -> x.sendMsg(message));
+    //群发消息 --> 可供外部调用
+    public void sendMsg2All(String message) {
+        webSocketSet.forEach(websocket -> websocket.sendMsg(message));
     }
 
-    ///点对点发送消息
-    public static void sendMsg2One(String message, String userId) {
-        webSocketMap.get(userId).sendMsg(message);
+    //点对点发送消息
+    public void sendMsg2One(String message) {
+        sendMsg(message);
     }
 
-    ///实现服务器主动推送
+    //实现服务器主动推送
     private void sendMsg(String message) {
         try {
             this.session.getBasicRemote().sendText(message);
             // this.session.getAsyncRemote().sendText(message);
-        } catch (IOException e) {
-            System.out.println("异常---发送消息: " + e);
+        } catch (Exception e) {
+            log.error("【WebSockt消息】 向客户端发送消息异常: {}", e);
         }
     }
 
-    //三个同步方法,线程安全
-    private static synchronized int getOnlineCount() {
-        return onlineCount;
-    }
-
-    private static synchronized void addOnlineCount() {
-        MyWebSocket.onlineCount++;
-    }
-
-    private static synchronized void subOnlineCount() {
-        MyWebSocket.onlineCount--;
-    }
+    //更高级的注解，MaxMessageSize 属性可以被用来定义消息字节最大限制，
+    //在示例程序中，如果超过6个字节的信息被接收，就报告错误和连接关闭。
+    // @Message(maxMessageSize = 6)
+    // public void receiveMessage(String s) {}
 }
 ```
+
 # thymeleaf
 
 ##基础概念
 
-模板引擎：`将后台数据 填充 到前台模板的表达式中！`thymeleaf，freemarker，jsp，velocity
+> 模板引擎：`将后台数据 填充 到前台模板的表达式中！`thymeleaf，freemarker，jsp，velocity
 
 ```xml
 <dependency>
@@ -1442,10 +1367,10 @@ public class MyWebSocket {
 > sts的html代码提示
 
 ```shell
-(0).下载STS插件: https://github.com/thymeleaf/thymeleaf-extras-eclipse-plugin/releases
-(1).在STS安装目录dropins下新建文件夹: thymeleaf-2.1.2
-(2).只将压缩包中的 features 和 plugins 文件夹拷贝到以上目录并重启eclise!!!
-(3).在thymeleaf的html页面引入命名空间：<html lang="en" xmlns:th="http://www.thymeleaf.org">
+下载STS插件: https://github.com/thymeleaf/thymeleaf-extras-eclipse-plugin/releases
+在STS安装目录dropins下新建文件夹: thymeleaf-2.1.2
+只将压缩包中的 features 和 plugins 文件夹拷贝到以上目录并重启eclise!!!
+在thymeleaf的html页面引入命名空间：<html lang="en" xmlns:th="http://www.thymeleaf.org">
 ```
 > 低版本异常
 
@@ -1473,9 +1398,9 @@ templates 目录是安全的，意味着该目录下的内容不允许外界直�
 
 ##常用符号
 
->`~{...}` <!--片段引用表达式-->
+>`~{...}` 片段引用表达式
 
->`@{...}` <!--定义URL-->
+>`@{...}` 定义URL
 
 ```html
 <!--http://ip:8080/order/details/3-->
@@ -1490,20 +1415,20 @@ templates 目录是安全的，意味着该目录下的内容不允许外界直�
 <!--http://ip:8080/order/3/details?orderId=3 -->
 <a th:href="@{/{orderId}/details(orderId=${o.id}, orderName=${o.name})}">相对路径-传参-restful</a>
 ```
->`${...}` <!--变量值--> https://www.cnblogs.com/xiaohu1218/p/9634126.html
+>`${...}` 变量值 https://www.cnblogs.com/xiaohu1218/p/9634126.html
 
 ```html
 (1).获取对象的属性，调用方法：${person.name}
 (2).使用内置的基本对象：${! #strings.isEmpty(msg)}
 (3).内置的一些工具对象
 ```
->`#{...}` <!--用于获取 properties 文件内容，常用于'国际化'场景-->
+>`#{...}` 用于获取 properties 文件内容，常用于'国际化'场景
 
 ```html
 home.welcome=this messages is from home.properties! <!--properties文件-->
 <p th:text="#{home.welcome}">This text will not be show!</p> <!--读取properties文件中的 home.welcome-->
 ```
->`#maps`  <!--工具对象表达式-->
+>`#maps`  工具对象表达式
 
 ```html
 #dates #calendars #numbers #strings #objects #bools #arrays #lists #sets
@@ -1511,7 +1436,7 @@ home.welcome=this messages is from home.properties! <!--properties文件-->
 <!--有msg对象则显示<p>; 反之不显示-->
 <p style="color:red" th:text="${msg}" th:if="${not #strings.isEmpty(msg)}" />
 ```
->`*{...}`    <类似${}功能，配合th:object使用，获取指定对象的变量值>
+>`*{...}`    类似${}功能，配合th:object使用，获取指定对象的变量值
 
 ```html
 <div> <!--(1).类似${}功能-->
@@ -1842,29 +1767,21 @@ http请求的安全和幂等，是指多次调用同一个请求对资源状态�
 '安全' -> 请求不会影响资源的状态。只读的请求：GET，HEAD，OPTIONS
 '幂等' -> 多次相同的请求，目的一致。
 ```
-| 请求方式 |  请求url  |                             说明                             |    是否幂等    |
-| :------: | :-------: | :----------------------------------------------------------: | :------------: |
-|   GET    | /emp/list |                   只读请求，不改变资源状态                   |   安全，幂等   |
-|   PUT    |  /emp/5   |         多次请求都是将id为 5 的员工姓名修改成'wang'          |  不安全，幂等  |
-|   POST   | /emp/emp  |                 多次请求会新增多条相同的数据                 | 不安全，不幂等 |
-|  DELETE  |  /emp/5   |              多次请求目的都是删除id为 5 的员工               |  不安全，幂等  |
-|          |           | `第一次成功删除，第二次及以后虽资源已不存在，但也得返回 200 OK，不能返回 404` |                |
+```shell 
+GET    /emps      查询员工列表  -> 只是请求，不改变资源状态                    #安全，幂等
+POST   /emps/emp  新增一个员工  -> 多次请求会新增多条相同的数据                #不安全，不幂等
+PUT    /emps/emp  更新员工信息  -> 多次请求都是将id为 5 的员工姓名修改成'wang'  #不安全，幂等
+DELETE /emps/{id} 删除员工信息  -> 多次请求目的都是删除id为 5 的员工           #不安全，幂等
+                                 #第一次成功删除，第二次及以后虽资源已不存在，但也得返回 200 OK，不能返回 404
 
-> 测试接口
+GET    /emps/emp  跳转新增页面
+GET    /emps/{id} 跳转更新页面
+```
 
-|     请求说明     |  请求url  | 请求方式 |
-| :--------------: | :-------: | :------: |
-|     列表页面     | /emp/list |   GET    |
-| 跳转页面（新增） | /emp/emp  |   GET    |
-|     新增接口     | /emp/emp  |   POST   |
-| 跳转页面（修改） | /emp/{id} |   GET    |
-|     修改接口     | /emp/emp  |   PUT    |
-|     删除接口     | /emp/{id} |  DELETE  |
-
-> `将 POST 请求转化为 PUT，DELETE`
+> `请求转化`：将 POST 转化为 PUT，DELETE
 
 ```xml
-<!--（1）配置 HiddenHttpMethodFilter，SpringBoot默认已配置-->
+<!--（1）配置 HiddenHttpMethodFilter，SpringBoot 默认已配置-->
 <filter>
     <filter-name>HiddenHttpMethodFilter</filter-name>  
     <filter-class>org.springframework.web.filter.HiddenHttpMethodFilter</filter-class>  
@@ -1884,16 +1801,22 @@ http请求的安全和幂等，是指多次调用同一个请求对资源状态�
 > 跳转到列表页面 `a标签对应的是 GET 请求`
 
 ```html
-<a th:href="@{/emp/list}">员工列表</a>
+<a th:href="@{/emps}">员工列表</a>
 ```
 
 >跳转逻辑
 
 ```java
-@GetMapping("/list")
-public String list(Model model) {
-    model.addAttribute("emps", EmpUtils.listAll()); //模拟查库
-    return "/emp/list";
+@Slf4j
+@Controller
+@RequestMapping("/emps")
+public class EmployeeController {
+
+    @GetMapping
+    public String list(Model model) {
+        model.addAttribute("emps", EmpUtils.listAll());
+        return "/emps/list"; //模板页 list.html
+    }
 }
 ```
 
@@ -1902,39 +1825,39 @@ public String list(Model model) {
 ```html
 <!DOCTYPE html>
 <html lang="en" xmlns:th="http://www.thymeleaf.org">
-<head>
-    <meta charset="UTF-8">
-    <title>列表页面</title>
+    <head>
+        <meta charset="UTF-8">
+        <title>列表页面</title>
 
-    <script th:src="@{/webjars/jquery/jquery.min.js}"></script>
-    <script th:src="@{/webjars/bootstrap/js/bootstrap.min.js}"></script>
-    <link rel="stylesheet" th:href="@{/webjars/bootstrap/css/bootstrap.min.css}"/>
+        <script th:src="@{/webjars/jquery/jquery.min.js}"></script>
+        <script th:src="@{/webjars/bootstrap/js/bootstrap.min.js}"></script>
+        <link rel="stylesheet" th:href="@{/webjars/bootstrap/css/bootstrap.min.css}"/>
 
-    <script>/*删除记录的js...*/</script>
-</head>
-<body>
-<table>
-    <tr>
-        <th>姓名</th>
-        <th>年龄</th>
-        <th>城市</th>
-        <th>操作</th>
-    </tr>
-    <tr th:if="${null==emps || 0==emps.size()}">
-        <td colspan="4" th:text="员工列表为空"></td>
-    </tr>
-    <tr th:each="emp:${emps}" th:object="${emp}"> <!--th:object 和 *{...} 配合使用-->
-        <td th:text="${emp.name}"></td>
-        <td th:text="*{gender}?'男':'女'"></td>
-        <td th:text="*{city.name}"></td>
-        <td>
-            <a th:href="@{/emp/}+*{id}">修改</a> <!--路径拼接-->
-            <a href="#" onclick="deleteEmp(this)" th:attr="url=@{/emp/}+${emp.id}">删除</a>
-        </td>
-    </tr>
-</table>
-<a th:href="@{/emp/emp}">新增员工</a>
-</body>
+        <script>/*删除记录的js...*/</script>
+    </head>
+    <body>
+        <table>
+            <tr>
+                <th>姓名</th>
+                <th>年龄</th>
+                <th>城市</th>
+                <th>操作</th>
+            </tr>
+            <tr th:if="${null==emps || 0==emps.size()}">
+                <td colspan="4" th:text="员工列表为空"></td>
+            </tr>
+            <tr th:each="emp:${emps}" th:object="${emp}"> <!--th:object 和 *{...} 配合使用-->
+                <td th:text="${emp.name}"></td>
+                <td th:text="*{gender}?'男':'女'"></td>
+                <td th:text="*{city.name}"></td>
+                <td>
+                    <a th:href="@{/emps/}+*{id}">修改</a> <!--路径拼接-->
+                    <a href="#" onclick="deleteEmp(this)" th:attr="url=@{/emps/}+${emp.id}">删除</a>
+                </td>
+            </tr>
+        </table>
+        <a th:href="@{/emps/emp}">新增员工</a>
+    </body>
 </html>
 ```
 
@@ -1943,7 +1866,7 @@ public String list(Model model) {
 >跳转新增页面
 
 ```html
-<a th:href="@{/emp/emp}">新增员工</a>
+<a th:href="@{/emps/emp}">新增员工</a>
 ```
 
 >跳转逻辑
@@ -1952,7 +1875,7 @@ public String list(Model model) {
 @GetMapping("/emp")
 public String toAdd(Model model) {
     model.addAttribute("citys", EmpUtils.listCity()); //新增页面要显示的城市列表信息
-    return "/emp/emp"; //转发-页面
+    return "/emps/emp"; //转发-页面
 }
 ```
 
@@ -1964,7 +1887,7 @@ public String toAdd(Model model) {
 @PostMapping("/emp")
 public String add(Emp emp) {
     empList.add(emp);
-    return "redirect:/emp/list"; //重定向-接口
+    return "redirect:/emps"; //重定向 -> 接口
 }
 ```
 
@@ -1973,7 +1896,7 @@ public String add(Emp emp) {
 >跳转修改页面
 
 ```html
-<a th:href="@{/emp/}+*{id}">修改</a> <!--路径拼接-->
+<a th:href="@{/emps/}+*{id}">修改</a> <!--路径拼接-->
 ```
 
 >跳转逻辑
@@ -1985,7 +1908,7 @@ public String toUpdate(@PathVariable Integer id, Model model) {
     
     model.addAttribute("emp", emp);
     model.addAttribute("citys", EmpUtils.cityList); //用于页面回显
-    return "/emp/emp";
+    return "/emps/emp";
 }
 ```
 
@@ -1994,49 +1917,49 @@ public String toUpdate(@PathVariable Integer id, Model model) {
 ```html
 <!DOCTYPE html>
 <html lang="en" xmlns:th="http://www.thymeleaf.org">
-<head>
-    <meta charset="UTF-8">
-    <title>员工信息页</title>
-</head>
-<body>
-<form method="post" th:action="@{/emp/emp}">
-    <!--新增和修改使用同一页面，区分方式：回显 emp 是否为空 ${null!=person}-->
-    <input type="hidden" name="_method" value="put" th:if="${null!=emp}">
-    <!--修改：PUT请求 + emp.id-->
-    <input type="hidden" name="id" th:value="${emp.id}" th:if="${null!=emp}">
+    <head>
+        <meta charset="UTF-8">
+        <title>员工信息页</title>
+    </head>
+    <body>
+        <form method="post" th:action="@{/emps/emp}">
+            <!--新增和修改使用同一页面，区分方式：回显 emp 是否为空 ${null!=person}-->
+            <input type="hidden" name="_method" value="put" th:if="${null!=emp}">
+            <!--修改：PUT请求 + emp.id-->
+            <input type="hidden" name="id" th:value="${emp.id}" th:if="${null!=emp}">
 
-    <table>
-        <tr>
-            <td>姓名：</td>
-            <td><input type="text" name="name" th:value="${null!=emp}?${emp.name}"></td>
-        </tr>
-        <tr>
-            <td>性别：</td>
-            <td>
-                <!--th:checked radio标签是否选中-->
-                <input type="radio" name="gender" value="1" th:checked="${null!=emp}?${emp.gender}">男
-                <input type="radio" name="gender" value="0" th:checked="${null!=emp}?${!emp.gender}">女
-            </td>
-        </tr>
-        <tr>
-            <td>住址：</td>
-            <td>
-                <select name="city.id">
-                    <!--th:selected 回显emp.city.id == 遍历city.id，则选中-->
-                    <option th:each="city:${citys}" th:object="${city}" th:value="*{id}" th:text="*{name}"
-                            th:selected="${null!=emp}?${emp.city.id}==*{id}"></option>
-                </select>
-            </td>
-        </tr>
-        <tr>
-            <td colspan="2">
-                <!--回显 emp 为空，则显示'新增'；否则显示'修改'-->
-                <input type="submit" th:value="${null==emp}?'新增':'修改'">
-            </td>
-        </tr>
-    </table>
-</form>
-</body>
+            <table>
+                <tr>
+                    <td>姓名：</td>
+                    <td><input type="text" name="name" th:value="${null!=emp}?${emp.name}"></td>
+                </tr>
+                <tr>
+                    <td>性别：</td>
+                    <td>
+                        <!--th:checked radio标签是否选中-->
+                        <input type="radio" name="gender" value="1" th:checked="${null!=emp}?${emp.gender}">男
+                        <input type="radio" name="gender" value="0" th:checked="${null!=emp}?${!emp.gender}">女
+                    </td>
+                </tr>
+                <tr>
+                    <td>住址：</td>
+                    <td>
+                        <select name="city.id">
+                            <!--th:selected 回显emp.city.id == 遍历city.id，则选中-->
+                            <option th:each="city:${citys}" th:object="${city}" th:value="*{id}" th:text="*{name}"
+                                    th:selected="${null!=emp}?${emp.city.id}==*{id}"></option>
+                        </select>
+                    </td>
+                </tr>
+                <tr>
+                    <td colspan="2">
+                        <!--回显 emp 为空，则显示'新增'；否则显示'修改'-->
+                        <input type="submit" th:value="${null==emp}?'新增':'修改'">
+                    </td>
+                </tr>
+            </table>
+        </form>
+    </body>
 </html>
 ```
 
@@ -2046,7 +1969,7 @@ public String toUpdate(@PathVariable Integer id, Model model) {
 @PutMapping("/emp")
 public String update(Emp emp) {
     EmpUtils.empList.update(emp);
-    return "redirect:/emp/list";
+    return "redirect:/emps"; //重定向 -> 接口
 }
 ```
 
@@ -2082,14 +2005,14 @@ public String update(Emp emp) {
 @DeleteMapping("/{id}")
 public String delete(@PathVariable Integer id) {
     EmpUtils.empList.remove(id.intValue());
-    return "redirect:/emp/list";
+    return "redirect:/emps";
 }
 ```
 
 > 删除方式（2）不使用form表单，而使用ajax异步请求
 
 ```html
-<a href="#" onclick="deleteEmp(this)" th:attr="url=@{/emp/}+${emp.id}">删除</a>
+<a href="#" onclick="deleteEmp(this)" th:attr="url=@{/emps/}+${emp.id}">删除</a>
 ```
 
 ```html

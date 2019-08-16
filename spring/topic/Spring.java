@@ -312,7 +312,7 @@
         InfoService upInfoService;
 //}
 
-//{--------<<<AOP>>>-----------------------------
+//{--------<<<AOP>>>-----------------------------X
 #基本概念
     AOP: 面向切面编程, 通过'动态代理'实现程序功能的统一维护. (Aspect-Oriented Programming)
 
@@ -358,9 +358,9 @@
     5.DEMO
 
         @Slf4j
-        @Aspect        // 标明该类是一个切面类
-        @Order(5)    // 切面的优先级 -> 值越小,优先级越高
-        @Component    // Spring管理
+        @Aspect     // 标明该类是一个切面类
+        @Order(5)   // 切面的优先级 -> 值越小，优先级越高
+        @Component  // Spring管理
         public class MyAopConfig {
             
             // 定义切点(重用机制): 起点表达式 + 切点签名

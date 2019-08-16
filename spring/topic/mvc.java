@@ -53,18 +53,18 @@
         }        
         http://127.0.0.1:8090/demo/hello/spring ---> hello spring
     
-#@RequestParam ///将{请求参数}映射到方法的入参
-    #value: 参数名,必须和url中的参数名保持一致
-    #required: 是否为必须,默认true 
-    #defaultValue: 参数的默认值,当url中没有该参数时取默认值
+// #@RequestParam ///将{请求参数}映射到方法的入参
+    // #value: 参数名,必须和url中的参数名保持一致
+    // #required: 是否为必须,默认true 
+    // #defaultValue: 参数的默认值,当url中没有该参数时取默认值
     
-        @GetMapping("/hello")
-        public String hello(@RequestParam(value = "name", required = true) String arg0,
-                            @RequestParam(value = "age", required = false, defaultValue = "18") Integer arg1) {
-            return MessageFormat.format("{0} {1} {2}", HELLO, arg0, arg1);
-        }
+        // @GetMapping("/hello")
+        // public String hello(@RequestParam(value = "name", required = true) String arg0,
+                            // @RequestParam(value = "age", required = false, defaultValue = "18") Integer arg1) {
+            // return MessageFormat.format("{0} {1} {2}", HELLO, arg0, arg1);
+        // }
         
-        http://127.0.0.1:8090/demo/hello?name=wang&sex=99 ---> hello wang 18
+        // http://127.0.0.1:8090/demo/hello?name=wang&sex=99 ---> hello wang 18
         
 #@RequestHeader ///Header属性.(属性同上)
 #@CookieValue///Cookie属性.(属性同上)
@@ -98,12 +98,12 @@
     #方法的返回结果直接写入 HTTP 响应正文中.
     #返回非页面, 而是其他数据格式时使用(如json,xml等). 一般用于异步获取数据.
     
-#@RequestBody
-    #获取请求体的数据,可转换成javaBean对象,也可以转换成Map类型.
-    #默认使用 HttpMessageConverter 解析,然后把相应数据绑定到 controller 方法的参数上
-    #multipart/form-data: //不能处理
-    #application/x-www-form-urlencoded: //PUT时必须; GET,POST时可选(@RequestParam, @ModelAttribute 也可以)
-    #其他(application/json, application/xml等): //必须
+// #@RequestBody
+    // #获取请求体的数据,可转换成javaBean对象,也可以转换成Map类型.
+    // #默认使用 HttpMessageConverter 解析,然后把相应数据绑定到 controller 方法的参数上
+    // #multipart/form-data: //不能处理
+    // #application/x-www-form-urlencoded: //PUT时必须; GET,POST时可选(@RequestParam, @ModelAttribute 也可以)
+    // #其他(application/json, application/xml等): //必须
         
     1.前台传递JSON
         function login(e) {
@@ -634,31 +634,31 @@
 //}
 
 //{--------<<<页面跳转>>>---------------------------------------------------------------------
-#页面跳转 -> 没有任何业务逻辑,只是单纯的路由过程(点击按钮跳转到一个页面)
-    1.配置Controller
-        @RequestMapping("/toView")
-        public String view(){
-            return "view";
-        }
+// #页面跳转 -> 没有任何业务逻辑,只是单纯的路由过程(点击按钮跳转到一个页面)
+    // 1.配置Controller
+        // @RequestMapping("/toView")
+        // public String view(){
+            // return "view";
+        // }
         
-    2.实现接口
-        @Configuration
-        public class MyWebMvcConfigurer implements WebMvcConfigurer {
-            @Override
-            public void addViewControllers(ViewControllerRegistry registry) {
-                //url访问: ip:port/demo/toView ---> 对应资源: /templates/view.html
-                registry.addViewController("/toView").setViewName("view");
-            }
-        }
+    // 2.实现接口
+        // @Configuration
+        // public class MyWebMvcConfigurer implements WebMvcConfigurer {
+            // @Override
+            // public void addViewControllers(ViewControllerRegistry registry) {
+                // //url访问: ip:port/demo/toView ---> 对应资源: /templates/view.html
+                // registry.addViewController("/toView").setViewName("view");
+            // }
+        // }
         
-    3.配置xml
-        //(1).使用此标签后必须配置 <mvc:annotation-driven />,否则会造成所有的 @Controller 注解无法解析,导致404错误
-        //(2).如果请求存在处理器,则这个标签对应的请求处理将不起作用. 因为请求是先去找处理器处理,如果找不到才会去找这个标签配置
-        <mvc:view-controller path="/toView" view-name="view"/>
-        <mvc:annotation-driven />
+    // 3.配置xml
+        // //(1).使用此标签后必须配置 <mvc:annotation-driven />,否则会造成所有的 @Controller 注解无法解析,导致404错误
+        // //(2).如果请求存在处理器,则这个标签对应的请求处理将不起作用. 因为请求是先去找处理器处理,如果找不到才会去找这个标签配置
+        // <mvc:view-controller path="/toView" view-name="view"/>
+        // <mvc:annotation-driven />
         
-    4.boot项目
-        存放在 /resources/static/ 目录下的资源,可直接通过浏览器访问,勿需映射.
+    // 4.boot项目
+        // 存放在 /resources/static/ 目录下的资源,可直接通过浏览器访问,勿需映射.
 
 //}
 

@@ -4,7 +4,7 @@
 
 
 
-# -----mybatis------
+# -----mybatis-----
 
 #基本使用
 
@@ -108,14 +108,14 @@ String getNameById(int id);
 
 ## 基本语法
 
-> 多个入参：当mybatis接口中有多个入参时，`4 种解决方案`
+> 多个入参：当mybatis接口中有多个入参时，`④种解决方案`
 
 ```shell
+【推荐】在Mapper接口的参数列表使用注解 @Param("passageId")
+
 【不推荐】第 1 个参数 ---> #{param1}
 【不推荐】第 1 个参数 ---> #{arg0}
-
-【推荐】手动将多参数封装成 pojo 或 Map<String, Object>
-【推荐】在Mapper接口的参数列表使用注解 @Param("passageId")
+【不推荐】手动将多参数封装成 pojo 或 Map<String, Object>
 ```
 
 ```java
@@ -160,7 +160,7 @@ List<Map<String, Object>> getAllPassage();
 ```
 
 ```java
-@MapKey("flowerName") //这里的‘flowerName’表示的是javabean中的属性名，而非数据库中的字段名。所以xml中的 flower_name 必须改别名。切记！
+@MapKey("flowerName") //‘flowerName’表示java属性名，而非数据库字段名。所以xml中的 flower_name 必须改别名。切记！
 Map<String, Flower> listByName(String flowerName);
 ```
 
@@ -176,7 +176,9 @@ Map<String, Flower> listByName(String flowerName);
 <sql id="ref">
     id,name,age,address,companyId <!-- sql标签 用于抽取可重用的sql片段 -->
 </sql>
+```
 
+```xml
 <select id="selById" resultType="com.heiketu.pojo.Users">
     select
     <include refid="ref" /> <!-- include标签 用于引用前者 -->
@@ -206,7 +208,7 @@ select order_id id, order_price price, order_no orderNo from orders where order_
 </reslutMap>
 ```
 
-> 模糊查询：`3种解决方案`
+> 模糊查询：`④种解决方案`
 
 ```sql
 -- java代码中拼接参数：%张%
@@ -363,13 +365,167 @@ public class PageInfo<T> extends PageSerializable<T> {
 }
 ```
 
-##联表查询
+# 关联查询
 
+## 联表查询对象
 
+>查询学生时，把老师信息也查出
 
+```java
+class Student{
+    private Integer id;
+    private String name;
 
+    private Teacher teacher; 
+}
+```
 
+```java
+List<Student> listAllStudent();
+```
 
+> `方法1`：列别名 + 自动映射（当列别名和 pojo 属性一致时，mybatis自动映射赋值）
+
+```xml
+<!-- 在SQL中'.'是关键字符，所以在两侧添加反单引号 `teacher.id`-->
+<select id="listAllStudent" resultType="com.x.pojo.Student">
+    SELECT s.id id, s.name name, t.id `teacher.id`, t.name `teacher.name`
+    FROM student s LEFT JOIN teacher t
+    ON t.id=s.tid LIMIT 5
+</select>
+```
+
+> `方法2`：列别名 + 手动映射（resultMap）
+
+```xml
+<!--左外连接(left outer join)：可查询所有的学生信息-->
+<select id="listAllStudent" resultMap="studentMap">
+    SELECT s.id sid, s.name sname, t.id tid, t.name tname
+    FROM student s LEFT OUTER JOIN teacher t
+    ON s.tid=t.id LIMIT 5
+</select>
+
+<resultMap type="com.example.*.bean.Student" id="studentMap">
+    <id column="sid" property="id"/>
+    <result column="sname" property="name"/>
+
+    <result column="tid" property="teacher.id"/>
+    <result column="tname" property="teacher.name"/>
+</resultMap>
+```
+
+> `方法3`：关联查询`（association：一对一关联查询）`
+
+```xml
+<select id="listAllStudent" resultMap="studentMap">
+    SELECT s.id sid, s.name sname, t.id tid, t.name tname
+    FROM student s LEFT OUTER JOIN teacher t
+    ON s.tid=t.id LIMIT 5
+</select>
+
+<resultMap type="com.example.mybatis.po.Student" id="studentMap">
+    <id column="sid" property="id" />
+    <result column="sname" property="name" />
+
+    <!--association 等同于 reslutMap-->
+    <!--property：Student类中的属性名； javaType：装配后返回的java类型-->
+    <association property="teacher" javaType="com.example.mybatis.po.Teacher">
+        <id column="tid" property="id" />
+        <result column="tname" property="name" />
+    </association>
+</resultMap>
+```
+
+> `方法4`：分步查询
+
+```xml
+<select id="listAllStudent" resultMap="stuMap">
+    select id,name,tid from student
+</select>
+
+<resultMap type="com.example.mybatis.po.Student" id="stuMap">
+    <!--student表的其他列，使用 AutoMapping 自动装配！但对于二次查询的参数tid，必须显示装配一次-->
+    <!--<result column="tid" property="tid"/>-->
+
+    <!--association   -> 一对一关联查询-->
+    <!--property      -> Student类中的属性名-->
+    <!--fetchType     -> 是否懒加载：lazy-懒加载，eager-立即加载-->
+    <!--select        -> 通过哪个查询可以查出这个对象的信息-->
+    <!--column        -> 把当前表哪个列的值作为参数传递给select-->
+    <!--对于分步查询传参多列,可以使用形式 column="{key1=id, key2=name}"; mybatis底层将参数封装成map-->
+    <association property="teacher" fetchType="lazy" select="com.example.mybatis.mapper.TeacherMapper.selById"
+                 column="tid" />
+</resultMap>
+```
+
+```xml
+<!--该方法定义在 TeacherMapper-->
+<select id="selById" resultType="com.example.mybatis.po.Teacher">
+    SELECT id, name FROM teacher WHERE id=#{id}
+</select>
+```
+
+##联表查询集合
+
+>查询老师时，把所有学生信息查出
+
+```java
+class Teacher{
+    private Integer id;
+    private String name;
+
+    private List<Student> studentList; 
+}
+```
+
+```java
+List<Teacher> listAllTeacher();
+```
+
+>`方法3`：关联查询 `（collection：一对多关联，association：一对一关联）`
+
+```xml
+<select id="listAllTeacher" resultMap="teacherMap">
+    SELECT t.id tid, t.name tname, s.id sid, s.name sname
+    FROM teacher t LEFT JOIN student s
+    ON t.id=s.tid LIMIT 10
+</select>
+
+<resultMap type="com.example.spring.bean.Teacher" id="teacherMap">
+    <id column="tid" property="id" />
+    <result column="tname" property="name" />
+
+    <!--collection -> 当property是集合类型时使用-->
+    <!--ofType     -> 集合的泛型是哪个类-->
+    <collection property="studentList" ofType="com.example.spring.bean.Student">
+        <id column="sid" property="id" />
+        <result column="sname" property="name" />
+    </collection>
+</resultMap>
+```
+
+> `方法4`：分步查询
+
+```xml
+<select id="listAllTeacher" resultMap="teacherMap">
+    SELECT id, name FROM teacher
+</select>
+
+<resultMap type="com.example.spring.bean.Teacher" id="teacherMap">
+    <id column="id" property="id" />
+    <result column="name" property="name" />
+
+    <collection property="studentList" column="id" 
+                select="com.example.spring.mapper.StudentMapper.selByTid" />
+</resultMap>
+```
+
+```xml
+<!--此方法定义在 StudentMapper.xml-->
+<select id="selByTid" resultType="com.example.spring.bean.Student">
+    SELECT id, name FROM student WHERE tid=#{tid}
+</select>
+```
 
 
 
@@ -378,6 +534,8 @@ public class PageInfo<T> extends PageSerializable<T> {
 # 其他资料
 
 ## xml提示
+
+> eclipse的xml提示
 
 ```shell
 下载dtd文件: "mybatis-3-mapper.dtd"和"mybatis-3-config.dtd"
@@ -566,13 +724,310 @@ boolean saveBatch(List<Flower> list);
 </insert>
 ```
 
+## 缓存相关
+
+> 一级缓存：作用域为一个 SqlSession，默认开启。
+
+```shell
+MyBatis会在一次会话，一个SqlSession对象中创建一个本地缓存(local cache)，
+对于每一次查询，都会尝试根据查询的条件去本地缓存中查找是否在缓存中，
+如果在缓存中，就直接从缓存中取出，然后返回给用户；否则，从数据库读取数据，将查询结果存入缓存并返回给用户。
+
+Mybatis内部存储缓存使用HashMap，key为 'hashCode + sqlId + Sql' 语句。value为从查询出来映射生成的java对象。
+```
+
+> 二级缓存：作用域为一个 NameSpace，默认关闭。
+
+```shell
+同一个 NameSpace 中，查询sql可以从缓存中获取数据。
+```
+
+```properties
+#（1）默认开启
+mybatis.configuration.cache-enabled=true
+```
+
+```java
+（2）实体类POJO实现序列化接口 implements Serializable。（<cache/>设置 readOnly="true"，则可省）
+```
+
+```xml
+（3）<cache eviction="LRU" flushInterval="60000" size="1024" readOnly="true"/> <!--mapper.xml 新增-->
+```
+
+```shell
+#参数说明
+eviction       -> 缓存的回收策略，默认LRU（可选值：LRU，FIFO，SOFT，WEAK）
+flushInterval  -> 缓存失效时间，默认永不失效（单位毫秒）
+size           -> 缓存存放多少个元素，默认1024
+type           -> 指定自定义缓存的全类名（需要实现Cache接口，自定义缓存类）
+readOnly       -> 是否只读，默认false
+```
 
 
 
 
-# -------jpa------
 
-##基础配置
+# 相关概念
+
+> 物理分页 & 逻辑分页
+
+```shell
+#物理分页：依赖的是某一物理实体，这个物理实体就是数据库。
+比如，MySQL数据库提供了 limit 关键字，程序员只需要编写带有limit关键字的SQL语句，数据库返回的就是分页结果。
+
+#逻辑分页：依赖的是程序员编写的代码。数据库返回的不是分页结果，而是全部数据，由程序员通过代码获取分页数据。
+常用的操作是一次性从数据库中查询出全部数据并存储到List集合中，因为List集合有序，再根据索引获取指定范围的数据。
+```
+
+```shell
+mybatis的 RowBounds 是逻辑分页，不推荐使用。
+```
+
+
+#--mybatis-plus--
+
+# 基本使用
+
+> BOOT整合
+
+```xml
+<!-- mybatis-plus（内置 mybatis-starter） -->
+<dependency>
+    <groupId>com.baomidou</groupId>
+    <artifactId>mybatis-plus-boot-starter</artifactId>
+    <version>3.1.2</version>
+</dependency>
+```
+
+```properties
+#mybatis-plus
+#主键策略（默认 ID_WORKER）
+mybatis-plus.global-config.db-config.id-type=ID_WORKER_STR
+#表名前缀
+mybatis-plus.global-config.db-config.table-prefix=tb_
+
+#也支持'mybatis'的配置，配置名换成'mybatis-plus'
+#驼峰命名（默认开启）
+mybatis-plus.configuration.map-underscore-to-camel-case=true
+#xml路径
+mybatis-plus.mapper-locations=
+```
+
+```java
+@MapperScan(value = "com.example.mybatis.mapper") //全局注解，使用'mybatis'注解
+```
+
+> 主键策略
+
+```shell
+AUTO             #数据库自增
+ID_WORKER        #分布式全局唯一ID 长整型类型（java属性中的主键使用 Long 类型）
+ID_WORKER_STR    #分布式全局唯一ID 字符串类型（String）
+
+UUID             #32位UUID 字符串
+INPUT            #自行输入
+NONE             #无状态
+```
+
+> 实体类
+
+```java
+@Data
+@NoArgsConstructor
+@AllArgsConstructor
+@TableName(value = "user") //表名，如有统一前缀，可使用全局配置
+public class User {
+
+    @TableId(value = "userId", type = IdType.ID_WORKER_STR) //主键的数据库字段名为'userId'，及主键策略
+    private String userId;
+
+    @TableField("user_name") //数据库中字段名为'user_name'
+    private String userName;
+
+    private Integer account;
+
+    @TableField(exist = false) //数据表中不存在的字段
+    private Boolean gender;
+}
+```
+
+> Mapper接口
+
+```java
+@Component
+public interface UserMapper extends BaseMapper<User> {} //继承已有接口
+```
+
+# 条件构造器
+
+>特殊说明
+
+```shell
+#（1）不支持以及不赞成在 RPC 调用中把 Wrapper 进行传输
+传输 wrapper 可以类比为你的 controller 用 map 接收值（开发一时爽，维护火葬场）
+正确的 RPC 调用姿势是写一个 DTO 进行传输，被调用方再根据 DTO 执行相应的操作
+
+#（2）使用的是数据库字段，而不是java属性
+
+#（3）两种 Wrapper --> QueryWrapper：查询和删除时使用，UpdateWrapper：更新时使用
+```
+
+> insert
+
+```java
+int insert(T entity); //插入一条记录，返回受影响的行数。可直接获取到新插入的主键 id
+```
+
+> AbstractWrapper
+
+```sql
+-- like
+like("name", "王");     --name like '%王%'
+notLike("name", "王");  --name not like '%王%'
+likeLeft("name", "王"); --name like '%王'
+
+-- isNull
+isNull("name");        --name is null
+isNotNull("name");     --name is not null
+
+-- in相关
+in("age",{1,2,3});     --age in (1,2,3) ---> arg2：数组
+in("age", 1, 2, 3);    --age in (1,2,3) ---> arg2：可变数组
+
+inSql("age", "1,2,3"); --age in (1,2,3,4,5,6) --->arg2：sql字符串
+inSql("id", "select id from table where id < 3");
+                       --id in (select id from table where id < 3) --->arg2：sql查询语句
+
+-- orderBy相关
+orderByDesc("name").orderByAsc("id"); --ORDER BY name DESC , id ASC.
+
+-- having
+having("sum(age) > 10");       --having sum(age) > 10
+having("sum(age) > {0}", 11);  --having sum(age) > 11
+
+-- or（主动调用 or，表示紧接着下一个方法不是用 and 连接！默认是 and）
+eq("id",1).or().eq("name","老王"); --id = 1 or name = '老王'
+
+
+-- apply（拼接sql）
+apply("id = 1"); --id = 1
+apply("date_format(dateColumn,'%Y-%m-%d') = '2008-08-08'"); 
+                 --date_format(dateColumn,'%Y-%m-%d') = '2008-08-08'")
+apply("date_format(dateColumn,'%Y-%m-%d') = {0}", "2008-08-08");
+                 --date_format(dateColumn,'%Y-%m-%d') = '2008-08-08'")
+
+-- last（只能调用一次，多次调用以最后一次为准。有sql注入的风险，请谨慎使用）
+last("limit 1");
+
+-- exists（拼接 EXISTS 语句）
+exists("select id from table where age = 1"); --EXISTS(select id from table where age = 1)
+```
+
+>QueryWrapper
+
+```sql
+select("id", "name", "age");  --设置查询字段
+```
+
+> UpdateWrapper
+
+```sql
+set("name", "老李头");     --设置 SET 字段
+set("name", "");          --数据库字段值变为 空字符串
+set("name", null);        --数据库字段值变为 null
+
+setSql("name = '老李头'"); --同上
+```
+
+#通用Mapper
+
+> 作用同 mybatis-plus，但是不好用。
+
+```xml
+<!-- https://mvnrepository.com/artifact/tk.mybatis/mapper-spring-boot-starter -->
+<dependency>
+    <groupId>tk.mybatis</groupId>
+    <artifactId>mapper-spring-boot-starter</artifactId>
+    <version>2.1.5</version>
+</dependency>
+```
+
+```properties
+#mapper
+mapper.mappers=com.example.friend.base.IBaseMapper
+mapper.not-empty=true
+mapper.identity=MYSQL
+
+#mybatis的sql打印
+logging.level.com.example.friend.mapper=debug
+```
+
+```java
+@MapperScan("com.example.friend.mapper") //tk.mybatis.spring.annotation.MapperScan，启动类
+```
+
+```java
+public interface EmployeeMapper extends Mapper<Employee>, MySqlMapper<Employee> {}
+```
+
+> 常用方法
+
+```java
+//xxxByPrimaryKey()：实体类需要使用 @Id 注解标明主键。否则，通用 Mapper 会将所有实体类字段作为联合主键。
+
+public void selectByPrimaryKey() { //主键查询
+    Employee employee = employeeMapper.selectByPrimaryKey(5);
+}
+```
+
+```java
+//xxxSelective：非主键字段如果为 null 值，则不加入到 SQL 语句中。
+UPDATE table_emp SET emp_salary = ? WHERE emp_id = ?
+
+public void updateByPrimaryKeySelective() {
+    Employee employee = new Employee(7, null, 2222.22, null);    
+    int update = employeeMapper.updateByPrimaryKeySelective(employee);
+}
+```
+
+```java
+//自增主键直接赋值到 employee
+INSERT INTO table_emp ( emp_id,emp_name,emp_salary,emp_age ) VALUES( ?,?,?,? )
+SELECT LAST_INSERT_ID()
+
+public void insert() { 
+    Employee employee = new Employee(null, "xiao3", 5555.55, 20);
+    int insert = employeeMapper.insert(employee);
+}
+```
+
+```java
+//使用非空的值生成 WHERE 子句，在条件表达式中使用 "=" 进行比较
+
+public void selectOne() {
+    Employee emp = new Employee(null, "bob", null, null);
+    Employee employee = employeeMapper.selectOne(emp);
+}
+```
+
+```java
+//同上。使用非空的值生成 WHERE 子句。特别注意，当参数为 null 或者 参数字段都为 null 时，将生成可怕的sql
+DELETE FROM table_emp
+
+public void delete() {
+    Employee employee = null;
+    int delete = employeeMapper.delete(employee);
+}
+```
+
+
+
+# -------jpa-------
+
+# 基本使用
+
+##基础概念
 
 >基础概念
 
@@ -586,6 +1041,14 @@ Spring Data        #用于简化数据库（SQL，NoSQL...）访问，并支持�
 Spring Data JPA    #Spring Data的一个子模块，实现了 JPA 标准的 Spring Data，底层是 Hibernate
 
 Spring Data Redis  #通过简单配置，实现对reids各种操作，异常处理及序列化，支持发布订阅
+```
+
+```shell
+#一些缺点
+屏蔽了SQL的优雅，发明了一种自己的查询方式。这种查询方式并不能够覆盖所有的SQL场景
+增加了代码的复杂度，需要花更多的时间来理解DAO
+DAO操作变的特别的分散，分散到多个java文件中，或者注解中（虽然也支持XML）。如果进行一些扫描，或者优化，重构成本大
+不支持复杂的SQL，DBA流程不好切入
 ```
 
 > 常用配置
@@ -788,6 +1251,8 @@ public void daoDao() {
 }
 ```
 
+#关联查询
+
 ##一对多关联
 
 > 一对多关联映射：dept 与 emp 是一对多关系
@@ -918,3 +1383,6 @@ public void findMany2Many() {
     System.out.println(optional.get().getRoles());
 }
 ```
+
+
+

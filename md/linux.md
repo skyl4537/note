@@ -1230,6 +1230,17 @@ pstree -p | wc -l #查询当前整个系统已用的线程或进程数
 tcpdump tcp port 5232 -w /tmp/tcp5232.cap #抓取 TCP 协议的 5232 端口相关数据，并写入文件
 ```
 
+## curl
+
+> 命令行发送 GET POST 等restful请求
+
+```shell
+curl http://127.0.0.1:8090/qrcode/hello?world=java  #GET
+
+curl http://127.0.0.1:8090/qrcode/post -X POST -d "aaaa"    #POST（-X POST/PUT/DELETE）
+curl http://127.0.0.1:8090/qrcode/world -X POST -H "Content-Type:application/json" -d '{"code":200,"msg":"OK"}'
+```
+
 
 
 # 补充命令

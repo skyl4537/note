@@ -318,6 +318,8 @@
     而 *Controller 中的 *Service 对象不需要,为什么????
     //设置get/set是为spring在管理 *Service 时,依赖注入使用.
     //后者是直接给全局属性 *Service 赋值,所以可以不设置get/set.
+    
+    
 /*    
 #2-3S
     AOP(Aspect Oriented Programming): 面向切面编程
@@ -1627,98 +1629,322 @@ Spring 定义了 7 种类传播行为。
 确保 Transaction01 可以多次从一个表中读取到相同的行， 在 Transaction01 执行期
 间，禁止其它事务对这个表进行添加、更新、删除操作。可以避免任何并发问题，但性
 能十分低下。
+
+    <!-- 事务管理器 -->
+    <bean id="dataSourceTransactionManager" class="org.springframework.jdbc.datasource.DataSourceTransactionManager">
+        <property name="dataSource" ref="dataSource"></property>
+    </bean>
+    <!-- 基于注解的事务管理 -->
+    <tx:annotation-driven transaction-manager="dataSourceTransactionManager"/>
     
     
+#mybatis-plus
+
+// ##MyBatis-Plus 内置 MyBatis-Spring
+
+    // <!-- mybatis-plus（内置 mybatis-spring） -->
+    // <dependency>
+        // <groupId>com.baomidou</groupId>
+        // <artifactId>mybatis-plus-boot-starter</artifactId>
+        // <version>3.1.2</version>
+    // </dependency> 
+    
+// ##mybatis vs mp
+    // 基于 Mybatis
+        // 需要编写 EmployeeMapper 接口，并手动编写 CRUD 方法
+        // 提供 EmployeeMapper.xml 映射文件，并手动编写每个方法对应的 SQL 语句.
+    // 基于 MP
+        // 只需要创建 EmployeeMapper 接口, 并继承 BaseMapper 接口，Over！！！
+
+// ##实体类
+
+    // @Data
+    // @NoArgsConstructor
+    // @AllArgsConstructor
+    // @TableName(value = "user") //表名
+    // public class User {
+
+        // /**
+         // * AUTO          数据库自增
+         // * ID_WORKER     分布式全局唯一ID 长整型类型
+         // * ID_WORKER_STR 分布式全局唯一ID 字符串类型
+         // * UUID          32位UUID 字符串
+         // * INPUT         自行输入
+         // * NONE          无状态
+         // */
+        // @TableId(value = "userId", type = IdType.ID_WORKER_STR)
+        // private String userId;
+
+        // @TableField("user_name")
+        // private String userName;
+        // private Integer account;
+    // }
+        
+// ##mp 全局策略配置
+    // #驼峰命名
+    // @TableField("user_name") //字段名
+    // private String userName;
+
+    // mybatis-plus.configuration.map-underscore-to-camel-case=true
     
     
+    // #主键策略
+    // @TableId(value = "userId", type = IdType.ID_WORKER_STR)
+    // private String userId;
+    
+    // mybatis-plus.global-config.db-config.id-type=id_worker_str
     
     
+    // #表名前缀
+    // @TableName(value = "tb_user") //表名
+    // public class User {}
 
+    // mybatis-plus.global-config.db-config.table-prefix=tb_
 
 
+// ##直接获取新插入的 id，勿需额外配置
 
+    // User entity = new User(null, "dong", 35, false);
+    // int insert = userMapper.insert(entity);
+    // System.out.println("id: " + entity.getUserId());
 
+// #update
 
+    // // UPDATE user SET account=? WHERE userId=?
+    // User entity = new User("2", null, 80, false);
+    // int update = userMapper.updateById(entity);
 
+    
+    // //UPDATE user SET account=? WHERE user_name = ? 
+    // //UpdateWrapper: 实体对象封装操作类（可以为 null，里面的 entity 用于生成 where 语句）
+    // User entity = new User(null, null, 80, false);
+    // UpdateWrapper<User> updateWrapper = new UpdateWrapper<>();
+    // updateWrapper.eq("user_name", "dong");
+    // int update = userMapper.update(entity, updateWrapper); //返回修改成功记录数
 
 
+// #select
+    
+    // //SELECT userId,user_name,account FROM user WHERE userId=?
+    // User user = userMapper.selectById("1");
 
+    // //SELECT userId,user_name,account FROM user WHERE userId IN ( ? , ? )
+    // List<String> idList = Arrays.asList("1", "2");
+    // List<User> users = userMapper.selectBatchIds(idList);
 
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
+    // //SELECT userId,user_name,account FROM user WHERE user_name = ?
+    // Map<String, Object> columnMap = new HashMap<>();
+    // columnMap.put("user_name", "dong");
+    // List<User> users = userMapper.selectByMap(columnMap);
+
+        // // SELECT userId,user_name,account FROM user WHERE user_name = ? 
+        // QueryWrapper<User> queryWrapper = new QueryWrapper<>();
+        // queryWrapper.eq("user_name", "wang");
+        // User user = userMapper.selectOne(queryWrapper);
+
+        // // SELECT COUNT( 1 ) FROM user WHERE user_name LIKE ? AND account = ?
+        // QueryWrapper<User> queryWrapper = new QueryWrapper<>();
+        // queryWrapper.like("user_name", "li").eq("account", 35);
+        // Integer count = userMapper.selectCount(queryWrapper);
+
+
+        // // SELECT userId,user_name,account FROM user WHERE user_name LIKE ? AND account = ?
+        // QueryWrapper<User> queryWrapper=new QueryWrapper<>();
+        // queryWrapper.like("user_name", "li").eq("account", 35);
+        // List<User> users = userMapper.selectList(queryWrapper);
+
+        // // ？？？？ 物理分页 --> 不使用！！！
+        // // SELECT userId,user_name,account FROM user WHERE user_name LIKE ?
+        // IPage<User> page = new Page<>(1, 2);
+        // QueryWrapper<User> queryWrapper = new QueryWrapper<>();
+        // queryWrapper.like("user_name", "li");
+        // IPage<User> userIPage = userMapper.selectPage(page, queryWrapper);
+        
+        // // 同上
+        // IPage<User> page = new Page<>(1, 2);
+        // QueryWrapper<User> queryWrapper = new QueryWrapper<>();
+        // queryWrapper.like("user_name", "li");
+        // IPage<Map<String, Object>> mapIPage = userMapper.selectMapsPage(page, queryWrapper);
+
+
+// #delete
+
+        // int delete = userMapper.deleteById(id);
+        // int delete = userMapper.deleteBatchIds(idList);
+
+        // // DELETE FROM user WHERE user_name = ?
+        // QueryWrapper<User> wrapper = new QueryWrapper<>();
+        // wrapper.eq("user_name", "lin");
+        // int delete = userMapper.delete(wrapper);
+
+
+// ##条件构造器
+
+    // 使用的是数据库字段，而不是java属性
+
+
+
+#代理
+    代理模式是Java设计模式中的一种，其特征为代理类与委托类有同样的接口，
+    代理类主要负责为委托类预处理消息、过滤消息、把消息转发给委托类，以及事后处理消息等。
+    
+    代理类与委托类之间通常存在关联关系，一个代理类的对象与一个委托类的对象关联，代理类的对象本身并不真正实现业务，
+    而是通过调用委托类对象的相关方法来提供具体业务。
+
+    在Java中的 java.lang.reflect 包下提供了一个Proxy类和一个InvocationHandler接口，
+    通过这个类和接口可以生成JDK动态代理或动态代理对象。
+    
+    #按照代理的创建时间不同，可以分为两种：
+    静态代理：手动创建，再对其编译。在程序运行前，代理类的.class文件就已经存在。
+    动态代理：在程序运行时，通过反射机制动态创建而成。
+
+
+    #动态代理的实现原理有些类似于过滤器的实现原理，但有所不同。
+    动态代理的代理类与委托类之间的关系更像是明星与经纪人之间的关系，也就是说，如果你想找某个明星演出的话，
+    并不是找他本人，而是找到他的经纪人就可以了。动态代理的实现过程很类似于这个过程，具体请看下图：
+
+    #Proxy类是Java的 java.lang.reflect 包下提供的，该类用于创建动态代理类和代理对象的静态方法，它也是所有动态代理类的父类。
+    如果在程序中为一个或多个接口动态地生成实现类，就可以用Proxy类来创建动态代理类；
+    
+    如果需要为一个或多个接口动态地创建实例，也可以使用Proxy类来创建动态代理实例。
+
+    //创建一个动态代理类所对应的Class对象，该代理类将实现interfaces所指定的多个接口。
+    //第一个ClassLoader参数指定生成动态代理类的类加载器。
+    static Class<?> getProxyClass(ClassLoader loader, Class<?>... interfaces)
+    
+    //直接创建一个动态代理对象，该代理对象的实现类实现了 interfaces 指定的系列接口，
+    //执行代理对象的每个方法时都会被替换执行 InvocationHandler 对象的 invoke() 方法。
+    static Object newProxyInstance(ClassLoader loader, Class<?>[] interfaces, InvocationHandler h)
+
+    
+    #InvocationHandler
+
+    InvocationHandler 接口提供了invoke()方法，用于替换代理对象的每一个方法。
+    真实业务类可以通过代理类对象调用 InvocationHandler 接口提供的 invoke() 方法，来替代调用委托类的真实方法。
+
+    //在代理实例上处理方法调用并返回结果。在与方法关联的代理实例上调用方法时，将在调用处理程序上调用此方法。
+    //proxy   表示代理类对象，也就是Proxy.newProxyInstance()方法返回的对象，通常用不上。
+    //method  表示当前被调用方法的反射对象，
+    //args    表示调用目标方法时传入的实参。
+    Object invoke(Object proxy, Method method, Object[] args)
+    
+        public Object proxyInstance() {
+            /**
+             * @param loader     目标对象的类加载器
+             * @param interfaces 目标对象实现的接口列表
+             * @param h          目标对象执行的方法
+             * @return a proxy instance with the specified invocation handler of a
+             * proxy class that is defined by the specified class loader
+             * and that implements the specified interfaces
+             */
+            return Proxy.newProxyInstance(
+                    target.getClass().getClassLoader(),
+                    target.getClass().getInterfaces(),
+                    (proxy, method, args) -> {
+                        System.out.println("代理老师--上课");
+
+                        /**
+                         * 执行动态代理对象的所有方法时,都会被替换成执行下面的invoke()方法.
+                         * proxy   代表动态代理对象.
+                         * method  代表正在执行的方法.
+                         * args    代表调用目标方法时传入的实参.
+                         */
+                        Object invoke = method.invoke(target, args);
+                        System.out.println("代理老师--下课");
+                        return invoke;
+                    });
+        }
+
+    #动态代理的作用
+        通过Java提供的Proxy类和InvocationHandler接口生成的动态代理类，
+        可以阻止调用委托类的方法、过滤参数及修改对应方法的返回值等作用。实现业务接口方法的实现类即委托类，具体操作如下：
+
+
+
+#初始化数据--jpa
+spring:
+ datasource:
+ schema: classpath:db/schema.sql
+ data: classpath:db/data.sql
+ sql-script-encoding: utf-8
+ jpa:
+ hibernate:
+ ddl-auto: none
+schema ：脚本中创建表的语句
+data ：脚本中初始化数据的预计
+sql-script-encoding：设置脚本的编码
+Spring Boot 项目启动的时候会自动执行脚本。
+
+ddl-auto 四个值的解释
+
+create： 每次加载hibernate时都会删除上一次的生成的表，然后根据你的model类再重新来生成新表，哪怕两次没有任何改变也要这样执行，这就是导致数据库表数据丢失的一个重要原因。
+create-drop ：每次加载hibernate时根据model类生成表，但是sessionFactory一关闭,表就自动删除。
+update：最常用的属性，第一次加载hibernate时根据model类会自动建立起表的结构（前提是先建立好数据库），以后加载hibernate时根据 model类自动更新表结构，即使表结构改变了但表中的行仍然存在不会删除以前的行。要注意的是当部署到服务器后，表结构是不会被马上建立起来的，是要等 应用第一次运行起来后才会。
+validate ：每次加载hibernate时，验证创建数据库表结构，只会和数据库中的表进行比较，不会创建新表，但是会插入新值。 5、 none : 什么都不做。
+
+
+在生产中，这两种模式都建议慎用！
+
+
+
+#策略设计模式
+    //1.过滤出list中长度>5的
+    //2.过滤出list中包含a的
+    //3....N多情况...
+    List<String> list = Arrays.asList("java", "scala", "python");
+
+    public interface Filterable<T> {//策略接口
+        boolean filter(T t);
+    }
+
+    public List<String> filterList(List<String> list, Filterable<String> filter) {
+        List<String> res = new ArrayList<>();
+        for (String str : list) {
+            if (filter.filter(str)) { //使用策略
+                res.add(str);
+            }
+        }
+        return res;
+    }
+
+    //lambda前
+    List<String> res = filterList(list, new Filterable<String>() {
+
+        @Override
+        public boolean filter(String t) {
+            return t.length() > 3; //不同过滤条件,不同策略
+        }
+    });
+    res.forEach(t -> System.out.println(t));
+
+    //lambda后
+    List<String> res = filterList(list, t -> t.length() > 3);
+    res.forEach(System.out::println);
+
+
+
+#如何设计API接口，实现统一格式返回？
+https://cloud.tencent.com/developer/article/1443918
+
+
+
+#异步通知-支付成功
+    1.验证签名（sdk已完成）
+    2.支付的状态（sdk已完成）
+    3.支付金额
+    4.支付人（下单人与支付人是同一个？根据需求而定）
+
+
+#web
+    #redirect 跳转时，
+    最好使用绝对地址: http://192.168.8.7:8090/sell/order/list
+    不要使用相对地址: /sell/order/list
+
+    #清除 cookie
+    Cookie cookie = new Cookie(name, value); //清除时, value 设为null
+    cookie.setPath("/");
+    cookie.setMaxAge(maxAge); //清除时,设为 0
+    response.addCookie(cookie); //HttpServletResponse
 
 
 
