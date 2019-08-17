@@ -240,7 +240,7 @@ SELECT * FROM user WHERE name LIKE '%#{name}%' -- 张 -> "%'张'%" --> 错误
 ```xml
 <!-- 使用标签<select/> && statementType="CALLABLE" -->
 <select id="get_park_free_count0" resultType="java.util.Map" statementType="CALLABLE">
-    {call get_park_free_count(#{parkId})}
+    call get_park_free_count(#{parkId})
 </select>
 ```
 

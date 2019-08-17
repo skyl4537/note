@@ -1596,46 +1596,46 @@ CREATE TABLE `product_category` (
 
     // 事务保证了数据的'完整性'和'一致性'
 
-#事务传播行为
-当事务方法被另一个事务方法调用时，必须指定事务应该如何传播。
-例如：方法可能继续在现有事务中运行，也可能开启一个新事务，并在自己的事务中运行。
-事务的传播行为可以由传播属性指定。
-Spring 定义了 7 种类传播行为。
+// #事务传播行为
+// 当事务方法被另一个事务方法调用时，必须指定事务应该如何传播。
+// 例如：方法可能继续在现有事务中运行，也可能开启一个新事务，并在自己的事务中运行。
+// 事务的传播行为可以由传播属性指定。
+// Spring 定义了 7 种类传播行为。
 
-事务传播属性可以在 @Transactional 注解的 propagation 属性中定义。
+// 事务传播属性可以在 @Transactional 注解的 propagation 属性中定义。
 
-    // propagation    -> 事务的传播行为, 默认 REQUIRED
-    // isolation    -> 事务的隔离度, 默认 DEFAULT
-    // timeout        -> 事务的超时时间, 默认 -1,永不.(设置10(秒),则10s后事务还没完成,就则自动回滚事务)
-    // readOnly        -> 否为只读事务，默认 false.(忽略那些不需要事务的方法,比如读取数据,可以设置 readOnly 为 true)
-    // rollbackFor    -> 指定能够触发事务回滚的异常类型,用逗号分隔. {xxx1.class, xxx2.class, ...}
-    // noRollbackFor-> 指定不触发事务回滚的异常类型, 同上.
+    // // propagation    -> 事务的传播行为, 默认 REQUIRED
+    // // isolation    -> 事务的隔离度, 默认 DEFAULT
+    // // timeout        -> 事务的超时时间, 默认 -1,永不.(设置10(秒),则10s后事务还没完成,就则自动回滚事务)
+    // // readOnly        -> 否为只读事务，默认 false.(忽略那些不需要事务的方法,比如读取数据,可以设置 readOnly 为 true)
+    // // rollbackFor    -> 指定能够触发事务回滚的异常类型,用逗号分隔. {xxx1.class, xxx2.class, ...}
+    // // noRollbackFor-> 指定不触发事务回滚的异常类型, 同上.
     
-当 bookService 的 purchase()方法被另一个事务方法 checkout()调用时，它默认会在现有的事务内运行。
-因此在 checkout()方法的开始和终止边界内只有一个事务。
-这个事务只在 checkout()方法结束的时候被提交，结果
+// 当 bookService 的 purchase()方法被另一个事务方法 checkout()调用时，它默认会在现有的事务内运行。
+// 因此在 checkout()方法的开始和终止边界内只有一个事务。
+// 这个事务只在 checkout()方法结束的时候被提交，结果
 
-数据库系统必须具有隔离并发运行各个事务的能力， 使它们不会相互影响， 避免各种并
-发问题。 一个事务与其他事务隔离的程度称为隔离级别。SQL 标准中规定了多种事务隔离级
-别， 不同隔离级别对应不同的干扰程度， 隔离级别越高， 数据一致性就越好， 但并发性越弱。
-1) 读未提交：READ UNCOMMITTED
-允许 Transaction01 读取 Transaction02 未提交的修改。
-2) 读已提交：READ COMMITTED
-要求 Transaction01 只能读取 Transaction02 已提交的修改。
-3) 可重复读：REPEATABLE READ
-确保 Transaction01 可以多次从一个字段中读取到相同的值， 即 Transaction01 执行
-期间禁止其它事务对这个字段进行更新。
-4) 串行化：SERIALIZABLE
-确保 Transaction01 可以多次从一个表中读取到相同的行， 在 Transaction01 执行期
-间，禁止其它事务对这个表进行添加、更新、删除操作。可以避免任何并发问题，但性
-能十分低下。
+// 数据库系统必须具有隔离并发运行各个事务的能力， 使它们不会相互影响， 避免各种并
+// 发问题。 一个事务与其他事务隔离的程度称为隔离级别。SQL 标准中规定了多种事务隔离级
+// 别， 不同隔离级别对应不同的干扰程度， 隔离级别越高， 数据一致性就越好， 但并发性越弱。
+// 1) 读未提交：READ UNCOMMITTED
+// 允许 Transaction01 读取 Transaction02 未提交的修改。
+// 2) 读已提交：READ COMMITTED
+// 要求 Transaction01 只能读取 Transaction02 已提交的修改。
+// 3) 可重复读：REPEATABLE READ
+// 确保 Transaction01 可以多次从一个字段中读取到相同的值， 即 Transaction01 执行
+// 期间禁止其它事务对这个字段进行更新。
+// 4) 串行化：SERIALIZABLE
+// 确保 Transaction01 可以多次从一个表中读取到相同的行， 在 Transaction01 执行期
+// 间，禁止其它事务对这个表进行添加、更新、删除操作。可以避免任何并发问题，但性
+// 能十分低下。
 
-    <!-- 事务管理器 -->
-    <bean id="dataSourceTransactionManager" class="org.springframework.jdbc.datasource.DataSourceTransactionManager">
-        <property name="dataSource" ref="dataSource"></property>
-    </bean>
-    <!-- 基于注解的事务管理 -->
-    <tx:annotation-driven transaction-manager="dataSourceTransactionManager"/>
+    // <!-- 事务管理器 -->
+    // <bean id="dataSourceTransactionManager" class="org.springframework.jdbc.datasource.DataSourceTransactionManager">
+        // <property name="dataSource" ref="dataSource"></property>
+    // </bean>
+    // <!-- 基于注解的事务管理 -->
+    // <tx:annotation-driven transaction-manager="dataSourceTransactionManager"/>
     
     
 #mybatis-plus

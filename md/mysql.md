@@ -527,8 +527,6 @@ TRUNCATE TABLE flower; -- 清空表2
 -- DELETE 清空表后，添加新的数据时自增列接着自增。TRUNCATE 则是从1开始重新计数。
 ```
 
-## TCL事务
-
 
 
 ## 存储过程
@@ -536,163 +534,81 @@ TRUNCATE TABLE flower; -- 清空表2
 > 一组预先编译好的sql语句集合，可以理解成批处理语句。
 
 ```sql
--- 优点
-封装并隐藏复杂的业务逻辑，简化sql操作，并提高代码的重用性。
-减少编译次数，只编译一次
-减少和数据库服务器的连接次数，提高了效率
 
--- 缺点
-切换到其他厂商的数据库系统时，需要重写原有的存储过程。
-存储过程的性能调校与撰写，受限于各种数据库系统。
 ```
 
 >查看：存储过程详细的定义信息
 
 ```sql
-SHOW CREATE PROCEDURE 数据库.存储过程名;
+
 ```
 
 > 修改：只能改变存储过程的特征（注释和权限），不能修改过程的参数以及过程体。
 
 ```sql
-ALTER {PROCEDURE | FUNCTION} … …
+
 ```
 
 > 删除：删除后再创建，可以修改存储过程的参数和过程体。
 
 ```sql
-DROP PROCEDURE [IF EXISTS] db_name.sp_name;
+
 ```
 
 > 创建：当过程体只有一句话时，BEGIN END可以省略
 
 ```sql
--- 参数模式：IN（只能做输入），OUT（只能做输出），INOUT（既能...又能...），
-CREATE PROCEDURE pro_test(参数模式 参数名 参数类型...)
-BEGIN
-  -- 存储过程体（一组合法的sql语句）
-END
+
 ```
 
 > DEMO-01：参数模式 IN
 
 ```sql
-DROP PROCEDURE IF EXISTS test0430.pro_login; -- 有则删除
 
-CREATE PROCEDURE pro_login(IN login_name VARCHAR(20), IN login_pwd VARCHAR(15))
-BEGIN
-    DECLARE cnt INT DEFAULT 0; -- 声明局部变量，及默认值
-    DECLARE res VARCHAR(10) DEFAULT '';
-
-    SELECT COUNT(*) INTO cnt -- 局部变量赋值
-    FROM student s
-    WHERE s.sname=login_name AND s.sid=login_pwd;
-
-    IF cnt>0 THEN
-		SET res='登陆成功'; -- if-then-else 语句
-    ELSE
-        SET res='登录失败'; -- 变量使用
-    END IF;
-    
-	SELECT res;
-END
 ```
 
 > DEMO-02：参数模式 OUT
 
 ```sql
-DROP PROCEDURE IF EXISTS get_student_info_by_id;
 
-CREATE PROCEDURE get_student_info_by_id(IN p_id INT,OUT p_name VARCHAR(20),OUT p_gender VARCHAR(2))
-BEGIN
-    SELECT sname,gender INTO p_name,p_gender
-    FROM student WHERE sid=p_id;
-END
-
-SET @sname='', @gender=''; -- 声明时必须指定默认值（也可以省略声明过程，直接使用用户变量）。
-
-CALL get_student_info_by_id(5,@sname,@gender);
-SELECT @sname,@gender;
 ```
 
 > DEMO-03：参数模式 INOUT
 
 ```sql
-DROP PROCEDURE IF EXISTS double_self;
 
-CREATE PROCEDURE double_self(INOUT p_a INT,INOUT p_b INT)
-BEGIN
-    SET p_a=p_a*2;
-    SET p_b=p_b*2;
-END
-
-SET @a=3, @b=5; -- 对于 INOUT，必须先声明并赋值
-
-CALL double_self(@a, @b);
-SELECT @a,@b;
 ```
 
 
 
-> 变量分类：局部变量和用户变量。用户变量包括：会话变量和全局变量。
+> 
 
 ```sql
-'局部变量'：作用范围在 begin到 end语句块之间。在该语句块里设置的变量。
 
-'用户变量'：以"@"开始，形式为"@变量名"。跟mysql客户端绑定，设置的变量，只对当前用户使用的客户端生效
-
-'全局变量'：定义时，以如下两种形式出现，set GLOBAL 变量名 或者 set @@global.变量名 对所有客户端生效。只有具有super权限才可以设置
-
-'会话变量'：只对连接的客户端有效。
 ```
 
 ```sql
--- 局部变量 与 用户变量：
-1.用户变量是以"@"开头的。局部变量没有这个符号。
-2.定义方式不同。 -- 用户变量使用 set语句，局部变量使用 declare语句定义 
-3.作用范围。局部变量只在 begin-end语句块之间有效，出了范围就失效。
 
-用户定义的变量就叫用户变量。这样理解的话，会话变量和全局变量都可以是用户定义的变量。只是他们是对当前客户端生效，还是对所有客户端生效的区别了。所以，用户变量包括了会话变量和全局变量
 ```
 
 ## 变量
 
-变量分为：系统变量 和 用户变量。
-
 > 系统变量：系统已经提前定义好了的变量，一般都有其特殊意义。如代表字符集、代表某些mysql文件位置
 
 ```sql
--- 系统变量包括：会话级变量（当次会话连接生效的变量，如names），全局变量（一直生效的变量）。二者声明方式相同，只是作用域不同。
 
-会话变量的赋值：set 变量名 = 值; -- 比如常用的set names ="utf8"; 或者set @@变量名=值
-全局变量的赋值：set global 变量名 = 值;
-
-show variables; --查看系统变量
-select @@变量名; --调用系统变量
 ```
 
 > 用户变量：用户自己定义的变量，必须使用一个**@符号**。`用户变量都是会话级的变量，仅在当次连接中生效`
 
 ```sql
--- 用户变量可以不声明定义，就可以直接使用，默认为 null
 
-set @变量名=1;
-select @变量名:=值; -- 因为 = ，有很多地方都用来判断是否等于，为了避免歧义，也可以使用:=来赋值
-select 值 into @变量名;
 ```
 
 >局部变量：用户自定义的，可认为局部变量`也是用户变量，但不需要使用 @`。一般用在存储过程块、触发器块等
 
 ```sql
--- 使用 declare 声明局部变量，其中可选项 default 后可以跟一个默认值
--- 变量声明语句要在其他语句如 select 语句之前
 
-declare myq int; --声明
-declare myq int default 666;
-
-set myq= 值； --赋值
-
-select myq;  --获取
 ```
 
 

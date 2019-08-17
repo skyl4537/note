@@ -1,6 +1,148 @@
 [TOC]
 
+# 基础概念
 
+> 路径前缀 /
+
+```shell
+由服务器解析 --> 表示：web应用的根目录 --> http:127.0.0.1:8090/demo/
+
+@GetMapping("/hello")                                  #Serlvet映射的访问路径
+req.getRequestDispatcher("/hello").forward(req, res);  #请求转发
+```
+
+```shell
+由浏览器解析 --> 表示：web站点的根目录 --> http:127.0.0.1:8090/
+
+<a href="/hello.html">测试</a>         #超链接<a>
+<form method="post" action="/hello">  #Form表单的action
+req.sendRedirect("/hello");           #请求重定向
+```
+
+
+
+
+
+# Servlet
+
+>HTTP请求
+
+```shell
+建立连接 --> 发送请求信息 --> 回送响应信息 --> 关闭连接
+
+每一次请求，都要重新建立一次连接，都会调用一次 service() 方法
+每次连接只能处理一个请求和响应
+```
+
+> Servlet作用
+
+```shell
+将 url 映射到一个java类的处理方法上
+接收请求的数据, 并与服务器其他资源进行通信（如数据库）
+将处理结果展示到页面，以及处理页面的跳转
+
+编译存储在目录"web应用/WEB-INF/classes/*".
+```
+
+>Servlet容器
+
+```shell
+负责处理客户请求。当客户请求到来时，调用某个 Servlet，并把 Servlet 的执行结果返回给客户.
+典型的 Servlet 应用是监听器，过滤器的实现
+
+Servlet 本质是一个java接口类，部署运行在Servlet容器中
+Servlet 容器管理Servlet的整个生命周期，并负责调用Servlet方法响应客户端请求
+Servlet 和客户端的通信采用"请求/响应"模式，基于请求
+```
+
+> Servlet生命周期：Servlet容器管理，`非线程安全`，所有请求公用同一个Servlet对象
+
+```java
+@ServletComponentScan //全局注解; 启动时自动扫描 @WebServlet,并将该类实例化
+```
+
+```java
+/**
+ * @param name          Servlet别名
+ * @param urlPatterns   访问url，同一个Servlet可以被映射到多个URL上。其中'/'代表当前web应用的根目录
+ * @param loadOnStartup Servlet实例被创建的时机。默认-1
+ *                      负数：在第一次请求时被创建
+ *                      正数或0：在当前应用被Servlet容器加载时创建实例，且数值越小越早被创建
+ * @param initParams    配置Servlet的初始化参数，在init()方法中读取
+ */
+@WebServlet(name = "testServlet", urlPatterns = {"/test", "/servlet"}, loadOnStartup = -1,
+            initParams = @WebInitParam(name = "user", value = "123"))
+public class TestServlet extends HttpServlet {
+
+    //只在第一次请求时调用。创建【单实例】的Servlet对象。减小服务端内存开销，快速响应客户端
+    public TestServlet() {
+        System.out.println("生命周期 - 构造器");
+    }
+
+    /**
+     * 只被调用一次。调用构造器方法后立即被调用。用于初始化当前Servlet
+     *
+     * @param config 封装了Servlet的初始化信息，可获取对象 ServletContext
+     */
+    @Override
+    public void init(ServletConfig config) {
+        System.out.println("生命周期 - init()");
+    }
+
+    //每次请求都会调用。用于响应客户端请求
+    @Override
+    protected void service(HttpServletRequest req, HttpServletResponse resp) throws IOException {
+        System.out.println("生命周期 - service()");
+
+        resp.setContentType("text/html;charset=utf-8");
+        resp.getWriter().write("自定义 Servlet");
+    }
+
+    //只被调用一次。应用被卸载前调用。用于释放Servlet所占用的资源（如数据库连接）
+    @Override
+    public void destroy() {
+        System.out.println("生命周期 - destroy()");
+    }
+}
+```
+
+>ServletConfig：封装了Servlet的初始化信息，可获取对象 ServletContext
+
+```java
+@Override
+public void init(ServletConfig config) {
+    System.out.println("生命周期 - init()");
+
+    String user = config.getInitParameter("user"); //获取单个初始化参数. "123"
+
+    Enumeration<String> names = config.getInitParameterNames(); //获取所有
+    while (names.hasMoreElements()) {
+        String name = names.nextElement();
+        String value = config.getInitParameter(name);
+    }
+    
+    ServletContext servletContext = config.getServletContext(); //获取 ServletContext 对象
+}
+```
+
+>ServletContext：代表当前WEB应用，可以从中获取到应用的各个方面信息
+
+```java
+context.getContextPath(); //server.servlet.context-path=/demo
+
+//F:\sp_project\webpark\src\main\webapp\demo.log
+context.getRealPath("abc.log"); //文件在服务器上的绝对路径，而非部署前路径
+
+InputStream in = context.getResourceAsStream("my.properties"); //读取配置
+//InputStream in = getClass().getClassLoader().getResourceAsStream("my.properties"); //同上
+Properties properties = new Properties();
+properties.load(in);
+String url = properties.getProperty("info.url");
+
+context.setAttribute("user", "123"); //属性相关的三个方法（设置，获取，移除）
+String user = (String) context.getAttribute("user");
+context.removeAttribute("user");
+```
 
 
 
@@ -59,10 +201,10 @@ public ResultVO param3(@RequestBody Student student) {
 
 # AOP
 
-> 基础概念
+> AOP（Aspect-Oriented-Programing）面向切面编程
 
 ```shell
-AOP(Aspect-Oriented Programing)：'面向切面编程'，通过'动态代理'实现程序功能的统一维护
+通过'动态代理'实现程序功能的统一维护
 通过对既有程序定义一个切入点，然后在切入点前后切入不同的执行内容。如：打开/关闭数据库连接，打开/关闭事务，记录日志等
 
 #基于AOP不会破坏原来程序逻辑。
@@ -79,10 +221,7 @@ AOP(Aspect-Oriented Programing)：'面向切面编程'，通过'动态代理'实
 > 优先级
 
 ```shell
-使用注解 @Order(i) 定义每个切面的优先级。i 的值越小，优先级越高。
-```
-
-```shell
+#使用注解 @Order(i) 定义每个切面的优先级。i 的值越小，优先级越高。
 #前置通知，从小到大。后置返回通知，从大到小
 @Before          @Order(5)  --> @Order(10)
 @After           @Order(10) --> @Order(5)
@@ -195,29 +334,5 @@ public class AopConfig {
 }
 ```
 
-> xml
 
-```xml
-<!-- 配置切面的 bean. -->
-<bean id="myAopConfig" class="com.example.config.MyAopConfig"></bean>
-<bean id="myAopConfig0" class="com.example.config.MyAopConfig0"></bean>
-
-<!-- 配置 AOP -->
-<aop:config>
-    <!-- 配置切点表达式 -->
-    <aop:pointcut id="pointcut" expression="execution(* com.example.controller..*(..))"/>
-
-    <!-- 配置切面及通知 -->
-    <aop:aspect ref="myAopConfig" order="2">
-        <aop:before method="doBefore" pointcut-ref="pointcut"/>
-        <aop:after method="doAfter" pointcut-ref="pointcut"/>
-        <aop:after-returning method="doAfterReturning" pointcut-ref="pointcut" returning="result"/>
-        <aop:after-throwing method="doAfterThrowing" pointcut-ref="pointcut" throwing="t"/>
-        <!-- <aop:around method="aroundMethod" pointcut-ref="pointcut"/> --> <!--环绕通知-->
-    </aop:aspect>    
-    <aop:aspect ref="myAopConfig0" order="1"> <!--测试优先级-->
-        <aop:before method="validateArgs" pointcut-ref="pointcut"/>
-    </aop:aspect>
-</aop:config>
-```
 

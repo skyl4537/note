@@ -1,6 +1,6 @@
 
 
-## 基础命令
+# 基础命令
 
 > 常用命令
 
@@ -531,7 +531,179 @@ public class BookService {
 
 
 
+# 存储过程
 
+## 存储过程
 
+> 一组预先编译好的sql语句集合，可以理解成批处理语句。
 
+```sql
+-- 优点
+封装并隐藏复杂的业务逻辑，简化sql操作，并提高代码的重用性
+减少编译次数，只编译一次
+减少和数据库服务器的连接次数，提高了效率
+
+-- 缺点
+切换到其他厂商的数据库系统时，需要重写原有的存储过程
+存储过程的性能调校与撰写，受限于各种数据库系统
+```
+
+> 基础操作
+
+```sql
+-- 查看：存储过程详细的定义信息
+SHOW CREATE PROCEDURE 数据库.存储过程名;
+
+-- 修改：只能改变存储过程的特征（注释和权限），不能修改过程的参数以及过程体
+ALTER {PROCEDURE | FUNCTION} ...
+
+-- 删除：删除后再创建，可以修改存储过程的参数和过程体
+DROP PROCEDURE [IF EXISTS] db_name.sp_name;
+```
+
+> 创建操作：当过程体只有一句话时，BEGIN END可以省略
+
+```sql
+-- 参数模式：IN（只能做输入），OUT（只能做输出），INOUT（既能...又能...）
+CREATE PROCEDURE pro_test(参数模式 参数名 参数类型...)
+BEGIN
+  -- 存储过程体（一组合法的sql语句）
+END
+```
+
+>创建の参数模式 IN `常用`
+
+```sql
+DROP PROCEDURE IF EXISTS get_student_by_teacher_id;
+
+CREATE PROCEDURE get_student_by_teacher_id(IN p_teacher_id INT)
+BEGIN
+	SELECT s.id id,s.`name` name,t.id `teacher.id`,t.`name` `teacher.name` -- t.id `teacher.id` 关联查询
+	FROM student s RIGHT JOIN (SELECT id,`name`,sid FROM teacher WHERE id=p_teacher_id) t
+	ON s.tid=t.id LIMIT 5;
+END
+```
+
+```sql
+-- sql 测试
+CALL get_student_by_teacher_id(1);
+```
+
+```xml
+<!-- mybatis 测试 -->
+<select id="getStudentByTeacherId" resultType="com.example.mybatis.po.Student">
+    CALL get_student_by_teacher_id(#{teacherId});
+</select>
+```
+
+>创建の参数模式 OUT
+
+```sql
+-- 参数模式 OUT
+CREATE PROCEDURE get_student_info_by_id(IN p_in_id INT, OUT p_out_name VARCHAR(20))
+BEGIN
+    SELECT name INTO p_out_name
+    FROM student WHERE id=p_in_id;
+END
+```
+
+```sql
+-- 测试
+-- SET @sname='', @gender=''; -- 使用前先声明，声明时必须指定默认值（也可以省略声明过程，直接使用用户变量）
+
+CALL get_student_info_by_id(3, @sname);
+SELECT @sname;
+```
+
+> 创建の参数模式 INOUT
+
+```sql
+-- 参数模式 INOUT
+CREATE PROCEDURE double_self(INOUT p_a INT, INOUT p_b INT)
+BEGIN
+    SET p_a=p_a*2;
+    SET p_b=p_b*2;
+END
+```
+
+```sql
+SET @a=3, @b=5; -- 对于模式 INOUT，必须先声明并赋值
+
+CALL double_self(@a, @b);
+SELECT @a,@b;
+```
+
+## 变量
+
+> 变量分类： 局部变量、用户变量、会话变量 和 全局变量 
+
+```sql
+其中，会话变量 和 全局变量 统称为 系统变量。而，局部变量 只存在于函数和存储过程之中
+```
+
+> 系统变量：会话变量 和 全局变量
+
+```sql
+系统已经提前定义好了的变量，一般都有其特殊意义。如，代表字符集、代表某些mysql文件位置
+
+-- 系统变量，用户不能新增，只能修改已有的
+```
+
+>会话变量：只在当前会话生效
+
+```sql
+show session variables;              -- 查看所有的会话变量
+show session variables LIKE "%var%"; -- 过滤部分
+
+set session var_name = value;        -- 赋值
+```
+
+>全局变量：影响服务器整体操作。但是一旦重启，这些设置会被重置。注意要想更改全局变量，必须具有SUPER权限。
+
+```sql
+show session variables;
+show global variables like "%var%";
+
+set global var_name = value;
+```
+
+> 用户变量：用户定义的变量，`以 @ 为前缀`。仅在当前会话生效
+
+```sql
+-- 可以不声明定义，直接使用，默认为 null
+变量名对大小写不敏感
+变量不能在要求字面值的地方使用，比如 select 中的 limit 语句等
+调用用户变量的表达式的计算顺序实际上是未定义的 -- SELECT @a = 0, @a := @a + 1; 两列都可能是 0
+为用户变量赋值时，会先确定表达式的值         -- SET @m = 0; SET @m = 3, @n = @m; SELECT @n; 结果为 0
+虽然用户变量的类型可以动态修改，但不建议这么操作
+```
+
+```sql
+set @变量名 = 1;
+select @变量名: = 值; -- 因为 =，有很多地方都用来判断是否等于，为了避免歧义，也可以使用 := 来赋值
+select 值 into @变量名;
+```
+
+> 局部变量：一般用在存储过程、函数等。`用户变量的一种，不需要使用 @`
+
+```sql
+declare var int default 666; -- 局部变量使用 declare 声明，可选项 default 设置默认值
+set var= 值；
+select 值 into var;
+```
+
+```sql
+-- 局部变量 与 用户变量：
+前缀符号：用户变量是以 "@" 开头的。局部变量没有这个符号
+定义方式：用户变量使用 set 语句，局部变量使用 declare 语句定义 
+作用范围：局部变量只在 begin-end 语句块之间有效，出了范围就失效
+```
+
+##函数
+
+> 函数：存储着一系列sql语句，调用函数就是一次性执行这些语句。所以，函数可以降低语句重复。
+
+```sql
+
+```
 
