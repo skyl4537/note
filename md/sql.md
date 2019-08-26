@@ -2,6 +2,146 @@
 
 # 基础命令
 
+# 名词
+
+> 名词解析
+
+```sql
+DB    --Data-Base，数据库，存储一系列有组织的数据
+DBMS  --Data-Base-Manage-System，数据库管理系统软件，如：Mysql，Oracle，sql-server
+SQL   --Structure-Query-Language，结构化查询语言，与数据库通信
+```
+
+> 基础语法
+
+```sql
+不区分大小写。建议关键字大写，表名和列名小写。每条命令使用分号结尾。单引号和双引号都可以表示字符串。
+
+mysql的字段名、表名通常不需要加任何引号，如果非要加上引号，必须加反引号。
+
+mysql的别名可不加引号，如果加，单引号和双引号以及反引号都可以。别名含有特殊字符，则必须使用双引号。
+```
+
+>赋予权限
+
+```sql
+-- GRANT [权限内容] ON [库名.表名] TO [用户名@'IP地址'] IDENTIFIED BY ['密码']WITH GRANT OPTION;
+-- 赋予用户名 MAO，密码 MIAOMIAO 的用户可以在任意设备上操作所有数据库表的权限
+GRANT ALL PRIVILEGES ON *.* TO MAO@'%' IDENTIFIED BY 'MIAOMIAO' WITH GRANT OPTION;
+```
+
+> linux环境mysql日志配置在`my.cnf 或 mysql.cnf`
+
+```shell
+find / -name my.cnf(mysql.cnf) #查找这两个文件所在位置
+log-error=/var/log/mysql.log   #在上述两个文件中配置
+```
+
+
+
+## DDL
+
+> sql分类
+
+```sql
+DDL：Data-Define-Languge，数据定义语言。         --如，create，drop，alter
+DML：Data-Manipulate-Language，数据操作语言。    --如，insert，update，delete
+DQL：Data-Query-Language，数据查询语言。         --如，select
+
+TCL：Transaction-Control-Language，事务控制语言。--如，commit，rollback  
+```
+
+> CREATE
+
+```sql
+CREATE TABLE `city` (
+    `id` int(11) NOT NULL AUTO_INCREMENT COMMENT 'id',
+    `name` varchar(10) DEFAULT NULL COMMENT '用户名', --VARCHAR 记得指定长度
+    PRIMARY KEY (`id`)
+) COMMENT '用户';
+
+SHOW CREATE TABLE city; --查看创建过程
+DESC city;              --DESC 查看表的详细信息
+```
+
+> DROP
+
+```sql
+DROP TABLE IF EXISTS `city`; --先删除
+```
+
+> ALERT：`ADD|CHANGE|MODIFY|DROP`
+
+```sql
+ALTER TABLE tbName ADD COLUMN 列名 列类型 [列参数] [NOT NULL DEFAULT]  --增加列
+ALTER TABLE tbName CHANGE COLUMN 旧列名 新列名 列类型 [列参数]          --修改列名（注意，新列的类型）
+ALTER TABLE tbName MODIFY COLUMN 列名 新列类型 [列参数]                --修改列类型
+ALTER TABLE tbName DROP COLUMN 列名;                                 --删除列
+
+ALTER TABLE tbName RENAME TO newName; -- 修改表名
+```
+
+> LIKE：表的复制
+
+```sql
+CREATE TABLE city0 LIKE city; -- 仅复制表的整体结构
+
+CREATE TABLE city1 SELECT id,name FROM city WHERE id=2; -- 复制表的部分结构 + 数据（id，name两列）
+```
+
+## DML
+
+> INSERT
+
+```sql
+INSERT INTO city(id,name) VALUES --列与值要严格对应。不写则默认为所有列赋值
+(DEFAULT,'晋州'),                 --自增主键赋值 DEFAULT，不指定的列默认赋值 NULL
+(DEFAULT,'朔州');                 --支持批量插入
+```
+
+```sql
+INSERT INTO city(id,name)
+SELECT id,name FROM employee WHERE id=3; --将查询结果插入到表中
+```
+
+```sql
+--(1).第一种方式支持批量插入，第二种不支持
+--(2).第二种方式支持子查询，第一种不支持
+```
+
+> UPDATE
+
+```sql
+UPDATE city SET age=900 WHERE name='苏州'; --修改字段值，必须添加条件，否则全表修改
+```
+
+> DELETE
+
+```sql
+DELETE FROM city WHERE name='晋州'; --单表删除
+
+DELETE city,student
+FROM city JOIN student ON student.name=city.name
+WHERE city.name='晋州';             --联表删除
+```
+
+```sql
+DELETE FROM city;    -- 清空表1
+TRUNCATE TABLE city; -- 清空表2
+
+-- DELETE 可以加 WHERE 过滤条件，TRUNCATE 不可以。
+-- DELETE 可以 rollback 回滚。TRUNCATE 速度更快，不可恢复，清空后释放内存。
+-- DELETE 删除有返回值。TRUNCATE 删除没有。
+
+-- DELETE 清空表后，添加新的数据时自增列接着自增。TRUNCATE 则是从1开始重新计数。
+```
+
+
+
+
+
+#基础函数
+
 > 常用命令
 
 ```sql
@@ -19,7 +159,149 @@ mysql -h 192.168.5.25 -P 33306 -u bluecardsoft -p
  SELECT ROW_COUNT(); -- 返回受影响的行数
 ```
 
+## 单行函数
 
+> NULL
+
+```sql
+ISNULL(expr)  -- 表达式为 NULL，返回 1，否则返回 0
+```
+
+```sql
+IFNULL(v1,v2) -- v1 为 NULL，返回 v2，否则返回 v1
+
+IF(expr,v1,v2) -- 表达式成立，返回 v1；否则返回 v2
+```
+
+> CONCAT
+
+```sql
+SELECT 5 + 'aa'; -- 对于非数值的一方，作取0处理。最终结果：5
+SELECT 5 + NULL; -- NULL和任何值相加，结果：NULL
+```
+
+```sql
+SELECT CONCAT(5,'a') caoncat; -- 字符串拼接：'5a'
+```
+
+> BETWEEN 和 IN
+
+```sql
+BETWEEN 5 AND 10 <==> 5<= x <=10
+IN(5, 10)        <==> x=5 || x=10
+```
+
+> CASE简单函数：SWITCH `（适合离散的等值条件）`
+
+```sql
+SELECT employee_id,
+    (CASE sex
+     WHEN '1' THEN '男'
+     WHEN '0' THEN '女'
+     ELSE '其他' END) sex
+FROM employees
+```
+
+> CASE搜索函数：IF-ELSE `（适合逻辑逻辑条件）`
+
+```sql
+SELECT employee_id,
+    (CASE
+     WHEN sex=1 THEN '男'
+     WHEN sex=0 THEN '女'
+     ELSE '其他' END) sex
+FROM employees
+```
+
+> 数学函数 `（a%b = a-a/b*b）`
+
+```sql
+SELECT ROUND(-1.45) n1, ROUND(-1.65) n2;         -- -1，-2 -->先绝对值，再四舍五入，最后加符号
+SELECT ROUND(-1.455, 2) n1, ROUND(-1.451, 2) n2; -- -1.46, -1.45 -->保留两位小数
+
+SELECT CEIL(-1.451) n1;        -- -1 -->向上取整，返回 >= 参数的最小整数
+SELECT FLOOR(-1.451) n1;       -- -2 -->向下取整，... <= ............
+
+SELECT TRUNCATE(-1.499, 1) n1; -- -1.4 -->截断，保留一位小数
+
+SELECT MOD(-10, -3) n1;        -- -1 -->取余%，取余操作的符号位和被除数一致。 a%b = a-a/b*b
+```
+
+> 字符串函数 `（索引从1开始计数）`
+
+```sql
+SELECT SUBSTR('RUNOOB', 2) AS subStr;     -- UNOOB，从 1 开始计数
+SELECT SUBSTR('RUNOOB', 2, 3) AS subStr;  -- UNO --> 同 MID()
+SELECT SUBSTR('RUNOOB', -3) AS subStr;    -- OOB --> 同 RIGHT()
+```
+
+```sql
+SELECT LEFT('RUNOOB', 3) AS leftStr;      -- RUN --> 左侧前3位字符
+SELECT RIGHT('RUNOOB', 3) AS rightStr;    -- OOB --> 右侧后3......
+SELECT MID('RUNOOB', 2, 3) AS midStr;     -- UNO --> 中间第2位字符开始(从1开始计数)，截取3位
+```
+
+```sql
+SELECT SUBSTRING_INDEX('192.168.5.120', '.', 2) AS subIndex;  -- 192.168 --> 截第二个'.'之前
+SELECT SUBSTRING_INDEX('192.168.5.120', '.', -2) AS subIndex; -- 5.120   --> ...........后
+SELECT SUBSTRING_INDEX('192.168.5.120', '..', 2) AS subIndex; -- 192.168.5.120 --> 无返回所有
+```
+
+```sql
+SELECT UCASE("runoob") AS uCase; -- RUNOOB
+SELECT LCASE("RUNOOB") AS lCase; -- runoob --> 大小写转换
+```
+
+```sql
+SELECT LENGTH('测试') AS length;          -- 6 --> 以'字节'为单位（汉字：utf-8占3字节，GBK占2）
+SELECT CHAR_LENGTH('测试') AS charLength; -- 2 --> '字符'【推荐】。VARCHAR(10)，10指的是字符
+```
+
+```sql
+SELECT REPLACE('192.168.5.120','.','') INTO @repStr; -- 1921685120 --> 替换所有
+```
+
+```sql
+SELECT INSTR('ASDFGH', 'SD') AS instr;   -- 2 --> 子串第一次出现的索引，找不到返回0
+
+SELECT SUBSTR(email, 1, INSTR(email, '@')-1) name FROM employee; --截取 email 中的 name
+```
+
+> 时间函数
+
+```sql
+SELECT now();      -- 2019-08-20 11:15:43
+SELECT curdate();  -- 2019-08-20
+SELECT curtime();  -- 11:16:55
+```
+
+```sql
+SELECT date('2019-08-20 11:15:43') date; -- 2019-08-20 --> 截取日期部分
+SELECT time('2019-08-20 11:15:43') time; -- 11:15:43   --> 截取时间部分
+
+SELECT year('2019-08-20 11:15:43') year;              -- 2019 -->截取年份
+SELECT EXTRACT(YEAR FROM '2019-08-20 11:15:43') year; -- 同上
+```
+
+```sql
+SELECT DATE_ADD('2019-08-20 11:15:43', INTERVAL 1 DAY); -- 1天以后（-1表示一天以前）【DATE_SUB() 也可以表示一天以前】
+```
+
+```sql
+SELECT DATEDIFF('2008-12-30','2008-12-31') AS dateDiff; -- -1，时间差（前面减后面）
+```
+
+```sql
+SELECT DATE_FORMAT('2019/08/20 11:15:43', '%Y-%m-%d %H:%i:%s') AS dateFormat; -- 2019-01-11 14:56:19
+
+SELECT STR_TO_DATE('23/04/2019', '%d/%m/%Y') str2date; -- 2019-04-23，字符串转日期
+```
+
+```sql
+%Y：4位的年份； %m：两位的月份； %y：2位的年份； %c：1位的月份； %d：两位的天数
+```
+
+##分组函数
 
 
 
@@ -273,7 +555,7 @@ mysql> SELECT JSON_UNQUOTE(memo -> '$.datas.name') name FROM log WHERE id=470941
 > 事务分类：隐式事务 和 显式事务
 
 ```shell
-事务：一个或一组 sql 语句组成一个执行单元，这个执行单元要么都执行成功，要么都执行失败。
+事务：一个操作序列，这些操作要么都执行成功，要么都执行失败。它是一个不可分割的工作单位。
 ```
 
 ```sql
@@ -291,8 +573,10 @@ SHOW VARIABLES LIKE 'autocommit'; -- 查看《自动提交》功能是否开启
 
 SET autocommit=0;                 -- 关闭《自动提交》，只针对当前会话起作用。所以每条事务都要以这条语句开始
 START TRANSACTION; -- 可选语句，开始事务
+
 UPDATE trans SET fmoney = fmoney - 700 WHERE fname='小李'; -- 事务正文sql
 UPDATE trans SET fmoney = fmoney + 700 WHERE fname='老王';
+
 COMMIT; -- 提交事务
 -- ROLLBACK; --回滚事务，与提交事务，二选一
 ```
@@ -301,13 +585,12 @@ COMMIT; -- 提交事务
 
 ```sql
 -- 原子性（Atomicity）
-事务中多条 sql 语句在逻辑上'不可再分'。要么都执行成功，要么都执行失败。
+事务是一个'不可再分割'的工作单位，事务中的操作要么都发生，要么都不发生。
 ```
 
 ```sql
 -- 一致性（Consistency）
 事务执行会使数据从 一个一致性状态 ->（变换到）-> 另外一个一致性状态（转账之前和之后，金钱总额不变）。
-
 执行过程中，如果某一个或某几个操作失败了，则必须将其他所有操作撤销，将数据恢复到事务执行之前的状态，这就是'回滚'。
 ```
 
@@ -315,7 +598,7 @@ COMMIT; -- 提交事务
 -- 隔离性（Isolation）
 多个事务并发执行，应保证各个事务之间不能互相干扰。
 
-隔离级别：读未提交（Read uncommitted）、读提交（read committed）、可重复读（repeatable read）和串行化（Serializable）。
+隔离级别：读未提交（Read uncommitted）、读提交（Read committed）、可重复读（Repeatable read）和串行化（Serializable）。
 ```
 
 ```sql
@@ -323,6 +606,24 @@ COMMIT; -- 提交事务
 事务一旦提交，对数据的改变将是永久的，不会被其他操作所影响。比如，删除一条数据。
 ```
 
+> ACID & CAP
+
+```shell
+数据库对于 ACID 中的一致性的定义是这样的：如果一个事务原子地在一个一致地数据库中独立运行，那么在它执行之后，数据库的状态一定是一致的。
+对于这个概念，它的第一层意思就是对于数据完整性的约束，包括主键约束、引用约束以及一些约束检查等等，
+在事务的执行的前后以及过程中不会违背对数据完整性的约束，所有对数据库写入的操作都应该是合法的，并不能产生不合法的数据状态。
+```
+
+```shell
+CAP 定理中的数据一致性，其实是说分布式系统中的各个节点中对于同一数据的拷贝有着相同的值；
+而 ACID 中的一致性是指数据库的规则，如果 schema 中规定了一个值必须是唯一的，那么一致的系统必须确保在所有的操作中，该值都是唯一的。
+由此来看 CAP 和 ACID 对于一致性的定义有着根本性的区别。
+```
+
+```shell
+数据库的一致性是：应用系统从一个正确的状态到另一个正确的状态。
+而 ACID 就是说事务能够通过 AID 来保证这个 C 的过程. C 是目的, AID 都是手段.
+```
 
 ## 事务管理
 
@@ -359,25 +660,11 @@ Spring 的核心事务管理抽象是'PlatformTransactionManager'。它为事务
 -- HibernateTransactionManager ：用 Hibernate 框架存取数据库
 ```
 
-> XML配置（二选一）
-
-```xml
-<!-- 配置事务管理器 -->
-<bean id="transactionManager" class="org.springframework.jdbc.datasource.DataSourceTransactionManager">
-    <property name="dataSource" ref="dataSource" />
-</bean>
-
-<!-- 开启事务注解 -->
-<tx:annotation-driven transaction-manager="transactionManager" />
-```
-
-> 注解配置（二选一）
+>在需要进行事务控制的方法上加注解
 
 ```java
 @EnableTransactionManagement //全局注解
 ```
-
->在需要进行事务控制的方法上加注解
 
 ```java
 @Transactional
@@ -412,58 +699,40 @@ public void purchase(int bookId, int bookCount) {
 
 ## 隔离级别
 
-> `mysql 默认：REPEATABLE_READ（可重复读）。Spring 默认：READ_COMMITED（读提交）`
+> mysql 默认：REPEATABLE_READ`（可重复读）`。Spring 默认：READ_COMMITED`（读已提交）`
 
-> 数据库事务的并发问题
+> 数据库的事务并发可能引起的问题
 
-```sql
--- 脏读（更新场景） --> T2更新未提交 T1读 T2回滚
+```shell
+丢失修改    -> 更新   #T1,T2 读入同一数据并修改，T2提交的结果被 T1 破坏了，导致 T1 的修改丢失。（订票系统）
 
-T1 将某条记录的 AGE 值从 20 修改为 30，但未提交。
-T2 读取了 T1 更新后的值：30。
-T1 回滚，AGE 值恢复到了 20。
-T2 读取到的 30 就是一个无效的值。
-```
-
-```sql
--- 不可重复读（更新） --> T1读 T2更新提交 T1再读
-
-T1 读取了 AGE 值为 20。
-T2 将 AGE 值修改为 30。
-T1 再次读取 AGE 值为 30，和第一次读取不一致。
-```
-
-```sql
--- 幻读（新增场景） --> T1读 T2新增 T1读
-
-T1 读取了 STUDENT 表中的一部分数据。
-T2 向 STUDENT 表中插入了新的行。
-T1 读取了 STUDENT 表时，多出了一些行。
+脏读       -> 更新   #T2改  T1读   T2回滚（T1读取的无效值）
+不可重复读  -> 更新   #T1读  T2改提  T1读（和第一次读取的不一样）
+幻读       -> 新增   #T1读  T2新增  T1读（多了几行）
 ```
 
 > 事务的隔离级别要得到底层数据库引擎的支持，而不是应用程序或者框架的支持。`mysql支持4种 > oracle的2种`
 
-```sql
--- READ_UNCOMMITTED（读未提交）：以上③种问题都可能发生
-允许 T1 读取 T2 未提交的修改。
+```shell
+#读未提交，避免【丢失修改】
+事务可以看到其他事务'尚未提交'的修改
 ```
 
-```sql
--- READ_COMMITTED（读提交）：只可以避免【脏读】
-要求 T1 只能读取 T2 已提交的修改。
+```shell
+#读已提交，避免【脏读】
+'读取数据的事务'允许其他事务继续访问该行数据，但是'未提交的写事务'将会禁止其他事务访问该行。
 ```
 
-```sql
--- REPEATABLE_READ（可重复读）：可以避免【脏读】+【不可重复读】。mysql 的默认配置
-执行 T1 期间，禁止其它事务对这个字段进行更新，确保 T1 可以多次从一个字段中读取到相同的值。
+```shell
+#可重复读，避免【脏读】和【不可重复读】
+'读取数据的事务'将会禁止写事务（但允许读事务），'写事务'则禁止任何其他事务。
 ```
 
-```sql
--- SERIALIZABLE（串行化）：以上③个问题都可以避免，但效率低。不推荐
-在 T1 执行期间，禁止其它事务对这个表进行添加、更新、删除操作。可确保 T1 可以多次从一个表中读取到相同的行，避免任何并发问题，但性能十分低下。
-锁定整个范围的键，并一直持有锁，直到事务完成。
+```shell
+#串行化，消除【以上问题】，但性能低下
+要求事务序列化执行，事务只能一个接着一个地执行，'不能并发执行'。
 
-在 REPEATABLE_READ（可重复读） 的基础上，增加了在事务完成之前，其他事务不能向事务已读取的范围'插入新行'的限制。
+#隔离级别越高，越能保证数据的完整性和一致性，但是对并发性能的影响也越大。
 ```
 
 > 设置隔离级别
@@ -483,28 +752,20 @@ SET global transaction isolation level read committed; -- 设置全局的隔离�
 ```
 
 ```java
-@Service
-public class UserService {
-
-    @Transactional //结账
-    public void checkout(String userId, List<Integer> bookIds) {
-        for (Integer bookId : bookIds) {
-            bookService.purchase(userId, bookId);
-        }
+@Transactional //结账
+public void checkout(String userId, List<Integer> bookIds) {
+    for (Integer bookId : bookIds) {
+        bookService.purchase(userId, bookId);
     }
 }
 ```
 
 ```java
-@Service
-public class BookService {
-
-    @Transactional //买书
-    public void purchase(String userId, Integer bookId) {
-        //（1）获取书籍信息（单价，库存）
-        //（2）扣除书籍库存
-        //（3）扣除用户金额
-    }
+@Transactional //买书
+public void purchase(String userId, Integer bookId) {
+    //（1）获取书籍信息（单价，库存）
+    //（2）扣除书籍库存
+    //（3）扣除用户金额
 }
 ```
 
@@ -531,7 +792,7 @@ public class BookService {
 
 
 
-# 存储过程
+# 高级命令
 
 ## 存储过程
 
@@ -591,8 +852,8 @@ CALL get_student_by_teacher_id(1);
 
 ```xml
 <!-- mybatis 测试 -->
-<select id="getStudentByTeacherId" resultType="com.example.mybatis.po.Student">
-    CALL get_student_by_teacher_id(#{teacherId});
+<select id="getStudentByTeacherId" statementType="CALLABLE" resultType="com.example.mybatis.po.Student">
+    {CALL get_student_by_teacher_id(#{teacherId})}
 </select>
 ```
 
@@ -705,5 +966,41 @@ select 值 into var;
 
 ```sql
 
+```
+
+
+
+
+
+## 执行顺序
+
+```sql
+(7) - SELECT
+(8) - DISTINCT <select_list>
+(1) - FROM <left_table>
+(3) - <join_type> JOIN <right_table>
+(2) - ON <join_condition>
+(4) - WHERE <where_condition>
+(5) - GROUP BY <group_by_list>
+(6) - HAVING <having_condition>
+(9) - ORDER BY <order_by_condition>
+(10 - LIMIT <limit_number>
+```
+
+```sql
+FROM 才是 SQL 语句执行的第一步，并非 SELECT。
+数据库在执行 SQL 语句的第一步是将数据从硬盘加载到数据缓冲区中，以便对这些数据进行操作。
+```
+
+```sql
+SELECT 是在大部分语句执行了之后才执行的，严格的说是在 FROM 和 GROUP BY 之后执行的。
+理解这一点是非常重要的，这就是你'不能'在 WHERE 中使用在 SELECT 中设定别名的字段作为判断条件的原因。
+```
+
+```sql
+无论在语法上还是在执行顺序上， UNION 总是排在在 ORDER BY 之前。
+很多人认为每个 UNION 段都能使用 ORDER BY 排序，但是根据 SQL 语言标准和各个数据库 SQL 的执行差异来看，这并不是真的。
+尽管某些数据库允许 SQL 语句对子查询（subqueries）或者派生表（derived tables）进行排序，
+但是，这并不说明这个排序在 UNION 操作过后仍保持排序后的顺序。
 ```
 

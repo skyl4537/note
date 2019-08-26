@@ -13,7 +13,7 @@
 >必要配置
 
 ```xml
-<!-- Mybatis 启动器 -->
+<!-- mybatis 启动器 -->
 <dependency>
     <groupId>org.mybatis.spring.boot</groupId>
     <artifactId>mybatis-spring-boot-starter</artifactId>
@@ -170,7 +170,7 @@ Map<String, Flower> listByName(String flowerName);
 </select>
 ```
 
-> 抽取引用：`<select/> + <include/>`
+> 抽取引用：`<sql/> + <include/>`
 
 ```xml
 <sql id="ref">
@@ -238,21 +238,21 @@ SELECT * FROM user WHERE name LIKE '%#{name}%' -- 张 -> "%'张'%" --> 错误
 > 存储过程
 
 ```xml
-<!-- 使用标签<select/> && statementType="CALLABLE" -->
-<select id="get_park_free_count0" resultType="java.util.Map" statementType="CALLABLE">
-    call get_park_free_count(#{parkId})
+<!-- 使用标签 select && statementType="CALLABLE" -->
+<select id="getStudentByTeacherId" statementType="CALLABLE" resultType="com.example.mybatis.po.Student">
+    {CALL get_student_by_teacher_id(#{teacherId})}
 </select>
 ```
 
 > 特殊符号
 
 ```shell
-#{}：预编译处理，防止SQL注入，安全。自动对传入参数添加一个单（双）引号。可以通过OGNL方式取值：参数.属性。
+`#{}`：预编译处理，防止SQL注入，安全。自动对传入参数添加一个单（双）引号。可以通过OGNL方式取值：参数.属性。
      原理是将sql中的 #{} 替换为 ?，然后调用 PreparedStatement.set() 方法来赋值。
 ```
 
 ```shell
-${}：sql字符串拼接。需手动添加单（双）引号。也可以通过OGNL方式取值：参数.属性。
+'${}'：sql字符串拼接。需手动添加单（双）引号。也可以通过OGNL方式取值：参数.属性。
      配合使用 statementType="STATEMENT"，原理是把 ${} 替换成变量的值。
 ```
 
@@ -263,7 +263,7 @@ select name from student where xCode = ?       --传值为'S123456'；
 -- 如果使用${}，那么生成的SQL为：
 select name from student where xCode = S123456 --直接字符串拼接
 
---所以，如果 xCode 的数据类型为varchar,那么使用${}就会报错。
+--所以，如果 xCode 的数据类型为varchar，那么使用${}就会报错。
 ```
 
 ```xml
@@ -275,8 +275,6 @@ select name from student where xCode = S123456 --直接字符串拼接
 </select>
 ```
 
-
-
 ##分页查询
 
 > `插件版`：在插件的拦截方法内拦截待执行的sql，然后重写sql，添加对应的物理分页语句和分页参数。
@@ -286,6 +284,16 @@ select name from student where xCode = S123456 --直接字符串拼接
     <groupId>com.github.pagehelper</groupId>
     <artifactId>pagehelper-spring-boot-starter</artifactId>
     <version>1.2.5</version>
+    <exclusions> <!-- 整合 mybatis-plus,排斥依赖,避免报错 -->
+        <exclusion>
+            <groupId>org.mybatis</groupId>
+            <artifactId>mybatis</artifactId>
+        </exclusion>
+        <exclusion>
+            <groupId>org.mybatis</groupId>
+            <artifactId>mybatis-spring</artifactId>
+        </exclusion>
+    </exclusions>
 </dependency>
 ```
 
@@ -295,15 +303,13 @@ public PageInfo<Person> listByPage(@PathVariable int pageNum, @PathVariable int 
     PageHelper.startPage(pageNum, pageSize); //查询之前设置：页码数，页容量
     List<Person> list = service.listAll();
 
-    //PageInfo包含了非常全面的分页属性: isFirstPage,hasPreviousPage,prePage,pages,startRow....
-    PageInfo<Person> pageInfo = new PageInfo<>(res);//包含导航页码的PageInfo结果集 - 详见附表
-    //int[] nums = pageInfo.getNavigatepageNums();//导航页码
-
+    //PageInfo包含了非常全面的分页属性【详见附表】
+    PageInfo<Person> pageInfo = new PageInfo<>(res);
     return pageInfo;
 }
 ```
 
-> `分插件版`：xml占位符 ? 不允许在关键字前后进行数学运算，所以需要在代码中完成计算，然后再传递到 xml 中
+> `非插件版`：xml占位符 ? 不允许在关键字前后进行数学运算，所以需要在代码中完成计算，然后再传递到 xml 中
 
 ```java
 int page = 2, size = 2;
@@ -323,45 +329,32 @@ List<People> list = service.listPage(map);
 
 ```java
 public class PageInfo<T> extends PageSerializable<T> {
-    //当前页
-    private int pageNum;
-    //每页的数量
-    private int pageSize;
-    //当前页的数量
-    private int size;
+    private int pageNum; //当前页
+    private int pageSize; //每页的数量
+    private int size; //当前页的数量
+
+    protected long    total; //总记录数
+    protected List<T> list; //结果集
 
     //由于startRow和endRow不常用，这里说个具体的用法
     //可以在页面中"显示startRow到endRow 共size条数据"
 
-    //当前页面第一个元素在数据库中的行号
-    private int startRow;
-    //当前页面最后一个元素在数据库中的行号
-    private int endRow;
-    //总页数
-    private int pages;
+    private int startRow; //当前页面第一个元素在数据库中的行号
+    private int endRow; //当前页面最后一个元素在数据库中的行号
 
-    //前一页
-    private int prePage;
-    //下一页
-    private int nextPage;
+    private int pages; //总页数
+    private int prePage; //前一页
+    private int nextPage; //下一页
 
-    //是否为第一页
-    private boolean isFirstPage = false;
-    //是否为最后一页
-    private boolean isLastPage = false;
-    //是否有前一页
-    private boolean hasPreviousPage = false;
-    //是否有下一页
-    private boolean hasNextPage = false;
+    private boolean isFirstPage = false; //是否为第一页
+    private boolean isLastPage = false; //是否为最后一页
+    private boolean hasPreviousPage = false; //是否有前一页
+    private boolean hasNextPage = false; //是否有下一页
 
-    //导航页码数
-    private int navigatePages;
-    //所有导航页号
-    private int[] navigatepageNums;
-    //导航条上的第一页
-    private int navigateFirstPage;
-    //导航条上的最后一页
-    private int navigateLastPage;
+    private int navigatePages; //导航页码数
+    private int[] navigatepageNums; //所有导航页号
+    private int navigateFirstPage; //导航条上的第一页
+    private int navigateLastPage; //导航条上的最后一页
 }
 ```
 
@@ -729,7 +722,7 @@ boolean saveBatch(List<Flower> list);
 > 一级缓存：作用域为一个 SqlSession，默认开启。
 
 ```shell
-MyBatis会在一次会话，一个SqlSession对象中创建一个本地缓存(local cache)，
+myBatis会在一次会话，一个SqlSession对象中创建一个本地缓存(local cache)，
 对于每一次查询，都会尝试根据查询的条件去本地缓存中查找是否在缓存中，
 如果在缓存中，就直接从缓存中取出，然后返回给用户；否则，从数据库读取数据，将查询结果存入缓存并返回给用户。
 
@@ -909,13 +902,10 @@ having("sum(age) > {0}", 11);  --having sum(age) > 11
 -- or（主动调用 or，表示紧接着下一个方法不是用 and 连接！默认是 and）
 eq("id",1).or().eq("name","老王"); --id = 1 or name = '老王'
 
-
 -- apply（拼接sql）
 apply("id = 1"); --id = 1
-apply("date_format(dateColumn,'%Y-%m-%d') = '2008-08-08'"); 
-                 --date_format(dateColumn,'%Y-%m-%d') = '2008-08-08'")
-apply("date_format(dateColumn,'%Y-%m-%d') = {0}", "2008-08-08");
-                 --date_format(dateColumn,'%Y-%m-%d') = '2008-08-08'")
+apply("date_format(dateColumn,'%Y-%m-%d') = '2008-08-08'"); --date_format(dateColumn,'%Y-%m-%d') = '2008-08-08'")
+apply("date_format(dateColumn,'%Y-%m-%d') = {0}", "2008-08-08"); --date_format(dateColumn,'%Y-%m-%d') = '2008-08-08'")
 
 -- last（只能调用一次，多次调用以最后一次为准。有sql注入的风险，请谨慎使用）
 last("limit 1");
@@ -938,6 +928,23 @@ set("name", "");          --数据库字段值变为 空字符串
 set("name", null);        --数据库字段值变为 null
 
 setSql("name = '老李头'"); --同上
+```
+
+> 分页插件
+
+```java
+@Bean
+public PaginationInterceptor paginationInterceptor() {
+    PaginationInterceptor paginationInterceptor = new PaginationInterceptor();
+    // paginationInterceptor.setLimit(最大单页限制数量，默认 500 条，小于 0 如 -1 不受限制);
+    return paginationInterceptor;
+}
+```
+
+```java
+Page<Student> page = new Page<>(2, 3); //第 2 页，每页 3 条
+// page.setOrders(Collections.singletonList(new OrderItem().setColumn("name"))); //设置排序字段
+Page<Student> studentIPage = (Page<Student>) studentMapper.selectPage(page, null);
 ```
 
 #通用Mapper

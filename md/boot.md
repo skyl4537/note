@@ -434,6 +434,33 @@ spring.datasource.druid.stat-view-servlet.deny=192.168.8.8
 spring.datasource.druid.stat-view-servlet.reset-enable=false
 ```
 
+> 配置数据库密码加密
+
+```shell
+#生成数据库密码的密文和公钥（密码包含特殊符号，用引号括起来）
+命令行切换到 'druid-1.1.18.jar' 所在的路径，然后打开 cmder 工具，执行以下命令：
+java -cp .\druid-1.1.18.jar com.alibaba.druid.filter.config.ConfigTools '#$%_BC13439677375'
+```
+
+```properties
+#boot 项目的配置文件
+spring.datasource.type=com.alibaba.druid.pool.DruidDataSource
+spring.datasource.driverClassName=com.mysql.cj.jdbc.Driver
+spring.datasource.url=jdbc:mysql://192.168.8.7:33306/test0806?useSSL=false&serverTimezone=GMT%2B8
+spring.datasource.username=bluecardsoft
+#spring.datasource.password=#$%_BC13439677375
+# 生成的加密后的密码
+spring.datasource.password=nKGSYPDvmT2ytyLKH4u5yL7/sJI8XcAbzKoaoiceNmmv0YayXMHbpj6Ijlz8I8RXaTWwQkTgfkmDDztCFbsITQ==
+# 生成的公钥
+public-key=MFwwDQYJKoZIhvcNAQEBBQADSwAwSAJBAKUx2YO6HlWkuePwxDD7l0FpfJ2t6w3nTZvy2uI1cw2dAHI4fnu4P4559RQKKutL8K9TtgUQN2xdxe+0xR5rbAMCAwEAAQ==
+# 配置 connection-properties，启用加密，配置公钥。
+spring.datasource.druid.connection-properties=config.decrypt=true;config.decrypt.key=${public-key}
+# 启用ConfigFilter
+spring.datasource.druid.filter.config.enabled=true
+```
+
+
+
 ##静态资源
 
 >默认目录：存放在以下目录的资源都可以直接访问

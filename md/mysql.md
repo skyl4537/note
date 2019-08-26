@@ -182,31 +182,22 @@
 
 > 名词解析
 
-DB：Data-Base，数据库，存储一系列有组织的数据
-DBMS：Data-Base-Manage-System，数据库管理系统软件，如：Mysql，Oracle，sql-server
-SQL：Structure-Query-Language，结构化查询语言，与数据库通信
+
 
 > 基础语法
 
-不区分大小写。建议关键字大写，表名和列名小写。每条命令使用分号结尾。单引号和双引号都可以表示字符串。
 
-mysql的字段名、表名通常不需要加任何引号，如果非要加上引号，必须加反引号。
-
-mysql的别名可不加引号，如果加，单引号和双引号以及反引号都可以。别名含有特殊字符，则必须使用双引号。
 
 > linux环境mysql日志配置在`my.cnf 或 mysql.cnf`
 
 ```sql
-find / -name my.cnf(mysql.cnf) --> 查找这两个文件所在位置
-log-error=/var/log/mysql.log   --> 在上述两个文件中配置
+
 ```
 
 > 远程登录
 
 ```sql
--- GRANT [权限内容] ON [库名.表名] TO [用户名@'IP地址'] IDENTIFIED BY ['密码']WITH GRANT OPTION;
--- 赋予用户名 MAO，密码 MIAOMIAO 的用户可以在任意设备上操作所有数据库表的权限
-GRANT ALL PRIVILEGES ON *.* TO MAO@'%' IDENTIFIED BY 'MIAOMIAO' WITH GRANT OPTION;
+
 ```
 
 > 完全卸载
@@ -401,62 +392,30 @@ ALTER TABLE `coupon` ADD UNIQUE key (索引名); -- 新增 唯一索引
 
 > sql分类
 
-- DDL：Data-Define-Languge，数据定义语言。                如，create，drop，alter
-- DML：Data-Manipulate-Language，数据操作语言。     如，insert，update，delete
-- DQL：Data-Query-Language，数据查询语言。              如，select
-- TCL：Transaction-Control-Language，事务控制语言。 如，commit，rollback    
-
 ##DDL定义
 
 > CREATE
 
 ```sql
--- CREATE TABLE 表名(字段 类型 约束 COMMENT 列注释, ...) COMMENT 表注释
 
-DROP TABLE IF EXISTS flower; -- 先删除
-CREATE TABLE flower(
-    id INT(10)  PRIMARY KEY auto_increment COMMENT '编号', -- 主键自增，字段注释
-    name VARCHAR(30) NOT NULL COMMENT '花名',
-    price FLOAT NOT NULL DEFAULT 0.0 COMMENT '价格', -- 默认价格0.0
-    production VARCHAR(50) NOT NULL COMMENT '原产地'
-) COMMENT '花花'
-
-DESC flower; -- DESC 查看表的详细信息
 ```
 
 > DROP
 
 ```sql
-DROP TABLE IF EXISTS flower; --删除表
+
 ```
 
 > ALTER：ALTER TABLE tbName `ADD|CHANGE|MODIFY|DROP` COLUMN 列名 [ 列类型 约束]
 
 ```sql
-ALTER TABLE tbName ADD COLUMN 列名 列类型 [列参数] [NOT NULL DEFAULT]; --增加列
 
-ALTER TABLE tbName CHANGE COLUMN 旧列名 新列名 列类型 [列参数] --修改列名（注意，新列的类型）
-
-ALTER TABLE tbName MODIFY COLUMN 列名 新列类型 [列参数] --修改列类型
-
-ALTER TABLE tbName DROP COLUMN 列名; --删除列
-
-ALTER TABLE tbName RENAME TO tbNames; -- 修改表名
 ```
 
 > LIKE：表的复制
 
 ```sql
-CREATE TABLE flower2 LIKE flower; -- 仅复制表的整体结构
 
-CREATE TABLE flower3
-SELECT * FROM flower; -- 复制表的整体结构 + 数据
-
-CREATE TABLE flower4
-SELECT id,name FROM flower WHERE 0; -- 仅赋值表的部分结构（id，name两列）
-
-CREATE TABLE flower3
-SELECT id,name FROM flower WHERE name='太阳花'; -- 复制表的部分结构 + 数据
 ```
 
 
@@ -466,42 +425,21 @@ SELECT id,name FROM flower WHERE name='太阳花'; -- 复制表的部分结构 +
 >INSERT：两种语法
 
 ```sql
--- 列与值要严格对应。如果没有显示指明列名，则代表插入所有的列。
-INSERT INTO flower VALUES('牵牛花',1.1,'山西'); -- 错误写法，自增主键也得显示赋值 DEFAULT
-INSERT INTO flower VALUES(DEFAULT,'牵牛花',1.1,'山西');
 
--- 显示指定列名。对于Nullable列，如不指定则默认插入NULL
-INSERT INTO flower(id,name,price) VALUES(DEFAULT,'牵牛花',1.1);
 ```
 
 ```sql
--- 另一种插入方式
-INSERT INTO flower(name,price,production)
-SELECT '向日葵',5.9,'大理';
 
-INSERT INTO flower
-SET `name`='牡丹花',price=1.3*6,production='杭州'; --具体详见练习15
 ```
 
 ```sql
--- 两种插入方式比较：
--- (1).第一种方式支持批量插入，第二种不支持
--- (2).第一种方式支持子查询，第二种不支持
 
-INSERT INTO flower VALUES(DEFAULT,'牵牛花',1.1,'山西'), -- 1.批量插入
-(DEFAULT,'喇叭花',1.2,'山西'),
-(DEFAULT,'太阳花',1.3,'辽宁'); 
-
-INSERT INTO flower(name,price,production)
-SELECT '向日葵',(SELECT 1.0*5),'大理'; -- 2.子查询
 ```
 
 > UPDATE
 
 ```sql
-UPDATE flower
-SET price=5.3,production='云南'
-WHERE name LIKE '%向日葵%'; -- -- 修改字段值，必须添加条件，否则全表修改
+
 ```
 
 > Delete
@@ -511,20 +449,11 @@ DELETE FROM flower WHERE id=3; --单表删除
 ```
 
 ```sql
-DELETE b,bo -- 删除张无忌及其女友信息。若只删除张无忌，则 DELETE bo。多表删除
-FROM beauty b JOIN boys bo ON bo.bid=b.boy_id
-WHERE bo.bname='张无忌';
+
 ```
 
 ```sql
-DELETE FROM flower;    -- 清空表1
-TRUNCATE TABLE flower; -- 清空表2
 
--- DELETE 可以加 WHERE 过滤条件，TRUNCATE 不可以。
--- DELETE 可以roll back回滚。TRUNCATE 速度更快，不可恢复，清空后释放内存。
--- DELETE 删除有返回值。TRUNCATE 删除没有。
-
--- DELETE 清空表后，添加新的数据时自增列接着自增。TRUNCATE 则是从1开始重新计数。
 ```
 
 
@@ -824,15 +753,10 @@ SELECT
     ) memo
 ```
 ```sql
--- 利用三目函数 IF(e1, e2, e3)
-SELECT IF((SELECT memo FROM passage_set WHERE mark="park_number") IS NULL,
-    (SELECT memo FROM system_set WHERE mark="park_number"),
-    (SELECT memo FROM passage_set WHERE mark="park_number")) memo
+
 ```
 ```sql
--- 利用函数 IFNULL(e1, e2) 
-SELECT IFNULL ((SELECT memo FROM passage_set WHERE mark="park_number"),
-    (SELECT memo FROM system_set WHERE mark="park_number")) memo
+
 ```
 
 > IS NULL 或 IS NOT NULL
@@ -841,63 +765,34 @@ SELECT IFNULL ((SELECT memo FROM passage_set WHERE mark="park_number"),
 SELECT * FROM student WHERE `name` IS NOT NULL;
 ```
 
-> CONCAT 连接符：`NULL和任何值相加，结果都为NULL`
+> CONCAT 连接符：
 
 ```sql
-SELECT 5+'aa'; -- 对于非数值的一方，作取0处理。最终结果：5
-SELECT NULL+5; -- NULL和任何值相加，结果都为NULL
 
-SELECT CONCAT(first_name, last_name) AS 姓名 FROM student; -- 将查询结果拼接
 ```
 
 > BETWEEN...AND...（`包括临界值 [5,10]`）
 
 ```sql
-SELECT id FROM student WHERE id BETWEEN 5 AND 10;
+
 ```
 
 > IN 区间取值，包含临界值
 
 ```sql
-SELECT * FROM student WHERE tid in(2, 3);
+
 ```
 
 > CASE THEN - 两种格式：(1).简单CASE函数。(2).CASE搜索函数。`容易忘记 END 结束符`
 
 ```sql
--- 简单CASE函数 --> 相当于Switch
-SELECT employee_id,
-    (CASE sex
-        WHEN '1' THEN '男'
-        WHEN '0' THEN '女'
-        ELSE '其他' END) sex
-FROM employees
 
--- CASE搜索函数 --> 相当于if-else ---> 两者区别：前者适合离散的等值条件，后者适合逻辑逻辑条件
-SELECT employee_id,
-    (CASE
-        WHEN sex=1 THEN '男'
-        WHEN sex=0 THEN '女'
-        ELSE '其他' END) sex
-FROM employees
 ```
-
-
-
-
 
 > 数学函数（`a%b = a-a/b*b`）
 
 ```sql
-SELECT ROUND(-1.45) n1, ROUND(-1.65) n2; -- -1，-2 -->先绝对值，再四舍五入，最后加符号
-SELECT ROUND(-1.455, 2) n1; -- -1.46 -->保留两位小数
 
-SELECT CEIL(-1.451) n1;  -- -1 -->向上取整，返回 >= 参数的最小整数
-SELECT FLOOR(-1.451) n1; -- -2 -->向下取整，... <= ............
-
-SELECT TRUNCATE(-1.499, 1) n1; -- -1.4 -->截断，保留一位小数
-
-SELECT MOD(-10, -3) n1; -- -1 -->取余%，取余操作的符号位和被除数一致。 a%b = a-a/b*b
 ```
 
 ```java
@@ -908,88 +803,17 @@ double d = Math.ceil(-1.455);  //-1.0
 double d = Math.floor(-1.455); //-2.0 -->同sql
 ```
 
-
-
-
-
 > 字符串命令（`SUBSTR() 方法是 SUBSTRING() 的简写，索引从1开始`）
 
 ```sql
-SELECT LENGTH('测试') AS length;            -- 6 --> 以'字节'为单位（汉字：utf-8占3字节，GBK占2）
-SELECT CHAR_LENGTH('测试') AS charLength;    -- 2 --> '字符'【推荐】。VARCHAR(10)，10指的是字符。
 
-SELECT CONCAT('aaa', 'vvv') con; -- 字符串拼接
-
-SELECT INSTR('ASDFGH', 'SD') AS instr; -- 2 -->子串第一次出现的索引，找不到返回0
-
-SELECT LEFT('RUNOOB', 3) AS leftStr;      -- RUN --> 左侧前3位字符
-SELECT RIGHT('RUNOOB', 3) AS rightStr;    -- OOB --> 右侧后3......
-SELECT MID('RUNOOB', 2, 3) AS midStr;     -- UNO --> 中间第2位字符开始(从1开始计数),截取3位
-
-SELECT SUBSTR('RUNOOB', 2) AS subStr;     -- UNOOB
-SELECT SUBSTR('RUNOOB', 2, 3) AS subStr;  -- UNO --> 同 MID()
-SELECT SUBSTR('RUNOOB', -3) AS subStr;    -- OOB --> 同 RIGHT()
-
-SELECT SUBSTRING_INDEX('192.168.5.120', '.', 2) AS subIndex;  -- 192.168 --> 截第二个'.'之前
-SELECT SUBSTRING_INDEX('192.168.5.120', '.', -2) AS subIndex; -- 5.120   --> ...........后
-SELECT SUBSTRING_INDEX('192.168.5.120', '..', 2) AS subIndex; -- 192.168.5.120 -> 无返回所有
-
-SELECT REPLACE('192.168.5.120','.','') INTO @repStr; -- 1921685120 --> 替换所有
-
-SELECT UCASE("runoob") AS uCase; -- RUNOOB
-SELECT LCASE("RUNOOB") AS lCase; -- runoob --> 大小写转换
-
-SELECT REPLACE('192.168.5.123','.','') INTO @device_id; -- 1921685123
-SELECT SUBSTR(@device_id, LENGTH(@device_id)-8, 9) INTO @device_id; -- 921685123
 ```
-
-```sql
--- 查询邮箱中的用户名。两个函数：字符串截取，字符索引
-SELECT SUBSTR(email,1, INSTR(email,'@')-1) s
-FROM employees;
-```
-
-
 
 > 时间命令
 
 ```sql
--- NOW(); 当前的日期和时间   2008-12-29 16:25:46
--- CURDATE(); 当前的日期    2008-12-29
--- CURTIME(); 当前的时间    16:25:46
 
-SELECT YEAR('2019-4-23 20:41:20') y; -- 2019 -->截取年份
-
--- DATE(); 提取字符串中的日期部分. SELECT DATE("2019-01-11 14:38:11") AS Date        
--- EXTRACT(); 提取字符串的各时间部分.
-SET @now=NOW();
-SELECT EXTRACT(YEAR FROM @now) AS nowYear, -- 2019
-       EXTRACT(HOUR FROM @now) AS nowHour; -- 14
-
--- DATE_ADD() / DATE_SUB(); 给定日期添加(减少)指定的时间间隔
-SELECT DATE_ADD(@now, INTERVAL 1 DAY);    -- 1天后的NOW.(-1表示1天前)
-
--- DATEDIFF(); 两个日期之间的天数
-SELECT DATEDIFF('2008-12-30','2008-12-31') AS DiffDate -- -1
-
--- DATE_FORMAT(); 日期时间格式化
-SELECT DATE_FORMAT(NOW(),'%Y-%m-%d %H:%i:%s') AS FormatNow; -- 2019-01-11 14:56:19
-
--- 将日期格式的字符，转换成指定格式的日期
-SELECT STR_TO_DATE('23/04/2019', '%d/%m/%Y') str2date; -- 2019-04-23
 ```
-
-| 序号 | 格式符 |         功能          |
-| :--: | :----: | :-------------------: |
-|  1   |   %Y   |       4位的年份       |
-|  2   |   %y   |       2位的年份       |
-|  3   |   %m   | 月份（01，02…11，12） |
-|  4   |   %c   |  月份（1，2…11，12）  |
-|  5   |   %d   |     日（01，02…）     |
-|  6   |   %H   |   小时（24小时制）    |
-|  7   |   %h   |   小时（12小时制）    |
-|  8   |   %i   |   分钟（00，01…59）   |
-|  9   |   %s   |    秒（00，01…59）    |
 
 
 
@@ -1376,23 +1200,6 @@ CROSS JOIN departments d; -- 交叉连接 a*b
 
 ##常用函数
 
-```sql
-IFNULL(v1,v2) -- 如果 v1 的值不为 NULL，则返回 v1，否则返回 v2。
-
-SELECT IFNULL(null,'Hello Word'); -- Hello Word
-```
-
-```sql
-ISNULL(expr) -- 判断表达式是否为 NULL，true则返回1，false返回0。
-
-SELECT ISNULL('a'); -- 1
-```
-
-```sql
-IF(expr,v1,v2) -- 如果表达式 expr 成立，返回结果 v1；否则，返回结果 v2。
-
-SELECT IF(1 > 0,'正确','错误'); -- 正确
-```
 ## 函数原理
 
 > IN语句内部原理（数据量 A >> B）。如果确定且有限的集合时，可以使用 IN（0，1，2）

@@ -56,8 +56,6 @@ String val1 = String.format("%.2f", 1.1250);
 System.out.println(val0 + " - " + val1); //1.12 - 1.13
 ```
 
-
-
 > &，&&：都是逻辑 "与" 运算符，但后者为短路运算
 
 ```java
@@ -100,10 +98,28 @@ int x = 2, y = 0; //|：2-1； ||：2-1
 ```shell
 switch：支持 byte，char,short,int（都可转换成 int），enum，String（jdk7新增）
 
-break ：当遇到break，switch语句终止。如果没有break出现，程序会继续执行下一条case语句，直到出现break语句。
+break ：当遇到break，switch语句终止。如果没有break出现，程序会继续执行下一条case语句，'直到出现 break 语句'。
 ```
 
-> for 循环
+> for
+
+```shell
+for(初始化； boolean表达式; 更新){ }
+
+'初始化'   ：对循环可能要用到的值进行初始化，相当于for循环内部的一个局部变量
+'布尔表达式'：当表达式结果为 true 时继续执行，为 false 时终止循环
+'更新'     ：在一次循环结束后进行更新，一般用于修改初始化值，从而影响循环布尔表达式的值
+```
+
+```java
+int count = 0;
+int num = 0;
+for (int i = 0; i < 100; i++) {
+    num = ++num; //先自增，再使用
+    count = count++; //先使用，再自增
+}
+System.out.println(num +" - "+ count); //100 - 0
+```
 
 ```java
 //如何跳出当前的多重嵌套循环？让外层的循环条件表达式的结果，可以受到里层循环体代码的控制。
@@ -122,6 +138,62 @@ public void test() {
     }
 }
 ```
+> final & finally & finalize
+
+```shell
+'finally'：异常处理的一部分，代码肯定会被执行，常用于释放资源。
+'finalize'：Object类的一个方法，用于垃圾回收。
+```
+
+```shell
+'final-类'：不可被继承，即 final 类没有子类。 final 类中的所有方法默认全是 final 方法。
+'final-方法'：不能被重写。#其中 private 和 static 方法默认就是 final
+
+'final-变量'：即常量。值类型，不能修改其值；引用类型，不能修改其对应的堆内存地址，即不能重新再赋值。
+             #但是，该内存地址所指向的那个对象还是可以变的。就像你记住了人家的门牌号，但你不能管人家家里人员数量。
+```
+
+```java
+public void doFinal(final int i, final StringBuilder sb) {
+    // i = i + 1; //编译报错，因为final修饰的基本类型  --> 值不能变
+    // sb = new StringBuilder(); //同上，修饰引用类型 --> 堆内存地址不能变,即引用不能变
+
+    sb.append("java"); //编译通过 -> 引用变量所指向的对象中的内容，可以改变
+}
+```
+```shell
+#为什么内部线程中引用外部对象要加final修饰符呢？
+被内部线程引用的外部对象受到外部线程作用域的制约，有其特定的生命周期。
+
+当外部对象在外部线程中生命周期已经结束，而内部线程中还在持续使用，怎样解决问题？'内部线程变量要访问一个已不存在的外部变量？'
+在外部变量前添加 final 修饰符，其实内部线程使用的这个变量就是外部变量的一个'复制品'，即使外部变量生命周期已经结束，内部复制品依然可用。
+```
+
+>finally
+
+```java
+int num = 5;
+try {
+    // int _res = num;
+    // return _res;
+    return num + 1; //这一语句 等价为 上面两行语句，所以在 finally 块中对 num 进行操作将不起作用。返回 6
+} finally {
+    num = num + 2;
+    // return num + 2; //7 --> 若 finally 块中也有 return 语句，则以 finally 为主，即返回 7
+}
+```
+
+> instanceof
+
+```java
+A a = new B(); //class B extends A{}
+System.out.println(a instanceof A); //true. instanceof 用来判断对象是否是一个类的一个实例
+```
+
+
+
+
+
 ## Integer
 
 >基本数据类型：三大类，八小种。引用类型：类，接口，数组。
@@ -290,6 +362,131 @@ for (EnumTest value : values) {
 ```
 
 ## Exception
+
+
+
+# 高级阶段
+
+##概念区分
+
+> 抽象类 & 接口
+
+```shell
+二者的定义 #抽象类使用关键字 abstract，接口使用 interface
+共同点    #不能实例化；用于被其他类实现和继承，以多态的方式使用；都可以包含抽象方法
+
+#不同点    单继承，多实现
+接口不能包含构造器。    抽象类可以包含构造器（让抽象类的子类调用这些构造器来完成属于抽象类的初始化操作）
+接口不能包含初始化块。  抽象类可以包含初始代码块
+
+接口只能定义静态常量，不能定义普通成员变量。抽象类既可以定义普通成员变量，也可以定义静态常量
+接口只包含抽象方法、静态方法和默认方法（java8新增），不能为普通方法提供方法实现。抽象类完全包含普通方法
+```
+
+
+
+
+
+##方法相关
+
+> 方法传参：递遵循值传递原则`（传递的是值或引用的拷贝，不改变原有值）`
+
+```shell
+基本类型传递的是数据值的拷贝。在方法内对值类型操作不会改变原有值。
+
+引用类型传递的是该对象的堆内存地址，即引用拷贝，但指向同一个对象。所以，在方法内对引用类型进行'重新赋引用'，不会改变原有值。
+但是'对原有引用的属性进行操作'时，可改变这个引用的属性值。
+```
+
+```java
+private void doSth(int i, String s, Person p) {
+    i += 1;
+    s += "hello";
+    p = new Person("li", 20);
+    // p.age = 30; //将改变原有引用的属性值，其他则不会改变原有值
+}
+```
+
+>重写 & 重载`（与返回值无关）`
+
+```shell
+'重写'：在子类中，出现和父类中一摸一样的方法。
+'重载'：同一类中，出现多个方法名一样，但参数列表（参数类型 + 个数 + 顺序）不一样的方法。
+```
+
+```java
+private + static + final 各修饰的方法，子类都不可重写。
+其中，子类中的 private + static 同名方法，表示重新定义的方法，与父类无关。而子类的 final 方法则编译报错。
+
+protected, default, public 对子类可见，可重写。但重写时不能缩小修饰符范围，即不能将父类 public 方法重写为 protected 方法。
+
+//当方法被重写后，调用子类实例的同名方法时会优先调用子类的重写方法，不会再调用父类的方法。
+```
+
+```java
+public class Parent {
+    private void fun1(){}
+    void fun2(){}
+    protected void fun3(){}
+    public static void fun4(){}
+}
+
+//fun1：私有权限，无法被子类继承，因此无法被重写
+//fun2：包权限，因此在同一个包内继承时，可以重写，但其他包继承无法重写
+//fun3：子类访问权限，因此无论如何继承，都可以被重写。
+//fun4：虽然是公有的访问权限，但为静态方法，无法被继承。
+```
+
+```java
+public void test() {
+    Father father = new Son(); //多态
+
+    //所有属性 和 静态方法 --> 看左，即和父类保持一致，调用父类的
+    System.out.println(father.staticNum);
+    System.out.println(father.num);
+    father.doStatic(); //FATHER-STATIC
+
+    //非静态方法 --> 若子类有重写，则调用子类方法。否则调用父类方法
+    father.doSth(); //Father 或 SON
+}
+```
+
+> 构造方法
+
+```shell
+'this'：子类调用【子类】的同名成员或方法。'super'： 子类调用【父类】的同名成员或方法。
+构造方法间调用使用 this() 或 super(name) 语句，并且该语句只能放在构造函数第一行。
+
+#对于子类的构造函数，不管无参还是有参，如果没有显示指明调用哪个父类构造时，默认调用父类无参构造。
+#当编译器尝试在子类中往这两个构造方法插入 super() 方法时，因为父类没有默认无参构造方法，所以编译器报错。下面 DEMO
+```
+
+```java
+class Super {
+    private int id;
+    public Super(int id) { this.id = id; } //没有无参构造
+}
+
+class Sub extends Super {    
+    public Sub() { } //编译错误
+
+    public Sub(int id) { } //编译错误
+}
+```
+
+> static 方法
+
+```shell
+#static 方法不可以调用非 static 方法
+因为非 static 方法是要与对象关联在一起的，必须创建一个对象后，才可以在该对象上进行方法调用。
+而 static 方法调用时不需要创建对象，可以通过类直接调用。
+
+在 static 方法中调用非 static 方法时，可能还没有实例化对象， 这就与以上逻辑不符。
+```
+
+```shell
+
+```
 
 
 

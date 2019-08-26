@@ -308,209 +308,53 @@ public String toString() {
 >多态原理
 
 ```shell
-同一方法可以根据调用者的不同而具有不同的实现。
 
-实现的原理是【动态绑定】，程序调用的方法在运行期才动态绑定。
-
-追溯源码可以发现，JVM 通过参数的自动转型来找到合适的办法。
 ```
 
 > 抽象类和接口的异同？
 
 ```java
-(2).共同点：不能实例化；以多态的方式使用
-(3).不同点：单继承；多实现
 
-(1).二者的定义
-    a.声明的方式：抽象类使用关键字 abstract，接口使用关键字 interface.
-    b.内部的结构：如下所示
-    
-interface MyInterface {
-    //java7 -> 只能声明全局常量（public static final，可省略不写）和抽象方法（public abstract）
-    public static final int STATIC_NUM = 7;
-
-    void method();
-
-    //java8 -> 声明 静态方法 和 默认方法
-    static void staticMethod() {
-        System.out.println("java8-静态方法");
-    }
-
-    default void defaultMethod() {
-        System.out.println("java8-默认方法");
-    }
-
-    //java9 -> 声明 私有方法（静态和非静态两种）
-    private static void privateMethod() {
-        //当有多个 java8的静态方法和默认方法时，可以将冗余代码提取到通用的 java9的私有方法 中
-        System.out.println("java9-私有方法"); 
-    }
-}
 ```
 
 > java 只支持`单继承`，不支持多继承。 但支持`多层继承`和`多实现`。
 
-当多个父类中定义了相同函数名的函数，而各个函数的实现各不相同，则子类就不确定要调用哪一个。
 
-**抽象类**：不能创建实例和允许有 abstract 方法的普通类（可以有非抽象方法）。继承抽象类就必须实现其中的抽象方法，除非子类也是抽象类。
-
-**接口：** 可看作一个特殊的抽象类，方法全是抽象的。一个类可以实现多个接口。接口`extends`接口。
 
 ```java
-class AAA {}
 
-abstract class ABC extends AAA { //抽象类 extends 具体类
-    abstract void abc();
-}
-
-abstract class CDE extends ABC { //抽象类 extends 抽象类，但没有实现其抽象方法，默认可不写父类的抽象。（两个方法 1+1）
-    void cde() {
-        System.out.println("cde");
-    }
-}
-
-class DEF extends CDE { //具体类 extends 抽象类，必须得实现父类的抽象方法（包括隐式的 abc()方法）。
-    @Override
-    void abc() {}
-}
 ```
 
 > this & super
 
-- **this：** 子类调用【子类】的同名成员或方法。**super：** 子类调用【父类】的...。
-- 构造函数间调用使用 `this() 或 super(name)` 语句，并且该语句只能放在构造函数第一行。
-- 对于子类的构造函数，不管无参还是有参，如果没有显示指明调用哪个父类构造时，默认调用父类无参构造。
+- ​
 
 ```java
-class Outter {
-    int num = 10;
 
-    class Inner {
-        int num = 20;
-        
-        void show() {
-            int num = 30;
-            
-            System.out.println(num); //30
-            System.out.println(this.num); //20
-            System.out.println(Outter.this.num); //10 --> 切记不能使用 super
-}}}
 ```
 
 ```java
-class Super {
-    private int id;
 
-    public Super(int id) {
-        this.id = id;
-    }
-}
-
-class Sub extends Super {    
-    public Sub() { //编译错误
-    }
-    public Sub(int id) { //编译错误
-    }
-}
-
-//对于子类，不管是无参构造还是有参构造，如果没有显示指明调用哪个父类构造时，都会默认调用父类的无参构造
-//当编译器尝试在子类中往这两个构造方法插入super()方法时，因为父类没有默认无参构造方法，所以编译器报错
 ```
 
 > 方法传参，递遵循值传递原则（`传递的是值或引用的拷贝，不改变原有值`）。
 
-- 基本类型传递的是数据值的拷贝。在方法内对值类型操作不会改变原有值。
-- 引用类型传递的是该对象的堆内存地址，即引用拷贝，但指向同一个对象。所以，在方法内对引用类型进行重新赋引用，不会改变原有值。
-- 但是对原有引用的属性进行操作时，可改变这个引用的属性值。
-
 ```java
-private void doSth(int i, String s, Person p) {
-    i += 1;
-    s += "hello";
-    p = new Person("li", 20);
-    // p.age = 30; //将改变原有引用的属性值，其他则不会改变原有值
-}
+
 ```
 
 > 方法重载：`方法重载与方法的返回值类型无关`
 
 ```java
-'重写'：在子类中，出现和父类中一摸一样的方法。
-'重载'：同一类中，出现多个方法名一样，但参数列表（参数类型 + 个数 + 顺序）不一样的方法。
 
-方法包括：  修饰符（可选）， 返回值类型，方法名，参数列表，方法体。
-
-假设定义了两个只有返回类型不一样的方法： int add(Object o); 和 boolean add(Object o); 当调用者不关心返回值时，写作：add(obj);编译器如何区分到底调用的是哪个方法？？
 ```
 
 > 方法重写
 
 ```java
-final 修饰的方法不可以被重写，如果子类对 final 修饰的方法进行重写，则编译报错。
 
-private 修饰的方法对于子类不可见，不可重写。
-同样的， private 和 static 方法名同时出现在父类和子类，表示重新定义的方法，与父类无关。
-
-protected, default, public 对子类可见，可重写。但重写时不能缩小修饰符范围，即不能将父类 public 方法重写为 private 方法。
-当方法被重写后，调用子类实例的同名方法时会优先调用子类的重写方法，不会再调用父类的方法。
 ```
 
-```java
-public class Parent {
-    private void fun1(){}
-    void fun2(){}
-    protected void fun3(){}
-    public static void fun4(){}
-}
-
-//fun1：私有权限，无法被子类继承，因此无法被重写
-//fun2：包权限，因此在同一个包内继承时，可以重写，但其他包继承无法重写
-//fun3：子类访问权限，因此无论如何继承，都可以被重写。
-//fun4：虽然是公有的访问权限，但为静态方法，无法被继承。
-```
-
-```java
-static class Father {
-    public static int staticNum = 6;
-    public int num = 6;
-
-    public static void doStatic() {
-        System.out.println("FATHER-STATIC");
-    }
-
-    public void doSth() {
-        System.out.println("FATHER");
-    }
-}
-
-static class Son extends Father {
-    public static int staticNum = 8;
-    public int num = 8;
-
-    //不能重写父类的 static 方法，只是重新定义
-    public static void doStatic() {
-        System.out.println("SON-STATIC");
-    }
-
-    // @Override
-    // public void doSth() {
-    //     System.out.println("SON");
-    // }
-}
-
-@Test
-public void test() {
-    Father father = new Son();
-
-    //所有属性 和 静态方法 --> 看左，即和父类保持一致，调用父类的
-    System.out.println(father.staticNum); //6
-    System.out.println(father.num); //6
-    father.doStatic(); //FATHER-STATIC
-
-    //非静态方法 --> 若子类有重写，则调用子类方法。否则调用父类方法
-    father.doSth(); //Father 或 SON
-}
-```
 ## Integer
 
 > 基本数据类型：三大类，八小种。引用类型：类，接口，数组。
@@ -580,10 +424,7 @@ int l = ++i; //先++，再使用
 > static 方法是否可以调用非 static 方法？反之可以。
 
 ```
-不可以。因为非 static 方法是要与对象关联在一起的，必须创建一个对象后，才可以在该对象上进行方法调用。
-而 static 方法调用时不需要创建对象，可以通过类直接调用。
 
-在 static 方法中调用非 static 方法时，可能还没有实例化对象， 这就与以上逻辑不符。
 ```
 
 >静态变量 && 实例变量
@@ -612,17 +453,11 @@ class Test{
 >final，finally，finalize
 
 ```java
-'final-类'：不可被继承，即 final 类没有子类。 final 类中的所有方法默认全是final方法。
 
-'final-方法'：不能被重写。其中 private 和 static 方法默认就是 final
-
-'final-变量'：即常量。值类型，不能修改其值；引用类型，不能修改其对应的堆内存地址，即不能重新再赋值。
 ```
 
 ```java
-'finally'：异常处理的一部分，代码肯定会被执行，常用于释放资源。
 
-'finalize'：Object类的一个方法，用于垃圾回收。
 ```
 
 >字符串一经创建就不可改变 `final String`。以下代码，原始的 String对象 中的内容到底变了没有？
@@ -637,25 +472,15 @@ str = str + "world!";
 
 > final修饰变量
 
-final 修饰值类型（基本数据类型）的变量，那么这个变量的值就定了，不能变了。
-
-final 修饰引用类型的变量，那么该变量存的是一个内存地址，该地址就不能变了。但是，该内存地址所指向的那个对象还是可以变的。就像你记住了人家的门牌号，但你不能管人家家里人员数量。
-
 ```java
-public void doFinal(final int i, final StringBuilder sb) {
-    // i = i + 1; //编译报错，因为final修饰的基本类型 --> 值不能变
-    // sb = new StringBuilder(); //同上，修饰引用类型 --> 堆内存地址不能变,即引用不能变
 
-    sb.append("java"); //编译通过 -> 引用变量所指向的对象中的内容，可以改变
-}
 ```
 
 
 > 为什么内部线程中引用外部对象要加final修饰符呢
 
 ```java
-被内部线程引用的外部对象受到外部线程作用域的制约，有其特定的生命周期。
-当外部对象在外部线程中生命周期已经结束，而内部线程中还在持续使用，怎样解决问题？'内部线程变量要访问一个已不存在的外部变量？'在外部变量前添加 final 修饰符，其实内部线程使用的这个变量就是外部变量的一个'复制品'，即使外部变量生命周期已经结束，内部复制品依然可用。
+
 ```
 
 
@@ -680,11 +505,7 @@ try {
 
 > `for(1初始化; 2(5)布尔表达式; 4更新){ 3 }` 等同于 `初始化; while(布尔表达式){ 更新; }`
 
-**初始化**：对循环可能要用到的值进行初始化，相当于for循环内部的一个局部变量
 
-**布尔表达式**：当表达式结果为true时继续执行，为false时终止循环
-
-**更新**：在一次循环结束后进行更新，一般用于修改初始化值，从而影响循环布尔表达式的
 
 ```java
 @Test
@@ -699,15 +520,7 @@ public void test() {
 ```
 
 ```java
-public void test() {
-    int count = 0;
-    int num = 0;
-    for (int i = 0; i < 100; i++) {
-        num = ++num; //先自增，再使用
-        count = count++; //先使用，再自增
-    }
-    System.out.println(num +" - "+ count); //100 - 0
-}
+
 ```
 
 ## switch
@@ -720,29 +533,12 @@ public void test() {
 
 
 
-
-
-
-
-
 ## instanceof
 
-> instanceof关键字可以用来判断对象是否是一个类的一个实例。
+> instanceof 关键字可以用来判断对象是否是一个类的一个实例。
 
 ```java
-class A{}
-class B extends A{}
-class C extends A{}
-class D extends B{}
 
-@Test
-public void test() {
-    A d = new D();
-    System.out.println(d instanceof A); //true
-    System.out.println(d instanceof B); //true
-    System.out.println(d instanceof C); //false
-    System.out.println(d instanceof D); //true
-}
 ```
 
 
