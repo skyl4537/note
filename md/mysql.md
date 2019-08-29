@@ -607,61 +607,25 @@ drop function 函数名;
 >分支结构：依据一定条件选择执行路径，会依据给定的条件来选择执行那些sql语句
 
 ```sql
-if 条件 then -- if中的条件基本可以参照select语句的while子句的条件。什么in \ not in \ = \ != 等都可以用。
-    sql语句
-[elseif 条件 then
-    sql语句]
-[else
-    sql语句]
-end if;
+
 ```
 
 ```sql
-create procedure pro_test(in a char(1))
-begin
-    if a in('a','b') then
-        select 1; -- 注意每个结束符号 ;
-    else 
-        select 2;
-    end if;
-end;
 
-call pro_test('5'); -- 执行
 ```
 
 ```sql
-CASE cnt WHEN 0 THEN -- case when语句
-    SET res='登录失败';
-ELSE
-    SET res='登录失败';
-END CASE;
+
 ```
 
 > 循环结构：在程序中需要反复执行某个功能而设置的一种程序结构。mysql中循环结构用于循环多次运行同一sql语句。
 
 ```sql
-CREATE PROCEDURE pro_while(IN p_count INT)
-BEGIN
-    DECLARE i INT DEFAULT 0;
-    WHILE i<p_count DO
-        INSERT INTO student(s_name,s_pwd) VALUES(CONCAT('john',i),'123');
-        SET i=i+1; -- 循环体内 ++
-    END WHILE;
-END;
+
 ```
 
 ```sql
---LEAVE相当于 break; ITERATE相当于 continue
-CREATE PROCEDURE pro_while(IN p_count INT)
-BEGIN
-    DECLARE i INT DEFAULT 0;
-    a:WHILE i<p_count DO
-        INSERT INTO student(s_name,s_pwd) VALUES(CONCAT('john',i),'123');
-        IF i>20 THEN LEAVE a; -- 添加 leave 语句，跳出循环
-        END IF;
-        SET i=i+1;
-    END WHILE;
-END;
+
 ```
 
 # 查询命令

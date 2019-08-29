@@ -1654,27 +1654,36 @@ pool.shutdown(); //取消整体任务
 public static void main(String[] args) {
     String key = "JOB_KEY";
     final Map<String, Future> futures = new HashMap<>(); //job_map
+    ScheduledExecutorService pool = Executors.newScheduledThreadPool(5);
 
     LocalTime init = LocalTime.now();
-    System.out.println("init: " + init);
+    System.out.println("INIT : " + init);
 
-    ScheduledExecutorService pool = Executors.newScheduledThreadPool(5);
     ScheduledFuture<?> future = pool.scheduleWithFixedDelay(() -> {
         LocalTime now = LocalTime.now();
-        System.out.println("now : " + now);
+        System.out.println("NOW  : " + now);
 
         if (ChronoUnit.MILLIS.between(init, now) > 3 * 1000) { //启动3s后，停止任务
             futures.get(key).cancel(true);
             pool.shutdown();
-            System.out.println("-------------");            
+            System.out.println("STOP : " + LocalTime.now());
         }
-    }, 0, 3, TimeUnit.SECONDS);
+    }, 1, 3, TimeUnit.SECONDS);
 
     //先于任务执行，即任务执行过程中，future肯定已放入Map
-    System.out.println(LocalTime.now() + " 0 " + futures.size());
+    System.out.println("START: " + LocalTime.now() + " " + futures.size());
     futures.put(key, future);
-    System.out.println(LocalTime.now() + " 1 " + futures.size());
+    System.out.println("END  : " + LocalTime.now() + " " + futures.size());
 }
+```
+
+```sh
+INIT : 16:10:47.218
+START: 16:10:47.229 0
+END  : 16:10:47.229 1  #已放入map
+NOW  : 16:10:48.229
+NOW  : 16:10:51.233
+STOP : 16:10:51.234    #停止任务
 ```
 
 ##@Scheduled

@@ -234,7 +234,9 @@ Date editTime = new Date();
 Integer i0 = new Integer(3);
 Integer i1 = Integer.valueOf(3); //装箱：基本类型 --> 包装类
 int num0 = i0.intValue();        //拆箱：包装类 --> 基本类型
+```
 
+```java
 Integer i = 4; //自动装箱：相当于 Integer i = Integer.valueOf(4);
 i = i + 5;     //自动拆箱：等号右边，将i对象转成基本数值 i.intValue() + 5，加法运算完成后，再次装箱，把基本数值转成对象
 ```
@@ -300,7 +302,123 @@ String octal = Integer.toOctalString(100); //144，十进制转八进制
 String hex = Integer.toHexString(100);     //64，十进制转十六进制
 ```
 
+## String
 
+> 字符串对象一旦创建（字符串常量池中），就无法修改。
+
+```shell
+String类的所有方法都没有改变字符串本身的值，而是返回了一个新的String对象。
+
+'String对象不可变（√）' 与 'String对象的引用变量不可变（×）'。
+
+final 类不一定线程安全，如: StringBuilder。
+#常见 final 类：LocalDateTime，StringBuffer，StringBuilder（非线程安全），Integer等。
+```
+
+```shell
+#String 不可变特性的应用
+'高效性'：不可变能保证其 hashcode 永远保持一致，不需要重新计算。这就使得字符串很适合作为 Map 中的 Key，字符串的处理速度要快过其它的键对象。
+
+'安全性'：String被广泛的使用在其他Java类中充当参数。比如网络连接、打开文件等操作。如果字符串可变，那么类似操作可能导致安全问题。
+
+'线程安全'：因为不可变对象不能被改变，所以他们可以自由地在多个线程之间共享。不需要任何同步处理。
+```
+
+> 字符串常量池
+
+```sh
+#Java为了避免产生大量的String对象，设计了一个字符串常量池。
+工作原理是这样的，创建一个字符串时，JVM首先为检查字符串常量池中是否有'值相等'的字符串，如果有，则不再创建，直接返回该字符串的引用地址；
+如果没有，则创建，然后放到字符串常量池中，并返回新创建的字符串的引用地址。
+
+当遇到 'new String("Hollis");' 时，还会在内存（不是字符串常量池中，而是在堆里面）上创建一个新的String对象，
+存储"hollis"，并将内存上的引用地址返回。
+```
+
+```sh
+字符串常量池中的对象是'在编译期确定'，在类被加载时创建。如果类加载时，该字符串常量在常量池中已存在，那就跳过，不会重新创建一个。
+
+与之相反，堆中的对象是'在运行期才确定'，在代码执行到 new 的时候创建的。
+```
+
+> `intern()`：①.将字符串字面量放入常量池（如果池中没有的话）②.返回这个常量的引用。
+
+```java
+String s1 = "Hollis"; 
+String s2 = new String("Hollis");
+String s3 = new String("Hollis").intern();
+
+System.out.println(s1 == s2); //false
+System.out.println(s1 == s3); //true
+```
+
+```sh
+#如何理解 String 的 intern()方法？
+可以简单的理解 s1 和 s3 做的事情是一样的。
+都是定义一个字符串对象，然后将'字符串字面量'保存在常量池中，并把这个'字面量的引用'返回给定义好的对象引用。
+
+对于 s3，在不调 intern()情况，s3指向的是JVM在堆中创建的那个对象的引用的（如图中的s2）。
+但是当执行了 intern()方法时，s3将指向字符串常量池中的那个字符串常量。
+```
+
+```sh
+#String s = new String("hollis"); 定义了几个对象？
+先在字符串常量池中查找是否含有'值相同'的字符串常量，然后再在内存中（堆）创建一个String对象
+```
+
+![](assets/string1.jpg)
+
+> 字符串拼接
+
+```java
+String s1 = "abc";
+String s2 = "ab" + "c";
+
+String s3 = "ab";
+String s4 = s3 + "c";
+
+System.out.println(s1 == s2); //true
+System.out.println(s1 == s4); //false
+```
+
+```sh
+对于字符串常量相加的表达式，不是等到运行期才去进行加法运算处理，而是在编译期直接将其编译成一个这些常量相连的结果。
+因此，String s2 = "ab" + "c"; 可转化为 String s2 = "abc"; 但是， s4 并不是字符串常量相加，不能转化。
+```
+
+> StringBuilder
+
+```sh
+#内部拥有一个数组用来存放字符串内容。当进行字符串拼接时，直接在数组中加入新内容，并自动维护数组的扩容，不会产生中间字符串。
+```
+
+```sh
+String          线程安全     直接进行字符串拼接，会产生大量中间字符串，并且时间消耗长。
+StringBuffer    线程安全     支持同步锁，性能稍差。
+StringBuilder   线程不安全   单线程进行大量字符串操作时，推荐使用（√）。
+```
+
+```java
+String res = str0 + str1;
+
+String res = new StringBuilder(str0).append(str1).toString(); //底层实现
+```
+
+```sh
+#循环中拼接字符串
+每次循环都需要创建一个 StringBuilder 对象（创建对象需要耗费时间和内存）。
+随着循环次数的增大，res字符串也就越长，把res中的字符复制到新建的 StringBuilder 中花费的时间也就越长。
+而且，StringBuilder(res).append(str).toString(); 会创建一个临时的字符串，随着循环次数的增加，
+这个操作花费的时间也会越来越长。总之，随着循环变量 i 的增大，每次循环会变得越来越慢。
+```
+
+> 字符串替换
+
+```sh
+replace();      #参数是 char 和 CharSequence，即支持字符和字符串的替换
+replaceAll();   #参数是 regex，即基于正则表达式的替换
+replaceFirst(); #参数也是 regex，但不同的是只替换第一个，即基于正则替换第一个满足条件的
+```
 
 
 
@@ -369,12 +487,31 @@ for (EnumTest value : values) {
 
 ##概念区分
 
+>== & equals()
+
+```shell
+#==  System.out.println(2 == 2.0); //true
+当比较的是基本数据类型时，比较的是值；
+当比较的是引用数据类型时，比较的是地址值。
+```
+
+```shell
+#equals
+不能用于基本数据类型的比较；
+当比较的是引用数据类型时，默认也是比较地址值（即调用==）。
+只不过像String、Date、File、包装类等都重写了Object类中的 equals()。实际开发中，常常需要根据业务需要重写 equals()。
+```
+
+
+
 > 抽象类 & 接口
 
 ```shell
 二者的定义 #抽象类使用关键字 abstract，接口使用 interface
 共同点    #不能实例化；用于被其他类实现和继承，以多态的方式使用；都可以包含抽象方法
+```
 
+```shell
 #不同点    单继承，多实现
 接口不能包含构造器。    抽象类可以包含构造器（让抽象类的子类调用这些构造器来完成属于抽象类的初始化操作）
 接口不能包含初始化块。  抽象类可以包含初始代码块
@@ -645,8 +782,232 @@ public boolean add(E e) {
 
 
 
+# IO
 
+## IO
 
+> 文件拷贝：字节流 + 字符流
+
+```sh
+按流向        ：输入流，输出流。
+按操作数据     ：字节流 （如音频，图片等），字符流（如文本）。
+
+字节流的抽象基类：InputStream，OutputStream。字符流的抽象基类：Reader，Writer。
+```
+
+```java
+try (BufferedInputStream bis = new BufferedInputStream(new FileInputStream(src));
+     BufferedOutputStream bos = new BufferedOutputStream(new FileOutputStream(dest))) {
+    int len;
+    byte[] buf = new byte[1024 * 4]; //字节流
+    while (-1 != (len = bis.read(buf))) {
+        bos.write(buf, 0, len);
+    }
+} catch (IOException e) {
+    System.out.println("系统找不到指定的文件：" + src);
+}
+```
+
+```java
+try (BufferedReader br = new BufferedReader(new FileReader(src));
+     BufferedWriter bw = new BufferedWriter(new FileWriter(dest))) {
+    String line;
+    while (null != (line = br.readLine())) { ///如果已到达流末尾，则返回 null
+        bw.write(line);
+        bw.newLine(); //由于 readLine()方法不返回行的终止符，所以手动写入一个行分隔符
+
+        bw.flush(); //只要用到缓冲区技术，就一定要调用 flush() 方法刷新该流中的缓冲
+    }
+} catch (IOException e) {
+    System.out.println("系统找不到指定的文件：" + src);
+}
+```
+
+> 转换流：字节流 ---> 字符流
+
+```java
+BufferedReader br = new BufferedReader(new InputStreamReader(new FileInputStream(filePath)));
+```
+
+> close() & flush()
+
+```sh
+close(); #先刷新一次缓冲区，再关闭流对象。关闭之后，流对象将不可用
+flush(); #仅仅刷新缓冲区（一般写字符时，先写入缓冲区）。刷新之后，流对象还可以继续使用
+```
+
+> 字符编码
+
+```sh
+GBK   ：占用两个字节，比 GB2312 编码多了很多汉字，如"镕"字。
+UTF-8 ：Unicode一种具体的编码实现。是一种变长编码方式，使用 1-4 个字节进行编码，有利于节约网络流量。
+```
+
+```sh
+#UTF-8编码规则
+① 对于单字节的符号，字节的第一位设为0，后面7位为这个符号的unicode码。因此对于英语字母，UTF-8编码和ASCII码是相同的。
+② 对于n字节的符号，第一个字节的前n位都设为1，第n+1位设为0，后面字节的前两位一律设为10。剩下的没有提及的二进制位，全部为这个符号的unicode码。
+
+假如有个字符占用3个字节，则：第一个字节以 1110 开始，第二三个字节以 10 开始。
+```
+
+```java
+byte[] bytes = "联通".getBytes("GBK");
+for (byte aByte : bytes) {
+    // 11000001 10101010 11001101 10101000 --> 两个汉字，4个字节
+    System.out.println(Integer.toBinaryString(aByte & 255));
+}
+```
+
+## File
+
+> 获取文件路径：`getCanonicalPath()`
+
+```java
+//返回定义时的路径，可能是相对路径，也可能是绝对路径，这个取决于定义时用的是相对路径还是绝对路径。
+//如果定义时用的是绝对路径，那么结果跟getAbsolutePath()一样
+file.getPath(); // ..\test1.txt
+```
+
+```java
+//返回的是定义时的路径对应的相对路径，但不会处理"."和".."的情况
+file.getAbsolutePath(); // F:\sp_project\spring\..\test1.txt
+```
+
+```java
+//返回的是规范化的绝对路径，相当于将getAbsolutePath()中的"."和".."解析成对应的正确的路径
+file.getCanonicalPath(); // F:\sp_project\test1.txt
+```
+
+> 常用方法
+
+```java
+boolean Mkdir();    //用于创建单层目录
+boolean Mkdirs();   //.......多.....
+
+boolean renameTo(); //重命名
+```
+
+##Properties
+
+> 继承Hashtable，所以具有 map 集合的特点
+
+```java
+String filePath = "application.properties";
+Properties properties = new Properties();
+InputStream in = getClass().getClassLoader().getResourceAsStream(filePath);
+if (null == in) {
+    System.out.println("配置文件不存在：" + filePath);
+} else {
+    try {
+        properties.load(in);
+        String property = properties.getProperty("server.port", "8080"); //arg2: 默认值
+        System.out.println("读取配置：" + property);
+    } catch (IOException e) {
+        e.printStackTrace();
+    }
+}
+```
+
+## Convert
+
+> int，byte[] `大端模式：高位在前，低位在后。【常用模式】`
+
+```java
+public static byte[] int2Bytes(int value, int len) {
+    if (len > 4 || len <= 0) throw new RuntimeException("int 最大长度4个字节");
+
+    byte[] bytes = new byte[len];
+    for (int i = 0; i < len; i++) {
+        bytes[i] = (byte) ((value >> 8 * (len - 1 - i)) & 0xFF);
+    }
+    return bytes;
+}
+```
+
+```java
+public static int bytes2Int(byte[] bytes) {
+    byte[] dest = new byte[4];
+    System.arraycopy(bytes, 0, dest, 4 - bytes.length, bytes.length);
+    return (dest[0] & 0xFF) << 24
+            | ((dest[1] & 0xFF) << 16)
+            | ((dest[2] & 0xFF) << 8)
+            | (dest[3] & 0xFF << 0);
+}
+
+```
+
+> int，byte[] `小端模式：低位在前，高位在后`
+
+```java
+public static byte[] int2Bytes(int value, int len) {
+    if (len > 4 || len <= 0) throw new RuntimeException("int 最大长度4个字节");
+    
+    byte[] bytes = new byte[len];
+    for (int i = 0; i < len; i++) {
+        bytes[i] = (byte) ((value >> 8 * i) & 0xFF);
+    }
+    return bytes;
+}
+
+```
+
+```java
+//offset: 从数组的第offset位开始
+public static int bytes2Int(byte[] bytes, int offset) {
+    return (bytes[offset + 0] & 0xFF)
+            | ((bytes[offset + 1] & 0xFF) << 8)
+            | ((bytes[offset + 2] & 0xFF) << 16)
+            | ((bytes[offset + 3] & 0xFF) << 24);
+}
+
+```
+
+> int，Hex
+
+```java
+public static String int2Hex(int value) {
+    return Integer.toHexString(value);
+}
+```
+
+```java
+private static int hex2Int(String hexString) {
+    return Integer.parseInt(hexString, 16);
+}
+```
+
+> String，Hex
+
+```java
+public static String string2Hex(String value) {
+    StringBuilder hexString = new StringBuilder();
+    for (char aChar : value.toCharArray()) {
+        hexString.append(Integer.toHexString(aChar));
+    }
+    return hexString.toString();
+}
+```
+
+> String，byte[]
+
+```java
+byte[] bytes = "hello".getBytes(Charset.forName("utf-8"));
+```
+
+```java
+String s = new String(bytes, Charset.forName("utf-8"));
+```
+
+> 校验和
+
+```java
+//第13位 -> 校验和 -> 前面所有字节的异或
+data[13] = data[0];
+for (int i = 1; i < 13; i++) {
+    data[13] = (byte) (data[13] ^ data[i]);
+}
+```
 
 
 # Reflect
@@ -667,7 +1028,7 @@ public class Person implements Cloneable{} //实现克隆接口
 Person clone = (Person) person.clone();
 ```
 
-> （3）反射方式：动态创建，效率相对低下，耗时是传统方式的3倍
+> （3）反射方式：动态创建，效率相对低下，耗时是传统方式的 `3` 倍
 
 ```java
 //先获取 clazz 对象（4种方式，常用1和2），再创建此 clazz 对象所表示的类的一个新实例
@@ -676,12 +1037,12 @@ Class<?> clazz = getClass().getClassLoader().loadClass("com.example.reflect.Pers
 Class<? extends clazz> clazz = new Person().getClass(); //3
 Class<Person> clazz = Person.class; //4
 
-Object instance = clazz.newInstance(); //创建实例
+Object instance = clazz.newInstance(); //创建实例。当没有无参构造时，将报错
 ```
 
 ## 常用方法
 
-> 构造器 & 属性 & 方法
+> 构造器
 
 ```java
 aClass.getConstructors();        //构造器：public
@@ -695,6 +1056,8 @@ Person p = (Person) constructor.newInstance(); //等同于 new Person();
 Constructor<?> constructor = aClass.getConstructor(String.class, Integer.class);
 Object instance = constructor.newInstance("li", 18); //new Person("li", 18);
 ```
+
+> 属性
 
 ```java
 //public static String city;
@@ -715,6 +1078,8 @@ young.setAccessible(true); //暴力膜
 young.set(p2, true);
 System.out.println(young.get(p2));
 ```
+
+> 方法
 
 ```java
 //public static String staticHello() {}

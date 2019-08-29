@@ -741,30 +741,30 @@
     
     
 #3-11S
-    常用注解
-        @Component: 创建类对象,相当于配置<bean/>        
-        @Controller: 写在控制器类上. (功能同 @Component)
-        @Service: 写在 ServiceImpl 类上. (...)
-        @Repository: 写在数据访问层类上. (...,mybatis不用,hibernate用)
+    // 常用注解
+        // @Component: 创建类对象,相当于配置<bean/>        
+        // @Controller: 写在控制器类上. (功能同 @Component)
+        // @Service: 写在 ServiceImpl 类上. (...)
+        // @Repository: 写在数据访问层类上. (...,mybatis不用,hibernate用)
         
-        @Resource: java注解
-            (1).不需要写对象的 get/set
-            (2).默认按照 byName 注入; 如果没有名称对象,按照 byType 注入
-            //建议把 对象名称 和 spring容器中对象名(类型名)相同
+        // @Resource: java注解
+            // (1).不需要写对象的 get/set
+            // (2).默认按照 byName 注入; 如果没有名称对象,按照 byType 注入
+            // //建议把 对象名称 和 spring容器中对象名(类型名)相同
         
-        @Autowired: spring注解
-            (1).不需要写对象的 get/set
-            (2).默认按照 byType 注入.
+        // @Autowired: spring注解
+            // (1).不需要写对象的 get/set
+            // (2).默认按照 byType 注入.
         
-        @Value(): 获取 properties 文件中内容
+        // @Value(): 获取 properties 文件中内容
         
-        @Aspect() 定义切面类
-        @Pointcut() 定义切点
-        @Before() 前置通知
-        @After 后置通知
-        @AfterReturning 后置通知,必须切点正确执行
-        @AfterThrowing 异常通知
-        @Arround 环绕通知
+        // @Aspect() 定义切面类
+        // @Pointcut() 定义切点
+        // @Before() 前置通知
+        // @After 后置通知
+        // @AfterReturning 后置通知,必须切点正确执行
+        // @AfterThrowing 异常通知
+        // @Arround 环绕通知
     
 #3-12S
     Ajax
@@ -1088,7 +1088,7 @@ new出来的对象再注入其他bean就会 发生获取不到的现象。所以
     
     服务监听：检测失效服务
 
-@RequestBody 注解必须配合 @PostMapping 使用，不能用 @GetMapping
+// @RequestBody 注解必须配合 @PostMapping 使用，不能用 @GetMapping
 
 #多模块
     product-server：所有业务逻辑

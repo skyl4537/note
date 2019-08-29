@@ -22,36 +22,10 @@
 ```xml
 <dependencies>
     <dependency>
-        <groupId>org.mybatis.spring.boot</groupId>
-        <artifactId>mybatis-spring-boot-starter</artifactId>
-        <version>1.3.2</version>
-    </dependency>
-    <dependency>
-        <groupId>mysql</groupId>
-        <artifactId>mysql-connector-java</artifactId>
-        <scope>runtime</scope> <!--只在运行时使用-->
-    </dependency>
-    <dependency>
-        <groupId>com.alibaba</groupId>
-        <artifactId>druid-spring-boot-starter</artifactId>
-        <version>1.1.10</version>
-    </dependency>
-
-    <dependency>
-        <groupId>org.springframework.boot</groupId>
-        <artifactId>spring-boot-starter-web</artifactId>
-    </dependency>
-    <dependency>
-        <groupId>org.projectlombok</groupId>
-        <artifactId>lombok</artifactId>
-        <scope>provided</scope>
-        <optional>true</optional> <!--依赖不会传递，依赖该项目的项目需要重新引入该依赖-->
-    </dependency>
-    <dependency>
         <groupId>org.springframework.boot</groupId> <!-- 热部署 -->
         <artifactId>spring-boot-devtools</artifactId>
-        <scope>runtime</scope> <!--只在运行时使用-->
-        <optional>true</optional> <!--只在当前项目生效，不传递-->
+        <scope>runtime</scope> <!-- 只在运行时使用 -->
+        <optional>true</optional> <!--只在当前项目生效，不会传递-->
     </dependency>
     <dependency>
         <groupId>org.springframework.boot</groupId>
@@ -131,30 +105,25 @@ info.random=${random.int[1000,9999]}
 
 ```yaml
 k:(空格)v #表示一对键值对(空格必须有)，其中属性和值大小写敏感。
+```
 
-#1.数组(List/Set)的标准写法：
-pets: 
- - cat
- - dog
+```yaml
+pets: [cat,dog,pig] #数组（List/Set）的行内写法
+```
 
-#数组的行内写法：
-pets: [cat,dog,pig]
+```yaml
+${random.int}; ${random.int(10)}; ${random.int(10,100)} #随机数
+```
 
-#2.随机数 
-${random.int}; ${random.int(10)}; ${random.int(10,100)}
-
-#3.引用配置变量（无则取默认值）
+```yaml
 person.age = ${random.int}
-person.last_name = 张三${person.age:18}
+person.last_name = 张${person.age:18} #引用配置变量（无则取默认值）
+```
 
-#4.转义（层级关系使用 2个或4个 空格）
+```yaml
 spring:
   datasource:
-    url: jdbc:mysql://192.168.8.7:33306/test0329?useSSL=false&allowMultiQueries=true
-    username: bluecardsoft
-    password: "#$%_BC13439677375" #""双引号里的内容不会转义符，''单括号则会
-    driver-class-name: com.mysql.jdbc.Driver
-    type: com.alibaba.druid.pool.DruidDataSource
+    password: "#$%_BC13439677375" #""双引号里的内容不会转义符，''单括号则会。（层级关系使用 2个或4个 空格）
 ```
 
 ## config
@@ -314,6 +283,67 @@ int str; //获取字符串常量'abc'
 @Value("#{info.remoteAddress？:'127.0.0.1'}") //获取bean的属性，默认'127.0.0.1'
 String address;
 ```
+## 加密配置
+
+> 配置文件中敏感信息的加密
+
+```sh
+druid 也可以做数据库明文加密，jasypt 任何配置都可以加密。
+```
+
+```xml
+<dependency>
+    <groupId>com.github.ulisesbocchio</groupId>
+    <artifactId>jasypt-spring-boot-starter</artifactId>
+    <version>2.1.1</version>
+</dependency>
+```
+
+```properties
+#配置文件中指定加密时使用的盐（salt）
+jasypt.encryptor.password=EbfYkitulv73I2p0mXI50JMXoaxZTKJ0
+```
+
+> 生成加密后的秘钥
+
+```java
+BasicTextEncryptor encryptor = new BasicTextEncryptor();
+encryptor.setPassword("EbfYkitulv73I2p0mXI50JMXoaxZTKJ0"); //盐
+
+String username = encryptor.encrypt("bluecardsoft"); //加密
+System.out.println(username); //同一个字符加密多次结果不一样，但解密后是一样的
+
+username = encryptor.decrypt(username); //解密
+System.out.println(username);
+```
+
+> 用生成的密钥替换配置文件的相应位置
+
+```properties
+#ENC()是固定写法，（）里面是加密后的信息
+spring.datasource.username=ENC(kZ11PHFbXpNzLsJ7bKq2atpDiCzJOAs8)
+```
+
+>盐的安全性
+
+```sh
+#盐值（jasypt.encryptor.password）直接写在配置文件中不安全，可以使用以下两个办法
+```
+
+```sh
+#（1）在项目部署的时候使用命令传入salt值
+java -jar -Djasypt.encryptor.password=G0CvDz7oJn6 xxx.jar
+```
+
+```sh
+#（2）在服务器的环境变量里配置，进一步提高安全性
+vim /etc/profile
+export JASYPT_PASSWORD = G0CvDz7oJn6 #/etc/profile 文件末尾插入
+source /etc/profile #刷新
+
+java -jar -Djasypt.encryptor.password=${JASYPT_PASSWORD} xxx.jar
+```
+
 ##常用接口
 
 >匹配带后缀url访问：http://192.168.8.7:8090/spring/test.do，其中 .do 可以省略
@@ -434,7 +464,7 @@ spring.datasource.druid.stat-view-servlet.deny=192.168.8.8
 spring.datasource.druid.stat-view-servlet.reset-enable=false
 ```
 
-> 配置数据库密码加密
+> 数据库密码加密
 
 ```shell
 #生成数据库密码的密文和公钥（密码包含特殊符号，用引号括起来）
@@ -450,9 +480,9 @@ spring.datasource.url=jdbc:mysql://192.168.8.7:33306/test0806?useSSL=false&serve
 spring.datasource.username=bluecardsoft
 #spring.datasource.password=#$%_BC13439677375
 # 生成的加密后的密码
-spring.datasource.password=nKGSYPDvmT2ytyLKH4u5yL7/sJI8XcAbzKoaoiceNmmv0YayXMHbpj6Ijlz8I8RXaTWwQkTgfkmDDztCFbsITQ==
+spring.datasource.password=nKGSYPDvmT2ytyLKH4u5yL7/s
 # 生成的公钥
-public-key=MFwwDQYJKoZIhvcNAQEBBQADSwAwSAJBAKUx2YO6HlWkuePwxDD7l0FpfJ2t6w3nTZvy2uI1cw2dAHI4fnu4P4559RQKKutL8K9TtgUQN2xdxe+0xR5rbAMCAwEAAQ==
+public-key=MFwwDQYJKoZIhvcNAQEBBQADSwAwSAJBAKUx2YO6H
 # 配置 connection-properties，启用加密，配置公钥。
 spring.datasource.druid.connection-properties=config.decrypt=true;config.decrypt.key=${public-key}
 # 启用ConfigFilter

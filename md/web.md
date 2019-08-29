@@ -13,6 +13,19 @@ ServerSocket 指定端口，启动后等待客户端连接
 封装响应结果 Response，发送到客户端
 ```
 
+> web.xml
+
+```xml
+<servlet>
+    <servlet-name>helloServlet</servlet-name>
+    <servlet-class>com.x.javaweb.HelloServlet</servlet-class>
+</servlet>
+<servlet-mapping>
+    <servlet-name>helloServlet</servlet-name>
+    <url-pattern>/hello</url-pattern>
+</servlet-mapping>
+```
+
 > 代码实现
 
 ```java
@@ -24,9 +37,9 @@ public class WebServer {
 
     //模拟从 web.xml 读取映射关系.<请求url, 处理Servlet>
     static {
-        servletMap.put("/hello", "webserver.HelloServlet");
-        servletMap.put("/login", "webserver.LoginServlet");
-        servletMap.put("/error", "webserver.ErrorServlet");
+        servletMap.put("/hello", "com.x.javaweb.HelloServlet");
+        servletMap.put("/login", "com.x.javaweb.LoginServlet");
+        servletMap.put("/error", "com.x.javaweb.ErrorServlet");
     }
 
     public static void main(String[] args) {
@@ -41,11 +54,11 @@ public class WebServer {
 
         while (isRunning) {
             Socket socket = serverSocket.accept();
-            pool.execute(() -> dispatcherServlet(socket));
+            pool.execute(() -> dispatchServlet(socket));
         }
     }
 
-    private void dispatcherServlet(Socket socket) {
+    private void dispatchServlet(Socket socket) {
         Request request = new Request(socket);
         Response response = new Response(socket);
 
@@ -130,7 +143,7 @@ resp.sendRedirect("重定向地址"); //重定向
 jsp善于处理页面显示，Servlet善于处理业务逻辑，二者结合使用。
 
 执行时，先转化为java文件，再编译成class文件。
-转化过程：java代码照搬；html + css + 表达式等通过流输出'out.write()'
+转化过程：java代码照搬，html + css + 表达式等通过流输出'out.write()'
 ```
 
 > 9大内置对象
@@ -142,7 +155,9 @@ ServletContext application;
 HttpSession session;
 HttpServletRequest request;            #同一个请求
 PageContext pageContext;               #当前页面的上下文.(可从中获取到其余 8 个隐含对象)
+```
 
+```sh
 JspWriter out = response.getWriter();  #用于页面显示信息，out.println();
 
 HttpServletResponse response;          #几乎不用（X）
@@ -219,7 +234,7 @@ Web容器中包含了多个Servlet，特定的HTTP请求该由哪一个Servlet�
 ```
 
 ```shell
-Servlet本质就是javax.servlet包下的一个接口，工作原理就是：反射+回调。目前所有的MVC框架的Controller基本都是这么个模式。
+Servlet本质就是 javax.servlet 包下的一个接口，工作原理就是：反射+回调。目前所有的MVC框架的 Controller 基本都是这么个模式。
 
 Servlet的执行是由容器（如Tomcat）通过 web.xml 的配置反射出 Servlet 对象后回调其 service()方法。
 ```
@@ -238,7 +253,6 @@ Servlet的执行是由容器（如Tomcat）通过 web.xml 的配置反射出 Ser
 
 ```shell
 负责处理客户请求。当客户请求到来时，调用某个 Servlet，并把 Servlet 的执行结果返回给客户.
-典型的 Servlet 应用是监听器，过滤器的实现
 
 Servlet 本质是一个java接口类，部署运行在Servlet容器中
 Servlet 容器管理Servlet的整个生命周期，并负责调用Servlet方法响应客户端请求
@@ -256,15 +270,8 @@ destory()  #只被调用一次。应用被卸载前调用。用于释放Servlet�
 
 >Servlet容器默认采用`单实例多线程`的方式处理多个请求
 
-```shell
-当web服务器启动的时候（或客户端发送请求到服务器时），Servlet就被加载并实例化（只存在一个Servlet实例）
-
-容器初始化Servlet。主要就是读取配置文件
-（如tomcat，可以通过servlet.xml的<Connector>设置线程池中线程数目，初始化线程池；通过web.xml，初始化每个参数值等等）；
-
-当请求到达时，Servlet容器通过调度线程（Dispatchaer Thread）调度它管理下的线程池中等待执行的线程（Worker Thread）给请求者；
-线程执行Servlet的service()方法；
-请求结束，放回线程池，等到被调用；
+```sh
+同一浏览器多个窗口，同时访问，多线程'顺序'执行。不同浏览器，同时访问，多线程'并行'执行。
 ```
 
 > BOOTの自定义Servlet
@@ -277,7 +284,6 @@ destory()  #只被调用一次。应用被卸载前调用。用于释放Servlet�
 @WebServlet(name = "testServlet", urlPatterns = "/test")
 public class TestServlet extends HttpServlet {
 
-    //每次请求都会调用。用于响应客户端请求
     @Override
     protected void service(HttpServletRequest req, HttpServletResponse resp) throws IOException {
         resp.setContentType("text/html;charset=utf-8");
@@ -291,39 +297,34 @@ public class TestServlet extends HttpServlet {
 ```java
 /**
  * @param name          Servlet别名
- * @param urlPatterns   访问url，同一个Servlet可以被映射到多个URL上。其中'/'代表当前web应用的根目录
+ * @param urlPatterns   访问url，可以有多个。其中'/'代表当前web应用的根目录
  * @param loadOnStartup Servlet实例被创建的时机。默认-1
- *                      负数：在第一次请求时被创建
+ *                      负数   ：在第一次请求时被创建
  *                      正数或0：在当前应用被Servlet容器加载时创建实例，且数值越小越早被创建
- * @param initParams    配置Servlet的初始化参数，在init()方法中读取
+ * @param initParams    Servlet的初始化参数，在init()方法中读取
  */
 @WebServlet(name = "testServlet", urlPatterns = {"/test", "/servlet"}, loadOnStartup = -1,
             initParams = @WebInitParam(name = "name", value = "123"))
 ```
 
 ```xml
-<servlet> <!-- xml版本配置 -->
+<servlet>
     <servlet-name>testServlet</servlet-name>
     <servlet-class>com.x.javaweb.TestServlet</servlet-class>
-
     <init-param> <!--初始化参数. 此节点必须在<load-on-startup>之前-->
         <param-name>name</param-name>
         <param-value>123</param-value>
     </init-param>
-    <load-on-startup>-1</load-on-startup> <!--指定 Servlet 被创建的时机-->
+    <load-on-startup>-1</load-on-startup>
 </servlet>
-
 <servlet-mapping>
     <servlet-name>testServlet</servlet-name>
-    <url-pattern>/test</url-pattern> <!--访问路径. 其中'/'代表当前web应用的根目录-->
+    <url-pattern>/test</url-pattern>
 </servlet-mapping>
 ```
 
 ```java
-@Override
 public void init(ServletConfig config) {
-    System.out.println("生命周期 - init()");
-
     String user = config.getInitParameter("name"); //获取单个初始化参数. "123"
 
     Enumeration<String> names = config.getInitParameterNames(); //获取所有
@@ -331,76 +332,22 @@ public void init(ServletConfig config) {
         String name = names.nextElement();
         String value = config.getInitParameter(name);
     }
-    
+
     ServletContext servletContext = config.getServletContext(); //获取 ServletContext 对象
 }
 ```
 
->`ServletContext`：代表当前WEB应用，可以从中获取到应用的各个方面信息。如，web应用的初始化参数：`IoC容器也是配置在此`
 
-```xml
-<context-param> <!-- 配置web应用的初始化参数。与节点 servlet 同级-->
-    <param-name>driver</param-name>
-    <param-value>com.mysql.jdbc.Driver</param-value>
-</context-param>
-```
 
-```java
-public void init(ServletConfig config) throws ServletException {
-    ServletContext context = config.getServletContext();
-    String driver = context.getInitParameter("driver"); //获取单个初始化参数
+## Filter
 
-    Enumeration<String> names = context.getInitParameterNames(); //获取所有
-    while (names.hasMoreElements()) {
-        String name = names.nextElement();
-        String value = context.getInitParameter(name);
-    }
-}
-```
->ServletContext常用方法
-
-```java
-context.getContextPath(); //server.servlet.context-path=/demo
-```
-
-```java
-//F:\sp_project\webpark\src\main\webapp\demo.log
-context.getRealPath("abc.log"); //文件在服务器上的绝对路径，而非部署前路径
-```
-
-```java
-InputStream in = context.getResourceAsStream("my.properties"); //读取配置
-//InputStream in = getClass().getClassLoader().getResourceAsStream("my.properties"); //同上
-Properties properties = new Properties();
-properties.load(in);
-String url = properties.getProperty("info.url");
-```
-
-```java
-context.setAttribute("user", "123"); //属性相关的三个方法（设置，获取，移除）
-String user = (String) context.getAttribute("user");
-context.removeAttribute("user");
-```
+> 过滤器：对发送到 Servlet 的请求，以及对发送到客户端的响应进行拦截
 
 
 
+## Listener
 
-
-
-
-
-
-## filter
-
->过滤器：对发送到 Servlet 的请求，以及对发送到客户端的响应进行拦截
-
-
-
-
-
-## listener
-
-> Servlet监听器
+> 监听器
 
 ```shell
 #四大域对象: ServletContext; HttpSession; ServletRequest; PageContext
@@ -469,7 +416,56 @@ public class MyListener implements HttpSessionBindingListener, HttpSessionActiva
 
 
 
-## 表单提交
+## ServletContext
+
+>代表当前WEB应用，可以从中获取到应用的各个方面信息。如，web应用的初始化参数：`IoC容器也是配置在此`
+
+```xml
+<context-param> <!-- 配置web应用的初始化参数。与节点 servlet 同级-->
+    <param-name>driver</param-name>
+    <param-value>com.mysql.jdbc.Driver</param-value>
+</context-param>
+```
+
+> 从监听器 `ServletContextListener` 中获取web应用的初始化参数
+
+```java
+public void contextInitialized(ServletContextEvent sce) {
+    ServletContext sc = sce.getServletContext();
+    String driver = context.getInitParameter("driver"); //获取单个初始化参数
+
+    Enumeration<String> names = context.getInitParameterNames(); //获取所有
+    while (names.hasMoreElements()) {
+        String name = names.nextElement();
+        String value = context.getInitParameter(name);
+    }
+}
+```
+>常用方法
+
+```java
+context.getContextPath(); //server.servlet.context-path=/demo
+```
+
+```java
+//F:\sp_project\webpark\src\main\webapp\demo.log
+context.getRealPath("abc.log"); //文件在服务器上的绝对路径，而非部署前路径
+```
+
+```java
+InputStream in = context.getResourceAsStream("my.properties"); //读取配置
+//InputStream in = getClass().getClassLoader().getResourceAsStream("my.properties"); //同上
+Properties properties = new Properties();
+properties.load(in);
+String url = properties.getProperty("info.url");
+```
+
+```java
+context.setAttribute("user", "123"); //属性相关的三个方法（设置，获取，移除）
+String user = (String) context.getAttribute("user");
+context.removeAttribute("user");
+```
+## 表单重复提交
 
 > 表单重复提交的3种场景
 
@@ -537,15 +533,18 @@ public String token(HttpSession session) {
 
 
 
-#Spring
+# Spring
 
-## IoC
+## 概述
 
 > 轻量级框架
 
 ```shell
 #什么是轻量级
-非侵入式，不需要实现所使用框架的任何接口。这样，就算以后切换框架也勿需修改源码。
+非侵入式，不需要实现所使用框架的任何接口。这样，就算以后切换框架也不需要修改源码
+
+#每一层递进，都是代码重用的结果
+基础语法 --> 方法 --> 类 --> jar --> 框架 
 ```
 
 ```shell
@@ -557,41 +556,207 @@ public String token(HttpSession session) {
 框架：`区别与类库，里面有一些约束`。举例：框架是填空题
 ```
 
-```shell
-#每一层递进，都是代码重用的结果
-基础语法 --> 方法 --> 类 --> jar --> 框架 
-```
-
 > 基础概念
 
 ```shell
 Spring是一个 'IoC'（DI）和 'AOP' 容器框架。
 
+'非侵入式'     基于 Spring 开发的应用中的对象可以不依赖于 Spring 的 API
+'依赖注入'     DI——Dependency Injection，反转控制（IOC）思想的经典实现
+'面向切面编程' Aspect Oriented Programming——AOP
+'容器'        Sring 是一个容器，因为它包含并且管理应用对象的生命周期
+'组件化'      实现了使用简单的组件配置组合成一个复杂的应用。 在 Spring 中可以使用 XML 和 Java 注解组合这些对象
 ```
 
+## IOC
 
+> IOC & DI
 
+```sh
+#传统的资源查找方式是：组件主动的从容器中获取所需要的资源
+开发人员往往需要知道在具体容器中特定资源的获取方式，增加了学习成本，同时降低了开发效率。
 
+#IOC（反转控制）的查找方式：反转了资源的获取方向，改由容器主动的将资源推送给需要的组件
+开发人员不需要知道容器是如何创建资源对象的，只需要提供接收资源的方式即可，极大的降低了学习成本，提高了开发的效率
+```
 
-> IoC容器创建：`详见 Servlet`
+```sh
+# DI（Dependency Injection）依赖注入
+IOC 的另一种表述方式：即组件以一些预先定义好的方式（例如：setter 方法）接受来自于容器的资源注入。相对于 IOC 而言，这种表述更直接。
+
+IOC 描述的是一种思想，而 DI 是对 IOC 思想的具体实现。
+```
+
+> 常见概念
+
+```sh
+'BeanFactory'：IOC 容器的基本实现，是 Spring 内部的基础设施，是面向Spring 本身的，不是提供给开发人员使用的
+
+'ApplicationContext'：BeanFactory 的子接口，提供了更多高级特性。面向 Spring 的使用者，几乎所有场合都使用
+```
+
+```sh
+#ApplicationContext 的主要实现类
+'ClassPathXmlApplicationContext'：对应类路径下的 XML 格式的配置文件
+'FileSystemXmlApplicationContext'：对应文件系统中的 XML 格式的配置文件
+```
+
+```sh
+#ConfigurableApplicationContext
+ApplicationContext 的子接口，包含一些扩展方法
+refresh() 和 close() 让 ApplicationContext 具有启动、关闭和刷新上下文的能力
+```
+
+```sh
+#WebApplicationContext
+专门为 WEB 应用而准备的，它允许从相对于 WEB 根目录的路径中完成初始化工作
+```
+
+> `IOC容器创建`：详见 SSM-web
+
+> `依赖注入`の通过Bean的属性赋值
 
 ```xml
-<!-- tomcat启动时，默认加载'web.xml'文件。在Web应用的初始化信息中配置 IoC 容器的配置文件 -->
-<!-- 在 Web 应用被 tomcat 加载时创建IoC容器，然后放到 ServletContext 属性中，供其他模块使用 -->
-<context-param>
-    <param-name>contextConfigLocation</param-name>
-    <param-value>classpath:applicationContext.xml</param-value> <!--Spring配置文件的名称和位置-->
-</context-param>
+<bean id="people" class="com.x.pojo.People">
+    <property name="id" value="123"/>
+    <property name="car" ref="car"/> <!--ref: 引用其他bean-->
+</bean>
 ```
 
 ```xml
-<listener> <!--启动 IOC 容器的 ServletContextListener-->
-    <listener-class>org.springframework.web.context.ContextLoaderListener</listener-class>
-</listener>
+<bean id="people" class="com.x.pojo.People" p:id="123" p:car-ref="car"/> <!--引入 p 命名空间-->
 ```
 
+>`依赖注入`の通过Bean的构造器赋值
 
+```xml
+<bean id="person" class="com.x.pojo.Person"/> <!--无参构造-->
+```
 
+```xml
+<bean id="people" class="com.x.pojo.People"> <!--有参构造-->
+    <constructor-arg name="id" value="123"/>
+    <constructor-arg name="car" ref="car"/>
+</bean>
+```
+
+```xml
+<bean id="people" class="com.x.pojo.People" c:id="123" c:car-ref="car"/> <!--引入 c 命名空间-->
+```
+
+> `bean的高级配置`の继承
+
+```sh
+#Spring 允许继承 bean 的配置，被继承的 bean 称为父 bean。继承的 Bean 称为子 Bean。
+(0).子 Bean 可以 '继承并覆盖' 父 Bean 中的配置（属性 autowire，abstract 除外）
+(1).若父 Bean 只作为模板，可以设置 abstract=true，这样 Spring 将不会实例化这个 Bean
+(2).父 Bean 可不配置 class 属性（必须 abstract=true），让子 Bean 自己指定类，只继承父 Bean 其他的属性
+```
+
+```xml
+<bean id="people" p:id="123" p:name="wang" abstract="true"/>
+<bean id="chinese" class="com.x.pojo.Chinese" parent="people"/> <!--p:id="123" p:name="wang"-->
+```
+
+>`bean的高级配置`の依赖
+
+```sh
+#依赖关系不等于引用关系。
+people 依赖 car，即必须先创建 car 才能创建 people，但 people 不一定要引用 car
+```
+
+```xml
+<bean id="car" class="com.x.pojo.Car" p:brand="Audi" p:price="720000"/>
+<bean id="people" class="com.x.pojo.people" p:id="123" p:name="wang" depends-on="car"/> <!--前置依赖-->
+```
+
+> 引用外部属性文件
+
+```xml
+<context:property-placeholder location="classpath:db.properties"/>
+```
+
+> bean的作用域
+
+```sh
+'singleton': 默认值，单例。只在IoC容器初始化时创建一次
+'prototype': 原型的，多实例的。IoC容器初始化时并不会创建，而是在每次调用时重新创建一个新的对象。
+```
+
+```xml
+<bean id="car" class="com.x.pojo.Car" scope="prototype" p:brand="Audi" p:price="720000"/>
+```
+
+>bean的生命周期
+
+```sh
+#Spring IOC 容器可以管理 bean 的生命周期，Spring 允许在 bean 生命周期内特定的时间点执行指定的任务。
+```
+
+```sh
+通过构造器或工厂方法'创建 Bean 实例'      #constuctor...
+为 Bean 的'属性赋值'和对其他 Bean 的引用  #setter...
+将 Bean 实例传递给 Bean 后置处理器的 postProcessBeforeInitialization() 方法
+调用 Bean 的'初始化'方法                #init...
+将 Bean 实例传递给 Bean 后置处理器的 postProcessAfterInitialization() 方法
+Bean 此时可以使用了                    #Car [brand=Audi, price=720000.0]
+当容器关闭时，调用 Bean 的'销毁方法'      #destroy...
+```
+
+```sh
+#bean 的后置处理器
+（1）bean 后置处理器允许在调用 '初始化方法 前+后' 对 bean 进行额外的处理
+（2）bean 后置处理器对 IOC 容器里的所有 bean 实例逐一处理，而非单一实例。其典型应用是：检查 bean 属性的正确性或根据特定的标准更改 bean 的属性。
+（3）bean 后置处理器时需要实现接口 BeanPostProcessor
+```
+
+```xml
+//首先，bean 中必须定义 init(); destroy(); 方法
+//其次，实现bean后置处理器: implements BeanPostProcessor
+<bean id="car" class="com.example.bean.Car" init-method="init"
+      destroy-method="destroy" p:brand="Audi" p:price="720000" /> //配置init(),destroy()方法
+<bean class="com.x.config.myBeanPostProcessor" /> //配置bean后置处理器  
+```
+
+> `自动装配` & 手动装配
+
+```sh
+手动装配： 以 value 或 ref 的方式，'明确指定属性值'都是手动装配。
+自动装配： 根据指定的装配规则，'不需要明确指定'，Spring '自动'将匹配的属性值'注入' bean 中。
+```
+
+> `自动装配`の两种模式
+
+```sh
+#ByType： 将类型匹配的 bean 作为属性注入到另一个 bean 中。
+若 IOC 容器中有多个与目标 bean 类型一致的 bean，Spring 将无法判定哪个 bean 最合适该属性，所以不能执行自动装配
+```
+
+```xml
+<bean id="car0" class="com.x.pojo.Car" p:brand="Audi"/>
+<bean id="car1" class="com.x.pojo.Car" p:brand="Bens"/> <!-- 多个相匹配的 类型，自动装配失败-->
+
+<bean id="people" class="com.x.pojo.People" p:name="wang" autowire="byType" /> <!-- p:car-ref="car" -->
+```
+
+```sh
+#ByName： 必须将目标 bean 的名称（Car的id）和属性名（People的属性名）设置的完全相同
+```
+
+```xml
+<bean id="car" class="com.x.pojo.Car" p:brand="Audi"/> <!--若 id 换成 'car1' 则不能自动装配-->
+<bean id="people" class="com.x.pojo.People" p:name="wang" autowire="byName" />
+```
+
+> `自动装配`の使用建议
+
+```sh
+#相对于使用注解的方式实现的自动装配，在 XML 文档中进行的自动装配略显笨拙，在项目中更多的使用注解的方式实现。
+
+(1).属性 autowire 作用于 Bean 的所有属性。所以，希望只自动装配个别属性时，不能实现
+(2).属性 autowire 要么 byType，要么 byName, 不能两者兼得
+(3).所以，实际项目中很少使用自动装配功能，明确清晰的配置文档更有说服力
+```
 
 
 ## AOP
@@ -733,74 +898,21 @@ public class AopConfig {
 
 
 
-# 相关注解
-
->@RequestParam：将`请求行或请求体`的参数（String）转化为简单类型
-
-```shell
-本质是将 Request.getParameter(); 获取的 String 转换为简单类型（由 ConversionService 配置的转换器来完成）
-所以，可以处理 GET POST 的请求行，也可以处理 POST 的请求体。
-```
-
-```java
-//GET，请求行 ---> 默认格式（application/x-www-form-urlencoded）
-
-@GetMapping("/param0")
-public ResultVO param0(@RequestParam(value = "name", required = true) String uName,
-                       @RequestParam(value = "age", required = false, defaultValue = "18") Integer uAge) {
-    System.out.println("param0: " + uName + "-" + uAge);
-    return ResultVOUtil.success();
-}
-```
-
-```java
-//POST，请求行 ---> 默认格式 或 JSON
-//POST，请求体 ---> 默认格式
-
-@PostMapping("/param1")
-public ResultVO param1(@RequestParam(value = "name", required = true) String uName,
-                       @RequestParam(value = "age", required = false, defaultValue = "18") Integer uAge) {
-    System.out.println("param1: " + uName + "-" + uAge);
-    return ResultVOUtil.success();
-}
-```
-
-> @RequestBody：将`请求体`的参数（JSON）转化为bean
-
-```shell
-本质是用 HandlerAdapter 配置的 HttpMessageConverters 来解析请求体，然后绑定到相应的 bean 上
-
-'@RequestParam 和 @RequestBody 可以相结合使用'
-```
-
-```java
-//POST，请求体 ---> JSON
-
-@PostMapping("/param3")
-public ResultVO param3(@RequestBody Student student) {
-    System.out.println("param3: " + student);
-    return ResultVOUtil.success(student);
-}
-```
-
-
-
-
-
 # SSM
 
-##web.xml
+##web
 
-> 加载过程
+> `web.xml` 基本作用
 
 ```shell
-web.xml 用来初始化配置信息：比如 welcome页面、servlet、servlet-mapping、filter、listener、启动加载级别等。
+#用来初始化配置信息：比如 welcome页面、servlet、servlet-mapping、filter、listener、启动加载级别等。
 
 web项目启动时，tomcat容器首先会读取 web.xml 里的配置，当这一步骤没有出错并且完成之后，项目才能正常地被启动起来。
 ```
 
+>初始化 `SpringIoC` 容器的监听器
+
 ```xml
-<!-- 初始化 SpringIoC 容器的监听器 -->
 <context-param>
     <param-name>contextConfigLocation</param-name>
     <param-value>classpath:applicationContext.xml</param-value>
@@ -810,6 +922,8 @@ web项目启动时，tomcat容器首先会读取 web.xml 里的配置，当这�
 </listener>
 ```
 
+> 加载过程
+
 ```shell
 （1）.启动 web 项目时，tomcat 首先读取 web.xml 中的两个节点: <context-param/> 和 <listener/>
 
@@ -818,7 +932,7 @@ web项目启动时，tomcat容器首先会读取 web.xml 里的配置，当这�
 
 （4）.容器创建 <listener/> 中的类实例，即创建监听。在监听器的 contextInitialized() 方法中，通过
      'event.getServletContext().getInitParameter("contextConfigLocation")'方法来得到 <context-param/> 设定的值。
-     
+
 （6）.得到 <context-param/> 值之后，就可以 '初始化 Spring-IoC 容器'。
 
 （7）.注意，以上都是在 web 项目还没有完全启动起来的时候就已经完成了的工作，比所有的 Servlet 都要早。
@@ -826,6 +940,8 @@ web项目启动时，tomcat容器首先会读取 web.xml 里的配置，当这�
 （8）.总的来说，加载顺序是：'<context-param> ---> <listener> ---> <filter> ---> <servlet>'
      其中，如果 web.xml 中出现了相同的元素，则按照在配置文件中出现的先后顺序来加载。
 ```
+
+> Spring 源码
 
 ```java
 public class ContextLoaderListener extends ContextLoader implements ServletContextListener {
@@ -835,16 +951,11 @@ public class ContextLoaderListener extends ContextLoader implements ServletConte
         servletContext sc = event.getServletContext();
         String configLocationParam = sc.getInitParameter(CONFIG_LOCATION_PARAM); //"contextConfigLocation"
         //... 初始化 SpringIoc 容器 ...
-        //
     }
 }
 ```
 
-
-
-
-
-> SSM整合
+> 完整配置
 
 ```xml
 <!-- 初始化 SpringIoC 容器的监听器 -->
@@ -906,5 +1017,82 @@ public class ContextLoaderListener extends ContextLoader implements ServletConte
 </welcome-file-list>
 ```
 
+##Spring
 
+> `applicationContext.xml`
+
+```xml
+<!-- SpringIoC 组件扫描 -->
+<context:component-scan base-package="com.example.spring"/>
+
+<!-- 配置数据源 -->
+<context:property-placeholder location="classpath:db.properties"/>
+<bean id="dataSource" class="com.alibaba.druid.pool.DruidDataSource">
+    <property name="driverClass" value="${jdbc.driver}" />
+    <property name="jdbcUrl" value="${jdbc.url}" />
+    <property name="user" value="${jdbc.username}" />
+    <property name="password" value="${jdbc.password}" />
+</bean>
+
+<!-- Spring 整合 Mybatis -->
+<!-- （1）.SqlSession 对象的创建，管理等  -->
+<bean class="org.mybatis.spring.SqlSessionFactoryBean">
+    <property name="dataSource" ref="dataSource" />
+    <property name="configLocation" value="classpath:mybatis-config.xml" /> <!-- Mybatis的全局配置文件 -->
+    <property name="mapperLocations" value="classpath:mybatis/mapper/*.xml" /> <!-- mapper.xml文件位置 -->
+
+    <property name="typeAliasesPackage" value="com.example.spring.beans" /> <!-- （可选）别名处理 -->
+</bean>
+
+<!-- （2-1）.mapper接口扫描 -->
+<bean class="org.mybatis.spring.mapper.MapperScannerConfigurer">
+    <property name="basePackage" value="com.example.spring.**.mapper" />
+</bean>
+
+<!-- （2-2）.另一种实现方案(mybatis-spring-1.3.0.jar 整合包提供的实现方案) -->
+<!-- <mybatis-spring:scan base-package="com.example.spring.mapper" /> -->
+
+<!-- 事务管理器 -->
+<bean id="transactionManager" class="org.springframework.jdbc.datasource.DataSourceTransactionManager">
+    <property name="dataSource" ref="dataSource" />
+</bean>
+<tx:annotation-driven transaction-manager="transactionManager" /> <!-- 开启注解事务 -->
+```
+
+## SpringMVC
+
+```xml
+<!-- 1.组件扫描 -->
+<context:component-scan base-package="com.example.spring"/>
+
+<!-- 2.配置视图解析器，配置jsp -->
+<bean class="org.springframework.web.servlet.view.InternalResourceViewResolver">
+    <property name="prefix" value="/WEB-INF/views/" />
+    <property name="suffix" value=".jsp" />
+</bean>
+
+<!-- 3.开启MVC注解支持 -->
+<!-- 简化配置:
+     (A).自动注册 DefaultAnootationHandlerMapping，AnotationMethodHandlerAdapter。
+         是 springMVC 为 @Controllers 分发请求所必须的 
+     (B).提供: 数据绑定，数字和日期的format，@NumberFormat，@DateTimeFormat，xml，json默认读写支持 -->
+<mvc:annotation-driven />
+
+<!-- 4.释放静态资源：(A).加入对静态资源的处理: js,gif,png (B).允许使用"/"做整体映射 -->
+<mvc:default-servlet-handler />
+```
+
+## mybatis
+
+```xml
+<!-- Spring 整合 MyBatis 后，MyBatis中配置数据源，事务等一些配置都可以迁移到 Spring 的配置中。
+     MyBatis配置文件中只需要配置与MyBatis相关的即可 -->
+<configuration>
+    <settings>
+        <setting name="mapUnderscoreToCamelCase" value="true"/> <!-- 映射下划线到驼峰命名 -->
+        <setting name="lazyLoadingEnabled" value="true"/>       <!-- 开启延迟加载 -->
+        <setting name="aggressiveLazyLoading" value="false"/>   <!-- 配置按需加载-->
+    </settings>
+</configuration>
+```
 

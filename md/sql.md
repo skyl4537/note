@@ -2,7 +2,7 @@
 
 # 基础命令
 
-# 名词
+## 名词
 
 > 名词解析
 
@@ -15,10 +15,9 @@ SQL   --Structure-Query-Language，结构化查询语言，与数据库通信
 > 基础语法
 
 ```sql
-不区分大小写。建议关键字大写，表名和列名小写。每条命令使用分号结尾。单引号和双引号都可以表示字符串。
+'不区分大小写。建议关键字大写，表名和列名小写'。每条命令使用分号结尾。单引号和双引号都可以表示字符串。
 
 mysql的字段名、表名通常不需要加任何引号，如果非要加上引号，必须加反引号。
-
 mysql的别名可不加引号，如果加，单引号和双引号以及反引号都可以。别名含有特殊字符，则必须使用双引号。
 ```
 
@@ -64,6 +63,12 @@ SHOW CREATE TABLE city; --查看创建过程
 DESC city;              --DESC 查看表的详细信息
 ```
 
+```sql
+CREATE TABLE city0 LIKE city; -- 仅复制表的整体结构
+
+CREATE TABLE city1 SELECT id,name FROM city WHERE id=2; -- 复制表的部分结构 + 数据（id，name两列）
+```
+
 > DROP
 
 ```sql
@@ -79,14 +84,6 @@ ALTER TABLE tbName MODIFY COLUMN 列名 新列类型 [列参数]                
 ALTER TABLE tbName DROP COLUMN 列名;                                 --删除列
 
 ALTER TABLE tbName RENAME TO newName; -- 修改表名
-```
-
-> LIKE：表的复制
-
-```sql
-CREATE TABLE city0 LIKE city; -- 仅复制表的整体结构
-
-CREATE TABLE city1 SELECT id,name FROM city WHERE id=2; -- 复制表的部分结构 + 数据（id，name两列）
 ```
 
 ## DML
@@ -134,6 +131,51 @@ TRUNCATE TABLE city; -- 清空表2
 -- DELETE 删除有返回值。TRUNCATE 删除没有。
 
 -- DELETE 清空表后，添加新的数据时自增列接着自增。TRUNCATE 则是从1开始重新计数。
+```
+
+## 执行顺序
+
+>所有的查询语句都是从 FROM 开始执行的，并非 SELECT。`where → group by → having → order by → limit`
+
+```sql
+(7) - SELECT
+(8) - DISTINCT <select_list>
+(1) - FROM <left_table>
+(3) - <join_type> JOIN <right_table>
+(2) - ON <join_condition>
+(4) - WHERE <where_condition>
+(5) - GROUP BY <group_by_list>
+(6) - HAVING <having_condition>
+(9) - ORDER BY <order_by_condition>
+(10 - LIMIT <limit_number>
+```
+
+```sql
+SELECT 班级, AVG(数学成绩) AS 数学平均成绩
+FROM 学生信息表
+WHERE 数学成绩表 IS NOT NULL --（错误写法）WHERE 数学成绩表 IS NOT NULL AND AVG(数学成绩) > 75
+GROUP BY 班级
+HAVING 数学平均成绩 > 75
+
+ORDER BY 数学平均成绩 DESC
+LIMIT 3;
+```
+
+```sql
+首先，执行 FROM 子句, 从学生成绩表中组装数据源的数据。
+执行 WHERE 子句, 筛选学生成绩表中所有学生的数学成绩不为 NULL 的数据 。
+执行 GROUP BY 子句, 把学生成绩表按 "班级" 字段进行分组。
+计算 avg 聚合函数, 按找每个班级分组求出 数学平均成绩。
+执行 HAVING 子句, 筛选出班级 数学平均成绩大于 75 分的。
+
+执行 SELECT 语句，返回数据，但别着急，还需要执行后面几个步骤。
+
+执行 ORDER BY 子句, 把最后的结果按 "数学平均成绩" 进行排序。
+执行 LIMIT ，限制仅返回3条数据。结合 ORDER BY 子句，即返回所有班级中数学平均成绩的前三的班级及其数学平均成绩。
+```
+
+```sql
+若将 avg(数学成绩) > 75 放到 WHERE 子句中，此时 GROUP BY 语句还未执行，因此此时聚合值 avg(数学成绩) 还是未知的，因此会报错。
 ```
 
 
@@ -835,8 +877,7 @@ END
 >创建の参数模式 IN `常用`
 
 ```sql
-DROP PROCEDURE IF EXISTS get_student_by_teacher_id;
-
+DROP PROCEDURE IF EXISTS get_student_by_teacher_id; --删除
 CREATE PROCEDURE get_student_by_teacher_id(IN p_teacher_id INT)
 BEGIN
 	SELECT s.id id,s.`name` name,t.id `teacher.id`,t.`name` `teacher.name` -- t.id `teacher.id` 关联查询
@@ -896,68 +937,43 @@ SELECT @a,@b;
 
 ## 变量
 
-> 变量分类： 局部变量、用户变量、会话变量 和 全局变量 
+> `系统变量`：系统预定义好的变量，用户不能新增。只能修改已有变量的值，重启将被重置
 
 ```sql
-其中，会话变量 和 全局变量 统称为 系统变量。而，局部变量 只存在于函数和存储过程之中
+--变量以 '@@' 开始，形式为 '@@变量名'。修改必须具有 SUPER 权限
+
+show variables LIKE "%event%";  --显示已有的变量
+SET @@event_scheduler=value;
+SELECT @@event_scheduler;
 ```
 
-> 系统变量：会话变量 和 全局变量
+> `用户变量`：只在当前会话生效
 
 ```sql
-系统已经提前定义好了的变量，一般都有其特殊意义。如，代表字符集、代表某些mysql文件位置
+--变量以 '@' 开始，形式为 '@变量名'
 
--- 系统变量，用户不能新增，只能修改已有的
+SET @var='hello sql';
+SELECT @var;           --默认为 NULL
 ```
 
->会话变量：只在当前会话生效
+> `局部变量`：一般用在存储过程、函数中
 
 ```sql
-show session variables;              -- 查看所有的会话变量
-show session variables LIKE "%var%"; -- 过滤部分
+--不需要使用 '@'，声明使用关键字 declare
 
-set session var_name = value;        -- 赋值
-```
-
->全局变量：影响服务器整体操作。但是一旦重启，这些设置会被重置。注意要想更改全局变量，必须具有SUPER权限。
-
-```sql
-show session variables;
-show global variables like "%var%";
-
-set global var_name = value;
-```
-
-> 用户变量：用户定义的变量，`以 @ 为前缀`。仅在当前会话生效
-
-```sql
--- 可以不声明定义，直接使用，默认为 null
-变量名对大小写不敏感
-变量不能在要求字面值的地方使用，比如 select 中的 limit 语句等
-调用用户变量的表达式的计算顺序实际上是未定义的 -- SELECT @a = 0, @a := @a + 1; 两列都可能是 0
-为用户变量赋值时，会先确定表达式的值         -- SET @m = 0; SET @m = 3, @n = @m; SELECT @n; 结果为 0
-虽然用户变量的类型可以动态修改，但不建议这么操作
-```
-
-```sql
-set @变量名 = 1;
-select @变量名: = 值; -- 因为 =，有很多地方都用来判断是否等于，为了避免歧义，也可以使用 := 来赋值
-select 值 into @变量名;
-```
-
-> 局部变量：一般用在存储过程、函数等。`用户变量的一种，不需要使用 @`
-
-```sql
-declare var int default 666; -- 局部变量使用 declare 声明，可选项 default 设置默认值
-set var= 值；
+declare var int default 666; -- 可选项 default 设置默认值
+set var = 值；
 select 值 into var;
 ```
 
+>用户变量 & 局部变量
+
 ```sql
--- 局部变量 与 用户变量：
 前缀符号：用户变量是以 "@" 开头的。局部变量没有这个符号
 定义方式：用户变量使用 set 语句，局部变量使用 declare 语句定义 
 作用范围：局部变量只在 begin-end 语句块之间有效，出了范围就失效
+
+-- 为了和 oracle 赋值相匹配，尽量都使用 ":=" 来赋值
 ```
 
 ##函数
@@ -968,39 +984,35 @@ select 值 into var;
 
 ```
 
+> 
 
 
 
+## 执行结构
 
-## 执行顺序
+> 分支结构
 
 ```sql
-(7) - SELECT
-(8) - DISTINCT <select_list>
-(1) - FROM <left_table>
-(3) - <join_type> JOIN <right_table>
-(2) - ON <join_condition>
-(4) - WHERE <where_condition>
-(5) - GROUP BY <group_by_list>
-(6) - HAVING <having_condition>
-(9) - ORDER BY <order_by_condition>
-(10 - LIMIT <limit_number>
+create procedure pro_test(in a char(1))
+begin
+    if a in('a','b') then
+        select 1; -- 注意每个结束符号 ;
+    else 
+        select 2;
+    end if;
+end;
 ```
 
-```sql
-FROM 才是 SQL 语句执行的第一步，并非 SELECT。
-数据库在执行 SQL 语句的第一步是将数据从硬盘加载到数据缓冲区中，以便对这些数据进行操作。
-```
+>循环结构
 
 ```sql
-SELECT 是在大部分语句执行了之后才执行的，严格的说是在 FROM 和 GROUP BY 之后执行的。
-理解这一点是非常重要的，这就是你'不能'在 WHERE 中使用在 SELECT 中设定别名的字段作为判断条件的原因。
-```
-
-```sql
-无论在语法上还是在执行顺序上， UNION 总是排在在 ORDER BY 之前。
-很多人认为每个 UNION 段都能使用 ORDER BY 排序，但是根据 SQL 语言标准和各个数据库 SQL 的执行差异来看，这并不是真的。
-尽管某些数据库允许 SQL 语句对子查询（subqueries）或者派生表（derived tables）进行排序，
-但是，这并不说明这个排序在 UNION 操作过后仍保持排序后的顺序。
+CREATE PROCEDURE pro_while(IN p_count INT)
+BEGIN
+    DECLARE i INT DEFAULT 0;
+    WHILE i<p_count DO
+        INSERT INTO student(s_name,s_pwd) VALUES(CONCAT('john',i),'123');
+        SET i=i+1; -- 循环体内 ++
+    END WHILE;
+END;
 ```
 

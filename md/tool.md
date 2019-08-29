@@ -383,15 +383,13 @@ Build,Exe... - Build Tools - Gradle - Offline work
 
 ## 基础概念
 
-> `TRACE < DEBUG < INFO < WARN < ERROR`
+> 日志级别：`TRACE < DEBUG < INFO < WARN < ERROR`
 
 ```shell
-日志门面 #日志的接口，如：slf4j（√），jcl，jboss-logging
+日志门面，日志的接口 #如：slf4j（√），jcl，jboss-logging
 
-日志实现 #具体实现类，如：logback（√），log4j，log4j2（apache），jul
+日志实现，具体实现类 #如：logback（√），log4j，log4j2（apache），jul
 ```
-
-> 配置文件
 
 ```shell
 logback.xml        #直接被日志框架加载
@@ -412,99 +410,93 @@ log4j.logger.com.x.controller = ${logging.level}, ctrl
 
 > 日志格式
 
-```properties
-%t    -> 线程名   
-%m    -> 日志主体
-%n    -> 平台换行符
-%r    -> 自应用启动到输出该log信息耗费的毫秒数
-%p    -> 日志级别 {%-5p} --> 5字符长度,左边补空格
-%d    -> 时间及格式 %d{yyyy-MMM-dd HH:mm:ss,SSS} --> 2002-10-18 22:10:28,921
+```sh
+#{%5p} -> 日志级别，5字符长度（5左边补空格，-5右边补）. %t -> 线程名；
+%d{yyyy-MM-dd HH:mm:ss.SSS} [%5p] [%t] - %m%n
 ```
-```properties
-#不建议使用,影响效率
-#a.不输入： 表示输出完整的<包名>+<类名>
-#b.输入0：  表示只输出<类名>
-#c.任意数字：表示输出小数点最后边点号之前的字符数量
-%c    -> %clength} -> length有三种情况(↑) -> 类全名
-
-%l -> 日志发生位置: 包括类目名,发生的线程,以及在代码中的行数
+```sh
+#不建议使用的参数，影响效率
+%c -> 类全名相关；%l -> 日志发生位置； %r -> 自应用启动到输出该log信息耗费的毫秒数
 ```
 
-> 输出线程id：slf4j默认不提供线程id输出，不过可利用 'MDC' 特性实现。
+>动态修改日志级别：`前提是 logback 日志框架`
 
-```java
-//1.配置拦截器：在线程开始时加入 ThreadId; 在线程结束时删除 ThreadId
-public class ThreadIdInterceptor implements HandlerInterceptor {
-    private final static String THREAD_ID = "ThreadId";
+```sh
+#开启监控的所有节点
+management.endpoints.web.exposure.include=*
 
-    @Override
-    public boolean preHandle(HttpServletRequest request, HttpServletResponse response, Object handler) {
-        String ThreadId = java.util.UUID.randomUUID().toString().replaceAll("-", "").toUpperCase();
-        MDC.put(THREAD_ID, ThreadId); //加入 ThreadId
-        return true;
-    }
-
-    @Override
-    public void afterCompletion(HttpServletRequest request, HttpServletResponse response, Object handler, Exception ex) {
-        // .... 其他逻辑代码
-        MDC.remove(THREAD_ID); //删除 ThreadId
-    }
-}
-```
-```java
-//2.注册拦截器
-@Configuration
-public class MyWebMvcConfigurer implements WebMvcConfigurer {
-    @Override
-    public void addInterceptors(InterceptorRegistry registry) {
-        registry.addInterceptor(new ThreadIdInterceptor()).addPathPatterns("/**");
-    }
-}
-```
-```xml
-<!-- 3.logback.xml -->
-<property name="CONSOLE_PATTERN" <!-- %X{ThreadId}，输出MDC中key的值 -->
-        value="%d{yyyy-MM-dd HH:mm:ss.SSS} %5p [%t] %X{ThreadId} %c{0} - %m%n" />
-```
-```java
-//4.输出结果
-2018-12-06 20:59:04.436  INFO [http-nio-8090-exec-1] 41C85FC1684A4F37B64BEFC22D288C0C
-    HelloController - 2018-12-06 20:59:04.436 -> 50 - http-nio-8090-exec-1 ==> 
-    java.lang.RuntimeException: asyncFuture - / by zero
-```
->动态修改日志级别：利用 SpringBoot 的 Actuator 监控
-
-```properties
 #所有模块的日志级别
-http://127.0.0.1:8090/demo/actuator/loggers
+http://localhost:8080/web/actuator/loggers
 #具体模块的日志级别
-http://127.0.0.1:8090/demo/actuator/loggers/com.example.controller
+http://localhost:8080/web/actuator/loggers/com.example.web.controller
 
-#发送 POST 请求到以上路径，动态修改以上模块的日志级别为 DEBUG，成功状态码为 '204'
-POST - 请求体: {"configuredLevel": "DEBUG"} - Content-Type: application/json
+#发送 POST 请求到以上路径，动态修改以上模块的日志级别为 WARN，成功状态码为 '204'
+POST - 请求体: {"configuredLevel": "WARN"} - Content-Type: application/json
 ```
+> 使用方式
+
+```java
+log.info("变量os的取值为: " + macOS);  //方式-1（×）
+
+log.info("变量os的取值为: {}", macOS); //方式-2（√）
+```
+
+```sh
+方式-1 对于日志输出设为 WARN 情况，也会先进行'字符串拼接'影响性能。但是，方式-2 则不存在这种问题，先判断输出级别，再进行字符串拼接。
+```
+
+> 使用原则
+
+```sh
+#ERROR：影响到程序正常运行的异常情况
+打开配置文件失败
+所有第三方对接的异常（包括第三方返回错误码）
+所有影响功能使用的异常，包括：SQLException 和 除了业务异常之外的所有异常（RuntimeException和Exception）
+不应该出现的情况：比如要使用Azure传图片，但是Azure未响应
+```
+
+```sh
+#WARN：不应该出现但是不影响程序，当前请求正常运行的异常情况
+有容错机制的时候出现的错误情况
+找不到配置文件，但是系统能自动创建配置文件
+即将接近临界值的时候，例如：缓存池占用达到警告线
+业务异常的记录，比如：当接口抛出业务异常时，应该记录此异常
+```
+
+```sh
+#INFO：系统运行信息
+Service方法中对于 系统/业务 状态的变更
+主要逻辑中的分步骤
+客户端请求参数（REST/WS）
+调用第三方时的 调用参数 和 调用结果
+```
+
+```sh
+#DEBUG：生产环境需要关闭 DEBUG 信息
+可以填写所有的想知道的相关信息(但不代表可以随便写，DEBUG 信息要有意义,最好有相关参数)
+如果在生产情况下需要开启 DEBUG，需要使用开关进行管理，不能一直开启
+```
+
 ##日志过滤
 
-> LevelFilter：级别过滤器。根据配置的过滤级别，选择性的接收或拒绝日志
+> `LevelFilter`：级别过滤器。如只输出级别 ERROR
 
-```java
-//DENY      -> 日志将立即被抛弃,不再经过其他过滤器
-//ACCEPT    -> 日志会被立即处理,..................
-//NEUTRAL   -> 有序列表里的下一个过滤器会接着处理日志
+```sh
+DENY    #日志将立即被抛弃，不再经过其他过滤器
+ACCEPT  #日志会被立即接收，..................
+NEUTRAL #有序列表里的下一个过滤器会接着处理日志
 ```
 ```xml
-<!--A.logback.xml-->
-<filter class="ch.qos.logback.classic.filter.LevelFilter"> <!--过滤ERROR-->
+<filter class="ch.qos.logback.classic.filter.LevelFilter">
     <level>ERROR</level>
-    <onMatch>ACCEPT</onMatch>
+    <onMatch>ACCEPT</onMatch> 
     <onMismatch>DENY</onMismatch>
 </filter>
 ```
 ```properties
-#B.log4j.properties
-log4j.logger.com.x.sm = DEBUG, sm, err ---> sm包日志级别, 输出路径1, 输出路径2
+log4j.logger.com.x.sm = DEBUG, err
 
-log4j.appender.err.filter.a=org.apache.log4j.varia.LevelRangeFilter ---> 过滤ERROR
+log4j.appender.err.filter.a=org.apache.log4j.varia.LevelRangeFilter
 log4j.appender.err.filter.a.LevelMin=ERROR
 log4j.appender.err.filter.a.LevelMax=ERROR
 log4j.appender.err.filter.a.acceptOnMatch=true
@@ -515,53 +507,43 @@ log4j.appender.err.layout=org.apache.log4j.PatternLayout
 log4j.appender.err.layout.ConversionPattern=%d{HH:mm:ss.SSS} - %m%n
 ```
 
-> ThresholdFilter：临界值过滤器，`过滤 <配置级别，只输出 >=`
+> `ThresholdFilter`：临界值过滤器。如输出级别 >= INFO
 
 ```xml
-<!--A.logback.xml-->
 <filter class="ch.qos.logback.classic.filter.ThresholdFilter">
     <level>INFO</level>
 </filter>
 ```
 
 ```properties
-#B.log4j.properties
-log4j.logger.com.x.sm = DEBUG, sm, err
+log4j.logger.com.x.sm = DEBUG, info
 
-log4j.appender.err.Threshold=ERROR
-log4j.appender.err=org.apache.log4j.DailyRollingFileAppender
-log4j.appender.err.File=/var/lib/webpark/logs/sm/error
-log4j.appender.err.DatePattern='.'yyyyMMdd'.log'
-log4j.appender.err.layout=org.apache.log4j.PatternLayout
-log4j.appender.err.layout.ConversionPattern=%d{HH:mm:ss.SSS} - %m%n
+log4j.appender.info.Threshold=INFO
+log4j.appender.info=org.apache.log4j.DailyRollingFileAppender
+log4j.appender.info.File=/var/lib/webpark/logs/sm/error
+log4j.appender.info.DatePattern='.'yyyyMMdd'.log'
+log4j.appender.info.layout=org.apache.log4j.PatternLayout
+log4j.appender.info.layout.ConversionPattern=%d{HH:mm:ss.SSS} - %m%n
 ```
 
 ## 异步输出
 
-每次输出日志就会发生一次磁盘IO，损耗性能。
+> 每次输出日志就会发生一次磁盘IO，损耗性能。
 
-异步输出，不让此次写日志发生磁盘IO，阻塞日志线程，从而减少不必要的性能损耗。
-
-```xml
-<!--同步appender-->
-<appender name="info" class="ch.qos.logback.core.rolling.RollingFileAppender">
-    //... ...
-</appender>
-```
+> 异步输出：日志先缓存，缓存达到一定量级，再一次性的输出。
 
 ```xml
-<!--异步appender 必须跟在同步后面,否则不起作用-->
-<appender name="async4info" class="ch.qos.logback.classic.AsyncAppender">
+<!--异步appender 必须跟在同步后面，否则不起作用-->
+<appender name="ASYNC_INFO_APPENDER" class="ch.qos.logback.classic.AsyncAppender">
 
-    <!--当 BlockingQueue 还有20%容量，将丢弃 TRACE、DEBUG 和 INFO 级别的日志-->
+    <!--当 BlockingQueue 还有 20% 容量，将丢弃 TRACE、DEBUG 和 INFO 级别的日志-->
     <!--只保留 WARN 和 ERROR 级别的日志。为保持所有的日志，将该值设置为0。默认值20-->
     <discardingThreshold>0</discardingThreshold>
-    <queueSize>256</queueSize> <!--BlockingQueue 的最大容量,该值影响性能. 默认值256-->
+    <queueSize>256</queueSize> <!-- 缓冲区大小，默认值256个-->
 
     <!--异步appender并不自己写日志，只是将日志输出到 BlockingQueue-->
     <!--最终还是具体的appender将日志输出到文件-->
-    <!--图示详见: http://www.importnew.com/27247.html-->
-    <appender-ref ref="info"/>
+    <appender-ref ref="INFO_APPENDER"/>
 </appender>
 ```
 
@@ -801,94 +783,6 @@ log4j.appender.CTRL_ERROR.DatePattern='_'yyyyMMdd_HH'.log'
 log4j.appender.CTRL_ERROR.layout=org.apache.log4j.PatternLayout
 log4j.appender.CTRL_ERROR.layout.ConversionPattern=%d{HH:mm:ss.SSS} [%5p] [%t] - %m%n
 ```
-
-## 使用原则
-
->使用场景
-
-```shell
-当你遇到问题的时候，只能通过 debug 功能来确定问题，你应该考虑打日志，良好的系统，是可以通过日志进行问题定为的。
-
-当你碰到 if...else... 或者 switch... 这样的分支时，要在分支的首行打印日志，用来确定进入了哪个分支
-
-经常以功能为核心进行开发，你应该在提交代码前，可以确定通过日志可以看到整个流程
-```
-
-> 必须使用参数化信息的方式，不能字符串拼接
-
-```java
-log.debug("Processing trade with id:[{}] and symbol : [{}] ", id, symbol);
-```
-
-> 必须先判断日志级别，再进行输出。`否则会造成不必要的资源消耗（字符串组装）`
-
-```java
-if (logConfig.CONFIG_LEVEL < logConfig.DEBUG_LEVEL) { //配置级别低于 DEBUG，才输出 DEBUG
-    log.debug("Processing trade with id: " + id + " symbol: " + symbol);
-}
-```
-
-> ERROR：影响到程序正常运行的异常情况
-
-```java
-打开配置文件失败
-
-所有第三方对接的异常（包括第三方返回错误码）
-
-所有影响功能使用的异常，包括：SQLException 和 除了业务异常之外的所有异常（RuntimeException和Exception）
-
-//不应该出现的情况：比如要使用Azure传图片，但是Azure未响应
-```
-
->WARN：不应该出现但是不影响程序，当前请求正常运行的异常情况
-
-```
-有容错机制的时候出现的错误情况
-
-找不到配置文件，但是系统能自动创建配置文件
-
-即将接近临界值的时候，例如：缓存池占用达到警告线
-
-业务异常的记录，比如：当接口抛出业务异常时，应该记录此异常
-```
-
-> INFO：系统运行信息
-
-```
-Service方法中对于 系统/业务 状态的变更
-
-主要逻辑中的分步骤
-
-客户端请求参数（REST/WS）
-
-调用第三方时的调用参数和调用结果
-```
-
-```
-并不是所有的 service 都进行出入口打点记录，单一、简单 service 是没有意义的（job除外,job需要记录开始和结束）
-
-对于复杂的业务逻辑，需要进行日志打点，以及埋点记录，比如电商系统中的下订单逻辑，以及OrderAction操作(业务状态变更)。
-
-对于整个系统的提供出的接口（REST/WS），使用info记录入参
-
-如果所有的 service 为SOA架构，那么可以看成是一个外部接口提供方，那么必须记录入参
-
-调用其他第三方服务时，所有的出参和入参是必须要记录的（因为你很难追溯第三方模块发生的问题）
-```
-
-> DEBUG：
-
-```
-可以填写所有的想知道的相关信息(但不代表可以随便写，debug 信息要有意义,最好有相关参数)
-
-生产环境需要关闭 DEBUG 信息
-
-如果在生产情况下需要开启 DEBUG，需要使用开关进行管理，不能一直开启
-```
-
-> TRACE：特别详细的系统运行完成信息。业务代码中，不要使用（除非有特殊用意，否则请使用DEBUG级别替代）
-
-
 
 #Maven
 

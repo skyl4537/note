@@ -4,19 +4,19 @@
 
 //}
 
-//{--------<<<@ComponentScan>>>--------------------------------------------------------------------
-#自动扫描组件 & 指定扫描规则
-    1.xml版
-        // <!-- springIOC 组件扫描 -->
-        <context:component-scan base-package="com.example.spring"> //<!-- 排除Controller -->
-            <context:exclude-filter type="annotation" expression="org.springframework.stereotype.Controller" />
-        </context:component-scan>
+//{--------<<<@ComponentScan>>>--------------------------------------------------------------------X
+// #自动扫描组件 & 指定扫描规则
+    // 1.xml版
+        // // <!-- springIOC 组件扫描 -->
+        // <context:component-scan base-package="com.example.spring"> //<!-- 排除Controller -->
+            // <context:exclude-filter type="annotation" expression="org.springframework.stereotype.Controller" />
+        // </context:component-scan>
         
-    2.注解版
-        @ComponentScan(value = "com.example.spring", useDefaultFilters = false, //禁用默认规则
-                excludeFilters = { //排除注解 @Controller 标注的组件
-                        @ComponentScan.Filter(type = FilterType.ANNOTATION, classes = {Controller.class})
-                })
+    // 2.注解版
+        // @ComponentScan(value = "com.example.spring", useDefaultFilters = false, //禁用默认规则
+                // excludeFilters = { //排除注解 @Controller 标注的组件
+                        // @ComponentScan.Filter(type = FilterType.ANNOTATION, classes = {Controller.class})
+                // })
 //}
 
 //{--------<<<@Configuration & @Bean>>>--------------------------------------------------------------------

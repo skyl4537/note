@@ -164,7 +164,7 @@ public class ApplicationUtils implements ApplicationContextAware {
 
 #Commons
 
-## Lang
+## lang
 
 ```xml
 <dependency>
@@ -304,61 +304,95 @@ String packageName = ClassUtils.getPackageName(Test.class);
 > IOUtils
 
 ```java
-IOUtils.closeQuietly(in); //不再推荐使用这种关闭流方式，推荐使用java7新特性：try-with-resources
+toString();     //读取流，返回 String
+readLines();    //读取流，返回 list<String>
+lineIterator(); //读取流，返回迭代器
 ```
 
 ```java
-try (FileInputStream in = new FileInputStream(src);
-     FileWriter out = new FileWriter(dest)) {
-    IOUtils.copy(in, out, "UTF-8"); //拷贝流，从输入到输出
-} catch (IOException e) {
-    e.printStackTrace();
-}
+copy();      //拷贝流. 支持多种数据间的拷贝
+copyLarge(); //适合拷贝较大的数据流，比如2G以上
 ```
 
 ```java
-//拷贝较大的数据流，比如2G以上
-IOUtils.copyLarge(new FileInputStream(src), new FileOutputStream(dest));
+read();      //从一个流中读取内容
+readFully(); //读取指定长度的流，如果数据源长度不够，就会抛出异常
 ```
 
 ```java
-String line = IOUtils.toString(in, "UTF-8"); //读取流中的字符串
+write();      //把数据写入到输出流中
+writeLines(); //把 list<String> 写入到输出流中
 ```
 
 ```java
-IOUtils.write("1234", new FileOutputStream(dest), "UTF-8"); //字符串写入输出流
+close();        //关闭URL连接
+closeQuietly(); //忽略 nulls 和异常，关闭某个流 ---> 推荐使用java7新特性：try-with-resources
+```
+
+```java
+skip();      //跳过指定长度的流
+skipFully(); //类似skip，只是如果忽略的长度大于现有的长度，就会抛出异常
+```
+
+```java
+contentEquals();          //比较两个流是否相同
+contentEqualsIgnoreEOL(); //比较两个流，忽略换行符
+```
+
+```java
+toBufferedInputStream(); //把流的全部内容放在另一个流中
+toBufferedReader();      //返回输入流
+toInputStream();         //返回输入流
+toByteArray();           //返回字节数组
+toCharArray();           //返回字符数组
 ```
 
 > FileUtils
 
 ```java
-List<String> lines = FileUtils.readLines(file, "UTF-8"); //读取文件
-```
-
-```java
-FileUtils.listFiles(dir, null, true); //迭代遍历目录
-
-FileUtils.listFiles(dir, EmptyFileFilter.NOT_EMPTY, null); //过滤非空文件，不过滤目录
-
-FileUtils.deleteDirectory(new File(path)); //迭代删除文件夹
-```
-
-
-```java
-FileUtils.copyFile(src, dest); //拷贝文件
-```
-
-```java
-URLCodec urlCodec = new URLCodec();
-String url = "http://192.168.5.25:8080/webpark/image/20190518/" +
-    urlCodec.encode("十二pass.log", "UTF-8"); //url中文 进行编码和解码
-String dest = "C:\\Users\\BlueCard\\Desktop";
-
-URL httpUrl = new URL(url);
-String fileName = urlCodec.decode(FilenameUtils.getName(httpUrl.getFile()), "UTF-8");
-
 //下载URL资源，注意设置超时时间,单位毫秒
 FileUtils.copyURLToFile(httpUrl, new File(dest, fileName), 5 * 1000, 5 * 1000);
+```
+
+```java
+readLines();        //读取文件内容，返回 List<String>
+readFileToString(); //将文件内容作为字符串返回
+
+openInputSteam();   //打开指定文件的输入流
+```
+
+```java
+listFiles();  //列出指定目录下的所有文件
+```
+
+```java
+copyInputStreamToFile(); //将一个输入流中的内容拷贝到某个文件
+
+copyFile();              //文件拷贝
+copyDirectory();         //目录拷贝。结合 FileFilter 过滤
+copyFileToDirectory();   //将一个文件拷贝到某个目录下
+```
+
+```java
+write();                //将字符串内容直接写到文件中
+writeByteArrayToFile(); //将字节数组内容写到文件中
+writeLines();           //将容器中的元素的toString方法返回的内容依次写入文件中
+writeStringToFile();    //将字符串内容写到文件中
+```
+
+```java
+size(); //返回文件或目录的大小
+```
+
+```java
+deleteQuietly();   //删除文件
+
+deleteDirectory(); //删除目录
+cleanDirectory();  //清空目录，但不删除最外层目录
+```
+
+```java
+contentEquals(); //比较两个文件的内容是否相同
 ```
 
 > FilenameUtils
@@ -503,6 +537,152 @@ B = JSON.parseArray(JSON.toJSONString(A), Dog.class);
 
 
 
+
+
+# HttpClient
+
+##基础概念
+
+```xml
+<dependency>
+    <groupId>org.apache.httpcomponents</groupId>
+    <artifactId>httpclient</artifactId>
+</dependency>
+```
+> 区别 GET & POST
+
+```shell
+超链接<a/>    #只能用 GET 提交HTTP请求
+表单<form/>   #可以用 GET，POST .......
+
+GET          #参数只能在请求行（request-line）
+POST         #参数可在请求行，亦可在请求体（request-body）
+```
+> 区别 URL & URI：http://ip:port/demo/hello/hello & /demo/hello/hello
+
+<https://www.cnblogs.com/wuyun-blog/p/5706703.html>
+
+<https://blog.csdn.net/koflance/article/details/79635240>
+
+## GET-请求行
+
+> 两种方式获取HttpGet
+
+```java
+//(1).直接将参数拼接在 URI 之后
+String uri = "http://127.0.0.1:8090/demo/http/get?name=中国&age=70";
+HttpGet httpGet = new HttpGet(uri);
+```
+```java
+//(2).通过 URIUtils 工具类生成带参数的 URI
+String param = "name=中国&age=70";
+// String param = "name=" + URLEncoder.encode("中国", "UTF-8") + "&age=70"; //中文参数，encode
+URI uri = URIUtils.createURI("http", "127.0.0.1", 8090, "/demo/http/get", param, null);
+HttpGet httpGet = new HttpGet(uri);
+```
+
+## POST-请求行
+
+> 两种方式获取httpPost （同GET）
+
+```java
+//(1).拼接字符串
+String uri = "http://127.0.0.1:8090/demo/http/post?name=中国&age=70";
+HttpPost httpPost = new HttpPost(uri);
+```
+
+```java
+//(2).工具类 URIUtils
+String param = "name=中国&age=70";
+// String param = "name=" + URLEncoder.encode("中国", "UTF-8") + "&age=70"; //中文参数,encode
+URI uri = URIUtils.createURI("http", "127.0.0.1", 8090, "/demo/http/post", param, null);
+HttpPost httpPost = new HttpPost(uri);
+```
+
+## POST-请求体
+
+> 传输 表单键值对 keyValue
+
+```java
+//1.POST表单
+List<NameValuePair> nvps = new ArrayList<>(2);
+nvps.add(new BasicNameValuePair("name", "中国"));
+nvps.add(new BasicNameValuePair("age", "70"));
+UrlEncodedFormEntity entity = new UrlEncodedFormEntity(nvps, Charset.forName("UTF-8")); //中文乱码
+
+HttpPost httpPost = new HttpPost("http://127.0.0.1:8090/demo/http/post");
+httpPost.setEntity(entity);
+```
+
+```java
+//2.查看HTTP数据
+System.out.println(entity.getContentType()); //Content-Type: application/x-www-form-urlencoded; charset=UTF-8
+System.out.println(entity.getContentLength()); //30
+System.out.println(EntityUtils.toString(entity)); //name=%E4%B8%AD%E5%9B%BD&age=70
+```
+
+> 传输 JSON
+
+```java
+String data = "{\"name\":\"中国\",\"age\":\"70\"}";
+StringEntity entity = new StringEntity(data, "UTF-8"); //中文乱码,默认"ISO-8859-1"
+entity.setContentEncoding("UTF-8");
+entity.setContentType("application/json");//设置contentType --> json
+
+HttpPost httpPost = new HttpPost("http://127.0.0.1:8090/demo/http/postBody");
+httpPost.setEntity(entity);
+```
+
+> 传输 File
+
+```xml
+<!-- HttpClient-File -->
+<dependency>
+    <groupId>org.apache.httpcomponents</groupId>
+    <artifactId>httpmime</artifactId>
+</dependency>
+```
+
+```html
+<!-- 前台页面 -->
+<form action="http://127.0.0.1:8090/demo/http/postFile" method="POST" enctype="multipart/form-data">  
+    <input type="text" name="fileName" value="中国"/>  
+    <input type="file" name="file"/>  
+    <inupt type="submit" value="提交"/>  
+</form>
+```
+
+```java
+//后台逻辑
+MultipartEntityBuilder builder = MultipartEntityBuilder.create();
+ContentType contentType = ContentType.create("text/plain","UTF-8");//中文乱码，默认"ISO-8859-1"
+builder.addTextBody("fileName", "中国", contentType);
+builder.addBinaryBody("file", new File("C:\\Users\\BlueCard\\Desktop\\StatusCode.png"));
+HttpEntity entity = builder.build();
+
+HttpPost httpPost = new HttpPost("http://127.0.0.1:8090/demo/http/postFile");
+httpPost.setEntity(entity);
+```
+
+## 请求结果解析
+
+> 请求结果解析通用于 GET 和 POST。
+
+```java
+String uri = "http://127.0.0.1:8090/demo/http/get?name=中国&age=70";
+HttpGet httpGet = new HttpGet(uri); //组装请求-GET
+// HttpPost httpPost = new HttpPost(uri); //组装请求-POST
+
+try (CloseableHttpResponse httpResponse = HttpClients.createDefault().execute(httpGet)) { //发送请求，连接自动关闭
+    if (null != httpResponse && HttpStatus.SC_OK == httpResponse.getStatusLine().getStatusCode()) {
+        String res = EntityUtils.toString(httpResponse.getEntity(), "UTF-8"); //获取结果
+        System.out.println(res);
+    }
+} catch (IOException e) {
+    e.printStackTrace();
+}
+```
+
 # fastjson
 
 ```xml
@@ -516,7 +696,7 @@ B = JSON.parseArray(JSON.toJSONString(A), Dog.class);
 >`getIntValue()和getInteger()`的区别
 
 ```java
-json.getInteger("a"); //null --->对于空的key
+json.getInteger("a");  //null --->对于空的key
 json.getIntValue("a"); //0
 ```
 
@@ -664,152 +844,6 @@ public class JsonUtils {
         }
         return null;
     }
-}
-```
-
-
-
-# HttpClient
-
-##基础概念
-
-```xml
-<dependency>
-    <groupId>org.apache.httpcomponents</groupId>
-    <artifactId>httpclient</artifactId>
-</dependency>
-```
-> 区别 GET & POST
-
-```shell
-超链接<a/>    #只能用 GET 提交HTTP请求
-表单<form/>   #可以用 GET，POST .......
-
-GET          #参数只能在请求行（request-line）
-POST         #参数可在请求行，亦可在请求体（request-body）
-```
-> 区别 URL & URI：http://ip:port/demo/hello/hello & /demo/hello/hello
-
-<https://www.cnblogs.com/wuyun-blog/p/5706703.html>
-
-<https://blog.csdn.net/koflance/article/details/79635240>
-
-## GET-请求行
-
-> 两种方式获取HttpGet
-
-```java
-//(1).直接将参数拼接在 URI 之后
-String uri = "http://127.0.0.1:8090/demo/http/get?name=中国&age=70";
-HttpGet httpGet = new HttpGet(uri);
-```
-```java
-//(2).通过 URIUtils 工具类生成带参数的 URI
-String param = "name=中国&age=70";
-// String param = "name=" + URLEncoder.encode("中国", "UTF-8") + "&age=70"; //中文参数，encode
-URI uri = URIUtils.createURI("http", "127.0.0.1", 8090, "/demo/http/get", param, null);
-HttpGet httpGet = new HttpGet(uri);
-```
-
-## POST-请求行
-
-> 两种方式获取httpPost （同GET）
-
-```java
-//(1).拼接字符串
-String uri = "http://127.0.0.1:8090/demo/http/post?name=中国&age=70";
-HttpPost httpPost = new HttpPost(uri);
-```
-
-```java
-//(2).工具类 URIUtils
-String param = "name=中国&age=70";
-// String param = "name=" + URLEncoder.encode("中国", "UTF-8") + "&age=70"; //中文参数,encode
-URI uri = URIUtils.createURI("http", "127.0.0.1", 8090, "/demo/http/post", param, null);
-HttpPost httpPost = new HttpPost(uri);
-```
-
-## POST-请求体
-
-> 传输 表单键值对 keyValue
-
-```java
-//1.POST表单
-List<NameValuePair> nvps = new ArrayList<>(2);
-nvps.add(new BasicNameValuePair("name", "中国"));
-nvps.add(new BasicNameValuePair("age", "70"));
-UrlEncodedFormEntity entity = new UrlEncodedFormEntity(nvps, Charset.forName("UTF-8")); //中文乱码
-
-HttpPost httpPost = new HttpPost("http://127.0.0.1:8090/demo/http/post");
-httpPost.setEntity(entity);
-```
-
-```java
-//2.查看HTTP数据
-System.out.println(entity.getContentType()); //Content-Type: application/x-www-form-urlencoded; charset=UTF-8
-System.out.println(entity.getContentLength()); //30
-System.out.println(EntityUtils.toString(entity)); //name=%E4%B8%AD%E5%9B%BD&age=70
-```
-
-> 传输 JSON
-
-```java
-String data = "{\"name\":\"中国\",\"age\":\"70\"}";
-StringEntity entity = new StringEntity(data, "UTF-8"); //中文乱码,默认"ISO-8859-1"
-entity.setContentEncoding("UTF-8");
-entity.setContentType("application/json");//设置contentType --> json
-
-HttpPost httpPost = new HttpPost("http://127.0.0.1:8090/demo/http/postBody");
-httpPost.setEntity(entity);
-```
-
-> 传输 File
-
-```xml
-<!-- HttpClient-File -->
-<dependency>
-    <groupId>org.apache.httpcomponents</groupId>
-    <artifactId>httpmime</artifactId>
-</dependency>
-```
-
-```html
-<!-- 前台页面 -->
-<form action="http://127.0.0.1:8090/demo/http/postFile" method="POST" enctype="multipart/form-data">  
-    <input type="text" name="fileName" value="中国"/>  
-    <input type="file" name="file"/>  
-    <inupt type="submit" value="提交"/>  
-</form>
-```
-
-```java
-//后台逻辑
-MultipartEntityBuilder builder = MultipartEntityBuilder.create();
-ContentType contentType = ContentType.create("text/plain","UTF-8");//中文乱码，默认"ISO-8859-1"
-builder.addTextBody("fileName", "中国", contentType);
-builder.addBinaryBody("file", new File("C:\\Users\\BlueCard\\Desktop\\StatusCode.png"));
-HttpEntity entity = builder.build();
-
-HttpPost httpPost = new HttpPost("http://127.0.0.1:8090/demo/http/postFile");
-httpPost.setEntity(entity);
-```
-
-## 请求结果解析
-
-> 请求结果解析通用于 GET 和 POST。
-
-```java
-String uri = "http://127.0.0.1:8090/demo/http/get?name=中国&age=70";
-HttpGet httpGet = new HttpGet(uri); //组装请求-GET
-// HttpPost httpPost = new HttpPost(uri); //组装请求-POST
-
-try (CloseableHttpResponse httpResponse = HttpClients.createDefault().execute(httpGet)) { //发送请求，连接自动关闭
-    if (null != httpResponse && HttpStatus.SC_OK == httpResponse.getStatusLine().getStatusCode()) {
-        String res = EntityUtils.toString(httpResponse.getEntity(), "UTF-8"); //获取结果
-        System.out.println(res);
-    }
-} catch (IOException e) {
-    e.printStackTrace();
 }
 ```
 

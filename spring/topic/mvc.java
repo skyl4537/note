@@ -98,52 +98,52 @@
     #方法的返回结果直接写入 HTTP 响应正文中.
     #返回非页面, 而是其他数据格式时使用(如json,xml等). 一般用于异步获取数据.
     
-// #@RequestBody
-    // #获取请求体的数据,可转换成javaBean对象,也可以转换成Map类型.
-    // #默认使用 HttpMessageConverter 解析,然后把相应数据绑定到 controller 方法的参数上
-    // #multipart/form-data: //不能处理
-    // #application/x-www-form-urlencoded: //PUT时必须; GET,POST时可选(@RequestParam, @ModelAttribute 也可以)
-    // #其他(application/json, application/xml等): //必须
+// // #@RequestBody
+    // // #获取请求体的数据,可转换成javaBean对象,也可以转换成Map类型.
+    // // #默认使用 HttpMessageConverter 解析,然后把相应数据绑定到 controller 方法的参数上
+    // // #multipart/form-data: //不能处理
+    // // #application/x-www-form-urlencoded: //PUT时必须; GET,POST时可选(@RequestParam, @ModelAttribute 也可以)
+    // // #其他(application/json, application/xml等): //必须
         
-    1.前台传递JSON
-        function login(e) {
-            $.ajax({
-                url: $(e).attr('url'),
-                type: 'POST',
-                contentType: "application/json; charset=utf-8", //解析时,必须使用 @RequestBody
-                data: JSON.stringify({'name': $('#name').val(), 'pwd': $('#pwd').val()}), //JSON对象 -> JSON字符串
-                success: function (data) {
-                    alert(JSON.parse(data).name); //JSON字符串 -> JSON对象
-                }
-            });
-        }
+    // 1.前台传递JSON
+        // function login(e) {
+            // $.ajax({
+                // url: $(e).attr('url'),
+                // type: 'POST',
+                // contentType: "application/json; charset=utf-8", //解析时,必须使用 @RequestBody
+                // data: JSON.stringify({'name': $('#name').val(), 'pwd': $('#pwd').val()}), //JSON对象 -> JSON字符串
+                // success: function (data) {
+                    // alert(JSON.parse(data).name); //JSON字符串 -> JSON对象
+                // }
+            // });
+        // }
         
-        //后台解析 -> @RequestBody
-        @PostMapping("/login")
-        @ResponseBody //***
-        public String login(@RequestBody User user) {
-            return JSON.toJSONString(user);
-        }
+        // //后台解析 -> @RequestBody
+        // @PostMapping("/login")
+        // @ResponseBody //***
+        // public String login(@RequestBody User user) {
+            // return JSON.toJSONString(user);
+        // }
         
-    2.前台传递String
-        function login(e) {
-            $.ajax({
-                url: $(e).attr('url'),
-                type: 'POST',
-                contentType: "application/x-www-form-urlencoded; charset=utf-8", //默认,可省
-                data: {'name': $('#name').val(), 'pwd': $('#pwd').val()}, //字符串
-                success: function (data) {
-                    alert(data);
-                }
-            });
-        }
+    // 2.前台传递String
+        // function login(e) {
+            // $.ajax({
+                // url: $(e).attr('url'),
+                // type: 'POST',
+                // contentType: "application/x-www-form-urlencoded; charset=utf-8", //默认,可省
+                // data: {'name': $('#name').val(), 'pwd': $('#pwd').val()}, //字符串
+                // success: function (data) {
+                    // alert(data);
+                // }
+            // });
+        // }
         
-        //后台解析 -> @RequestParam
-        @PostMapping("/login")
-        @ResponseBody
-        public String login(@RequestParam String name, @RequestParam String pwd) {
-            return name + " - " + pwd;
-        }
+        // //后台解析 -> @RequestParam
+        // @PostMapping("/login")
+        // @ResponseBody
+        // public String login(@RequestParam String name, @RequestParam String pwd) {
+            // return name + " - " + pwd;
+        // }
         
 #转发和重定向
     #一般情况下,控制器方法返回字符串都会被当成逻辑视图名处理.
