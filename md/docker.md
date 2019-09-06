@@ -294,9 +294,9 @@ DOCKER_OPTS="--insecure-registry juandapc:5000"
 >docker启动，网页登陆
 
 ```shell
-#4369：erlang发现；5672：client通信；15672：UI管理界面；25672：server间内部通信    
-docker run --name rabbitmq -d -p 5671:5671 -p 5672:5672 -p 4369:4369 -p 15671:15671 -p 15672:15672 \
--p 25672:25672 -p 15674:15674 rabbitmq
+#4369：erlang发现；5672：client通信；15672：UI管理界面；15674：js监听rabbitmq的端口；25672：server间内部通信
+docker run --name rabbitmq -d -p 4369:4369 -p 5671:5671 -p 5672:5672 -p 15671:15671 -p 15672:15672 \
+-p 15674:15674 -p 25672:25672 rabbitmq
 
 /etc/rabbitmq     #配置文件
 /var/lib/rabbitmq #数据存储

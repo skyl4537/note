@@ -303,19 +303,11 @@ Create An Anonymous Account: 新建一个匿名用户，只可连接，不可操
 > 日期类型
 
 ```sql
-timestamp：占用4个字节，表示范围 '1970-01-01 00:00:01.000000' to '2038-01-19 03:14:07.999999'
-datetime：占用8个字节，表示范围 '1000-01-01 00:00:00.000000' to '9999-12-31 23:59:59.999999'
 
-如果存进去的是NULL, timestamp会自动储存当前时间，而 datetime会储存 NULL。
-
-timestamp 容易受mysql版本 和 数据库所在时区的影响。
-
-总结： timestamp类型适合用来记录数据的最后修改时间，因为只要更改了记录中其他字段的值， timestamp字段的值都会被自动更新。（如果需要，可以设置 timestamp不自动更新）
 ```
 
 ```sql
--- 保存毫秒值
-无论 datetime 还是 timestamp：数据长度一栏选择 3，不然不保留毫秒值。'2019-5-17 20:09:10.456'
+
 ```
 
 
@@ -635,48 +627,35 @@ drop function 函数名;
 > 起别名：对于别名含有特殊符号的（如空格，#等），使用`双引号`括起来。此外，#是sql的注释符号
 
 ```sql
-SELECT id, `name` "stu#name" FROM student;
+
 ```
 
 > 去重：DISTINCT 和 GROUP BY ，二者都是针对给定字段进行去重。
 
-DISTINCT 方式就是两两对比，需要遍历整个表。GROUP BY 分组类似先建立索引再查索引。
 
-两者对比，大表 GROUP BY 快。小表DISTINCT 快，不用建索引。但小表就算建索引，也不会慢到哪去。
 
 ```sql
-SELECT DISTINCT course_id,num -- DISTINCT：课程id和成绩都相同的，才进行去重
-FROM score;
+
 ```
 
 ```sql
-SELECT course_id,num -- GROUP BY 方式
-FROM score
-GROUP BY course_id,num;
+
 ```
 
 >  模糊查询：通配符`%` 零到多个字符，`_`一个字符，`[]`括号内的一个字符
 
 ```sql
-SELECT * FROM student WHERE `id` LIKE '1%'; -- id以1开头，可以匹配数值型。
 
-SELECT * FROM student WHERE `name` LIKE '_\_%'; -- 第二个字符为下划线（系统转义符）
-SELECT * FROM student WHERE `name` LIKE '_$_%' ESCAPE '$'; --自定义转义符 $
 ```
 
 ```sql
--- 两句查询结果不一样。因为，like '%%' 只查询不为 NULL 的值。
-SELECT * FROM employee; 
-SELECT * FROM employee WHERE first_name like '%%'; 
+
 ```
 
 > 安全等于`<=>`
 
 ```sql
-SELECT * FROM student WHERE `name` <=> '如花'; -- 对于非NULL，等同于 =
-SELECT * FROM student WHERE `name` <=> NULL; -- 对于NULL，等同于 IS
 
-SELECT * FROM student WHERE `name` IS NULL; -- IS NULL 
 ```
 
 | 区别：<=> 和 IS NULL | 普通类型的数值 | null值 | 可读性 |
@@ -788,22 +767,19 @@ SUM，AVG，MIN，MAX，COUNT`（统计非NULL）`用作统计使用，又称为
 > SUM，AVG 一般用于数值类型。MAX，MIN 可处理任何类型，如日期类型，字符串类型
 
 ```sql
-SELECT SUM(salary), AVG(salary) FROM employees;
 
-SELECT MAX(hiredate), MIN(first_name) FROM employees; --日期类型，字符串类型
 ```
 
 > 所有函数 都忽略NULL。其中，对于SUM函数 `NULL和任何数相加结果都为 NULL`
 
 ```sql
-SELECT SUM(commission_pct), AVG(commission_pct), SUM(commission_pct)/COUNT(commission_pct)
-FROM employees;
+
 ```
 
 > 所有函数都可以结合 DISTINCT
 
 ```sql
-SELECT SUM(DISTINCT salary) s1, SUM(salary) s2 FROM employees;
+
 ```
 
 > COUNT 专题
@@ -825,18 +801,10 @@ SELECT SUM(DISTINCT salary) s1, SUM(salary) s2 FROM employees;
 > 分组函数同时查询的字段要求是`GROUP BY`后的字段，分组函数作为条件肯定是放在`HAVING`语句中。
 
 ```sql
-SELECT department_id, MAX(salary) max
-FROM employees
-WHERE commission_pct IS NOT NULL
-GROUP BY department_id
-ORDER BY max DESC; -- 每个部门，有奖金员工中的最高工资 --> WHERE
+
 ```
 ```sql
-SELECT department_id, COUNT(department_id) AS count 
-FROM employees
-GROUP BY department_id
-HAVING count>2
-ORDER BY count ASC; -- 查询哪个部门的员工数大于2 --> HAVING
+
 ```
 
 ## 子查询
@@ -1312,127 +1280,17 @@ WHERE department_id=(
 ## 数据准备
 
 ```sql
-SET NAMES utf8;
-SET FOREIGN_KEY_CHECKS = 0;
 
--- ----------------------------
---  Table structure for `class`
--- ----------------------------
-DROP TABLE IF EXISTS `class`;
-CREATE TABLE `class` (
-  `cid` int(11) NOT NULL AUTO_INCREMENT,
-  `caption` varchar(32) NOT NULL,
-  PRIMARY KEY (`cid`)
-) ENGINE=InnoDB AUTO_INCREMENT=5 DEFAULT CHARSET=utf8;
-
--- ----------------------------
---  Records of `class`
--- ----------------------------
-BEGIN;
-INSERT INTO `class` VALUES ('1', '三年二班'), ('2', '三年三班'), ('3', '一年二班'), ('4', '二年九班');
-COMMIT;
-
--- ----------------------------
---  Table structure for `course`
--- ----------------------------
-DROP TABLE IF EXISTS `course`;
-CREATE TABLE `course` (
-  `cid` int(11) NOT NULL AUTO_INCREMENT,
-  `cname` varchar(32) NOT NULL,
-  `teacher_id` int(11) NOT NULL,
-  PRIMARY KEY (`cid`),
-  KEY `fk_course_teacher` (`teacher_id`),
-  CONSTRAINT `fk_course_teacher` FOREIGN KEY (`teacher_id`) REFERENCES `teacher` (`tid`)
-) ENGINE=InnoDB AUTO_INCREMENT=5 DEFAULT CHARSET=utf8;
-
--- ----------------------------
---  Records of `course`
--- ----------------------------
-BEGIN;
-INSERT INTO `course` VALUES ('1', '生物', '1'), ('2', '物理', '2'), ('3', '体育', '3'), ('4', '美术', '2');
-COMMIT;
-
--- ----------------------------
---  Table structure for `score`
--- ----------------------------
-DROP TABLE IF EXISTS `score`;
-CREATE TABLE `score` (
-  `sid` int(11) NOT NULL AUTO_INCREMENT,
-  `student_id` int(11) NOT NULL,
-  `course_id` int(11) NOT NULL,
-  `num` int(11) NOT NULL,
-  PRIMARY KEY (`sid`),
-  KEY `fk_score_student` (`student_id`),
-  KEY `fk_score_course` (`course_id`),
-  CONSTRAINT `fk_score_course` FOREIGN KEY (`course_id`) REFERENCES `course` (`cid`),
-  CONSTRAINT `fk_score_student` FOREIGN KEY (`student_id`) REFERENCES `student` (`sid`)
-) ENGINE=InnoDB AUTO_INCREMENT=53 DEFAULT CHARSET=utf8;
-
--- ----------------------------
---  Records of `score`
--- ----------------------------
-BEGIN;
-INSERT INTO `score` VALUES ('1', '1', '1', '10'), ('2', '1', '2', '9'), ('5', '1', '4', '66'), ('6', '2', '1', '8'), ('8', '2', '3', '68'), ('9', '2', '4', '99'), ('10', '3', '1', '77'), ('11', '3', '2', '66'), ('12', '3', '3', '87'), ('13', '3', '4', '99'), ('14', '4', '1', '79'), ('15', '4', '2', '11'), ('16', '4', '3', '67'), ('17', '4', '4', '100'), ('18', '5', '1', '79'), ('19', '5', '2', '11'), ('20', '5', '3', '67'), ('21', '5', '4', '100'), ('22', '6', '1', '9'), ('23', '6', '2', '100'), ('24', '6', '3', '67'), ('25', '6', '4', '100'), ('26', '7', '1', '9'), ('27', '7', '2', '100'), ('28', '7', '3', '67'), ('29', '7', '4', '88'), ('30', '8', '1', '9'), ('31', '8', '2', '100'), ('32', '8', '3', '67'), ('33', '8', '4', '88'), ('34', '9', '1', '91'), ('35', '9', '2', '88'), ('36', '9', '3', '67'), ('37', '9', '4', '22'), ('38', '10', '1', '90'), ('39', '10', '2', '77'), ('40', '10', '3', '43'), ('41', '10', '4', '87'), ('42', '11', '1', '90'), ('43', '11', '2', '77'), ('44', '11', '3', '43'), ('45', '11', '4', '87'), ('46', '12', '1', '90'), ('47', '12', '2', '77'), ('48', '12', '3', '43'), ('49', '12', '4', '87'), ('52', '13', '3', '87');
-COMMIT;
-
--- ----------------------------
---  Table structure for `student`
--- ----------------------------
-DROP TABLE IF EXISTS `student`;
-CREATE TABLE `student` (
-  `sid` int(11) NOT NULL AUTO_INCREMENT,
-  `gender` char(1) NOT NULL,
-  `class_id` int(11) NOT NULL,
-  `sname` varchar(32) NOT NULL,
-  PRIMARY KEY (`sid`),
-  KEY `fk_class` (`class_id`),
-  CONSTRAINT `fk_class` FOREIGN KEY (`class_id`) REFERENCES `class` (`cid`)
-) ENGINE=InnoDB AUTO_INCREMENT=17 DEFAULT CHARSET=utf8;
-
--- ----------------------------
---  Records of `student`
--- ----------------------------
-BEGIN;
-INSERT INTO `student` VALUES ('1', '男', '1', '理解'), ('2', '女', '1', '钢蛋'), ('3', '男', '1', '张三'), ('4', '男', '1', '张一'), ('5', '女', '1', '张二'), ('6', '男', '1', '张四'), ('7', '女', '2', '铁锤'), ('8', '男', '2', '李三'), ('9', '男', '2', '李一'), ('10', '女', '2', '李二'), ('11', '男', '2', '李四'), ('12', '女', '3', '如花'), ('13', '男', '3', '刘三'), ('14', '男', '3', '刘一'), ('15', '女', '3', '刘二'), ('16', '男', '3', '刘四');
-COMMIT;
-
--- ----------------------------
---  Table structure for `teacher`
--- ----------------------------
-DROP TABLE IF EXISTS `teacher`;
-CREATE TABLE `teacher` (
-  `tid` int(11) NOT NULL AUTO_INCREMENT,
-  `tname` varchar(32) NOT NULL,
-  PRIMARY KEY (`tid`)
-) ENGINE=InnoDB AUTO_INCREMENT=6 DEFAULT CHARSET=utf8;
-
--- ----------------------------
---  Records of `teacher`
--- ----------------------------
-BEGIN;
-INSERT INTO `teacher` VALUES ('1', '张磊老师'), ('2', '李平老师'), ('3', '刘海燕老师'), ('4', '朱云海老师'), ('5', '李杰老师');
-COMMIT;
-
-SET FOREIGN_KEY_CHECKS = 1;
 ```
 
-![](assets/sql0.png)
+![(assets/sql0.png)
 
 ## 练习01-10
 
 > 2.查询"生物"课程比"物理"课程成绩高的所有学生的学号
 
 ```sql
--- 分别查询选修"生物"和"物理"学生成绩的临时表
--- 再根据【学号】连接两个临时表，再进行筛选
 
-SELECT SW.student_id,SW.num sw_num,WL.num wl_num
-FROM
-(SELECT student_id,num FROM score sc JOIN course c ON c.cid=sc.course_id WHERE c.cname='生物') SW
-LEFT JOIN
-(SELECT student_id,num FROM score sc JOIN course c ON c.cid=sc.course_id WHERE c.cname='物理') WL
-ON WL.student_id=SW.student_id
-WHERE SW.num>IF(ISNULL(WL.num),0,WL.num); 
 ```
 
 > 4.查询所有同学的学号、姓名、选课数、总成绩

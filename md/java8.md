@@ -133,7 +133,7 @@ public <X extends Throwable> T orElseThrow(Supplier<? extends X> exceptioSupplie
 public Optional<T> filter(Predicate<? super T> predicate)
 public<U> Optional<U> flatMap(Function<? super T, Optional<U>> mapper)
 ```
-> 优雅判 null
+> 优雅判 NULL
 
 ```java
 public String getDogName0(Person person) throws IllegalArgumentException { //繁琐
@@ -319,9 +319,9 @@ boolean before = plusDays.isBefore(ldt); //false
 boolean leapYear = LocalDate.now().isLeapYear();
 ```
 
-## Instant
+## 时间戳
 
-> `时间戳对象`，以Unix元年（1970年1月1日0点）开始所经历的毫秒数进行运算。
+> `Instant`，以Unix元年（1970年1月1日0点）开始所经历的毫秒数进行运算。
 
 ```java
 Instant instant = Instant.now();//默认获取 UTC 时区时间戳,北京是 UTC+8
@@ -331,46 +331,38 @@ long epochMilli = instant.toEpochMilli();//毫秒值，时间戳
 long epochSecond = instant.getEpochSecond();//秒值
 ```
 
-## ChronoUnit
+## 时间间隔
 
-> Duration，Period：分别表示时间间隔的两个维度，`前者用时分秒，后者用年月日`。
-
-> Duration：表示两个时间之间相隔的时分秒。
+> Duration：两个时间点相隔的 `X时X分X秒`
 
 ```java
-LocalDateTime begin = LocalDateTime.of(2017, 12, 31, 10, 0, 0);
+LocalDateTime start = LocalDateTime.of(2017, 12, 31, 10, 0, 0);
 LocalDateTime end = LocalDateTime.now();
 
-Duration duration = Duration.between(begin, end);
-System.out.println(duration); //PT12514H45M34.598S
+Duration between = Duration.between(start, end); //PT14735H53M57.538S
 ```
 
->Period：表示两个日期之间相隔的X年X月X日，`不能转化为具体的多少天`。
+>Period：两个时间点相隔的 `X年X月X日`
 
 ```java
-LocalDate begin = LocalDate.of(2017, 12, 31);
+LocalDate start = LocalDate.of(2017, 12, 31);
 LocalDate end = LocalDate.now();
 
-Period between = Period.between(begin, end);
-System.out.println(between); //P1Y5M5D
-System.out.printf("%d年%d月%d日", between.getYears(), between.getMonths(), between.getDays()); //1年5月5日
+Period between = Period.between(start, end); //P1Y8M6D
 ```
 
-> ChronoUnit：计算两个日期或时间相隔的`具体天数，月数，甚至秒数`。
+>ChronoUnit：两个时间点间隔的 `具体天数，月数，甚至秒数`
 
 ```java
-LocalDateTime begin = LocalDateTime.of(2017, 12, 31, 10, 0, 0);
+LocalDateTime start = LocalDateTime.of(2019, 9, 6, 10, 03, 0);
 LocalDateTime end = LocalDateTime.now();
 
-long days = ChronoUnit.DAYS.between(begin, end);
-long months = ChronoUnit.MONTHS.between(begin, end);
-long seconds = ChronoUnit.SECONDS.between(begin, end); //对于相隔秒数，必须使用 LocalDateTime
-System.out.println(days + " - " + months + " - " + seconds); //521 - 17 - 45029290
+long between = ChronoUnit.MILLIS.between(start, end); //99262 毫秒
 ```
 
-##Temporal...
+##时间校正器
 
-> 时间校正器。提供了日期操纵的接口，如：将日期调整到"下个周末"。TemporalAdjusters 是系统提供的接口实现类。`类似 Excutor，Excutors`
+> 提供了日期操纵的接口，如：将日期调整到"下个周末"。TemporalAdjusters 是系统提供的接口实现类。`类似 Excutor，Excutors`
 
 ```java
 LocalDateTime now = LocalDateTime.now();//今天周六
@@ -539,6 +531,7 @@ Stream 操作是延迟执行的。意味着它会等到需要结果时才执行�
 
 原始版本的 Iterator，用户只能一个一个的遍历元素并对其执行某些操作；
 高级版本的 Stream，用户只要给出需要对其包含的元素执行什么操作，比如 "过滤掉长度大于10的字符串"、"获取每个字符串的首字母"等，
+Stream 会隐式地在内部进行遍历，做出相应的数据转换。
 ```
 
 ## 创建流
@@ -724,13 +717,15 @@ Double reduce2 = list.stream()
 
 >收集
 
+```sh
+#collect(): 将流中元素转化为 -> <R, A> R collect(Collector<? super T, A, R> collector);
+
+(1).Collector 接口定义了如何对流执行收集操作（如收集到List，Set，Map等）
+(2).Collectors 实用类提供了系统实现的收集器实例
+(3).类似：Executor，Executors； Collection<E>，Collections
+```
+
 ```java
-//collect(): 将流中元素转化为 -> <R, A> R collect(Collector<? super T, A, R> collector);
-
-// (1).Collector 接口定义了如何对流执行收集操作(如收集到List,Set,Map等).
-// (2).Collectors 实用类提供了系统实现的收集器实例.
-// (3).类似: Executor,Executors; Collection<E>,Collections;
-
 // toList(); toSet(); toCollection(); 
 List<String> collect = list.stream()
         .map(Person::getName)
@@ -830,7 +825,7 @@ Map<Boolean, List<Person>> collect14 = list.stream()
 (3).Head -> peek -> filter -> ... -> null
 
 (4).有状态操作会把无状态操作截断，单独处理。先peek+filter，再sorted，最后peek
-#(5).有状态操作的入参为2个，无状态为1个
+(5).有状态操作的入参为2个，无状态为1个
 
 (6).并行环境下，有状态的中间操作不一定能并行操作
 ```

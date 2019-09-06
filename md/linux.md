@@ -391,6 +391,23 @@ awk '$1>0 && $2=="B" {print $1,$3}' file
 awk '($1>0 && $2=="B")||(NR==1)' file 
 ```
 
+## curl
+
+> 命令行发送 GET POST 请求
+
+```shell
+curl localhost:9006/web/hello/get1?name=li  #默认 GET
+
+curl localhost:9006/web/hello/post3 -X POST -d "name=li" #POST（-X POST/PUT/DELETE）
+curl localhost:9006/web/hello/post4 -X POST -d '{"name":"li"}' -H "Content-Type:application/json" #JSON
+```
+```sh
+curl -x 192.168.5.19:808 https://www.baidu.com #指定代理（proxy）服务器以及其端口
+```
+
+
+
+
 
 # F-G-H-I-J-K
 
@@ -562,6 +579,30 @@ COMMAND — 进程名称（命令名/命令行）
 
 
 #V-W-X-Y-Z
+
+## zip
+
+>压缩和解压（unzip）
+
+```shell
+#-d: 从压缩文件内删除指定的文件
+#-q: 不显示指令执行过程
+#-r: 递归处理，将指定目录下的所有文件和子目录一并处理
+#-l: 在不解压的前提下，显示压缩文件内所包含的文件
+```
+```sh
+zip -qr err.zip ./err*   #将当前目录下所有以'err'开头的文件压缩到'err.zip'
+zip -qr sm.zip /logs/sm  #将目录 /logs/sm 下所有文件夹和文件压缩到'sm.zip'
+
+zip -d sm.zip a.log     #从压缩文件中删除文件 a.log    
+
+unzip -l sm.zip         #查看压缩包中的文件信息（不解压）
+
+unzip sm.zip            #解压到当前目录
+unzip err.zip -d ./err  #......指定目录    
+
+j=0; for i in ./*.zip; do unzip $i -d $i_$j; let j++; done #批量解压
+```
 
 
 
@@ -1184,28 +1225,6 @@ free -hts 3 #3s刷新一次，内存的使用情况
 
 
 
-## zip
-
->压缩和解压（unzip）
-
-```shell
-#-d: 从压缩文件内删除指定的文件
-#-q: 不显示指令执行过程
-#-r: 递归处理，将指定目录下的所有文件和子目录一并处理
-#-l: 在不解压的前提下，显示压缩文件内所包含的文件
-
-zip -qr err.zip ./err*   #将当前目录下所有以'err'开头的文件压缩到'err.zip'
-zip -qr sm.zip /logs/sm  #将目录 /logs/sm 下所有文件夹和文件压缩到'sm.zip'
-
-zip -d sm.zip a.log    #从压缩文件中删除文件 a.log    
-
-unzip -l sm.zip         #查看压缩包中的文件信息（不解压）
-
-unzip sm.zip            #解压到当前目录
-unzip err.zip -d ./err  #......指定目录    
-
-j=0; for i in ./*; do unzip $i -d $j; let j++; done #批量解压
-```
 
 ## tar
 
@@ -1334,17 +1353,6 @@ pstree -p | wc -l #查询当前整个系统已用的线程或进程数
 #-w<数据包文件>: 把数据包数据写入指定的文件。
 
 tcpdump tcp port 5232 -w /tmp/tcp5232.cap #抓取 TCP 协议的 5232 端口相关数据，并写入文件
-```
-
-## curl
-
-> 命令行发送 GET POST 等restful请求
-
-```shell
-curl http://127.0.0.1:8090/qrcode/hello?world=java  #GET
-
-curl http://127.0.0.1:8090/qrcode/post -X POST -d "aaaa"    #POST（-X POST/PUT/DELETE）
-curl http://127.0.0.1:8090/qrcode/world -X POST -H "Content-Type:application/json" -d '{"code":200,"msg":"OK"}'
 ```
 
 

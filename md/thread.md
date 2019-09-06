@@ -8,179 +8,114 @@
 
 ## 基础概念
 
-多线程的目的是为了更好的利用计算机的 CPU 资源。比如在一个进程中，如果只有一个线程（也叫主线程），那么如果当这个线程因为某种原因阻塞（等待用户输入数据等情况）的时候，那么相对应的这个进程也让出了 CPU 资源并暂停执行了。试想一下，如果在一个进程中添加多个线程，那么当这个进程中某个线程阻塞的时候，其余线程还可以继续执行，做它们自己的工作，这样的话计算机的利用效率就提高了。
+> 并行 & 并发
+
+```sh
+
+```
+
+> 线程 & 进程
+
+```sh
+
+```
+
+> 线程调度
+
+```sh
+计算机通常只有一个CPU时，在任意时刻只能执行一条计算机指令，每一个进程只有获得CPU的使用权才能执行指令。
+所谓多进程并发运行，从宏观上看，其实是各个进程轮流获得CPU的使用权，分别执行各自的任务。
+
+那么,在可运行池中，会有多个线程处于就绪状态等到CPU，JVM就负责了线程的调度。
+JVM采用的是'抢占式调度'，没有采用分时调度，因此可以能造成多线程执行结果的的随机性。
+```
+
+> 多线程意义
+
+```
+多线程的目的是为了更好的利用计算机的 CPU 资源。
+比如在一个进程中，如果只有一个线程（也叫主线程），那么如果当这个线程因为某种原因阻塞（等待用户输入数据等情况）的时候，
+那么相对应的这个进程也让出了 CPU 资源并暂停执行了。试想一下，如果在一个进程中添加多个线程，那么当这个进程中某个线程阻塞的时候，
+其余线程还可以继续执行，做它们自己的工作，这样的话计算机的利用效率就提高了。
+```
 
 > 线程创建
 
-1. 继承于 Thread 类并且重写其 run 方法。不推荐使用，java 单继承，多实现。
-2. 新建一个 Runnable 对象并将其作为一个参数传入 Thread 类的构造方法中。
-3. 实现 Callable 接口，并使用线程池调用。
-4. ​
+```sh
+- extends Thread，'不推荐使用'，java 单继承，多实现  #每个线程执行自己的 run()方法（Thread implements Runnable）。
+- implements Runnable，作为参数传入 Thread，'推荐'。#多个.......同一个 run()...
+- implements Callable，使用线程池调用
 
-```java
-//区别 ① 和 ②
-前者，每个线程执行自己的 run方法。
-后者，多个.......同一个 run...。
+```
+
+```sh
+#Runnable 比 Thread 具有的优势
+多个线程共享同一个 run()方法，共同操作同一份资源
+可以避免java中的单继承的局限性
+增加程序的健壮性，实现解耦操作，代码可以被多个线程共享，代码和数据独立
+线程池只能放入实现 Runable 或 Callable 类线程，不能直接放入继承Thread的类
 ```
 
 > 线程启动
 
-通过调用线程对象的 `start()` 方法来开启一个线程`（该方法只能被调用一次）`。线程开启后便进入就绪状态，但并不会马上执行，而是等待线程调度器的调度。一旦线程调度器调度了该线程之后，该线程便可获得 CPU 资源，然后进入运行状态，开始执行 run() 方法。run() 方法运行结束，该线程也随即终止。
+```sh
+通过调用线程对象的 start() 方法来启动一个线程（该方法只能被调用一次）。
+线程开启后便进入'就绪状态'，但并不会马上执行，而是等待线程调度器的调度。
+一旦线程调度器调度了该线程之后，该线程便可获得 CPU 资源，然后进入'运行状态'，开始执行 run() 方法。run() 方法运行结束，该线程也随即终止。
+```
 
-```java
-//区别 start() 和 run()
-start，用来启动线程，真正实现多线程运行，无需等待 run方法体代码执行完毕，而继续执行下面的代码。
-
-run  ，不会开启新的线程，直接在调用线程中执行 run()方法体中的内容，程序还是顺序执行。
+```sh
+#区别 start() 和 run()
+start()：用来启动线程，真正实现多线程运行。
+run()  ：不会开启新的线程，直接在调用线程中执行 run()方法体中的内容，程序还是顺序执行。
 ```
 
 > 线程暂停
 
-通过调用线程对象的 `sleep(long millis)` 方法来让线程休眠指定的秒数，调用这个方法之后线程将会让出 CPU 进入休眠。休眠完成之后，线程并不会直接获得 CPU 资源，而是会进入就绪状态，等待线程调度器的调度来获取 CPU 资源。
+```sh
+通过调用线程对象的 sleep(long millis) 方法来让线程休眠指定的秒数，调用这个方法之后，线程将会让出 CPU 进入'休眠状态'。
+休眠完成之后，线程并不会直接获得 CPU 资源，而是会进入'就绪状态'，等待线程调度器的调度来获取 CPU 资源。
+```
 
-> 线程退出
+##线程退出
 
-- 调用 `System.exit(0)` 或 `Runtime.getRuntime().exit(0)`，并且安全管理器允许程序退出。
-
-
-- 所有的非守护线程结束运行，包括：线程中 run() 正常执行完毕，或者在 run() 执行过程中发生异常。
+```sh
+- 调用 System.exit(0) 或 Runtime.getRuntime().exit(0)，并且安全管理器允许程序退出。
+- 所有的'非守护线程'运行结束，包括：线程中 run() 正常执行完毕，或者在 run() 执行过程中发生异常。
+```
 
 ```java
-//System.exit(0) 底层调用的还是 Runtime.getRuntime().exit(0)，都是用来结束当前运行的java虚拟机。
-try {
-    int i = Integer.parseInt("666");
-    System.exit(0); //正常执行完毕，直接退出，将整个虚拟机的内容都停掉。
-} catch (NumberFormatException e) {
-    e.printStackTrace();
-    System.exit(1); //捕获到异常，非正常退出（参数取值非0）
-}
+
 ```
 - 【官方推荐】用一个 boolean 变量来标记任务是否完成，在任务完成后直接退出循环 或 修改这个标记变量。
 
 ```java
-public void run() {
-    boolean isFinish = false; //记录线程任务是否完成
-    
-    while (!isFinish) {
-        if (/*任务完成*/) {
-            break; //或者 isFinish = true;
-        } else {
-            // do something ...
-        }
-    }
-}
+
 ```
 - 利用系统预定义的`中断标识：Thread.isInterrupted()`
 
 ```java
-public void run() {
-    while (!Thread.currentThread().isInterrupted()) {//获取当前线程对象的中断标志(true/false)
-        if (/*任务完成*/) {
-            Thread.currentThread().interrupt(); //实例方法，将线程对象的中断标志设置为 true
-        } else {
-            // do something ...
-        }
-    }
-}
+
 ```
-- `中断标识 存在的问题：`其本身不会影响线程的执行，但是和其他方法混用时，就有可能影响线程的执行。例如，和 sleep() 混用，如果当前线程处于中断状态，再调用 sleep() 方法后，不仅会抛出异常，而且还会打断当前的中断状态。
+- `中断标识 存在的问题：`
 
 ```java
-new Thread(() -> {
-    for (int i = 0; !Thread.currentThread().isInterrupted() && i < 3; i++) {
-        if (i > 0) {
-            Thread.currentThread().interrupt(); //大于0，中断标识设为 true
-        }
-        System.out.println("i: " + i);
-        try {
-            Thread.sleep(1000);
-        } catch (InterruptedException e) {
-            //中断状态的线程调用 sleep() 不仅会抛出此异常，并且还会打断 中断状态
-            e.printStackTrace();
-        }
-    }
-}).start();
+
 ```
 
 ```java
-//结果输出
-i: 0
-java.lang.InterruptedException: sleep interrupted
-    ... ...
-java.lang.InterruptedException: sleep interrupted
-    ... ...
-i: 1
-i: 2
+
 ```
 > 线程优先级
 
-每个线程都有一个优先级，默认为 5。线程的优先级越高，其越容易得到 CPU 资源，`但不是一定能得到 CPU 资源`。线程的优先级设置一定要在调用 start() 方法之前。
-
-在一个线程中创建另一个新的线程，那么这个新线程的优先级默认和创建它的线程的优先级相同。并且，`在守护线程中默认创建的线程还是守护线程`。
-
 ```java
-thread.setPriority(Thread.MAX_PRIORITY); //设置线程的优先级，在 start() 之前调用
-thread.start();
 
-public final static int MIN_PRIORITY = 1;
-public final static int NORM_PRIORITY = 5; //系统预设的三种优先级，默认为5
-public final static int MAX_PRIORITY = 10;
 ```
 
 > 守护线程
 
-**守护线程**：是为非守护线程（用户线程）服务的；jvm停止不用等守护线程执行完毕。
-
-非守护线程执行完毕，则jvm退出，此时守护线程也会被强制结束。所以，一些重要的任务不该放在守护线程中。
-
-- 主线程 是非守护线程，优先级为默认的 5。
-- 非守护线程 也叫用户线程，由用户创建。
-
-
-- 守护线程 是指在程序运行的时候在后台提供一种通用服务的线程。如gc。
-- 其中，主线程和守护线程一起销毁；主线程和非守护线程互不影响。
-
 ```java
-//守护线程 -> 每隔 1 秒打印一次 i 的值，循环一共需要执行 5 次，也就是打印 5 次 i 的值。
-//主线程   -> 休眠 3 秒后，打印一句结束语后结束。
-public static void daemonThreadTest() {
-    Thread daemonThread = new Thread(() -> {
-        for (int i = 0; i < 5; i++) {
-            System.out.println(Thread.currentThread().getName() + "打印: " + i);
-            TimeUnit.SECONDS.sleep(1);
-        }
-    }, "守护线程");
-    
-    daemonThread.setDaemon(true); //守护线程在调用 start() 方法之前设置，否则抛异常
-    daemonThread.start();
-}
 
-public static void main(String[] args) {
-    System.out.println("主线程-START");
-    daemonThreadTest();
-    TimeUnit.SECONDS.sleep(3);
-    System.out.println("主线程-END!");
-}
-```
-
-```java
-主线程-START       主线程-START       主线程-START 
-守护线程打印: 0     守护线程打印: 0     守护线程打印: 0
-守护线程打印: 1     守护线程打印: 1     守护线程打印: 1
-守护线程打印: 2     守护线程打印: 2     守护线程打印: 2
-主线程-END!        守护线程打印: 3     主线程-END!
-                  主线程-END!        守护线程打印: 3
-```
-
-```java
-//为什么守护线程没有执行完成（任务是打印 5 次，但是结果只打印了 3~4 次）？
-在这个程序中，主线程是唯一的非守护线程。主线程执行完毕，则jvm退出，即守护线程也会被强制结束。所以一些重要的任务不应该放在守护线程中完成。
-```
-
-```java
-//为什么后两个运行结果守护线程会多打印一次 i 值？
-这其实是线程之间的调度导致的。
-在守护线程中先打印 i 的值然后再进行休眠，当主线程休眠完 3 秒，守护线程也正好休眠完并且在准备下一次的打印。如果在主线程打印'主线程-END!'这句话之后，并且在 main()结束之前，CPU 执行了守护线程的话，那么守护线程就会执行第 4 次打印。即出现 '守护线程打印: 3' 这一行。这个当然也是有概率的。
 ```
 ## 生命周期
 
@@ -190,19 +125,12 @@ public static void main(String[] args) {
 
 > 线程状态
 
-- `新生状态` 用 new 关键字建立一个线程对象后，该线程对象就处于新生状态。处于新生状态的线程有自己的内存空间，通过调用 start 方法进入就绪状态。
-- `就绪状态` 处于就绪状态线程具备了运行条件，但还没分配到CPU，处于线程就绪队列，等待系统为其分配CPU。当系统选定一个等待执行的线程后，它就会从就绪状态进入执行状态，该动作称之为 CPU调度。
-- `运行状态` 处于运行状态的线程执行 run方法体代码，直到等待某资源而阻塞 或 完成任务而死亡。如果在给定的时间片内没有执行结束，就会被系统给换下来回到就绪状态，等待下一次线程调度器的调度。
-- `阻塞状态` 处于运行状态的线程在某些情况下，如执行了 sleep方法，或等待I/O设备等资源，将让出CPU并暂时停止自己的运行，进入阻塞状态。在阻塞状态的线程不能进入就绪队列。只有当引起阻塞的原因消除时，如睡眠时间已到，或等待的I/O设备空闲下来，线程便转入就绪状态，重新到就绪队列中排队等待，被系统选中后从原来停止的位置开始继续运行。
-- `死亡状态` 死亡状态是线程生命周期中的最后一个阶段。线程死亡的原因有三个。①是线程被强制性地终止，如通过执行 stop来终止一个线程【不推荐使用】；②是正常运行的线程完成了它的全部工作，③是线程抛出未捕获的异常。
+
 
 > 进入阻塞状态的4种情况（都会让出CPU）
 
 ```java
-sleep(); --> 抱着 资源锁 睡大觉，自己不用，也不给别人。
-wait();  --> 放开 资源锁，自己站旁边看别人执行。
-join();  --> 阻塞指定线程等到另一个线程完成以后再继续执行
-其他操作  --> 如IO中的read()，write();
+
 ```
 
 > 区别 sleep() 和 wait()
@@ -472,6 +400,10 @@ Object.notify(); //唤醒一个因调用当前对象的 wait() 方法而陷入�
 Object.notifyAll(); //唤醒所有因调用当前对象的 wait() 方法而陷入等待状态的线程。
 // 同样，这个方法也只能在 synchronized 关键字修饰的代码块中执行。
 ```
+
+
+
+
 # 线程同步
 
 ##内存模型
@@ -918,83 +850,9 @@ public static void stopThreadsByThreadGroup() throws InterruptedException {
 
 
 
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
 # 线程池
 
 ## 基础概念
-
-> 线程池优点
-
-```shell
-降低资源消耗：通过重复利用已创建的线程，降低线程创建和销毁造成的消耗
-提高响应速度：当任务到达时，任务可以不需要等待线程的创建就能立即执行
-提高可管理性：线程是稀缺资源，如果无限制的创建，不仅会消耗系统资源，还会降低系统的稳定性，使用线程池可以进行统一的分配，调优和监控。
-```
-> 生命周期
-
-```shell
-线程池是一个进程级的重量级资源。默认生命周期和 jvm 一致。即从开启线程池开始，到 jvm 关闭为止。
-
-如果手工调用 shutdown() 方法，那么线程池执行所有的任务后，自动关闭。
-```
-
-> 5种状态
-
-```java
-public class ThreadPoolExecutor extends AbstractExecutorService {
-    volatile int runState;
-    private static final int RUNNING    = -1 << COUNT_BITS;
-    private static final int SHUTDOWN   =  0 << COUNT_BITS;
-    private static final int STOP       =  1 << COUNT_BITS;
-    private static final int TIDYING    =  2 << COUNT_BITS;
-    private static final int TERMINATED =  3 << COUNT_BITS;
-}
-```
-```java
-//runState：线程池的状态，volatile 保证线程之间的可见性。
-RUNNING    ：线程池创建后,初始处于 RUNNING 状态，接受新的任务，处理队列任务
-SHUTDOWN   ：调用 shutdown()后的状态。不再接受新的任务，处理队列任务
-STOP       ：调用 shutdownNow()....。不再接受新任务，不处理队列任务，并尝试中断正在执行的任务线程
-
-TERMINATED ：线程池已结束，即 terminated()方法执行完。
-```
-
-> 线程池初始化
-
-```java
-默认，线程池创建之后，池中是没有线程的，需要接收任务之后才会创建线程。如果需要预创建线程，可通过以下两个方法实现。
-
-prestartCoreThread();     //初始化  1   个核心线程
-prestartAllCoreThreads(); //初始化 core 个核心线程
-```
-> 线程池关闭
-
-```java
-shutdown();    //不再接受新的任务，处理队列任务，以及当前任务
-
-shutdownNow(); //不再接受新任务，不处理队列任务，并尝试中断正在执行的任务线程
-```
 
 > 区别：execute() 和 submit()
 
@@ -1018,74 +876,6 @@ submit() ：不管提交的是Runnable还是Callable类型的任务，如果不�
 
 ##核心相关
 
-> 核心参数
-
-```java
-public ThreadPoolExecutor(int corePoolSize, 
-                          int maximumPoolSize, 
-                          long keepAliveTime,
-                          TimeUnit unit, BlockingQueue<Runnable> workQueue,
-                          ThreadFactory threadFactory,
-                          RejectedExecutionHandler handler);
-```
-
-```java
-//poolSize：当前线程池中的线程数
-```
-
-```java
-//corePoolSize：线程池中的核心线程数
-默认，线程池创建后池中线程总数为 0，只有在有任务提交到线程池中时才会创建线程。当然，也可以预创建线程。
-
-每次新来一个任务，会创建一个线程去执行，直到 poolSize = corePoolSize
-当'poolSize > corePoolSize'时，新提交的任务会被放进任务缓存队列 queue
-```
-
-```java
-//maximumPoolSize：线程池中允许创建的最大线程数
-表示在线程池中最多能创建多少个线程，非核心线程数 = maximumPoolSize - corePoolSize
-```
-
-```java
-//keepAliveTime：线程池中 非核心线程 允许闲置的最长时间
-超过这个时间的'非核心线程'将会被回收，对于任务很多并且每个任务处理时间较短的的情况，可以适当增大这个参数来提高线程利用率。
-
-当设置 allowCoreThreadTimeOut(true)时，keepAliveTime 参数也会作用到核心线程上，即 corePoolSize 也会被回收。
-```
-
-```java
-//unit：keepAliveTime 的时间单位，7种取值
-DAYS，HOURS，MINUTES，SECONDS，MILLISECONDS（毫秒），MICROSECONDS（微妙），NANOSECONDS（纳秒）
-```
-
-```java
-//threadFactory：线程工厂，主要用来创建线程
-```
-
-```java
-//workQueue：储存任务的阻塞队列（线程安全），用于提交和存储待处理任务
-(1).poolSize <  corePoolSize，添加新线程
-(2).poolSize >= corePoolSize，将请求加入缓冲队列
-(3).poolSize <  maximumPoolSize，缓冲队列已满，则扩充 corePoolSize 至 maximumPoolSize
-(4).poolSize >= maximumPoolSize，请求无法加入缓冲队列，任务将被拒绝
-```
-
-```java
-//handler：任务拒绝策略。以下两种情况，会触发：
-(1).等待队列已满 && poolSize = maximumPoolSize
-(2).调用 shutdown()，会等待线程池里的任务执行完毕，才真正 SHUTDOWN。在等待间，会拒绝新任务
-```
-
-```java
-AbortPolicy //默认方式，丢弃新的任务，并抛出异常 RejectedExecutionException
-
-DiscardPolicy //丢弃任务，但不抛出异常。会导致被丢弃的任务无法再次被执行
-
-DiscardOldestPolicy //丢弃最旧的未处理请求，然后执行当前提交的任务
-
-CallerRunsPolicy //直接在 execute() 的调用线程（可能是主线程）中运行被拒绝的任务
-                 //执行完之后,尝试将下一个任务添加到线程池中,可有效降低向线程池内添加任务的速度
-```
 > 常见阻塞队列
 
 ```java
@@ -1103,73 +893,6 @@ SynchronousQueue
 PriorityBlockingQueue
   - 按照'优先级'进行排序的/*无限队列*/，优先级最高的元素将始终排在队列的头部
   - 存放在其中的元素必须 implements Comparable，这样才能通过实现 compareTo() 进行排序
-```
-
-> 核心方法
-
-```java
-public class ThreadPoolExecutor 
-        extends [AbstractExecutorService implements (ExecutorService extends Executor)] {
-
-    // 在 Executor 中声明的方法，在 ThreadPoolExecutor 进行了具体的实现
-    // 通过这个方法可以向线程池提交一个任务，交由线程池去执行
-    execute();
-
-    // 在 ExecutorService 中声明的方法，在 AbstractExecutorService 就已经有了具体的实现
-    // 在 ThreadPoolExecutor 中并没有对其进行重写
-    // 也是用来向线程池提交任务的，但和 execute() 不同，它能够返回任务执行的结果
-    // 底层还是调用 execute()，只不过利用了 Future 来获取任务执行结果
-    submit();
-
-    //关闭线程池。不会接收新的任务，但会处理阻塞队列中的任务，以及当前正在执行的任务。
-    void shutdown();
-    
-    //立刻关闭线程池。即不会接收新的任务，也不处理阻塞队列中的任务，甚至还会尝试中断正在执行的任务
-    //返回值list为 阻塞列表中未被执行的任务
-    List<Runnable> shutdownNow();
-}
-```
-
-> 线程池扩充
-
-```java
-//poolSize  < corePoolSize
-新来任务，就会创建一个线程去执行这个任务
-```
-
-```java
-//poolSize > corePoolSize && 缓冲队列未满
-新来任务，尝试将其添加到任务缓存队列当中，等待空闲线程将其取出去执行
-```
-
-```java
-//poolSize > corePoolSize && 缓冲队列已满 && poolSize < maximumPoolSize
-新来任务，任务缓存队列已满，则会尝试创建新的线程（即扩充 corePoolSize）去执行这个任务
-```
-
-```java
-//poolSize > corePoolSize && 队列已满 && poolSize = maximumPoolSize
-新来任务，任务缓存队列已满，corePoolSize 已扩充至 maximumPoolSize，则会采取'任务拒绝策略'进行处理
-```
-
-```java
-当高峰期已过，如果某线程空闲时间超过 keepAliveTime，线程将被终止，直至 poolSize <= corePoolSize。
-
-如果设置了 allowCoreThreadTimeOut(true)，那么核心线程也会被终止（默认不会），直至 poolSize=0。
-```
-
->举个栗子：corePoolSize = 10，maximumPoolSize = (10+5)
-
-```shell
-假如有一个工厂，工厂里面有 10 个工人，每个工人同时只能做一件任务。
-
-因此，只要当10个工人中有工人是空闲的，来了任务就分配给空闲的工人做。当10个工人都有任务在做时，如果还来了任务，就把任务进行排队等待。
-
-如果新任务增长的速度远大于工人做任务的速度，那么此时工厂主管可能会想补救措施，如再招 5 个临时工人，然后就将任务也分配给这 5 个临时工人做
-
-如果说 （10+5） 个工人做任务的速度还是不够，此时工厂主管可能就要考虑不再接收新的任务或者抛弃前面的一些任务了
-
-当这 （10+5） 个工人中有人空闲时，而新任务增长的速度又比较缓慢，工厂主管可辞掉 5 个临时工。只保持原来的10个工人，毕竟请额外的工人是要花钱
 ```
 
 ## 容量相关
@@ -1214,69 +937,6 @@ int cpuSize = Runtime.getRuntime().availableProcessors(); //获取cpu核心数
  */
 ```
 ## DEMO
-
-> 当 queue 已满，新来一个 task，恰好 core 有一个空闲，哪种情况正确：`（1）`
-
-- （1）空闲 core 直接执行新来的 task
-- （2）空闲 core 取出 queue 头部的任务执行，而将新来的任务 task 放入队尾
-
-解答：有空闲 core 就使用，没有则加入队列（队列未满）或新建线程（队列已满），所以选(1)。从以下 DEMO 中的 Task-5，Task-6 执行先于 Task-3，Task-4 可以验证
->获取线程池属性
-
-```java
-public void test() throws InterruptedException {
-    ThreadPoolExecutor executor = new ThreadPoolExecutor(2, 4, 200,  //线程池最大容量 4+2
-                                  TimeUnit.MILLISECONDS, new ArrayBlockingQueue<>(2));
-    printPoolProperty(executor); //任务开始执行前，获取线程池属性
-    for (int i = 1; i <= 7; i++) {
-        int taskNum = i;
-        try {
-            executor.submit(() -> {
-                System.out.println(LocalTime.now() + " - "
-                        + Thread.currentThread().getName() + " START " + taskNum);
-                TimeUnit.SECONDS.sleep(2);
-            });
-            printPoolProperty(executor); //任务添加后，获取线程池属性
-        } catch (Exception e) {
-            e.printStackTrace();
-        }
-    }
-
-    Thread.sleep(6 * 1000); //所有任务执行完毕后，获取线程池属性
-    printPoolProperty(executor);
-    executor.shutdown();
-}
-
-private static void printPoolProperty(ThreadPoolExecutor executor) {
-    System.out.println(LocalTime.now() + " - "
-                       + "poolSize: " + executor.getPoolSize()
-                       + "; queueSize: " + executor.getQueue().size()
-                       + "; completedTask: " + executor.getCompletedTaskCount());
-}
-```
-```java
-20:22:59.169 - poolSize: 0; queueSize: 0; completedTask: 0 //初始状态
-
-20:22:59.192 - poolSize: 1; queueSize: 0; completedTask: 0 //Task-1
-20:22:59.192 - poolSize: 2; queueSize: 0; completedTask: 0 //Task-2.(poolSize = core)
-
-20:22:59.193 - poolSize: 2; queueSize: 1; completedTask: 0 //Task-3
-20:22:59.193 - poolSize: 2; queueSize: 2; completedTask: 0 //Task-4.(queue 已满)
-
-20:22:59.193 - poolSize: 3; queueSize: 2; completedTask: 0 //Task-5.(扩充 poolSize -> max)
-20:22:59.193 - poolSize: 4; queueSize: 2; completedTask: 0 //Task-6.(poolSize = max)
-
-20:22:59.193 - pool-1-thread-2 START 2
-20:22:59.196 - pool-1-thread-1 START 1
-20:22:59.196 - pool-1-thread-3 START 5
-20:22:59.196 - pool-1-thread-4 START 6
-
-java.util.concurrent.RejectedExecutionException: ...       //Task-7.(任务拒绝策略)
-
-20:23:01.194 - pool-1-thread-2 START 3
-20:23:01.197 - pool-1-thread-3 START 4
-20:23:05.195 - poolSize: 2; queueSize: 0; completedTask: 6 //所有任务完毕后，poolSize = core
-```
 
 > 三个线程顺序执行
 
@@ -1376,389 +1036,17 @@ public class MyThreadPool {
 
 ## ali推荐
 
-> JDK 内置的 4 种线程池
-
-```java
-//(1).单例线程池：只用一个核心线程来处理任务，适用于有序执行任务
-public static ExecutorService newSingleThreadExecutor() {
-	return new FinalizableDelegatedExecutorService
-		(new ThreadPoolExecutor(1, 1,
-								0L, TimeUnit.MILLISECONDS,
-								new LinkedBlockingQueue<Runnable>())); //queue Max
-}
-```
-```java
-//(2).固定线程池：核心线程数和最大线程数相同，不存在非核心线程。处理一个无限队列
-public static ExecutorService newFixedThreadPool(int nThreads) {
-	return new ThreadPoolExecutor(nThreads, nThreads,
-								  0L, TimeUnit.MILLISECONDS,
-								  new LinkedBlockingQueue<Runnable>()); //queue Max
-}
-```
-```java
-//(3).缓存线程池：不使用核心线程，使用无限大的非核心线程，每个线程的过期时间为 60 秒
-//适用于大量需要立即处理，并且每个任务耗时较少的任务集合
-public static ExecutorService newCachedThreadPool() {
-	return new ThreadPoolExecutor(0, Integer.MAX_VALUE,
-								  60L, TimeUnit.SECONDS,
-								  new SynchronousQueue<Runnable>());
-}
-```
-```java
-//(4).定时线程池：比Timer更安全，功能更强大。--> 如果有任务执行过程中抛出异常，则会跳出，不会影响下次循环
-public static ScheduledExecutorService newScheduledThreadPool(int corePoolSize) {
-	return new ScheduledThreadPoolExecutor(corePoolSize, Integer.MAX_VALUE,
-                                           0, NANOSECONDS,
-                                           new DelayedWorkQueue());
-}
-```
-
-> JDK 内置线程池的 2 个弊端（参考 ali 开发文档）
-
-```java
-(1).Fixed  & Single   --> queue ：MAX，容易因请求队列堆积，耗费大量内存，甚至OOM
-
-(2).Cached & Schedule --> max   ：MAX，可能会创建非常多的线程，甚至OOM
-```
-> `ali 推荐方案`
-
-- ThreadFactory对象（两种方式）
-
-```java
-//org.apache.commons.lang3.concurrent.BasicThreadFactory
-BasicThreadFactory threadFactory = new BasicThreadFactory.Builder()
-    .namingPattern("demo-pool-%d")/*.daemon(true)*/.build();
-```
-
-```java
-//com.google.common.util.concurrent.ThreadFactoryBuilder
-ThreadFactory threadFactory = new ThreadFactoryBuilder()
-    .setNameFormat("demo-pool-%d").build();
-```
-
-- 普通任务的线程池
-
-```java
-ExecutorService threadPool = new ThreadPoolExecutor(5, 200,
-        0L, TimeUnit.MILLISECONDS,
-        new LinkedBlockingQueue<>(1024),
-        threadFactory,
-        new ThreadPoolExecutor.AbortPolicy());
-```
-- 定时任务的线程池
-
-```java
-ScheduledExecutorService threadPool = new ScheduledThreadPoolExecutor(1, threadFactory);
-```
-
-- xml配置版
-
-
-```xml
-<bean id="userThreadPool"
-    class="org.springframework.scheduling.concurrent.ThreadPoolTaskExecutor">
-    <property name="corePoolSize" value="10" />
-    <property name="maxPoolSize" value="100" />
-    <property name="queueCapacity" value="2000" />
-
-    <property name="threadFactory" value= threadFactory />
-    <property name="rejectedExecutionHandler">
-        <ref local="rejectedExecutionHandler" />
-    </property>
-</bean>
-
-userThreadPool.execute(thread); <!-- java代码使用 -->
-```
-- 注解版
-
-
-```java
-@Bean("demoThreadPool") //默认情况，@Bean 注解的参数名称和方法名相同，也可以显示定义
-public Executor getAsyncExecutor() {
-    ThreadPoolTaskExecutor executor = new ThreadPoolTaskExecutor();
-    executor.setThreadNamePrefix("demo-pool-"); //线程名前缀
-
-    executor.setCorePoolSize(5); //核心线程数. 默认 1
-    executor.setMaxPoolSize(10); //最大线程数. 默认 Integer.MAX_VALUE
-    executor.setQueueCapacity(10); //缓冲队列大小. 默认 Integer.MAX_VALUE
-
-    executor.setAllowCoreThreadTimeOut(true); //核心线程也会超时关闭, 默认false
-    executor.setKeepAliveSeconds(KEEP_ALIVE_TIME); //空闲线程的最大存活时间,超过则被回收. 默认60s
-    executor.setRejectedExecutionHandler(new ThreadPoolExecutor.AbortPolicy()); //拒绝策略
-    //executor.setThreadFactory(r -> null);
-
-    executor.initialize(); //初始化
-    return executor;
-}
-```
-
 ## 异常处理
-
->如何正确处理子线程中的异常呢
-
-注意：子线程中发生了异常，如果没有任何类来接手处理的话，是会直接退出的，而不会记录任何日志。所以，如果什么都不做的话，是会出现子线程任务既没执行成功，也没有任何日志提示的诡异现象的。
-
-```
-java中两种异常：已检测异常(Checked-Exceptions)，未检测异常(Unchecked-Exceptions)
-
-（1）因为 run()不接受 throws 语句，所以当抛出已检测异常时，需要手动 try...catch.. 做相应的处理。
-（2）未检测异常：将异常信息记录到日志，然后退出程序。常见的APP崩溃，正是基于这一原理.
-```
-
->子线程处理（1）：try-catch
-
-```java
-public class ChildThread implements Runnable {            
-    public void run() {
-        //...1...                
-        try {
-            int i = 1/0;
-        } catch (Exception e) {
-            System.out.println(String.format("handle exception in child thread. %s", e));
-        }
-        //...2...
-    }
-}
-```
-> 子线程处理（2）：当前线程的异常处理器 `setUncaughtExceptionHandler`
-
-1. 优先选择，当前线程的异常处理器（默认没有）。
-2. 然后选择，当前线程所属线程组的异常处理器。
-3. 最后选择，全局的异常处理器。
-4. 最后的最后，都没有设置异常处理器，则主线程默默退出。
-
-```java
-new Thread(() -> {
-    Thread.currentThread().setUncaughtExceptionHandler((t, e) ->
-           System.out.println(String.format("%s 当前线程的异常处理器: %s", t.getName(), e)));
-
-    System.out.println(SystemUtils.getAll() + " - 1");
-    int i = 1 / 0;
-    System.out.println(SystemUtils.getAll() + " - 2");
-}).start();
-
-new Thread(() -> {
-    System.out.println(SystemUtils.getAll() + " - a");
-    String s = "aa".split("_")[1];
-    System.out.println(SystemUtils.getAll() + " - b");
-}).start();
-
-// 2019-05-30 20:19:27.481 - 12 - Thread-1 - a ---> 该线程未设置异常处理器，故没有捕获异常
-// 2019-05-30 20:19:27.481 - 11 - Thread-0 - 1
-// Thread-0 当前线程的异常处理器: java.lang.ArithmeticException: / by zero
-```
->子线程处理（3）：全局的异常处理器 `setDefaultUncaughtExceptionHandler`
-
-```java
-Thread.setDefaultUncaughtExceptionHandler((t, e) ->
-       System.out.println(String.format("%s 全局的异常处理器: %s", t.getName(), e)));
-
-new Thread(() -> {
-    Thread.currentThread().setUncaughtExceptionHandler((t, e) ->
-           System.out.println(String.format("%s 当前线程的异常处理器: %s", t.getName(), e)));
-
-    System.out.println(SystemUtils.getAll() + " - 1");
-    int i = 1 / 0;
-    System.out.println(SystemUtils.getAll() + " - 2");
-}).start();
-
-new Thread(() -> {
-    System.out.println(SystemUtils.getAll() + " - a");
-    String s = "aa".split("_")[1];
-    System.out.println(SystemUtils.getAll() + " - b");
-}).start();
-
-// 2019-05-30 20:20:52.459 - 12 - Thread-1 - a
-// 2019-05-30 20:20:52.466 - 11 - Thread-0 - 1
-// Thread-0 当前线程的异常处理器: java.lang.ArithmeticException: / by zero
-// Thread-1 全局的异常处理器: java.lang.ArrayIndexOutOfBoundsException: 1
-```
-
-> 父线程处理`推荐`：通过 Future.get() 捕获异常
-
-```java
-ExecutorService executor = Executors.newSingleThreadExecutor();
-
-Future<Object> future = executor.submit(() -> {
-    System.out.println(SystemUtils.getAll() + " - 1");
-    try {
-        int i = 1 / 0;
-    } catch (Exception e) {
-        throw new RuntimeException(e.getMessage()); //抛出异常
-    }
-    System.out.println(SystemUtils.getAll() + " - 2");
-    return "";
-});
-
-try {
-    System.out.println("res: " + future.get()); //get捕获异常
-} catch (InterruptedException | ExecutionException e) {
-    System.out.println("Future-Exception-Handler: " + e);
-    executor.shutdown();
-}
-
-// 2019-05-30 20:27:19.961 - 11 - pool-1-thread-1 - 1
-// Future-Exception-Handler: java.util.concurrent.Exe...on: java.lang.Run...ion: / by zero
-```
 
 
 
 # 定时调度
 
-任务调度可以用 Quartz，但对于简单的定时任务可以用Spring内置 Scheduled，linux系统定时任务用 Crontab。
-
 ##Timer
-
-> `Timer`：单线程，串行执行，单个任务异常，整体任务停止
-
-```java
-//一开始, Task_A 能正常1秒执行一次. 
-//Task_B 启动后, 由于 Task_B 完成需要2秒, 导致 Task_A 要等到 Task_B 执行完才能执行.
-//更可怕的是, Task_C 启动后, 抛了异常, 导致整个定时任务全部挂了!!!
-// A A A B A B C(x)
-
-Timer timer = new Timer();
-timer.schedule(Task_A, 0, 1 * 1000); //1s执行一次
-timer.schedule(Task_B, 2 * 1000, 2 * 1000); //延迟2s，2s执行一次 (完成消耗2s)
-timer.schedule(Task_C, 5 * 1000, 5 * 1000); //延迟5s，5s执行一次 (抛出异常)
-```
-```java
-Task_A.cancel(); //取消单个任务
-timer.cancel(); //取消整体任务
-```
 
 ##定时线程池
 
-> `ScheduledExecutorService`：并行执行，互不影响，单任务异常，异常任务停止，其他任务不影响
-
-对于抛出异常的任务，若想在抛出异常后，还可以继续循环执行，使用 `try-catch`包裹。
-
-```java
-//Task_B, Task_C 不再影响 Task_A 定时执行
-//Task_C 抛出异常后, 只影响自身不再执行, 其他无碍!!!
-// A A B A A A C(x) A B A A A A B
-
-ScheduledExecutorService pool = Executors.newScheduledThreadPool(2);
-pool.scheduleWithFixedDelay(Task_A, 0, 1, TimeUnit.SECONDS);
-pool.scheduleWithFixedDelay(Task_B, 2, 2, TimeUnit.SECONDS);
-pool.scheduleWithFixedDelay(Task_C, 5, 5, TimeUnit.SECONDS);
-```
-```java
-ScheduledFuture<?> future = scheduled.scheduleWithFixedDelay(task1, 1, 1, TimeUnit.SECONDS);
-future.cancel(true); //取消单个任务
-pool.shutdown(); //取消整体任务
-```
-> 停止任务时，任务是否已放入任务集map？
-
-```java
-public static void main(String[] args) {
-    String key = "JOB_KEY";
-    final Map<String, Future> futures = new HashMap<>(); //job_map
-    ScheduledExecutorService pool = Executors.newScheduledThreadPool(5);
-
-    LocalTime init = LocalTime.now();
-    System.out.println("INIT : " + init);
-
-    ScheduledFuture<?> future = pool.scheduleWithFixedDelay(() -> {
-        LocalTime now = LocalTime.now();
-        System.out.println("NOW  : " + now);
-
-        if (ChronoUnit.MILLIS.between(init, now) > 3 * 1000) { //启动3s后，停止任务
-            futures.get(key).cancel(true);
-            pool.shutdown();
-            System.out.println("STOP : " + LocalTime.now());
-        }
-    }, 1, 3, TimeUnit.SECONDS);
-
-    //先于任务执行，即任务执行过程中，future肯定已放入Map
-    System.out.println("START: " + LocalTime.now() + " " + futures.size());
-    futures.put(key, future);
-    System.out.println("END  : " + LocalTime.now() + " " + futures.size());
-}
-```
-
-```sh
-INIT : 16:10:47.218
-START: 16:10:47.229 0
-END  : 16:10:47.229 1  #已放入map
-NOW  : 16:10:48.229
-NOW  : 16:10:51.233
-STOP : 16:10:51.234    #停止任务
-```
-
 ##@Scheduled
-
-> Spring内置的定时线程池
-
-```java
-@Scheduled(fixedRate = 6000)  //上一次开始执行时间点之后6秒再执行
-@Scheduled(fixedDelay = 6000) //.....执行完毕时间点...........
-@Scheduled(initialDelay=1000, fixedRate=6000) //第一次延迟1秒后执行，之后按 fixedRate 的规则每6秒执行一次
-
-@Scheduled(cron = "0/1 * * * * ?")   //详细配置方法执行频率，1s1次
-
-cron表达式: [秒] [分] [时] [日] [月] [周] [年(可省)]
-秒(0~59); 分(0~59); 时(0~23); 日(1~31,和月份有关); 月(1~12); 星期(1~7,1为周日); 年(1970~2099)
-```
-
-```shell
-* 适用于所有字段。表示对应时间域的'每一个时刻'。如分钟字段，表示每分钟
-
-- 适用于所有字段。表示'一个范围'。如小时字段10-12，表示从10到12点，即 10,11,12
-
-, 适用于所有字段。表示'一个列表值'。如星期字段"MON,WED,FRI"，表示星期一、星期三和星期五
-
-/ 适用于所有字段。表示'一个等步长序列'。x/y表示：x为起始值，y 为增量步长值
-	如，分钟字段： 0/15表示 0,15,30,45； 5/15表示 5,20,35,50。'*/y == 0/y'
-
-? 日期和星期字段。通常指定为'无意义的值'，相当于占位符。因为日和星期是有冲突的
-```
-> 此注解默认使用`单例线程池`去处理任务
-
-```java
-@EnableScheduling //两个必要注解
-@Component
-public class Task {
-
-    @Scheduled(initialDelay = 1 * 1000, fixedDelay = 2 * 1000)
-    public void test1() throws InterruptedException {
-        System.out.println(getTimeAndThreadId() + " -> TASK-01 - START!");
-        Thread.sleep(3 * 1000);
-        System.out.println(getTimeAndThreadId() + " -> TASK-01 - END !!");
-    }
-
-    @Scheduled(initialDelay = 1 * 1000, fixedRate = 3 * 1000)
-    public void test2() throws InterruptedException {
-        System.out.println(getTimeAndThreadId() + " -> TASK-02 - START!");
-        Thread.sleep(5 * 1000);
-        System.out.println(getTimeAndThreadId() + " -> TASK-02 - END !!");
-        // int i = 1 / 0;
-    }
-
-    private String getTimeAndThreadId() {
-        return LocalTime.now() + " - " + Thread.currentThread().getId();
-    }
-}
-
-//@Scheduled 默认使用'单例线程池'，源码详见：
-//org.springframework.scheduling.concurrent.ThreadPoolTaskScheduler#poolSize=1
-//所以 task01，02 虽然同时启动，但还是顺序执行
-//但是，如果 task02 执行过程出现异常，也不会影响 task01 及 task02 的后续执行
-09:43:21.984 - 43 -> TASK-02 - START!
-09:43:26.985 - 43 -> TASK-02 - END !!
-09:43:26.985 - 43 -> TASK-01 - START!
-09:43:29.985 - 43 -> TASK-01 - END !!
-```
-> 配置定时任务的线程池大小
-
-```properties
-#线程池大小，默认1
-spring.task.scheduling.pool.size=5
-#线程名前缀，默认 scheduling-
-#spring.task.scheduling.thread-name-prefix=demoscheduling-
-```
-
-
 
 > 异步任务
 
@@ -1783,161 +1071,10 @@ public class ScheduledTask {
 ```
 ## Quartz
 
-> 核心概念
 
-```shell
-任务调度（Job-Scheduling）的开源框架。
-可以与JavaEE与JavaSE结合，也可以单独使用。可用来创建简单或运行十个、百个、甚至于好几万个 Jobs 复杂的程序。
-```
 
-```java
-job       //任务      - 你要做什么事？
-Trigger   //触发器    - 你什么时候去做？
-Scheduler //任务调度  - 你什么时候需要去做什么事？
-```
-```xml
-<dependency>
-    <groupId>org.quartz-scheduler</groupId>
-    <artifactId>quartz</artifactId>
-</dependency>
-<dependency>
-    <groupId>org.springframework</groupId>
-    <artifactId>spring-context-support</artifactId>
-</dependency>
-```
 
-> javaSE
 
-```java
-private static void task01() throws SchedulerException {
-    //1.job
-    JobDetail job = JobBuilder.newJob(JobDemo.class)
-        .withIdentity("job-01", "group-01").build();
-
-    //2.trigger
-    //方式一：通过 Quartz 内置方法来完成简单的重复调用，每秒执行一次
-    // Trigger trigger = TriggerBuilder.newTrigger()
-    //         .withSchedule(SimpleScheduleBuilder.repeatSecondlyForever()).build();
-
-    //方式一：自定义 Cron 表达式来给定触发的时间
-    Trigger trigger = TriggerBuilder.newTrigger()
-        .withIdentity("trigger-11", "group-11")
-        .withSchedule(CronScheduleBuilder.cronSchedule("0/2 * * * * ?")).build();
-
-    //3.scheduler
-    Scheduler scheduler = StdSchedulerFactory.getDefaultScheduler();
-    scheduler.scheduleJob(job, trigger);
-
-    scheduler.start();
-}
-```
-
-```java
-//JOB类必须定义为 public
-public class JobDemo implements Job {
-    @Override
-    public void execute(JobExecutionContext jobExecutionContext) {
-        System.out.println(LocalDateTime.now() + " - 任务被触发时调用！");
-    }
-}
-```
-
-> SpringBoot方式一：创建普通job类，直接调用。灵活，非侵入。
-
-```java
-@Component
-public class JobDemo01 {
-    @Autowired
-    HelloService helloService; //service 层
-
-    public void job() {
-        helloService.hello();
-        System.out.println("job01: " + SystemUtils.getNow());
-    }
-}
-```
-```java
-@Configuration
-public class QuartzConfig01 {
-    @Bean("job01")
-    public MethodInvokingJobDetailFactoryBean job01(JobDemo01 jobDemo01) {
-        MethodInvokingJobDetailFactoryBean job = new MethodInvokingJobDetailFactoryBean();
-        job.setName("my-job01"); // 任务的名字
-        job.setGroup("my"); // 任务的分组
-
-        job.setConcurrent(false); // 是否并发
-        job.setTargetObject(jobDemo01); // 被执行的对象
-        job.setTargetMethod("job"); // 被执行的方法
-        return job;
-    }
-
-    @Bean(name = "tigger01")
-    public CronTriggerFactoryBean tigger01(@Qualifier("job01") 
-                                           MethodInvokingJobDetailFactoryBean job01) {
-        CronTriggerFactoryBean tigger = new CronTriggerFactoryBean();
-        tigger.setName("my-tigger01");
-        tigger.setJobDetail(Objects.requireNonNull(job01.getObject()));
-        tigger.setCronExpression("0/5 * * * * ?"); //cron
-        return tigger;
-    }
-
-    @Bean(name = "scheduler01")
-    public SchedulerFactoryBean scheduler01(@Qualifier("tigger01") Trigger tigger01) {
-        SchedulerFactoryBean scheduler = new SchedulerFactoryBean();
-        scheduler.setStartupDelay(5); // 延时启动定时任务,避免系统未完全启动却开始执行定时任务的情况
-        scheduler.setOverwriteExistingJobs(true); // 覆盖已存在的任务
-        scheduler.setTriggers(tigger01); // 注册触发器
-        return scheduler;
-    }
-}
-```
-> SpringBoot方式二：job继承特定类，实现其方法，方法就是被调度的任务体。
-
-```java
-//@Component -> 无需此注解,区别于方式1
-public class JobDemo02 extends QuartzJobBean {
-    @Override
-    protected void executeInternal(JobExecutionContext context) {
-        HelloService helloService = (HelloService) context.getMergedJobDataMap()
-            .get("helloService"); //获取 service 对象，参数由以下方法传入
-        helloService.hello();
-        System.out.println("job02: " + SystemUtils.getNow());
-    }
-}
-```
-```java
-@Configuration
-public class QuartzConfig02 {
-    @Autowired
-    HelloService helloService;
-
-    @Bean("job02")
-    public JobDetailFactoryBean job02() {
-        JobDetailFactoryBean job = new JobDetailFactoryBean();
-        job.setJobClass(JobDemo02.class);
-
-        Map<String, Object> map = new HashMap<>();
-        map.put("helloService", helloService);
-        job.setJobDataAsMap(map); //传参 -> helloService
-        return job;
-    }
-
-    @Bean(name = "tigger02")
-    public CronTriggerFactoryBean cronTriggerFactoryBean(JobDetailFactoryBean job02) {
-        CronTriggerFactoryBean tigger = new CronTriggerFactoryBean();
-        tigger.setJobDetail(Objects.requireNonNull(job02.getObject()));
-        tigger.setCronExpression("0/5 * * * * ?"); //cron
-        return tigger;
-    }
-
-    @Bean(name = "scheduler02")
-    public SchedulerFactoryBean schedulerFactoryBean(CronTriggerFactoryBean tigger02) {
-        SchedulerFactoryBean scheduler = new SchedulerFactoryBean();
-        scheduler.setTriggers(tigger02.getObject());
-        return scheduler;
-    }
-}
-```
 # ThreadLocal
 
 > 基础介绍

@@ -133,6 +133,56 @@ TRUNCATE TABLE city; -- 清空表2
 -- DELETE 清空表后，添加新的数据时自增列接着自增。TRUNCATE 则是从1开始重新计数。
 ```
 
+## DQL
+
+> 别名：对于别名含有特殊符号的（如空格，#等），使用`双引号`括起来。
+
+```sql
+SELECT id, `name` "stu#name" FROM student;
+```
+
+> 去重：DISTINCT 和 GROUP BY ，二者都是针对给定字段进行去重。
+
+```sql
+DISTINCT 方式就是两两对比，需要遍历整个表。 GROUP BY 分组类似先建立索引，再查索引。
+
+两者对比：大表 GROUP BY 快，小表 DISTINCT 快（不用建索引）。但小表就算建索引，也不会慢到哪去。
+```
+
+```sql
+SELECT DISTINCT id,num FROM score;        -- DISTINCT：id和num 都相同的，才进行去重
+SELECT id,num FROM score GROUP BY id,num; -- GROUP BY
+```
+
+> 模糊查询：通配符`%` 零到多个字符，`_`一个字符，`[]`括号内的一个字符
+
+```sql
+SELECT * FROM student WHERE `id` LIKE '1%';                -- id以1开头，可以匹配数值型。
+SELECT * FROM student WHERE `name` LIKE '_\_%';            -- 第二个字符为下划线（系统内置转义符\）
+SELECT * FROM student WHERE `name` LIKE '_$_%' ESCAPE '$'; -- 自定义转义符 $
+```
+
+```sql
+-- 两句查询结果不一样。因为，like '%%' 不能匹配值为 NULL 记录
+SELECT * FROM employee; 
+SELECT * FROM employee WHERE first_name like '%%'; 
+```
+
+> 安全等于`<=>`
+
+```sql
+SELECT * FROM student WHERE `name` <=> '如花'; -- 对于非NULL，等同于 =
+
+SELECT * FROM student WHERE `name` <=> NULL;  -- 对于NULL，等同于 IS
+SELECT * FROM student WHERE `name` IS NULL;   -- IS NULL 
+```
+
+```sql
+
+```
+
+
+
 ## 执行顺序
 
 >所有的查询语句都是从 FROM 开始执行的，并非 SELECT。`where → group by → having → order by → limit`
@@ -176,6 +226,23 @@ LIMIT 3;
 
 ```sql
 若将 avg(数学成绩) > 75 放到 WHERE 子句中，此时 GROUP BY 语句还未执行，因此此时聚合值 avg(数学成绩) 还是未知的，因此会报错。
+```
+
+## 数据类型
+
+> timestamp & datetime
+
+```sql
+timestamp：占用4个字节，表示范围 '1970-01-01 00:00:01.000000' to '2038-01-19 03:14:07.999999'
+datetime ：占用8个字节，表示范围 '1000-01-01 00:00:00.000000' to '9999-12-31 23:59:59.999999'
+
+-- 如果存进去的是 NULL, timestamp 会自动储存当前时间，datetime 会储存 NULL。
+-- timestamp 适合用来记录数据的最后修改时间，因为只要更改了记录中其他字段的值， timestamp 字段的值都会被自动更新（可设置不自动更新）。
+```
+
+```sql
+-- 保存毫秒值
+无论 datetime 还是 timestamp：数据长度一栏选择 3，不然不保留毫秒值。'2019-5-17 20:09:10.456'
 ```
 
 
@@ -343,7 +410,59 @@ SELECT STR_TO_DATE('23/04/2019', '%d/%m/%Y') str2date; -- 2019-04-23，字符串
 %Y：4位的年份； %m：两位的月份； %y：2位的年份； %c：1位的月份； %d：两位的天数
 ```
 
-##分组函数
+##聚合函数
+
+> SUM，AVG，MIN，MAX，COUNT：用作统计使用，又称为聚合函数，统计函数，组函数。
+
+> SUM，AVG 一般用于`数值类型`。MAX，MIN 可处理`任何类型`，如日期类型，字符串类型
+
+```sql
+SELECT SUM(salary), AVG(salary) FROM employees;
+
+SELECT MAX(hiredate), MIN(first_name) FROM employees; --日期类型，字符串类型
+```
+
+> 处理 NULL
+
+```sql
+-- MAX，MIN：都忽略 NULL
+-- COUNT：两种情况：COUNT(column) --> 忽略 NULL； COUNT(*) --> 不忽略 NULL，若某行全为 NULL，计数器也会 +1。
+
+-- SUM：忽略 NULL 值。且当对多个列求和时 sum(id+name)，如果运算的列中任意一列的值为 NULL，则忽略这行的记录。
+select sum(name+id) from student;
+
+-- AVG：忽略 NULL 值，而不是将其作为 0 参与计算
+select sum(name)/count(name),avg(name) from student; --两种算法，结果一致
+select sum(name)/count(*),avg(name) from student;    --两种算法，结果不一致。0.625,1
+```
+
+> GROUP BY 处理 NULL
+
+```sql
+（1）.分组列中若有 NULL，这也将作为一组，且 NULL 值排在最前面。
+（2）.除汇总函数计算语句外，SELECT 中的选择列必须出现在 GROUP BY 中
+（3）.GROUP BY 可以包含任意数目的列，可以嵌套
+```
+
+> `WHERE` 用于分组前筛选，作用于原始表。`HAVING`用于分组后筛选，作用于分组后的表。
+>
+> 聚合函数作用的字段要求是 `GROUP BY` 后的字段，聚合函数作为条件肯定是放在 `HAVING` 语句中。
+
+```sql
+SELECT department_id, MAX(salary) max
+FROM employees
+WHERE commission_pct IS NOT NULL
+GROUP BY department_id
+ORDER BY max DESC; -- 每个部门，有奖金员工中的最高工资 --> WHERE
+```
+
+```sql
+SELECT department_id, COUNT(department_id) AS count 
+FROM employees
+GROUP BY department_id
+HAVING count > 2
+ORDER BY count ASC; -- 查询哪个部门的员工数大于2 --> HAVING
+```
 
 
 
@@ -1014,5 +1133,140 @@ BEGIN
         SET i=i+1; -- 循环体内 ++
     END WHILE;
 END;
+```
+
+
+
+
+
+
+
+# 练习相关
+
+## 数据准备
+
+```sql
+SET FOREIGN_KEY_CHECKS=0;
+
+-- ----------------------------
+-- Table structure for class
+-- ----------------------------
+DROP TABLE IF EXISTS `class`;
+CREATE TABLE `class` (
+  `cid` int(11) NOT NULL AUTO_INCREMENT,
+  `caption` varchar(32) NOT NULL,
+  PRIMARY KEY (`cid`)
+) ENGINE=InnoDB AUTO_INCREMENT=5 DEFAULT CHARSET=utf8;
+
+-- ----------------------------
+-- Records of class
+-- ----------------------------
+INSERT INTO `class` VALUES ('1', '三年二班');
+INSERT INTO `class` VALUES ('2', '三年三班');
+INSERT INTO `class` VALUES ('3', '一年二班');
+INSERT INTO `class` VALUES ('4', '二年九班');
+
+-- ----------------------------
+--  Table structure for `student`
+-- ----------------------------
+DROP TABLE IF EXISTS `student`;
+CREATE TABLE `student` (
+  `id` int(11) NOT NULL AUTO_INCREMENT,
+  `gender` char(1) NOT NULL,
+  `tid` int(11) NOT NULL,
+  `name` varchar(32) DEFAULT NULL,
+  PRIMARY KEY (`id`),
+  KEY `fk_class` (`tid`),
+  CONSTRAINT `fk_class` FOREIGN KEY (`tid`) REFERENCES `class` (`cid`)
+) ENGINE=InnoDB AUTO_INCREMENT=18 DEFAULT CHARSET=utf8;
+
+-- ----------------------------
+--  Records of `student`
+-- ----------------------------
+BEGIN;
+INSERT INTO `student` VALUES ('1', '男', '1', '理解'), ('2', '女', '1', '钢蛋'), ('3', '男', '1', '张三'), ('4', '男', '1', '张一'), ('5', '女', '1', '张二'), ('6', '男', '1', '张四'), ('7', '女', '2', '铁锤'), ('8', '男', '2', '李三'), ('9', '男', '2', '李一'), ('10', '女', '2', '李二'), ('11', '男', '2', '李四'), ('12', '女', '3', '如花'), ('13', '男', '3', '刘三'), ('14', '男', '3', '刘一'), ('15', '女', '3', '刘二'), ('16', '男', '3', '刘四');
+COMMIT;
+
+-- ----------------------------
+--  Table structure for `teacher`
+-- ----------------------------
+DROP TABLE IF EXISTS `teacher`;
+CREATE TABLE `teacher` (
+  `id` int(11) NOT NULL AUTO_INCREMENT,
+  `name` varchar(32) NOT NULL,
+  PRIMARY KEY (`id`)
+) ENGINE=InnoDB AUTO_INCREMENT=6 DEFAULT CHARSET=utf8;
+
+-- ----------------------------
+--  Records of `teacher`
+-- ----------------------------
+BEGIN;
+INSERT INTO `teacher` VALUES ('1', '张磊老师'), ('2', '李平老师'), ('3', '刘海燕老师'), ('4', '朱云海老师'), ('5', '李杰老师');
+COMMIT;
+
+-- ----------------------------
+-- Table structure for course
+-- ----------------------------
+DROP TABLE IF EXISTS `course`;
+CREATE TABLE `course` (
+  `cid` int(11) NOT NULL AUTO_INCREMENT,
+  `cname` varchar(32) NOT NULL,
+  `teacher_id` int(11) NOT NULL,
+  PRIMARY KEY (`cid`),
+  KEY `fk_course_teacher` (`teacher_id`),
+  CONSTRAINT `fk_course_teacher` FOREIGN KEY (`teacher_id`) REFERENCES `teacher` (`id`)
+) ENGINE=InnoDB AUTO_INCREMENT=5 DEFAULT CHARSET=utf8;
+
+-- ----------------------------
+-- Records of course
+-- ----------------------------
+INSERT INTO `course` VALUES ('1', '生物', '1');
+INSERT INTO `course` VALUES ('2', '物理', '2');
+INSERT INTO `course` VALUES ('3', '体育', '3');
+INSERT INTO `course` VALUES ('4', '美术', '2');
+
+-- ----------------------------
+-- Table structure for score
+-- ----------------------------
+DROP TABLE IF EXISTS `score`;
+CREATE TABLE `score` (
+  `sid` int(11) NOT NULL AUTO_INCREMENT,
+  `student_id` int(11) NOT NULL,
+  `course_id` int(11) NOT NULL,
+  `num` int(11) NOT NULL,
+  PRIMARY KEY (`sid`),
+  KEY `fk_score_student` (`student_id`),
+  KEY `fk_score_course` (`course_id`),
+  CONSTRAINT `fk_score_course` FOREIGN KEY (`course_id`) REFERENCES `course` (`cid`),
+  CONSTRAINT `fk_score_student` FOREIGN KEY (`student_id`) REFERENCES `student` (`id`)
+) ENGINE=InnoDB AUTO_INCREMENT=53 DEFAULT CHARSET=utf8;
+
+-- ----------------------------
+--  Records of `score`
+-- ----------------------------
+BEGIN;
+INSERT INTO `score` VALUES ('1', '1', '1', '10'), ('2', '1', '2', '9'), ('5', '1', '4', '66'), ('6', '2', '1', '8'), ('8', '2', '3', '68'), ('9', '2', '4', '99'), ('10', '3', '1', '77'), ('11', '3', '2', '66'), ('12', '3', '3', '87'), ('13', '3', '4', '99'), ('14', '4', '1', '79'), ('15', '4', '2', '11'), ('16', '4', '3', '67'), ('17', '4', '4', '100'), ('18', '5', '1', '79'), ('19', '5', '2', '11'), ('20', '5', '3', '67'), ('21', '5', '4', '100'), ('22', '6', '1', '9'), ('23', '6', '2', '100'), ('24', '6', '3', '67'), ('25', '6', '4', '100'), ('26', '7', '1', '9'), ('27', '7', '2', '100'), ('28', '7', '3', '67'), ('29', '7', '4', '88'), ('30', '8', '1', '9'), ('31', '8', '2', '100'), ('32', '8', '3', '67'), ('33', '8', '4', '88'), ('34', '9', '1', '91'), ('35', '9', '2', '88'), ('36', '9', '3', '67'), ('37', '9', '4', '22'), ('38', '10', '1', '90'), ('39', '10', '2', '77'), ('40', '10', '3', '43'), ('41', '10', '4', '87'), ('42', '11', '1', '90'), ('43', '11', '2', '77'), ('44', '11', '3', '43'), ('45', '11', '4', '87'), ('46', '12', '1', '90'), ('47', '12', '2', '77'), ('48', '12', '3', '43'), ('49', '12', '4', '87'), ('52', '13', '3', '87');
+COMMIT;
+```
+
+![](assets/sql0.png)
+
+##01-10
+
+> 查询《生物》比《物理》课程成绩高的所有学生的学号
+
+```sql
+SELECT sw.student_id,sw.num sw_num,wl.num wl_num FROM
+(SELECT s.num,s.student_id FROM score s JOIN course c ON c.cid=s.course_id WHERE c.cname='生物') sw -- 临时表 1
+LEFT JOIN
+(SELECT s.num,s.student_id FROM score s JOIN course c ON c.cid=s.course_id WHERE c.cname='物理') wl -- 临时表 2
+ON wl.student_id=sw.student_id
+WHERE sw.num > IF(ISNULL(wl.num),0,wl.num);
+```
+
+> 查询所有同学的学号、姓名、选课数、总成绩
+
+```sql
+
 ```
 

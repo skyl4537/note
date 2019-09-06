@@ -1,149 +1,82 @@
-[TOC]
 
-# 基础功能
 
-> 基础概念
 
-```shell
-简化依赖管理
-    #将各种功能模块进行划分，封装成一个个启动器(Starter)，更容易的引入和使用
-    #提供一系列的Starter，将各种功能性模块进行了划分与封装
-    #更容易的引入和使用，有效避免了用户在构建传统Spring应用时维护大量依赖关系，而引发的jar冲突等问题
 
-自动化配置 #为每一个Starter都提供了自动化的java配置类
-嵌入式容器 #嵌入式tomcat，无需部署war文件
-监控の端点 #通过 Actuator 模块暴露的http接口，可以轻松的了解和控制应用的运行情况
+# 基础概念
+
+## 概念相关
+
+
+
+
+
+
+
+> 引入父工程
+
+```sh
+'父工程'对各种常用依赖（并非全部）进行了版本管理，引入父工程，则不用关心版本冲突问题，需要什么依赖，直接引入坐标即可！
 ```
-
-##pom
-
->SpringBoot 并不是对 Spring 功能上的增强，而是提供了一种快速使用 Spring 的方式
 
 ```xml
-<dependencies>
-    <dependency>
-        <groupId>org.springframework.boot</groupId> <!-- 热部署 -->
-        <artifactId>spring-boot-devtools</artifactId>
-        <scope>runtime</scope> <!-- 只在运行时使用 -->
-        <optional>true</optional> <!--只在当前项目生效，不会传递-->
-    </dependency>
-    <dependency>
-        <groupId>org.springframework.boot</groupId>
-        <artifactId>spring-boot-starter-test</artifactId>
-        <scope>test</scope> <!--只在测试时使用-->
-    </dependency>
-</dependencies>
-
-<build>
-    <finalName>demo-user</finalName> <!--配置项目打包名-->
-    <plugins>
-        <plugin>
-            <groupId>org.springframework.boot</groupId>
-            <artifactId>spring-boot-maven-plugin</artifactId>
-            <!--打成的jar包可直接运行-->
-            <!--<configuration>
-                <executable>true</executable> 
-            </configuration>-->
-        </plugin>
-    </plugins>
-    <resources> <!--资源拷贝插件-->
-        <resource>
-            <directory>src/main/java</directory>
-            <includes>
-                <include>**/*.xml</include>
-            </includes>
-        </resource>
-        <resource>
-            <directory>src/main/resources</directory>
-        </resource>
-    </resources>
-</build>
+<parent>
+    <groupId>org.springframework.boot</groupId>
+    <artifactId>spring-boot-starter-parent</artifactId>
+    <version>2.1.5.RELEASE</version>
+</parent>
 ```
 
-##yml
+```sh
 
->application.properties
-
-```properties
-server.port=8090
-server.servlet.context-path=/demo
-#微服务项目名称：以横岗-分割
-#spring.application.name=demo-base
-
-#spring.profiles.active=dev
-
-spring.datasource.type=com.alibaba.druid.pool.DruidDataSource
-spring.datasource.driverClassName=com.mysql.cj.jdbc.Driver
-spring.datasource.url=jdbc:mysql://127.0.0.1:33306/webpark?useSSL=false&serverTimezone=GMT%2B8
-spring.datasource.username=bluecardsoft
-spring.datasource.password=#$%_BC13439677375
-
-#mybatis
-mybatis.mapper-locations=classpath*:com/example/demo/mapper/sqlxml/*.xml
-mybatis.configuration.map-underscore-to-camel-case=true
-#日志打印（可省）
-logging.level.com.example.amqp_publisher.mapper=debug
-
-spring.thymeleaf.cache=false
-#debug=true
-
-#boot日志，默认只打印控制台。配置保存到文件，及日志级别
-logging.file=sell.log
-#logging.level.ROOT=debug
-logging.pattern.console=%d - %msg%n
 ```
 
+
+
+# 配置相关
+
+##基础概念
+
+> properties
+
 ```properties
-#(1).引用配置变量（无则使用默认值 spring）
-info.msg=hello ${server.servlet.context-path : /spring}
+#(1).引用配置变量（无则使用默认值 8090）
+info.msg=hello ${server.port : 8090}
 
 #(2).随机值。微服务中不需要记录 ip:prot，所以可随机指定端口
 info.random=${random.int[1000,9999]}
 ```
 
-> applicatopn.yml
+> yaml
 
 ```yaml
-k:(空格)v #表示一对键值对(空格必须有)，其中属性和值大小写敏感。
-```
+k:(空格)v #基础语法。表示一对键值对(空格必须有)，其中属性和值大小写敏感
 
-```yaml
 pets: [cat,dog,pig] #数组（List/Set）的行内写法
-```
 
-```yaml
-${random.int}; ${random.int(10)}; ${random.int(10,100)} #随机数
-```
+${random.int}; ${random.int(10)}; ${random.int(10,100)} #随机数3种写法
 
-```yaml
 person.age = ${random.int}
-person.last_name = 张${person.age:18} #引用配置变量（无则取默认值）
-```
+person.last_name = 张${person.age:18} #引用配置变量（无则取默认值 18）
 
-```yaml
 spring:
   datasource:
     password: "#$%_BC13439677375" #""双引号里的内容不会转义符，''单括号则会。（层级关系使用 2个或4个 空格）
 ```
 
-## config
+> 加载顺序
 
-> 加载顺序：配置文件应该放置在jar包同级的 `/config/*.yml`
-
-```shell
-– classpath:/            #路径src/main/resources
+```sh
+– classpath:/         #项目 src/main/resources
 – classpath:/config/
-– file:./                #当前项目的根路径，与pom同级（jar包同级目录）。
+– file:./             #与 jar 包同级
 – file:./config/
 
-#优先级别: 低--->高. 高优先级覆盖低优先级.
-#加载顺序: 先--->后. (由里到外). 后加载的覆盖先加载的. [互补配置]
+#加载顺序：从上到下，从里到外，后加载的优先级更高，高优先级覆盖低优先级。所以，jar包外的配置优先级更高。
 ```
 
-> profile特性：不同环境加载不同配置
+> 不同环境加载不同配置
 
-```shell
-#以下文件与 application.yml 存放在同级目录下。其中，前者配置特殊信息；后者配置公用信息。二者相互补充
+```sh
 application-dev.yml   #开发环境
 application-test.yml  #测试环境
 application-prod.yml  #生产环境
@@ -152,7 +85,7 @@ application-prod.yml  #生产环境
 spring.profiles.active=dev
 ```
 
-> 外部配置log
+> 配置外部 logback
 
 ```properties
 #配置文件中指定log位置（内部或外部yml都可以）
@@ -160,31 +93,9 @@ spring.profiles.active=dev
 logging.config=file:./config/logback-spring.xml
 ```
 
-> log的 profile 特性
+## 读取配置
 
-```xml
-<springProfile name="dev"> <!-- 控制台 * 测试环境 -->
-    <root level="info">
-        <appender-ref ref="console" />
-    </root>
-</springProfile>
-
-<springProfile name="prod"> <!-- 控制台 * 生产环境 -->
-    <root level="warn">
-        <appender-ref ref="console" />
-    </root>
-</springProfile>
-```
-
-##读取配置
-
-```xml
-<dependency>
-    <groupId>org.springframework.boot</groupId>
-    <artifactId>spring-boot-configuration-processor</artifactId>
-    <optional>true</optional>
-</dependency>
-```
+> 配置文件
 
 ```properties
 voice.in=欢迎光临
@@ -196,7 +107,7 @@ info.security.password=pwd
 info.security.roles=USER,ADMIN
 ```
 
-> 单个属性读取：@value 和 env
+> 读取单个配置
 
 ```java
 @Value("${info.enabled}") //(1).@Value
@@ -210,28 +121,33 @@ Environment env;
 String pwd = env.getProperty("spring.mail.password");
 ```
 
->批量属性读取：必须使用静态内部类
+> 批量读取
+
+```xml
+<dependency>
+    <groupId>org.springframework.boot</groupId>
+    <artifactId>spring-boot-configuration-processor</artifactId>
+    <optional>true</optional>
+</dependency>
+```
 
 ```java
-@Data //lombok
-@Component
 /**
- * prefix: 属性前缀，通过 'prefix+字段名' 匹配属性，默认""
- * ignoreUnknownFields: 是否忽略未知的字段，默认 true
- * ignoreInvalidFields: 是否忽略验证失败（类型转换异常）的字段，默认 false
- */
-@ConfigurationProperties(/*prefix = "info",*/ ignoreUnknownFields = true, ignoreInvalidFields = true)
-/**
- * value: 需要加载的属性文件，可以一次性加载多个。
- * encoding: 编码格式，默认""
+ * prefix:                 属性前缀，通过【prefix+字段名】匹配属性，默认""
+ * ignoreUnknownFields:    是否忽略未知的字段，默认 true
+ * ignoreInvalidFields:    是否忽略验证失败（类型转换异常）的字段，默认 false
+ * <p>
+ * value:                  需要加载的属性文件，可以一次性加载多个
+ * encoding:               编码格式，默认""
  * ignoreResourceNotFound: 当指定的配置文件不存在是否报错，默认 false
- * name: 唯一标识，整个项目中唯一。
  */
-@PropertySource(value = {/*"file:./my.properties",*/ "classpath:my.properties"}, encoding = "utf-8",
-                ignoreResourceNotFound = false, name = "my.properties")
+@Data
+@Component
+@ConfigurationProperties(/*prefix = "info",*/ ignoreUnknownFields = true, ignoreInvalidFields = true)
+@PropertySource(value = "classpath:my.properties", encoding = "UTF-8", ignoreResourceNotFound = false)
 public class MyProperties {
     public Voice voice; //voice开头
-    public Info info; //info开头
+    public Info info;   //info开头
 
     @Data
     public static class Voice { //必须使用静态内部类
@@ -255,41 +171,23 @@ public class MyProperties {
 }
 ```
 
-> 通过IO读取
-
-```java
-// 默认从此类所在包下读取，path需要添加前缀"/"
-// InputStream in = getClass().getResourceAsStream("/my.properties");
-
-// 默认从ClassPath下读取，path不需要添加前缀
-InputStream in = getClass().getClassLoader().getResourceAsStream("my.properties");
-Properties properties = new Properties();
-properties.load(new InputStreamReader(in, "UTF-8")); //U8方式读取
-properties.forEach((key, value) -> log.info(key + " - " + value));
-```
-
->区别：`@Value("#{}") 与 @Value("${}")`
+> 区别：`@Value("#{}") 与 @Value("${}")`
 
 ```java
 //${}：获取配置文件中配置的属性
 @Value("${info.enabled:'false'}")
 String enabled; //默认'false'
 ```
-```java
-//#{} -> 通过SpEl表达式获取：常量，bean属性值，调用bean的某个方法
-@Value("#{‘abc’}")
-int str; //获取字符串常量'abc'
 
-@Value("#{info.remoteAddress？:'127.0.0.1'}") //获取bean的属性，默认'127.0.0.1'
+```java
+//#{} -> 通过SpEl表达式获取：bean属性值，调用bean的某个方法
+@Value("#{info.remoteAddress？:'127.0.0.1'}") //info的属性，默认 127.0.0.1
 String address;
 ```
+
 ## 加密配置
 
 > 配置文件中敏感信息的加密
-
-```sh
-druid 也可以做数据库明文加密，jasypt 任何配置都可以加密。
-```
 
 ```xml
 <dependency>
@@ -300,21 +198,24 @@ druid 也可以做数据库明文加密，jasypt 任何配置都可以加密。
 ```
 
 ```properties
+#druid 也可以做到数据库明文加密，jasypt 任何配置都可以加密
 #配置文件中指定加密时使用的盐（salt）
 jasypt.encryptor.password=EbfYkitulv73I2p0mXI50JMXoaxZTKJ0
 ```
 
-> 生成加密后的秘钥
+> 生成加密后的密钥
 
 ```java
-BasicTextEncryptor encryptor = new BasicTextEncryptor();
-encryptor.setPassword("EbfYkitulv73I2p0mXI50JMXoaxZTKJ0"); //盐
+public void getPwd() {
+    BasicTextEncryptor encryptor = new BasicTextEncryptor();
+    encryptor.setPassword("EbfYkitulv73I2p0mXI50JMXoaxZTKJ0"); //盐
 
-String username = encryptor.encrypt("bluecardsoft"); //加密
-System.out.println(username); //同一个字符加密多次结果不一样，但解密后是一样的
+    String username = encryptor.encrypt("bluecardsoft"); //加密
+    System.out.println(username); //同一个字符加密多次结果不一样，但解密后是一样的
 
-username = encryptor.decrypt(username); //解密
-System.out.println(username);
+    username = encryptor.decrypt(username); //解密
+    System.out.println(username);
+}
 ```
 
 > 用生成的密钥替换配置文件的相应位置
@@ -324,79 +225,25 @@ System.out.println(username);
 spring.datasource.username=ENC(kZ11PHFbXpNzLsJ7bKq2atpDiCzJOAs8)
 ```
 
->盐的安全性
-
-```sh
-#盐值（jasypt.encryptor.password）直接写在配置文件中不安全，可以使用以下两个办法
-```
+> 盐的安全性：直接写在配置文件中不安全，可以使用以下两个办法
 
 ```sh
 #（1）在项目部署的时候使用命令传入salt值
 java -jar -Djasypt.encryptor.password=G0CvDz7oJn6 xxx.jar
-```
 
-```sh
 #（2）在服务器的环境变量里配置，进一步提高安全性
 vim /etc/profile
-export JASYPT_PASSWORD = G0CvDz7oJn6 #/etc/profile 文件末尾插入
-source /etc/profile #刷新
+export JASYPT_PASSWORD = G0CvDz7oJn6 #末尾插入
+source /etc/profile
 
 java -jar -Djasypt.encryptor.password=${JASYPT_PASSWORD} xxx.jar
 ```
 
-##常用接口
+# 高级功能
 
->匹配带后缀url访问：http://192.168.8.7:8090/spring/test.do，其中 .do 可以省略
+## druid
 
-```java
-@Configuration
-public class MyWebMvcConfigurer implements WebMvcConfigurer {
-    @Override
-    public void configurePathMatch(PathMatchConfigurer configurer) {
-        //boot2.x默认将'/test'和'/test.do'作为2个url
-        configurer.setUseRegisteredSuffixPatternMatch(true); //true，统一以上两个url
-    }
-}
-```
-
-```java
-@Bean
-public ServletRegistrationBean servletRegistrationBean(DispatcherServlet dispatcherServlet) {
-    ServletRegistrationBean<DispatcherServlet> bean = new ServletRegistrationBean<>(dispatcherServlet);
-    bean.addUrlMappings("*.do"); //拦截'.do'结尾的url
-    return bean;
-}
-```
-
-> `CommandLineRunner`：用于在应用初始化完成后执行代码逻辑（可使用任何依赖），代码逻辑在整个应用生命周期内只会执行一次。
-
-```java
-@Order(value=n) //对于多个该配置的情况，设置执行顺序。n越小，越先执行。
-@Component
-public class ApplicationStartupRunner implements CommandLineRunner { }
-```
-
-> `SpringBootServletInitializer`：使用外置的tomcat启动时，项目启动类继承该类，并复写configure()方法。`待证`
-
-```java
-@SpringBootApplication
-public class MyApplication extends SpringBootServletInitializer {
-    public static void main(String[] args) {
-        SpringApplication.run(MyApplication.class, args);
-    }
-
-    @Override
-    protected SpringApplicationBuilder configure(SpringApplicationBuilder builder) {
-        return super.configure(builder);
-    }
-}
-```
-
-#高级功能
-
-##druid
-
-><https://github.com/alibaba/druid/tree/master/druid-spring-boot-starter>
+> pom
 
 ```xml
 <dependency>
@@ -405,9 +252,10 @@ public class MyApplication extends SpringBootServletInitializer {
     <version>1.1.10</version>
 </dependency>
 ```
+
 ```properties
-#boot1.x默认数据源为：org.apache.tomcat.jdbc.pool.DataSource
-#boot2.x默认数据源为：com.zaxxer.hikari.HikariDataSource
+#boot-1.x默认数据源为：org.apache.tomcat.jdbc.pool.DataSource
+#boot-2.x默认数据源为：com.zaxxer.hikari.HikariDataSource
 spring.datasource.type=com.alibaba.druid.pool.DruidDataSource
 ```
 
@@ -430,6 +278,7 @@ spring.datasource.druid.test-while-idle=true
 # 每次获取到连接时，不检测连接的可用性
 spring.datasource.druid.test-on-borrow=false
 spring.datasource.druid.test-on-return=false
+
 ```
 
 ```properties
@@ -463,20 +312,16 @@ spring.datasource.druid.stat-view-servlet.login-password=123456
 spring.datasource.druid.stat-view-servlet.deny=192.168.8.8
 spring.datasource.druid.stat-view-servlet.reset-enable=false
 ```
-
 > 数据库密码加密
 
-```shell
+```sh
 #生成数据库密码的密文和公钥（密码包含特殊符号，用引号括起来）
-命令行切换到 'druid-1.1.18.jar' 所在的路径，然后打开 cmder 工具，执行以下命令：
+#命令行切换到 'druid-1.1.18.jar' 所在的路径，然后打开 cmder 工具，执行以下命令：
 java -cp .\druid-1.1.18.jar com.alibaba.druid.filter.config.ConfigTools '#$%_BC13439677375'
 ```
 
 ```properties
-#boot 项目的配置文件
-spring.datasource.type=com.alibaba.druid.pool.DruidDataSource
-spring.datasource.driverClassName=com.mysql.cj.jdbc.Driver
-spring.datasource.url=jdbc:mysql://192.168.8.7:33306/test0806?useSSL=false&serverTimezone=GMT%2B8
+# 用户名不加密
 spring.datasource.username=bluecardsoft
 #spring.datasource.password=#$%_BC13439677375
 # 生成的加密后的密码
@@ -489,45 +334,42 @@ spring.datasource.druid.connection-properties=config.decrypt=true;config.decrypt
 spring.datasource.druid.filter.config.enabled=true
 ```
 
+## 静态资源
 
-
-##静态资源
-
->默认目录：存放在以下目录的资源都可以直接访问
+> 默认目录：存放在以下目录的资源都可以直接访问
 
 ```properties
+classpath:/static/
 classpath:/public/
 classpath:/resources/
-classpath:/static/
 classpath:/META-INFO/resouces/
+
+#classpath:/static/img/sql.png   ---> http://127.0.0.1:8090/demo/img/sql.png
 ```
 
-```properties
-classpath:/static/a.html        ---> http://127.0.0.1:8090/demo/a.html
-classpath:/static/abc/c.html    ---> http://127.0.0.1:8090/demo/abc/c.html
-classpath:/static/img/sql.png   ---> http://127.0.0.1:8090/demo/img/sql.png
-```
+> 自定义目录（1）：配置文件
 
-> 自定义目录：配置文件方式 + java代码方式
+```sh
+'file:/logs/'      表示与jar包同级目录的 /logs 目录
+'classpath:/logs/' 表示与配置文件同级的 /logs 目录
+```
 
 ```properties
 spring.mvc.static-path-pattern=/log/**
 #此配置会覆盖 springboot 默认配置，所以需要手动追加默认配置
-spring.resources.static-locations=classpath:/log/,file:logs/,classpath:/public/
+spring.resources.static-locations=classpath:/logs/,file:/logs/,classpath:/static/
 ```
 
-```java
-//file:logs/ 表示jar包同级目录下的 /logs 目录
-//classpath:/log/demo.log     ---> http://127.0.0.1:8090/demo/logs/demo.log
-//jar包同级目录/logs/test.log   ---> http://127.0.0.1:8090/demo/logs/test.log
+> 自定义目录（2）：代码配置
 
+```java
 @Configuration
 public class MyWebMvcConfigurer implements WebMvcConfigurer {
 
     @Override
     public void addResourceHandlers(ResourceHandlerRegistry registry) {
         registry.addResourceHandler("/log/**")
-            .addResourceLocations("classpath:/log/", "file:logs/");
+            .addResourceLocations("classpath:/logs/", "file:/logs/");
     }
 }
 ```
@@ -552,134 +394,35 @@ public class MyWebMvcConfigurer implements WebMvcConfigurer {
 </dependency>
 ```
 
-## 启动脚本
-
-> 启动脚本
-
-```shell
-#!/bin/bash
-DEMO_DIR="/var/tmp/demo"
-DEMO_JAR="demo-eureka.jar"
-DEMO_PID_FILE="demo.pid"
-
-cd $DEMO_DIR
-chmod 777 $DEMO_JAR
-
-nohup java -jar $DEMO_JAR >/dev/null 2>&1 &
-echo $! > $DEMO_PID_FILE #记录进程号，方便后续使用
-
-PID=`cat "$DEMO_PID_FILE"`
-echo "START AT PID: "$PID
-```
-
-> 停止脚本
-
-```shell
-#!/bin/bash
-DEMO_JAR="demo-eureka.jar"
-DEMO_PID_FILE="demo.pid"
-
-if [ -f "$DEMO_PID_FILE" ]; then #-f: 是否为普通文件(既不是目录，也不是设备文件)
-  PID=`cat "$DEMO_PID_FILE"`
-  echo "STOP PID: "$PID
-  kill -9 $PID
-  true>$DEMO_PID_FILE #清空文件
-fi
-```
-
-##跨域
-
-```shell
-跨域是什么？
-浏览器从一个域名的网页去请求另一个域名的资源时，域名、端口、协议任一不同，都是跨域。采用前后端分离开发，前后端分离部署，必然会存在跨域问题。
-
-怎么解决跨域？
-很简单，只需要在 Controller 类上添加注解 @CrossOrigin 即可！这个注解其实是CORS的实现。
-
-CORS（Cross-Origin Resource Sharing，跨源资源共享）是W3C出的一个标准，其思想是使用自定义的HTTP头部让浏览器与服务器进行沟通，
-从而决定请求或响应是应该成功，还是应该失败。因此，要想实现CORS进行跨域，需要服务器进行一些设置，同时前端也需要做一些配置和分析。
-本文简单的对服务端的配置和前端的一些设置进行分析。
-```
-
-## login
-
->前台表单
-
 ```html
-<!DOCTYPE html>
-<html lang="en" xmlns:th="http://www.thymeleaf.org">
-    <head>
-        <meta charset="UTF-8">
-        <title>login page</title>
-
-        <!--小叶子图标，存放目录 /static/ico/favicon.ico-->
-        <link rel="shortcut icon" th:href="@{/img/favicon.ico}"/>
-
-        <!--webjars-locator: 页面引用时，可省略版本号.(如 3.3.1)-->
-        <!--省略前: <script th:src="@{/webjars/jquery/3.3.1/jquery.min.js}"/>-->
-        <script th:src="@{/webjars/jquery/jquery.min.js}"></script>
-        <script th:src="@{/webjars/bootstrap/js/bootstrap.min.js}"></script>
-        <link rel="stylesheet" th:href="@{/webjars/bootstrap/css/bootstrap.min.css}"/>
-    </head>
-    <body>
-        <!--th:action 表单提交-->
-        <form method="post" th:action="@{/login}">
-            <!--th:value name为null则不显示-->
-            账户：<input type="text" th:name="userName" th:value="${uName}"/>
-            密码：<input type="password" th:name="userPwd"/>
-            <center>
-                <button type="submit" class="btn btn-primary">登陆</button>
-                <!--th:if errorMsg为空则不显示-->
-                <p th:if="${! #strings.isEmpty(errMsg)}" th:text="${errMsg}"></p>
-            </center>
-        </form>
-    </body>
-</html>
+<head>
+    <!--webjars-locator: 页面引用时，可省略版本号.(如 3.3.1)-->
+    <!--省略前: <script th:src="@{/webjars/jquery/3.3.1/jquery.min.js}"/>-->
+    <script th:src="@{/webjars/jquery/jquery.min.js}"></script>
+    <script th:src="@{/webjars/bootstrap/js/bootstrap.min.js}"></script>
+    <link rel="stylesheet" th:href="@{/webjars/bootstrap/css/bootstrap.min.css}"/>
+</head>
 ```
 
-> 后台接口
+## 拦截器
 
-```java
-@Controller
-public class UserController {
-
-    @PostMapping("/login")
-    public String login(@RequestParam("userName") String uName,
-                        @RequestParam("userPwd") String uPwd,
-                        HttpSession session, Model model) {
-        if (StringUtils.isNotBlank(uPwd)) {
-            session.setAttribute("userName", uName); //缓存Session，用于后续验证
-
-            //重定向到接口，可以防止表单重复提交！其实质是重定向到 MyWebMvcConfig.addViewControllers() 方法
-            return "redirect:/main";
-        }
-        
-        model.addAttribute("uName", uName); //用于表单回显
-        model.addAttribute("errMsg", "用户名或密码不正确");
-        return "/index"; //转发到页面：/templates/index.html
-    }
-}
-```
-
-> 登陆拦截器：未登录用户不允许访问登录页面以外的页面
+> 定义拦截器
 
 ```java
 @Slf4j
+@Component
 public class LoginInterceptor implements HandlerInterceptor {
 
-    //在目标方法之前被调用。适用于权限，日志，事务等
     @Override
-    public boolean preHandle(HttpServletRequest request, HttpServletResponse response, Object handler)
-        throws Exception {
-        StringBuffer requestURL = request.getRequestURL();
-        Object userName = request.getSession().getAttribute("userName");
-        log.info("{} {}", requestURL, userName);
+    public boolean preHandle(HttpServletRequest request, HttpServletResponse response, Object handler) {
+        log.info("preHandle...");
+        return true;
+    }
 
-        if (null == userName) {
-            request.getRequestDispatcher("/").forward(request, response);
-            return false;
-        }
-        return true; //有登陆Session，则不拦截
+    @Override
+    public void postHandle(HttpServletRequest request, HttpServletResponse response, Object handler,
+                           ModelAndView modelAndView) {
+        log.info("postHandle...");
     }
 }
 ```
@@ -688,29 +431,14 @@ public class LoginInterceptor implements HandlerInterceptor {
 
 ```java
 @Configuration
-public class MyWebMvcConfig implements WebMvcConfigurer {
+public class WebMvcConfig implements WebMvcConfigurer {
 
-    // @GetMapping("/toView")
-    // public String view() { return "view"; }
+    @Autowired
+    LoginInterceptor loginInterceptor;
 
-    //配置视图映射。等同于以上代码，相当于集合版
-    @Override
-    public void addViewControllers(ViewControllerRegistry registry) {
-        registry.addViewController("/").setViewName("index");
-        registry.addViewController("/main").setViewName("main");
-    }
-
-    //配置静态资源映射
-    @Override
-    public void addResourceHandlers(ResourceHandlerRegistry registry) {
-        registry.addResourceHandler("/**") //与 /static 同级的 /log 目录
-            .addResourceLocations("classpath:/static/", "classpath:/log/");
-    }
-
-    //注册拦截器
     @Override
     public void addInterceptors(InterceptorRegistry registry) {
-        registry.addInterceptor(new LoginInterceptor())
+        registry.addInterceptor(loginInterceptor)
             .addPathPatterns("/**")
             .excludePathPatterns("/webjars/**", "/img/**", "/html/**", "/log/**") //不拦截：静态资源
             .excludePathPatterns("/", "/login"); //不拦截：登陆接口
@@ -718,81 +446,128 @@ public class MyWebMvcConfig implements WebMvcConfigurer {
 }
 ```
 
-> 视图映射xml
+## 监听器
 
-```xml
-<!--(1).使用此标签后必须配置 <mvc:annotation-driven />，否则会造成所有的 @Controller 注解无法解析，导致404错误-->
-<!--(2).如果请求存在处理器，则这个标签对应的请求处理将不起作用。因为请求是先去找处理器处理，如果找不到才会去找这个标签配置-->
-<mvc:view-controller path="/toView" view-name="view"/>
-<mvc:annotation-driven />
-```
-
-##文件上传
-
->流程步骤：`html标签的 id 属性是给js使用，name 属性是给后台使用`
-
-```html
-(1).<form>表单: POST + enctype="multipart/form-data"
-(2).文件上传域(<file>)必须要有name属性: <input type='file' name="file">
-(3).后台使用 MultipartFile 接收文件资源
-```
-> 前台页面
-
-```html
-<form action="/upload" method="post" enctype="multipart/form-data">
-    File0: <input type="file" name="file"><br>
-    <!-- File1: <input type="file" name="file"><br> --> <!-- 多文件上传，name必须一致 -->
-    Desc: <input type="text" name="desc"><br>
-    <input type="submit" value="提交">
-</form>
-```
-> 后台代码：单文件上传
+> 定义监听器
 
 ```java
-@ResponseBody
-@PostMapping("/upload")
-public String upload(@RequestParam("file") MultipartFile file, @RequestParam("desc") String desc) {
-    //<form>表单中文件name, 文件名字, 文件大小
-    System.out.println(file.getName() + " - " + file.getOriginalFilename() + " - " + file.getSize());
-    file.transferTo(new File(getUploadDir(), file.getOriginalFilename())); //文件另存
-}
+@Slf4j
+@WebListener //注解
+public class MyServletContextListener implements ServletContextListener {
 
-public File getUploadDir() throws FileNotFoundException {
-    File dir = new File(ResourceUtils.getURL("").getPath(), "/upload"); //项目根目录下
-    if (!dir.exists()) {
-        dir.mkdirs(); //创建当前及父目录.(区别于 mkdir())
+    @Override
+    public void contextInitialized(ServletContextEvent sce) {
+        LocalDateTime startTime = LocalDateTime.now();
+        log.info("项目启动: {}", startTime);
+        sce.getServletContext().setAttribute("startTime", startTime);
     }
-    return dir;
+
+    @Override
+    public void contextDestroyed(ServletContextEvent sce) {
+        LocalDateTime startTime = (LocalDateTime) sce.getServletContext().getAttribute("startTime");
+        LocalDateTime endTime = LocalDateTime.now();
+        long between = ChronoUnit.MILLIS.between(startTime, endTime);
+        log.info("项目关闭: {}. 运行总时长: {}ms", endTime, between);
+    }
 }
 ```
-> 后台代码：多文件上传
+
+> 注册监听器
 
 ```java
-@PostMapping("/uploads")
-public void batchUplocad(@RequestParam("file") List<MultipartFile> files,
-                         @RequestParam("desc") List<String> descs) {
-    files.forEach(x -> x.transferTo(getUploadDir(), x.getOriginalFilename())); //文件另存 
-    descs.forEach(log::info); //文件描述
+@ServletComponentScan //全局注解
+```
+
+## Servlet
+
+> 定义Servlet
+
+```java
+@Slf4j
+@WebServlet(name = "myServlet", urlPatterns = {"/my", "/servlet/my"}, loadOnStartup = -1,
+            initParams = @WebInitParam(name = "name", value = "li"))
+public class MyServlet extends HttpServlet {
+    @Override
+    protected void service(HttpServletRequest req, HttpServletResponse resp) throws ServletException, IOException {
+        log.info("MyServlet.service()....");
+    }
 }
 ```
-> 限制上传文件的大小：两种方式
+
+> 注册Servlet
+
+```java
+@ServletComponentScan //全局注解
+```
+
+## CORS跨域
+
+> 问题描述
+
+```sh
+Access to XMLHttpRequest at 'http://localhost:9005/qrcode/java' from origin 'http://localhost:9006' 
+has been blocked by CORS policy: No 'Access-Control-Allow-Origin' header is present on the requested resource.
+```
+
+> 问题原因
+
+```sh
+'跨域'：指的是浏览器不能执行其他网站的脚本。域名、端口、协议任一不同，就是跨域。
+采用前后端分离开发，前后端分离部署，必然会存在跨域问题。
+
+CORS（Cross-Origin Resource Sharing，跨源资源共享）是 w3c 出的一个标准，其思想是使用自定义的HTTP头部让浏览器与服务器进行沟通，
+从而决定请求或响应是应该成功，还是应该失败。因此，要想实现CORS进行跨域，需要服务器进行一些设置，同时前端也需要做一些配置和分析。
+
+#注意：localhost 和 127.0.0.1 虽然都指向本机，但也属于跨域。
+```
 
 ```properties
-#单个上传文件的大小
-spring.servlet.multipart.max-file-size=10MB
-#一次请求上传文件的总容量
-spring.servlet.multipart.max-request-size=20MB
+# 非跨域
+http://www.123.com/index.html  --->  http://www.123.com/server.PHP
+
+# 跨域（主域名不同：123/456）
+http://www.123.com/index.html  --->  http://www.456.com/server.php
+
+# 跨域（子域名不同：abc/def）
+http://abc.123.com/index.html  --->  http://def.123.com/server.php
+
+# 跨域（协议不同：http/https）
+http://www.123.com/index.html  --->  https://www.123.com/server.php
+
+# 跨域（端口不同：8080/8081）
+http://www.123.com:8080/index.html  --->  http://www.123.com:8081/server.php
 ```
 
+> 服务端配置（1）：细粒度
+
 ```java
-@Bean //代码配置
-MultipartConfigElement multipartConfigElement() {
-    MultipartConfigFactory factory = new MultipartConfigFactory();
-    factory.setMaxFileSize("10MB"); //单个文件
-    factory.setMaxRequestSize("20MB"); //一次请求多个文件
-    return factory.createMultipartConfig();
+/**
+ * 细粒度的跨域注解
+ *
+ * @origins 允许可访问的域列表
+ * @maxAge 准备响应前的 缓存持续的 最大时间（以秒为单位）
+ */
+@CrossOrigin(origins = "http://localhost:9005", maxAge = 3600)
+@GetMapping("/java")
+public String java() {
+    return LocalDateTime.now().toString();
 }
 ```
+
+> 服务端配置（2）：粗粒度
+
+```java
+@Configuration
+public class WebMvcConfig implements WebMvcConfigurer {
+
+    @Override
+    public void addCorsMappings(CorsRegistry registry) {
+        registry.addMapping("/**")
+            .allowedOrigins("http://localhost:9005"); //允许端口 9005 访问
+    }
+}
+```
+
 
 
 
@@ -804,15 +579,172 @@ MultipartConfigElement multipartConfigElement() {
 
 #小众功能
 
-##tomcat
+## 单元测试
 
->修改打包方式
+```xml
+<dependency>
+    <groupId>org.springframework.boot</groupId>
+    <artifactId>spring-boot-starter-test</artifactId>
+    <scope>test</scope>
+</dependency>
+```
+
+```java
+@RunWith(SpringRunner.class)
+@SpringBootTest//(classes = {SpringMain.class}) //加载项目启动类，当测试类的路径同启动类时，可省。
+public class HelloServiceTest {
+    
+}
+```
+
+## 常用接口
+
+>`CommandLineRunner`：用于在应用初始化完成后执行代码逻辑，代码逻辑在整个应用生命周期内只会执行一次
+
+```java
+@Order(value=n) //对于多个该配置的情况，设置执行顺序。n越小，越先执行。
+@Component
+public class ApplicationStartupRunner implements CommandLineRunner { }
+```
+
+> 匹配后缀访问
+
+```java
+@Configuration //boot2.x默认将 '/test' 和 '/test.do' 作为2个url
+public class MyWebMvcConfigurer implements WebMvcConfigurer {
+
+    @Override
+    public void configurePathMatch(PathMatchConfigurer configurer) {
+        configurer.setUseRegisteredSuffixPatternMatch(true); //true，统一以上两个url
+    }
+
+    @Bean
+    public ServletRegistrationBean servletRegistrationBean(DispatcherServlet dispatcherServlet) {
+        ServletRegistrationBean<DispatcherServlet> bean = new ServletRegistrationBean<>(dispatcherServlet);
+        bean.addUrlMappings("*.do"); //拦截'.do'结尾的url
+        return bean;
+    }
+}
+```
+
+
+
+
+
+## Actuator
+
+```xml
+<dependency>
+    <groupId>org.springframework.boot</groupId>
+    <artifactId>spring-boot-starter-actuator</artifactId>
+</dependency>
+```
+
+> 常用端点
+
+```sh
+(*)mappings     #描述全部的URI路径，以及它们和控制器(包含Actuator端点)的映射关系
+(*)metrics      #报告各种应用程序度量信息，比如内存用量和HTTP请求计数
+(*)loggers      #显示和修改应用程序中的loggers配置
+(*)env          #获取全部环境属性
+
+health          #报告应用程序的健康指标，这些值由 HealthIndicator 的实现类提供
+info            #显示配置文件中以 'info' 打头的属性
+auditevents     #审计事件
+beans           #应用程序上下文里全部的Bean,以及它们的关系
+conditions      #自动配置报告,记录哪些自动配置条件通过了,哪些没通过
+configprops     #描述配置属性(包含默认值)如何注入Bean
+threaddump      #获取线程活动的快照
+scheduledtasks  #定时任务
+httptrace       #跟踪 HTTP 请求-响应交换的情况
+```
+
+> 暴露端点
+
+```properties
+#Boot2.x 默认只暴露两个端点: health 和 info
+management.endpoints.web.exposure.include=*   #暴露所有
+management.endpoints.web.exposure.exclude=env #不暴露: env
+
+#访问端点
+http://localhost:8090/demo/actuator        --> 返回所有已暴露的端点
+http://localhost:8090/demo/actuator/health --> 访问health端点
+```
+
+> 动态修改日志级别 `必须 logback`
+
+```properties
+#所有模块的日志级别
+http://127.0.0.1:8090/demo/actuator/loggers
+#具体模块的日志级别
+http://127.0.0.1:8090/demo/actuator/loggers/com.example.controller
+```
+
+```properties
+#发送 POST 请求到以上路径，动态修改以上模块的日志级别为 DEBUG，成功状态码为 '204'
+POST - 请求体: {"configuredLevel": "DEBUG"} - Content-Type: application/json
+```
+
+## Admin
+
+> 客户端（被监控者）：基于 Actuator 的可视化 WebUI
+
+```xml
+<dependency>
+    <groupId>de.codecentric</groupId>
+    <artifactId>spring-boot-admin-starter-client</artifactId>
+    <version>2.1.3</version>
+</dependency>
+<dependency>
+    <groupId>org.springframework.boot</groupId>
+    <artifactId>spring-boot-starter-security</artifactId>
+</dependency>
+```
+
+```properties
+management.endpoints.web.exposure.include=*
+spring.boot.admin.client.url=http://localhost:9090/hello
+```
+
+```java
+@Configuration
+public class SecurityPermitAllConfig extends WebSecurityConfigurerAdapter {
+    @Override
+    protected void configure(HttpSecurity http) throws Exception {
+        http.authorizeRequests()      //Security权限，授权的固定格式
+            .anyRequest().permitAll() //所有请求，所有权限都可以访问
+            .and().csrf().disable();  //固定写法：使 csrf()拦截失效
+    }
+}
+```
+
+> 服务端
+
+```xml
+<dependency>
+    <groupId>de.codecentric</groupId>
+    <artifactId>spring-boot-admin-starter-server</artifactId>
+    <version>2.1.3</version>
+</dependency>
+<dependency>
+    <groupId>org.springframework.boot</groupId>
+    <artifactId>spring-boot-starter-web</artifactId>
+</dependency>
+```
+
+```java
+@EnableAdminServer //全局注解
+```
+
+## war
+
+> 修改打包方式
 
 ```xml
 <groupId>com.example</groupId>
 <artifactId>amqp_publisher</artifactId>
 <version>0.0.1-SNAPSHOT</version>
-<packaging>war</packaging> <!--打包war，tomcat必须有-->
+<packaging>war</packaging> <!-- war -->
 ```
 
 > 移除自带的嵌入式Tomcat
@@ -821,7 +753,7 @@ MultipartConfigElement multipartConfigElement() {
 <dependency>
     <groupId>org.springframework.boot</groupId>
     <artifactId>spring-boot-starter-web</artifactId>
-    <exclusions> <!-- 移除嵌入式tomcat插件 -->
+    <exclusions>
         <exclusion>
             <groupId>org.springframework.boot</groupId>
             <artifactId>spring-boot-starter-tomcat</artifactId>
@@ -830,7 +762,7 @@ MultipartConfigElement multipartConfigElement() {
 </dependency>
 ```
 
->添加servlet-api依赖
+> 添加 servlet-api
 
 ```xml
 <dependency>
@@ -841,25 +773,25 @@ MultipartConfigElement multipartConfigElement() {
 </dependency>
 ```
 
->修改启动类，并重写初始化方法
+> 修改启动类
 
 ```java
 @MapperScan(value = "com.example.*.mapper")
 @SpringBootApplication
-public class AmqpPublisherApp extends SpringBootServletInitializer { //新增 extends
+public class Application extends SpringBootServletInitializer { //新增 extends
 
     public static void main(String[] args) {
-        SpringApplication.run(AmqpPublisherApp.class, args);
+        SpringApplication.run(Application.class, args);
     }
 
     @Override //新增方法
     protected SpringApplicationBuilder configure(SpringApplicationBuilder builder) {
-        return builder.sources(AmqpPublisherApp.class);
+        return super.configure(builder);
     }
 }
 ```
 
-##email
+## email
 
 ```xml
 <dependency>
@@ -867,6 +799,7 @@ public class AmqpPublisherApp extends SpringBootServletInitializer { //新增 ex
     <artifactId>spring-boot-starter-mail</artifactId>
 </dependency>
 ```
+
 ```properties
 #邮箱开启SMTP功能: https://blog.csdn.net/caimengyuan/article/details/51224269
 #授权码作为密码使用
@@ -874,7 +807,8 @@ spring.mail.host=smtp.163.com
 spring.mail.username=***@163.com
 spring.mail.password=***
 ```
-> 邮件（普通 + 附件 + 静态资源 + 模板）
+
+> 邮件：普通 + 附件 + 静态资源 + 模板
 
 ```java
 @RestController
@@ -923,9 +857,9 @@ public class MailController {
 
         //（2）静态资源 -> 在邮件正文中查看图片,而非附件
         String sb = "<h1>大标题-h1</h1>" +
-                "<p style='color:#F00'>红色字</p>" +
-                "<p style='text-align:right'>右对齐</p>" +
-                "<p><img src=\"cid:weixin\"></p>";
+            "<p style='color:#F00'>红色字</p>" +
+            "<p style='text-align:right'>右对齐</p>" +
+            "<p><img src=\"cid:weixin\"></p>";
         helper.setText(sb, true); //true表示启动HTML格式的邮件
         file = new File(SystemUtils.getFilePath(), "/imgs/a.jpg");
         if (file.exists()) {
@@ -949,288 +883,69 @@ public class MailController {
 
 
 
-
-
-
-
-
-
-
-
-
-
-
-
-## junit
-
->单元测试：`@SpringBootTest`
-
-```xml
-<dependency>
-    <groupId>org.springframework.boot</groupId>
-    <artifactId>spring-boot-starter-test</artifactId>
-    <scope>test</scope> <!-- 添加 junit 环境的 jar 包 -->
-</dependency>
-```
-```java
-@RunWith(SpringRunner.class) //junit 与 spring 进行整合，也可用 SpringJUnit4ClassRunner.class
-@SpringBootTest//(classes = {SpringMain.class}) //加载项目启动类，当测试类的路径同启动类时，可省。
-public class HelloServiceTest {
-
-    @Autowired
-    private HelloService helloService;
-
-    @Test
-    public void test() {
-        helloService.hello();
-    }
-}
-```
-
-
-
-
-
-
-
-## Actuator
-
-```xml
-<dependency>
-    <groupId>org.springframework.boot</groupId>
-    <artifactId>spring-boot-starter-actuator</artifactId>
-</dependency>
-```
-
-> 各个端点endpoint
-
-```shell
-auditevents     #审计事件
-beans           #应用程序上下文里全部的Bean,以及它们的关系
-health          #报告应用程序的健康指标,这些值由 HealthIndicator 的实现类提供
-conditions      #自动配置报告,记录哪些自动配置条件通过了,哪些没通过
-configprops     #描述配置属性(包含默认值)如何注入Bean
-info            #显示配置文件中以 'info' 打头的属性
-threaddump      #获取线程活动的快照
-scheduledtasks  #定时任务
-httptrace       #跟踪 HTTP 请求-响应交换的情况
-mappings        #描述全部的URI路径，以及它们和控制器(包含Actuator端点)的映射关系
-(*)metrics      #报告各种应用程序度量信息,比如内存用量和HTTP请求计数.
-(*)loggers      #显示和修改应用程序中的loggers配置
-(*)env          #获取全部环境属性
-```
-> Spring Boot2.x 所有端点访问路径都移到了/actuator
-
-```properties
-#默认只暴露两个端点: health 和 info
-management.endpoints.web.exposure.include=* //暴露所有
-management.endpoints.web.exposure.exclude=env //不暴露: env
-    
-http://localhost:8090/demo/actuator        --> 返回所有已暴露的端点
-http://localhost:8090/demo/actuator/health --> 访问health端点
-```
-
-```properties
-#以上，端点带(*)表示当前路径只能获取目录信息，详情信息得需要进一步访问获取。如，获取系统cpu个数:
-http://localhost:8090/demo/actuator/metrics/system.cpu.count
-
-#所有模块的日志级别
-http://127.0.0.1:8090/demo/actuator/loggers
-#具体模块的日志级别
-http://127.0.0.1:8090/demo/actuator/loggers/com.example.controller
-
-#发送 POST 请求到以上路径，动态修改以上模块的日志级别为 DEBUG，成功状态码为 '204'
-POST - 请求体: {"configuredLevel": "DEBUG"} - Content-Type: application/json
-```
-
-> 定制端点endpoint
-
-```properties
-#若要恢复 1.x 方式(即用 /health 代替 /actuator/health), 设置以下属性:
-management.endpoints.web.base-path=/
-```
-
-```properties
-#开启应用的远程关闭功能.【post请求】
-management.endpoint.shutdown.enabled=true 
-```
-
-```properties
-management.server.port=8091
-#只有在设置了 management.server.port 时才有效 (可选)
-management.server.servlet.context-path=/management
-#管理端的基本路径 (可选)
-management.endpoints.web.base-path=/application
-
-#设置了以上三项，则访问 health 端点路径
-http://localhost:8091/demo/management/application/health
-```
-
-```properties
-#关闭端点 - health
-management.endpoint.health.enabled=false
-
-#默认，只显示health部分信息，开启显示全部信息
-management.endpoint.health.show-details=always
-```
-
-```properties
-#配置文件加入以下内容，可在端口info看到, 访问 http://192.168.8.7:8090/demo/actuator/info
-info.myinfo.port=9527
-```
-
-> 端点 Beans
-
-```java
-druid: { //Spring应用程序上下文中的Bean名称或ID
-    aliases: [ ], //
-    scope: "singleton", //Bean的作用域.(通常是单例,这也是默认作用域)
-    type: "com.alibaba.druid.pool.DruidDataSource", //Bean的Java类型
-        //.class文件的物理位置,通常是一个URL,指向构建出的JAR文件.会随着应用程序的构建和运行方式发生变化
-    resource: "class path resource [com/example/demo/config/DruidConfig.class]", 
-    dependencies: [ ] //当前Bean注入的Bean ID列表
-},
-```
-
-##Admin
-
-> 客户端（被监控者）：用于监控BOOT项目，基于 Actuator 的可视化 WEB UI
-
-```xml
-<dependency>
-    <groupId>de.codecentric</groupId>
-    <artifactId>spring-boot-admin-starter-client</artifactId>
-    <version>2.1.3</version>
-</dependency>
-<dependency>
-    <groupId>org.springframework.boot</groupId>
-    <artifactId>spring-boot-starter-security</artifactId>
-</dependency>
-```
-```properties
-#actuator
-management.endpoints.web.exposure.include=*
-
-#admin服务端
-spring.boot.admin.client.url=http://localhost:9090/hello
-```
-```java
-@Configuration
-public /*static*/ class SecurityPermitAllConfig extends WebSecurityConfigurerAdapter {
-    @Override
-    protected void configure(HttpSecurity http) throws Exception {
-        http.authorizeRequests() //Security权限，授权的固定格式
-            .anyRequest().permitAll() //所有请求，所有权限都可以访问
-            .and().csrf().disable(); //固定写法：使 csrf()拦截失效
-    }
-}
-```
->服务端
-
-```xml
-<dependency>
-    <groupId>de.codecentric</groupId>
-    <artifactId>spring-boot-admin-starter-server</artifactId>
-    <version>2.1.3</version>
-</dependency>
-<dependency>
-    <groupId>org.springframework.boot</groupId>
-    <artifactId>spring-boot-starter-web</artifactId>
-</dependency>
-```
-```java
-//全局注解
-@EnableAdminServer
-```
-
 # thymeleaf
 
 ##基础概念
 
-> 模板引擎：`将后台数据 填充 到前台模板的表达式中！`thymeleaf，freemarker，jsp，velocity
+> 模板引擎：`将后台数据 填充 到前台模板的表达式中！`
 
 ```xml
 <dependency>
     <groupId>org.springframework.boot</groupId>
     <artifactId>spring-boot-starter-thymeleaf</artifactId>
 </dependency>
+```
 
+```properties
+#开发阶段关闭 thymeleaf 模板缓存，CTRL+F9
+spring.thymeleaf.cache=false
+```
+
+```html
 <html lang="en" xmlns:th="http://www.thymeleaf.org"> <!--命名空间-->
 ```
 
-> sts的html代码提示
+> 存放位置
 
-```shell
-下载STS插件: https://github.com/thymeleaf/thymeleaf-extras-eclipse-plugin/releases
-在STS安装目录dropins下新建文件夹: thymeleaf-2.1.2
-只将压缩包中的 features 和 plugins 文件夹拷贝到以上目录并重启eclise!!!
-在thymeleaf的html页面引入命名空间：<html lang="en" xmlns:th="http://www.thymeleaf.org">
-```
-> 低版本异常
-
-```xml
-<!--org.xml.sax.SAXParseException：元素类型 "meta" 必须由匹配的结束标记 "</meta>" 终止-->
-<!--这是由于低版本对于html语法解析比较严格，必须有头有尾-->
-
-(1).html标记按照严谨的语法去编写
-    <meta charset="UTF-8" />
-    
-(2).升级为高版本
-    <!--Thymeleaf.jar: 更新为 3.0 以上的版本-->
-    <!--thymeleaf-layout-dialect.jar: 更新为 2.0 以上的版本-->
-    <properties>
-        <java.version>1.8</java.version>
-        <thymeleaf.version>3.0.2.RELEASE</thymeleaf.version>
-        <thymeleaf-layout-dialect.version>2.0.4</thymeleaf-layout-dialect.version>
-    </properties>
-```
-> thymeleaf 模板文件存放位置：src/main/resources/templates
-
-```shell
-templates 目录是安全的，意味着该目录下的内容不允许外界直接访问，必须经过服务器的渲染。
+```sh
+模板文件存放位置：'src/main/resources/templates'
+该目录下的内容不允许外界直接访问，必须经过服务器的渲染，所以是安全的。
 ```
 
-##常用符号
+## 基础语法
 
->`~{...}` 片段引用表达式
+> `~{...}` 片段引用表达式
 
->`@{...}` 定义URL
+> `@{...}` 定义URL
 
 ```html
 <!--http://ip:8080/order/details/3-->
-<a href="emp" th:href="@{/details/}+${emp.id}">相对路径-传参-restful</a>
+<a href="emp" th:href="@{/details/}+${emp.id}">传参-restful</a>
 
 <!--http://ip:8080/order/details?orderId=3-->
-<a th:href="@{http://ip:8080/order/details(orderId=${o.id})}">绝对路径-传参</a>
+<a th:href="@{/details(orderId=${o.id})}">传参</a>
 
-<!--http://ip:8080/order/details?orderId=3-->
-<a th:href="@{/details(orderId=${o.id})}">相对路径-传参</a>
-
-<!--http://ip:8080/order/3/details?orderId=3 -->
-<a th:href="@{/{orderId}/details(orderId=${o.id}, orderName=${o.name})}">相对路径-传参-restful</a>
+<!--http://ip:8080/order/3/details?orderId=3&orderName=li -->
+<a th:href="@{/{orderId}/details(orderId=${o.id}, orderName=${o.name})}">传多参</a>
 ```
->`${...}` 变量值 https://www.cnblogs.com/xiaohu1218/p/9634126.html
+
+> `${...}` 变量取值
 
 ```html
 (1).获取对象的属性，调用方法：${person.name}
 (2).使用内置的基本对象：${! #strings.isEmpty(msg)}
 (3).内置的一些工具对象
 ```
->`#{...}` 用于获取 properties 文件内容，常用于'国际化'场景
+
+> `#{...}` 用于获取 properties 文件内容，常用于【国际化】场景
 
 ```html
 home.welcome=this messages is from home.properties! <!--properties文件-->
-<p th:text="#{home.welcome}">This text will not be show!</p> <!--读取properties文件中的 home.welcome-->
-```
->`#maps`  工具对象表达式
 
-```html
-#dates #calendars #numbers #strings #objects #bools #arrays #lists #sets
-
-<!--有msg对象则显示<p>; 反之不显示-->
-<p style="color:red" th:text="${msg}" th:if="${not #strings.isEmpty(msg)}" />
+<p th:text="#{home.welcome}">This text will not be show!</p> <!--读取配置文件中的 home.welcome-->
 ```
->`*{...}`    类似${}功能，配合th:object使用，获取指定对象的变量值
+
+> `*{...}` 类似`${...}`功能，配合`th:object`使用，获取指定对象的变量值
 
 ```html
 <div> <!--(1).类似${}功能-->
@@ -1238,40 +953,54 @@ home.welcome=this messages is from home.properties! <!--properties文件-->
     <p>Surname: <span th:text="*{session.user.surname}">Pepper</span>.</p>
     <p>Nationality: <span th:text="*{session.user.nationality}">Saturn</span>.</p>
 </div>
+```
 
+```html
 <div> <!--(2-1).原始表达式-->
     <p>Name: <span th:text="${session.user.firstName}">Sebastian</span>.</p>
     <p>Surname: <span th:text="${session.user.lastName}">Pepper</span>.</p>
     <p>Nationality: <span th:text="${session.user.nationality}">Saturn</span>.</p>
 </div>
+```
 
+```html
 <div th:object="${session.user}"> <!--(2-2).指定对象-->
     <p>Name: <span th:text="*{firstName}">Sebastian</span>.</p>
     <p>Surname: <span th:text="*{lastName}">Pepper</span>.</p>
     <p>Nationality: <span th:text="*{nationality}">Saturn</span>.</p>
 </div>
+```
 
+```html
 <div th:object="${session.user}"> <!--(2-3).混合使用-->
     <p>Name: <span th:text="*{firstName}">Sebastian</span>.</p> <!--指定对象-->
     <p>Surname: <span th:text="${session.user.lastName}">Pepper</span>.</p> <!--上下文变量取值-->
     <p>Nationality: <span th:text="${#object.nationality}">Saturn</span>.</p> <!--从 #object 中获取属性-->
 </div>
 ```
->`th:href`发送get请求
+
+## 常用语法
+
+> `th:value` 可以将一个值放入到 input 标签的 value 中
+
+> `th:href`GET请求
 
 ```html
 <a th:href="@{/emp}">用户添加</a> <!--发送get请求到 '/项目名/emp'-->
 ```
->`th:src`图片类地址引入
+
+> `th:src`图片类地址引入
 
 ```html
 <img alt="app-logo" th:src="@{/img/logo.png}" />
 ```
->`th:id`动态指定id属性
+
+> `th:id`动态指定id属性
 
 ```html
 <div th:id = "stu+(${rowStat.index}+1)" class="student"></div>
 ```
+
 > `th:each`
 
 ```html
@@ -1282,27 +1011,29 @@ home.welcome=this messages is from home.properties! <!--properties文件-->
     <td>[(${item.production})]</td>
     <td th:text="${itemStat.odd}?'odd':${item.memo}">memo</td>
 </tr>
-
-<!--(1).itemStat 称作状态变量，属性有:-->
-index        -> 当前迭代对象的索引. (从0开始)
-count        -> 当前迭代对象的计数. (从1开始)
-size        -> 迭代集合的长度
-current        -> 当前迭代变量
-even/odd    -> 布尔值,当前循环是否是偶数/奇数. (从0开始)
-first/last    -> 布尔值,当前循环是否是第一个/最后一个
-
-<!--(2).用法：${itemStat.index}; ${itemStat.odd}; ${itemStat.current.name}... ...-->
-
-<!--(3).在写 th:each="obj,objStat:${objList}"，可不写 objStat，自动添加，默认命名 objStat（如itemStat）-->
 ```
-> `th:value` 可以将一个值放入到 input 标签的 value 中
+
+```sh
+#(1).itemStat 称作状态变量，属性有:
+index       -> 当前迭代对象的索引。（从0开始）
+count       -> 当前迭代对象的计数。（从1开始）
+size        -> 迭代集合的长度
+current     -> 当前迭代变量
+even/odd    -> 布尔值，当前循环是否是偶数/奇数。(从0开始）
+first/last  -> 布尔值，当前循环是否是第一个/最后一个
+
+#(2).用法：${itemStat.index}; ${itemStat.odd}; ${itemStat.current.name}
+#(3).在写 th:each="obj,objStat:${objList}"，可不写 objStat，自动添加，默认命名 objStat（如itemStat）
+```
 
 > `th:text`
 
 ```html
 <div th:text="${emp.name}">将被替换</div> <!--一般写法-->
-<div>[[${emp.name}]]</div> <!--行内写法行内写法-->
+
+<div>[[${emp.name}]]</div>               <!--行内写法-->
 ```
+
 ```html
 <!--[[...]] & [(...)]-->
 <!--前者，会转义，等同于 th:text-->
@@ -1314,26 +1045,6 @@ first/last    -> 布尔值,当前循环是否是第一个/最后一个
 <p>The message is "This is <b>great!</b>"</p>
 ```
 
-```html
-<!--禁用行内写法（禁用内联）-->
-<p th:inline="none">A double array looks like this: [[1, 2, 3], [4, 5]]!</p> 
-```
-```html
-<!--js内联-->
-<script th:inline="javascript">
-    ...
-    var username = [[${session.user.name}]];
-    ...
-</script>
-```
-```html
-<!--css内联-->
-<style th:inline="css">
-    .[[${classname}]] {
-        text-align: [[${align}]];
-    }
-</style>
-```
 > `th:action` 表单提交的地址
 
 ```html
@@ -1345,20 +1056,22 @@ first/last    -> 布尔值,当前循环是否是第一个/最后一个
 </form>
 ```
 
->`th:selected` selected选择框，选中情况
+> `th:selected` 选择框，选中情况
 
 ```html
-<td>住址:</td> <!--th:text 用于显示; th:value 用于存值-->
+<td>住址:</td>
 <td>
-    <select name="city.id"> <!--th:selected 回显对象 person.city.id 和遍历 city.id 相同，则选中-->
+    <select name="city.id"> <!--th:text 用于显示; th:value 用于存值-->
         <option th:each="city : ${cityList}" th:value="${city.id}" th:text="${city.name}"
                 th:selected="${null!=person}?${person.city.id}==${city.id}">
-        </option>
+        </option> <!--th:selected 回显对象 person.city.id 和遍历 city.id 相同，则选中-->
     </select>
 </td>
+```
 
+```html
 <td>
-    <select name="city.id"> <!--配合使用 th:object-->
+    <select name="city.id"> <!--简化写法 th:object-->
         <option th:each="city : ${cityList}" th:object="${city}" th:value="*{id}" th:text="*{name}"
                 th:selected="${null!=person}?${person.city.id}==*{id}">
         </option>
@@ -1366,12 +1079,14 @@ first/last    -> 布尔值,当前循环是否是第一个/最后一个
 </td>
 ```
 
->`th:if` 条件判断
+> `th:if` 条件判断
 
 ```html
 <p th:if="${! #strings.isEmpty(msg)}" th:text="${msg}"></p> <!--msg不为空,则显示<p>-->
+```
 
-<!--th:if="${xx}" 表达式为 true 的各种情况:-->
+```sh
+#th:if="${xx}" 表达式为 true 的各种情况：
 boolean xx =true;
 int xx !=0;
 character xx !=0;
@@ -1379,7 +1094,9 @@ String xx !="false","off","no";
 If xx is not a boolean, a number, a character or a String
 ```
 
->`th:switch`多路选择，配合使用 `th:case`
+##其他语法
+
+> `th:switch`多路选择，配合使用 `th:case`
 
 ```html
 <div th:switch="${user.role}">
@@ -1389,7 +1106,7 @@ If xx is not a boolean, a number, a character or a String
 </div>
 ```
 
->`th:with` 变量赋值运算
+> `th:with` 变量赋值运算
 
 ```html
 <div th:with="first=${persons[0]}"> <!--th:with="x=${y}"-->
@@ -1399,13 +1116,13 @@ If xx is not a boolean, a number, a character or a String
 </div>
 ```
 
->`th:attr` 设置标签属性，多个属性用逗号分隔
+> `th:attr` 设置标签属性，多个属性用逗号分隔
 
 ```html
 th:attr="src=@{/image/aa.jpg},title=#{logo}" <!--一般用于自定义标签-->
 ```
 
->`th:remove` 删除某个属性
+> `th:remove` 删除某个属性
 
 ```html
 <tr th:remove="all"> <!--all：删除包含标签和所有的孩子-->
@@ -1541,397 +1258,22 @@ Session: <span th:text="${session.sess}"></span><br/>
 <!--request.getServletContext().setAttribute("app", "java");-->
 Application: <span th:text="${application.app}"></span>
 ```
-
->
-
-```html
-
-```
-
-
-
-# CRUD
-
-##restful
-
->restful是对于同一个服务器资源的一组不同的操作，包括：GET，POST，PUT，DELETE，PATCH，HEAD，OPTIONS
-
-```shell
-http请求的安全和幂等，是指多次调用同一个请求对资源状态的影响。
-'安全' -> 请求不会影响资源的状态。只读的请求：GET，HEAD，OPTIONS
-'幂等' -> 多次相同的请求，目的一致。
-```
-```shell 
-GET    /emps      查询员工列表  -> 只是请求，不改变资源状态                    #安全，幂等
-POST   /emps/emp  新增一个员工  -> 多次请求会新增多条相同的数据                #不安全，不幂等
-PUT    /emps/emp  更新员工信息  -> 多次请求都是将id为 5 的员工姓名修改成'wang'  #不安全，幂等
-DELETE /emps/{id} 删除员工信息  -> 多次请求目的都是删除id为 5 的员工           #不安全，幂等
-                                 #第一次成功删除，第二次及以后虽资源已不存在，但也得返回 200 OK，不能返回 404
-
-GET    /emps/emp  跳转新增页面
-GET    /emps/{id} 跳转更新页面
-```
-
-> `请求转化`：将 POST 转化为 PUT，DELETE
-
-```xml
-<!--（1）配置 HiddenHttpMethodFilter，SpringBoot 默认已配置-->
-<filter>
-    <filter-name>HiddenHttpMethodFilter</filter-name>  
-    <filter-class>org.springframework.web.filter.HiddenHttpMethodFilter</filter-class>  
-</filter>
-```
+> `#maps`  工具对象表达式
 
 ```html
-<!--（2）页面创建（POST表单 + 隐藏标签）-->
-<form method="post" th:action="@{/emp/}+${emp.id}">
-    <input type="hidden" name="_method" value="delete"> <!--隐藏标签 name + value-->
+#dates #calendars #numbers #strings #objects #bools #arrays #lists #sets
 
-    <a href="#" onclick="delEmp(this)" th:attr="url=@{/emp/}+${emp.id}">删除</a>
-</form>
-```
-##列表：get
-
-> 跳转到列表页面 `a标签对应的是 GET 请求`
-
-```html
-<a th:href="@{/emps}">员工列表</a>
-```
-
->跳转逻辑
-
-```java
-@Slf4j
-@Controller
-@RequestMapping("/emps")
-public class EmployeeController {
-
-    @GetMapping
-    public String list(Model model) {
-        model.addAttribute("emps", EmpUtils.listAll());
-        return "/emps/list"; //默认转发，forward
-    }
-}
-```
-
-> 列表页面
-
-```html
-<!DOCTYPE html>
-<html lang="en" xmlns:th="http://www.thymeleaf.org">
-    <head>
-        <meta charset="UTF-8">
-        <title>列表页面</title>
-
-        <script th:src="@{/webjars/jquery/jquery.min.js}"></script>
-        <script th:src="@{/webjars/bootstrap/js/bootstrap.min.js}"></script>
-        <link rel="stylesheet" th:href="@{/webjars/bootstrap/css/bootstrap.min.css}"/>
-
-        <script>/*删除记录的js...*/</script>
-    </head>
-    <body>
-        <table>
-            <tr>
-                <th>姓名</th>
-                <th>年龄</th>
-                <th>城市</th>
-                <th>操作</th>
-            </tr>
-            <tr th:if="${null==emps || 0==emps.size()}">
-                <td colspan="4" th:text="员工列表为空"></td>
-            </tr>
-            <tr th:each="emp:${emps}" th:object="${emp}"> <!--th:object 和 *{...} 配合使用-->
-                <td th:text="${emp.name}"></td>
-                <td th:text="*{gender}?'男':'女'"></td>
-                <td th:text="*{city.name}"></td>
-                <td>
-                    <a th:href="@{/emps/}+*{id}">修改</a> <!--路径拼接-->
-                    <a href="#" onclick="deleteEmp(this)" th:attr="url=@{/emps/}+${emp.id}">删除</a>
-                </td>
-            </tr>
-        </table>
-        <a th:href="@{/emps/emp}">新增员工</a>
-    </body>
-</html>
-```
-
-##新增：post
-
->跳转新增页面
-
-```html
-<a th:href="@{/emps/emp}">新增员工</a>
-```
-
->跳转逻辑
-
-```java
-@GetMapping("/emp")
-public String toAdd(Model model) {
-    model.addAttribute("citys", EmpUtils.listCity()); //新增页面要显示的城市列表信息
-    return "/emps/emp"; //转发-页面
-}
-```
-
-> 新增页面（同修改页面，略）
-
-> 新增接口
-
-```java
-@PostMapping("/emp")
-public String add(Emp emp) {
-    empList.add(emp);
-    return "redirect:/emps"; //重定向 -> 接口
-}
-```
-
-##修改：put
-
->跳转修改页面
-
-```html
-<a th:href="@{/emps/}+*{id}">修改</a> <!--路径拼接-->
-```
-
->跳转逻辑
-
-```java
-@GetMapping("/{id}")
-public String toUpdate(@PathVariable Integer id, Model model) {
-    Emp emp = EmpUtils.empList.get(id); //根据ID查找
-    
-    model.addAttribute("emp", emp);
-    model.addAttribute("citys", EmpUtils.cityList); //用于页面回显
-    return "/emps/emp";
-}
-```
-
->回显数据到修改页面
-
-```html
-<!DOCTYPE html>
-<html lang="en" xmlns:th="http://www.thymeleaf.org">
-    <head>
-        <meta charset="UTF-8">
-        <title>员工信息页</title>
-    </head>
-    <body>
-        <form method="post" th:action="@{/emps/emp}">
-            <!--新增和修改使用同一页面，区分方式：回显 emp 是否为空 ${null!=person}-->
-            <input type="hidden" name="_method" value="put" th:if="${null!=emp}">
-            <!--修改：PUT请求 + emp.id-->
-            <input type="hidden" name="id" th:value="${emp.id}" th:if="${null!=emp}">
-
-            <table>
-                <tr>
-                    <td>姓名：</td>
-                    <td><input type="text" name="name" th:value="${null!=emp}?${emp.name}"></td>
-                </tr>
-                <tr>
-                    <td>性别：</td>
-                    <td>
-                        <!--th:checked radio标签是否选中-->
-                        <input type="radio" name="gender" value="1" th:checked="${null!=emp}?${emp.gender}">男
-                        <input type="radio" name="gender" value="0" th:checked="${null!=emp}?${!emp.gender}">女
-                    </td>
-                </tr>
-                <tr>
-                    <td>住址：</td>
-                    <td>
-                        <select name="city.id">
-                            <!--th:selected 回显emp.city.id == 遍历city.id，则选中-->
-                            <option th:each="city:${citys}" th:object="${city}" th:value="*{id}" th:text="*{name}"
-                                    th:selected="${null!=emp}?${emp.city.id}==*{id}"></option>
-                        </select>
-                    </td>
-                </tr>
-                <tr>
-                    <td colspan="2">
-                        <!--回显 emp 为空，则显示'新增'；否则显示'修改'-->
-                        <input type="submit" th:value="${null==emp}?'新增':'修改'">
-                    </td>
-                </tr>
-            </table>
-        </form>
-    </body>
-</html>
-```
-
->修改接口
-
-```java
-@PutMapping("/emp")
-public String update(Emp emp) {
-    EmpUtils.empList.update(emp);
-    return "redirect:/emps"; //重定向 -> 接口
-}
-```
-
-##删除：delete
-
->删除方式（1）form表单
-
-```html
-<a href="#" onclick="deleteEmp(this)" th:attr="url=@{/emp/}+${emp.id}">删除</a>
-```
-
-```html
-<form id="deleteForm" method="post" action="#"> <!--独立于列表Table的<form/>表单-->
-    <input type="hidden" name="_method" value="DELETE">
-</form>
-```
-
-```html
-<script>
-    function deleteEmp(e) {
-        alert($(e).attr('url')); //按钮的url属性
-
-        //动态设置<form>的action属性，并提交
-        $('#deleteForm').attr('action', $(e).attr('url')).submit();
-        return false; //取消按钮的默认行为
-    }
-</script>
-```
-
->删除方式（1）后台逻辑
-
-```java
-@DeleteMapping("/{id}")
-public String delete(@PathVariable Integer id) {
-    EmpUtils.empList.remove(id.intValue());
-    return "redirect:/emps";
-}
-```
-
-> 删除方式（2）不使用form表单，而使用ajax异步请求
-
-```html
-<a href="#" onclick="deleteEmp(this)" th:attr="url=@{/emps/}+${emp.id}">删除</a>
-```
-
-```html
-<script>
-    function deleteEmp(e) {
-        $.ajax({
-            type: 'delete',
-            url: $(e).attr('url'),
-            dataType: 'text',
-            success: function (data) {
-                //e 表示当前emp所在行的标签<a/>
-                //$(e).parent().parent() 表示<a/> -> td -> tr
-                $(e).parent().parent().remove();
-                alert(data);
-            },
-            error: function (data) {
-                var res = JSON.parse(data.responseText); //转化json
-                alert(res.status + " - " + res.error + " - " + res.message);
-            }
-        });
-        return false;
-    }
-</script>
-```
-
-> 删除方式（2）后台逻辑
-
-```java
-@DeleteMapping("/{id}")
-@ResponseBody
-public String delete(@PathVariable Integer id) {
-    EmpUtils.empList.deleteById(id);
-    return "success";
-}
-```
-
-
-
-#异常处理
-
-> 问题需求
-
-```shell
-#当前问题
-当程序出现错误，如获取值为空或出现异常时，并不希望用户看到异常的具体信息，而是希望对对应的错误和异常做相应提示
-在MVC框架中很多时候会出现执行异常，那我们就需要加 try/catch 进行捕获，如果 service 层和 controller 层都加上，那就会造成代码冗余
-
-#解决方法
-编程时，先进行参数校验，有问题则'直接抛出异常'；没问题则继续执行具体的业务操作，最后返回成功信息。
-在'异常处理类'中捕获异常，统一处理，向用户返回规范的响应信息（如 json），无需在代码中 try/catch。
-
-#处理流程
-自定义异常类型，错误码，以及错误信息。
-对于可预知的异常由程序员在代码中（controller、service、dao）主动抛出；框架异常则由框架自行抛出
-在'异常处理类'中，统一处理异常：对于程序员抛出的异常，捕捉自定义异常处理。对于框架异常，则捕捉 Exception 处理。
-```
-
-> 异常处理类：原理是AOP切面。`不仅可以处理 controller 异常，也可以处理 service 异常`
-
-```java
-@Slf4j
-@ControllerAdvice //AOP切面
-// @RestControllerAdvice
-public class ExceptionConfig {
-
-    @ResponseBody //返回 json 数据，默认返回错误页面
-    @ResponseStatus(HttpStatus.BAD_REQUEST) //自定义响应状态码：400，默认 200
-    @ExceptionHandler(UserException.class)
-    public ResultVO userException(UserException e) {
-        log.error("【异常处理类】处理异常: UserException");
-        return ResultVOUtil.fail(e.getResultEnum());
-    }
-
-    @ResponseBody
-    @ExceptionHandler(CustomException.class)
-    public ResultVO customException(CustomException e) {
-        log.error("【异常处理类】处理异常: CustomException");
-        return ResultVOUtil.fail(e.getResultEnum());
-    }
-
-    @ExceptionHandler(Exception.class) //捕获未知错误，返回 404 页面
-    public String exception(Exception e) {
-        log.error("【异常处理类】处理异常: Exception");
-        return "/error/404";
-    }
-}
-```
-
-> 异常处理の优先级
-
-```shell
-#查找-优先级
-当执行过程中出现异常，首先在本类中查找 @ExceptionHandler 标识的方法。
-找不到，再去查找 @ControllerAdvice 标识类中的 @ExceptionHandler 标识方法来处理异常。
-
-#继承-优先级
-例如发生异常 NullPointerException; 但是声明的异常有 RuntimeException 和 Exception
-此时，根据异常的最近继承关系，找到继承深度最浅的那个，即 RuntimeException 的声明方法
-```
-
->异常处理の方法的常用参数
-
-```java
-/**
- * @param e 异常参数(包括自定义异常);
- *          请求或响应对象(HttpServletRequest; ServletRequest; PortleRequest/ActionRequest/RenderRequest)
- *          Session对象(HttpSession; PortletSession)
- *          WebRequest; NativeWebRequest; Locale;
- *          InputStream/Reader; OutputStream/Writer; Model
- * @return  ModelAndView; Model; Map; View; String; @ResponseBody; HttpEntity<?>或ResponseEntity<?>; 以及void
- */
+<!--有msg对象则显示<p>; 反之不显示-->
+<p style="color:red" th:text="${msg}" th:if="${not #strings.isEmpty(msg)}" />
 ```
 
 # WebSocket
 
-```xml
-<dependency>
-    <groupId>org.springframework.boot</groupId>
-    <artifactId>spring-boot-starter-websocket</artifactId>
-</dependency>
-```
+## 基础概念
 
 > 简介
 
-````shell
+```sh
 B/S 结构的软件项目中有时客户端需要实时的获得服务器消息，但默认HTTP协议只支持 请求响应模式。
 对于这种需求可以通过 polling，Long-polling，长连接，Flash-Socket，HTML5中定义的WebSocket 完成。
 
@@ -1939,9 +1281,9 @@ HTTP模式可以简化Web服务器，减少服务器的负担，加快响应速�
 但不容易直接完成实时的消息推送功能（如聊天室，后台信息提示，实时更新数据等）。
 
 应用程序通过 Socket 向网络发出请求或者应答网络请求。Socket 可以使用TCP/IP协议或UDP协议。
-````
+```
 
-```java
+```sh
 TCP协议：面向连接的，可靠的，基于字节流的传输层通信协议，负责数据的可靠性传输问题。
 UDP协议："无连接，不可靠"，基于报文的传输层协议，优点：发送后不用管，速度比TCP快。
 
@@ -1950,7 +1292,7 @@ HTTP协议："无状态协议"，通过 Internet 发送请求消息和响应消�
 
 > Http协议
 
-```shell
+```sh
 HTTP 协议原本是设计用于传输简单的文档和文件，而非实时的交互。
 
 根据 HTTP 协议，一个客户端如浏览器，向服务器打开一个连接，发出请求，等待回应，之后关闭连接。
@@ -1966,13 +1308,13 @@ HTTP协议决定了服务器与客户端之间的连接方式，无法直接实�
 
 > 双向通信
 
-```shell
+```sh
 Websocket：Html5 提供的一种通过 js 与远程服务器建立连接，从而实现客户端与服务器间双向的通信。
 优点：事件驱动，异步，使用ws或者wss协议的客户端socket，能够实现真正意义上的推送功能。
 缺点：少部分浏览器不支持，浏览器支持的程度与方式有区别
 ```
 
-> 客户端
+## 客户端
 
 ```html
 <body>
@@ -2034,7 +1376,14 @@ Websocket：Html5 提供的一种通过 js 与远程服务器建立连接，从�
 </body>
 ```
 
-> 服务端
+## 服务端
+
+````xml
+<dependency>
+    <groupId>org.springframework.boot</groupId>
+    <artifactId>spring-boot-starter-websocket</artifactId>
+</dependency>
+````
 
 ```java
 @Configuration
@@ -2117,16 +1466,166 @@ public class Websocket {
 }
 ```
 
+# 上传下载
 
-# 其他相关
+## 文件上传
 
-<https://www.cnblogs.com/moonlightL/p/7891806.html>
+> 前台页面
 
+```sh
+'form表单'： POST + enctype="multipart/form-data"
+'file标签'：必须要有 name 属性
+'后台使用'： MultipartFile 接收文件资源
+```
 
+```html
+<form action="/upload" method="post" enctype="multipart/form-data">
+    File0: <input type="file" name="file"><br>
+    <!-- File1: <input type="file" name="file"><br> --> <!-- 多文件上传，name必须一致 -->
+    Desc: <input type="text" name="desc"><br>
+    <input type="submit" value="提交">
+</form>
+```
 
+> 单个上传
 
+```java
+@PostMapping("/upload")
+public void upload(@RequestParam("file") MultipartFile file,
+                   @RequestParam("desc") String desc) {
+    log.info("文件名: {}. 文件大小: {}. 文件描述: {}", file.getOriginalFilename(), file.getSize(), desc);
+    file.transferTo(new File(getUploadDir(), file.getOriginalFilename())); //文件另存
+}
+```
 
+```java
+public File getUploadDir() throws FileNotFoundException {
+    File dir = new File(ResourceUtils.getURL("").getPath(), "/upload"); //项目根目录下
+    if (!dir.exists()) {
+        dir.mkdirs(); //创建当前及父目录.(区别于 mkdir())
+    }
+    return dir;
+}
+```
 
+> 批量上传
 
+```java
+@PostMapping("/uploads")
+public void batchUplocad(@RequestParam("file") List<MultipartFile> files,
+                         @RequestParam("desc") List<String> descs) {
+    files.forEach(x -> x.transferTo(getUploadDir(), x.getOriginalFilename())); //文件另存 
+    descs.forEach(log::info); //文件描述
+}
+```
 
+> 相关配置
 
+```properties
+#单个上传文件的大小
+spring.servlet.multipart.max-file-size=10MB
+#一次请求上传文件的总容量
+spring.servlet.multipart.max-request-size=20MB
+```
+
+##文件下载
+
+> 下载
+
+```java
+@GetMapping("/{name}")
+public void download(@PathVariable String name, HttpServletResponse resp) {
+    try (InputStream in = new FileInputStream(new File(getUploadDir(), name));
+         OutputStream out = resp.getOutputStream()) {
+        resp.setContentType("application/x-download");
+        resp.addHeader("Content-Disposition", "attachment;filename=" + name);
+        IOUtils.copy(in, out);
+    } catch (Exception e) {
+        e.printStackTrace();
+    }
+}
+```
+
+# 错误处理
+
+## 错误页面
+
+> 4xx，5xx 错误页面
+
+```sh
+在项目的 /static 目录下新建页面：'/error/4xx.html'和'/error/5xx.html'
+```
+
+## 异常捕获
+
+> 问题需求
+
+```sh
+#当前问题
+当程序出现错误，如获取值为空或出现异常时，并不希望用户看到异常的具体信息，而是希望对对应的错误和异常做相应提示
+在MVC框架中很多时候会出现执行异常，那我们就需要加 try/catch 进行捕获，如果 service 层和 controller 层都加上，那就会造成代码冗余
+
+#解决方法
+编程时，先进行参数校验，有问题则'直接抛出异常'；没问题则继续执行具体的业务操作，最后返回成功信息。
+在'异常处理类'中捕获异常，统一处理，向用户返回规范的响应信息（如 json），无需在代码中 try/catch。
+
+#处理流程
+自定义异常类型，错误码，以及错误信息。
+对于可预知的异常由程序员在代码中（controller、service、dao）主动抛出；框架异常则由框架自行抛出
+在'异常处理类'中，统一处理异常：对于程序员抛出的异常，捕捉自定义异常处理。对于框架异常，则捕捉 Exception 处理。
+```
+> 异常处理类
+
+```java
+@Slf4j
+@ControllerAdvice
+// @RestControllerAdvice
+public class ExceptionConfig {
+
+    @ResponseBody //返回 json 数据，默认返回错误页面
+    @ResponseStatus(HttpStatus.BAD_REQUEST) //自定义响应状态码：400，默认 200
+    @ExceptionHandler(UserException.class)
+    public ResultVO userException(UserException e) {
+        log.error("【异常处理类】处理异常: UserException");
+        return ResultVOUtil.fail(e.getResultEnum());
+    }
+
+    @ResponseBody
+    @ExceptionHandler(CustomException.class)
+    public ResultVO customException(CustomException e) {
+        log.error("【异常处理类】处理异常: CustomException");
+        return ResultVOUtil.fail(e.getResultEnum());
+    }
+
+    @ExceptionHandler(Exception.class) //捕获未知错误，返回 404 页面
+    public String exception(Exception e) {
+        log.error("【异常处理类】处理异常: Exception");
+        return "/error/404";
+    }
+}
+```
+
+> 异常处理の优先级
+
+```sh
+#查找-优先级
+当执行过程中出现异常，首先在本类中查找 @ExceptionHandler 标识的方法。
+找不到，再去查找 @ControllerAdvice 标识类中的 @ExceptionHandler 标识方法来处理异常。
+
+#继承-优先级
+例如发生异常 NullPointerException; 但是声明的异常有 RuntimeException 和 Exception
+此时，根据异常的最近继承关系，找到继承深度最浅的那个，即 RuntimeException 的声明方法
+```
+
+> 异常处理の方法的常用参数
+
+```java
+/**
+ * @param e 异常参数(包括自定义异常);
+ *          请求或响应对象(HttpServletRequest; ServletRequest; PortleRequest/ActionRequest/RenderRequest)
+ *          Session对象(HttpSession; PortletSession)
+ *          WebRequest; NativeWebRequest; Locale;
+ *          InputStream/Reader; OutputStream/Writer; Model
+ * @return  ModelAndView; Model; Map; View; String; @ResponseBody; HttpEntity<?>或ResponseEntity<?>; 以及void
+ */
+```

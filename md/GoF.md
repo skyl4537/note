@@ -4,11 +4,89 @@
 
 [TOC]
 
+# 单例模式
 
+> 一个类在内存中仅有一个实例。常用场景：
 
+```sh
+Spring 中，每个 Bean 默认就是单例，采用'单例注册表的方式'进行实现。
+SpringMVC 中，控制器对象是单例。
 
+在servlet编程中，每个Servlet也是单例
+数据库连接池的设计一般也是采用单例模式，因为数据库连接是一种数据库资源
+```
 
+> 饿汉式
 
+```java
+public class Singleton0 {
+    private static final Singleton0 instance = new Singleton0();
+
+    private Singleton0() {}
+
+    // (1).static 变量会在类装载时初始化，此时不会涉及多个线程访问该对象的问题
+    // (2).虚拟机保证只会装载一次该类，肯定也不会发生并发访问的问题
+    // 综上两点：可以省略关键字 synchronized
+    public static /*synchronized*/ Singleton0 newInstance() {
+        return instance;
+    }
+}
+```
+
+> 懒汉式
+
+```java
+public class Singleton1 {
+    private static volatile Singleton1 instance; // 【volatile】
+
+    private Singleton1() {}
+
+    // 延迟加载 --> 假如 newInstance() 从不调用，则也不会实例化对象，有效避免了资源的浪费
+    // 懒汉式 --> 对于多线程访问容易出问题，加上同步锁
+    public static Singleton1 newInstance() {
+        if (null == instance) {
+            synchronized (Singleton1.class) {
+                if (null == instance) {
+                    instance = new Singleton1(); //指令重排
+                }
+            }
+        }
+        return instance;
+    }
+}
+```
+
+```sh
+#双重检测锁
+'第1层判断'：加锁只需要在第一次初始化的时候用到，之后的调用都没必要再进行加锁。
+'第2层判断'：如果多个线程同时通过第1层检测，并且其中一个线程首先通过了第2层检测并实例化了对象，那么剩余通过了第一次检查的线程就不会再去实例化对象。
+这样，除了初始化的时候会出现加锁的情况，后续的所有调用都会避免加锁而直接返回，解决了性能消耗的问题。
+```
+
+```sh
+#volatile：指令重排问题
+实例化对象 new 过程，可以分解成三个步骤：
+（1）分配内存空间 （2）初始化对象 （3）将对象指向刚分配的内存空间
+
+但是，有些编译器为了性能的原因，可能会将第二步和第三步进行重排序，顺序就成了：
+（1）分配内存空间 （2）将对象指向刚分配的内存空间 （3）初始化对象
+```
+
+```sh
+#指令重排后，两个线程调用可能出现：T2访问的是一个初始化未完成的对象
+T1检测为null --> 获取锁 --> 再次检测null --> 为 instance 分配内存空间 --> 将 instance 指向内存空间（未初始化的对象）
+--> T1释放锁 --> T2获取锁 --> 检测不为null --> 访问 instance 对象（为初始化对象，可能出现问题） --> T1初始化对象
+```
+
+>单例注册表
+
+```sh
+由于构造函数是私有的，所以上述两种单例类都'不能被继承'。Spring 的单例 bean 采用的是'单例注册表'模式。
+```
+
+```java
+
+```
 
 
 

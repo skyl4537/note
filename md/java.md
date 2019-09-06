@@ -196,67 +196,14 @@ static class C extends A {
 >
 > 父类静态代码块、子类静态代码块、main、父类构造代码块、父类构造函数、子类构造代码块、子类构造数
 
-**静态代码块**：在类中只使用 static 关键字声明的代码块。`每个静态代码块只会执行一次`，用于初始化类的属性。由于 JVM 在加载类时会执行静态代码块，所以静态代码块优先主方法执行。
 
-**构造代码块**：在类中直接用{ }扩起来的代码块。`每次new对象时都会被调用`，执行顺序`优先于`所有的构造函数。作用：给所有的对象进行统一、共性的初始化。
-
-**构造函数**：每个类都有一个默认的无参构造函数，这个构造函数的权限和类保持一致。作用：是给通过此构造函数（构造函数不止一种）new 的对象进行初始化。
 
 ```java
-static class F {
-    static {
-        System.out.print("F-S{} ");
-    }
 
-    {
-        System.out.print("F{} ");
-    }
-
-    F() {
-        System.out.print("F() ");
-    }
-
-    public static void main(String[] args) {
-        System.out.print("F-M() ");
-        new S(); //F-S{} F-M() S-S{} F{} F() S{} S()
-    }
-}
-
-static class S extends F {
-    static {
-        System.out.print("S-S{} ");
-    }
-
-    {
-        System.out.print("S{} ");
-    }
-
-    S() {
-        System.out.print("S() ");
-    }
-}
 ```
 
 ```java
-static class Add {
-    static {
-        int i = 5; //局部变量，不会影响i值。
-    } //执行顺序在静态变量初始化之后（即如果设为非局部变量，则会影响静态变量的值）。
 
-    private static int i, j; 
-
-    public static void main(String[] args) { //i++，先++再使用；++i，先使用再++
-        i--; //输出：-1
-        add();
-        System.out.println(i + " - " + j); //输出：1-0
-        System.out.println(i + j + ++i); //输出：3
-    }
-
-    private static void add() {
-        j = i++ + ++i; //输出：0(0)+0(1)
-        System.out.println(i + " - " + j); //输出：1-0
-    }
-}
 ```
 
 - **栈内存：** 在`函数`中定义的一些`基本类型的变量`和`对象的引用变量`都在函数的栈内存中分配。

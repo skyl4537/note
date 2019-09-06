@@ -541,7 +541,7 @@ B = JSON.parseArray(JSON.toJSONString(A), Dog.class);
 
 # HttpClient
 
-##基础概念
+##基础
 
 ```xml
 <dependency>
@@ -549,7 +549,7 @@ B = JSON.parseArray(JSON.toJSONString(A), Dog.class);
     <artifactId>httpclient</artifactId>
 </dependency>
 ```
-> 区别 GET & POST
+> GET & POST
 
 ```shell
 超链接<a/>    #只能用 GET 提交HTTP请求
@@ -558,130 +558,152 @@ B = JSON.parseArray(JSON.toJSONString(A), Dog.class);
 GET          #参数只能在请求行（request-line）
 POST         #参数可在请求行，亦可在请求体（request-body）
 ```
-> 区别 URL & URI：http://ip:port/demo/hello/hello & /demo/hello/hello
+```sh
+
+```
+
+> URL & URI
 
 <https://www.cnblogs.com/wuyun-blog/p/5706703.html>
 
 <https://blog.csdn.net/koflance/article/details/79635240>
 
-## GET-请求行
-
-> 两种方式获取HttpGet
-
-```java
-//(1).直接将参数拼接在 URI 之后
-String uri = "http://127.0.0.1:8090/demo/http/get?name=中国&age=70";
-HttpGet httpGet = new HttpGet(uri);
-```
-```java
-//(2).通过 URIUtils 工具类生成带参数的 URI
-String param = "name=中国&age=70";
-// String param = "name=" + URLEncoder.encode("中国", "UTF-8") + "&age=70"; //中文参数，encode
-URI uri = URIUtils.createURI("http", "127.0.0.1", 8090, "/demo/http/get", param, null);
-HttpGet httpGet = new HttpGet(uri);
+```sh
+http://ip:port/demo/hello/hello #url
+/demo/hello/hello               #uri
 ```
 
-## POST-请求行
+## GET
 
-> 两种方式获取httpPost （同GET）
+> 请求行传参
 
 ```java
-//(1).拼接字符串
-String uri = "http://127.0.0.1:8090/demo/http/post?name=中国&age=70";
-HttpPost httpPost = new HttpPost(uri);
+String params = "username=" + URLEncoder.encode("李", "UTF-8") + "&password=123"; //中文处理
+String url = "http://localhost:9006/web/get?" + params;
+HttpGet httpGet = new HttpGet(url);
+
+String response = HttpClients.createDefault().execute(httpGet, new BasicResponseHandler()); //res
 ```
 
+## POST
+
+> 请求体 JSON
+
 ```java
-//(2).工具类 URIUtils
-String param = "name=中国&age=70";
-// String param = "name=" + URLEncoder.encode("中国", "UTF-8") + "&age=70"; //中文参数,encode
-URI uri = URIUtils.createURI("http", "127.0.0.1", 8090, "/demo/http/post", param, null);
-HttpPost httpPost = new HttpPost(uri);
+httpPost.setHeader("Content-Type", "application/json");
+StringEntity entity = new StringEntity(JSON.toJSONString(new User()));
+
+HttpPost httpPost = new HttpPost("http://localhost:9006/web/post");
+httpPost.setEntity(entity);
+
+String response = HttpClients.createDefault().execute(httpPost, new BasicResponseHandler()); //res
 ```
 
-## POST-请求体
-
-> 传输 表单键值对 keyValue
+> 请求体 Key-Value
 
 ```java
-//1.POST表单
 List<NameValuePair> nvps = new ArrayList<>(2);
 nvps.add(new BasicNameValuePair("name", "中国"));
 nvps.add(new BasicNameValuePair("age", "70"));
 UrlEncodedFormEntity entity = new UrlEncodedFormEntity(nvps, Charset.forName("UTF-8")); //中文乱码
 
-HttpPost httpPost = new HttpPost("http://127.0.0.1:8090/demo/http/post");
+HttpPost httpPost = new HttpPost("http://localhost:9006/web/post");
 httpPost.setEntity(entity);
+
+String response = HttpClients.createDefault().execute(httpPost, new BasicResponseHandler()); //res
 ```
+
+> 上传文件
 
 ```java
-//2.查看HTTP数据
-System.out.println(entity.getContentType()); //Content-Type: application/x-www-form-urlencoded; charset=UTF-8
-System.out.println(entity.getContentLength()); //30
-System.out.println(EntityUtils.toString(entity)); //name=%E4%B8%AD%E5%9B%BD&age=70
-```
-
-> 传输 JSON
-
-```java
-String data = "{\"name\":\"中国\",\"age\":\"70\"}";
-StringEntity entity = new StringEntity(data, "UTF-8"); //中文乱码,默认"ISO-8859-1"
-entity.setContentEncoding("UTF-8");
-entity.setContentType("application/json");//设置contentType --> json
-
-HttpPost httpPost = new HttpPost("http://127.0.0.1:8090/demo/http/postBody");
-httpPost.setEntity(entity);
-```
-
-> 传输 File
-
-```xml
-<!-- HttpClient-File -->
-<dependency>
-    <groupId>org.apache.httpcomponents</groupId>
-    <artifactId>httpmime</artifactId>
-</dependency>
-```
-
-```html
-<!-- 前台页面 -->
-<form action="http://127.0.0.1:8090/demo/http/postFile" method="POST" enctype="multipart/form-data">  
-    <input type="text" name="fileName" value="中国"/>  
-    <input type="file" name="file"/>  
-    <inupt type="submit" value="提交"/>  
-</form>
-```
-
-```java
-//后台逻辑
 MultipartEntityBuilder builder = MultipartEntityBuilder.create();
-ContentType contentType = ContentType.create("text/plain","UTF-8");//中文乱码，默认"ISO-8859-1"
+ContentType contentType = ContentType.create("text/plain","UTF-8");//中文乱码
 builder.addTextBody("fileName", "中国", contentType);
 builder.addBinaryBody("file", new File("C:\\Users\\BlueCard\\Desktop\\StatusCode.png"));
 HttpEntity entity = builder.build();
 
 HttpPost httpPost = new HttpPost("http://127.0.0.1:8090/demo/http/postFile");
 httpPost.setEntity(entity);
+
+String response = HttpClients.createDefault().execute(httpPost, new BasicResponseHandler()); //res
 ```
 
-## 请求结果解析
 
-> 请求结果解析通用于 GET 和 POST。
+
+# RestTemplate
+
+> 前置准备
 
 ```java
-String uri = "http://127.0.0.1:8090/demo/http/get?name=中国&age=70";
-HttpGet httpGet = new HttpGet(uri); //组装请求-GET
-// HttpPost httpPost = new HttpPost(uri); //组装请求-POST
+@Configuration
+public class AppConfig {
 
-try (CloseableHttpResponse httpResponse = HttpClients.createDefault().execute(httpGet)) { //发送请求，连接自动关闭
-    if (null != httpResponse && HttpStatus.SC_OK == httpResponse.getStatusLine().getStatusCode()) {
-        String res = EntityUtils.toString(httpResponse.getEntity(), "UTF-8"); //获取结果
-        System.out.println(res);
+    @Bean
+    public RestTemplate restTemplate() {
+        return new RestTemplate();
     }
-} catch (IOException e) {
-    e.printStackTrace();
 }
 ```
+
+## GET
+
+> 无参请求
+
+```java
+String url = "http://localhost:9006/web/test/get0";
+ResponseEntity<User> entity = restTemplate.getForEntity(url, User.class); //arg2：返回值类型
+```
+
+> 有参请求（2种方式）
+
+```java
+String url = "http://localhost:9006/web/test/get1?username={1}&password={2}";
+ResponseEntity<User> entity = restTemplate.getForEntity(url, User.class, "li", "123"); //arg3...：参数列表
+```
+
+```java
+String url = "http://localhost:9006/web/test/get1?username={username}&password={password}";
+Map<String, Object> map = new HashMap<>();
+map.put("username", "li");
+map.put("password", "123");
+ResponseEntity<User> entity = restTemplate.getForEntity(url, User.class, map);
+```
+
+> `推荐方案`
+
+```sh
+getForObject() 是对 getForEntity() 进一步封装，'只返回消息体的内容'，不返回协议的信息。
+```
+
+```java
+String url = "http://localhost:9006/web/test/get1?username={1}&password={2}";
+User user = restTemplate.getForObject(url, User.class, "li", "pwd");
+```
+
+##POST
+
+> 请求体传参
+
+```java
+String url = "http://localhost:9006/web/test/post0";
+User user = restTemplate.postForObject(url, new User(), User.class);
+```
+
+> postForLocation
+
+```sh
+postForLocation() 也是提交新资源，提交成功之后，返回新资源的URI。
+此方法的参数和前面两种的参数基本一致，只不过该方法的返回值为Uri，这个只需要服务提供者返回一个Uri即可，该Uri表示新资源的位置
+```
+
+> 也支持 PUT，DELETE
+
+```java
+restTemplate.put(url,new User());
+restTemplate.delete(url,"123"); //都没有返回值
+```
+
+
 
 # fastjson
 
@@ -867,6 +889,16 @@ public class JsonUtils {
 ```
 
 ![](assets/util0.png)
+
+
+
+
+
+
+
+
+
+
 
 
 

@@ -387,7 +387,6 @@ Build,Exe... - Build Tools - Gradle - Offline work
 
 ```shell
 日志门面，日志的接口 #如：slf4j（√），jcl，jboss-logging
-
 日志实现，具体实现类 #如：logback（√），log4j，log4j2（apache），jul
 ```
 
@@ -437,12 +436,19 @@ POST - 请求体: {"configuredLevel": "WARN"} - Content-Type: application/json
 
 ```java
 log.info("变量os的取值为: " + macOS);  //方式-1（×）
-
 log.info("变量os的取值为: {}", macOS); //方式-2（√）
+
+//方式-1 对于日志输出设为 WARN 情况，也会先进行'字符串拼接'影响性能。但是，方式-2 则不存在这种问题，先判断输出级别，再进行字符串拼接。
 ```
 
-```sh
-方式-1 对于日志输出设为 WARN 情况，也会先进行'字符串拼接'影响性能。但是，方式-2 则不存在这种问题，先判断输出级别，再进行字符串拼接。
+> boot项目简单配置
+
+```properties
+#boot日志，默认只打印控制台。配置保存到文件，及日志级别
+logging.file=/logs/web.log
+logging.level.root=info
+logging.level.com.example.web.controller=debug
+logging.pattern.console=%d{yyyy-MM-dd HH:mm:ss.SSS} [%-5p] [%t] - %m%n
 ```
 
 > 使用原则

@@ -75,23 +75,15 @@ map.put("size", size);
 
 > 数据库连接池
 
-在高频率访问数据库时，使用数据库连接池可以降低服务器系统压力，提升程序运行效率。对于小型项目不适用数据库连接池。
 
-关闭数据库连接对象，`只是把连接对象归还给数据库连接池，并将其状态变成 Idle，并不是销毁连接`。
 
 >JDK动态代理
 
-Dao接口没有实现类，当调用接口方法时，通过 `全限定名+方法名`拼接字符串作为key值，唯一定位一个MappedStatement。在Mybatis中，每一个select、insert、update、delete标签，都会被解析为一个MapperStatement对象。
 
-Mapper 接口的工作原理是JDK动态代理，Mybatis运行时会使用JDK动态代理为Mapper接口生成代理对象proxy，代理对象会拦截接口方法，转而执行MapperStatement所代表的sql，然后将sql执行结果返回。
-
-`Dao接口里的方法不能重载`！ 因为`全限定名+方法名`保存和寻找策略（接口可以重载，但是xml不能多个相同id）。
 
 > Mybatis是如何将sql执行结果封装为目标对象并返回的？都有哪些映射形式？
 
-第一种是使用 resultMap 标签，逐一定义数据库列名和对象属性名之间的映射关系。
 
-第二种是使用sql列的别名功能，将列的别名书写为对象属性名。有了列名与属性名的映射关系后，Mybatis通过反射创建对象，同时使用反射给对象的属性逐一赋值并返回，那些找不到映射关系的属性，是无法完成赋值的。
 
 > Xml映射文件中，常用的标签有哪些？
 
@@ -105,9 +97,7 @@ insert，delete，select，update，parameterMap，resultMap，resultType，sql�
 
 > 小知识点
 
-SqlSession 实例非线程安全，不能被共享。每次用完必须关闭。
 
-`增删改没有 resultType 属性`，返回值表示受影响的行数，类型可以是：boolean，int，long，void。
 
 
 
@@ -115,21 +105,15 @@ SqlSession 实例非线程安全，不能被共享。每次用完必须关闭。
 
 > 自身特点
 
-MyBatis是一个半自动的ORM（Object Relation Mapping，对象关系映射）框架，底层是对JDBC的封装，开发者只需要关注SQL本身，而不需要去处理Jdbc繁杂的过程代码（如：注册驱动，创建connection，创建statement，手动设置参数，结果集检索等）。
 
-MyBatis通过`xml或注解`的方式将java对象和sql语句映射生成最终执行的sql语句，最后由mybatis框架执行sql并将结果映射成java对象并返回。
 
 > mybatis优点
 
-- SQL写在XML里，解除sql与程序代码的耦合，便于统一管理
-- 与JDBC相比，消除了JDBC大量冗余的代码，不需要手动开关连接
-- 能够与Spring很好的集成
-- 提供映射标签，支持对象与数据库的ORM字段关系映射；提供对象关系映射标签，支持对象关系组件维护。
+- ​
 
 > mybatis缺点
 
-- SQL语句的编写工作量较大，尤其当字段多、关联表多时，对开发人员编写SQL语句的功底有一定要求。
-- SQL语句依赖于数据库，导致数据库移植性差，不能随意更换数据库。
+- ​
 
 > 和jdbc比较
 
@@ -137,16 +121,12 @@ mybatis抽离出数据库的连接，关闭的操作。抽离了sql语句，并�
 
 > 和hibernate比较
 
-- Mybatis和hibernate不同，它不完全是一个ORM框架，因为MyBatis需要程序员自己编写Sql语句。
-- Mybatis直接编写原生态sql，可以严格控制sql执行性能，灵活度高。但是灵活的前提是mybatis无法做到数据库无关性，如果需要实现支持多种数据库的软件，则需要自定义多套sql映射文件，工作量大。 
-- Hibernate对象/关系映射能力强，数据库无关性好。 
+-  
 
 
 > 结论
 
-- JDBC：sql包含在代码中，硬编码高耦合。实际开发中sql频繁修改，维护不易。
-- mybatis：半自动化ORM框架。sql和java编码分开，一个专注数据，一个专注业务，低耦合。
-- Hibernate: 全自动ORM。自动产生sql，但不灵活。
+- ​
 
 ##jdbc不足
 
@@ -268,15 +248,7 @@ public void doJDBC() throws ClassNotFoundException, SQLException, IOException {
 
 ##设计模式
 
-- Builder模式，例如SqlSessionFactoryBuilder、XMLConfigBuilder、XMLMapperBuilder；
-- 工厂模式，例如SqlSessionFactory、ObjectFactory、MapperProxyFactory；
-- 单例模式，例如ErrorContext和LogFactory；
-- 代理模式，`Mybatis实现的核心`，比如MapperProxy、ConnectionLogger，用的jdk的动态代理；还有executor.loader包使用了cglib或者javassist达到延迟加载的效果；
-- 组合模式，例如SqlNode和各个子类ChooseSqlNode等；
-- 模板方法模式，例如BaseExecutor和SimpleExecutor，还有BaseTypeHandler和所有的子类例如IntegerTypeHandler；
-- 适配器模式，例如Log的Mybatis接口和它对jdbc、log4j等各种日志框架的适配实现；
-- 装饰者模式，例如Cache包中的cache.decorators子包中等各个装饰者的实现；
-- 迭代器模式，例如迭代器模式PropertyTokenizer；
+- ​
 
 
 
@@ -304,11 +276,7 @@ public void doJDBC() throws ClassNotFoundException, SQLException, IOException {
 > parameterType & resultType & resultMap
 
 ```shell
-parameterType： 指定输入参数类型，mybatis通过 OGNL 从输入对象中获取参数值拼接在sql中。
 
-resultType： 指定输出结果类型，mybatis将sql查询结果的一行记录数据映射为resultType指定类型的对象。如果有多条数据，则分别进行映射，并把对象放到容器List中
-
-resultMap： 字段和java对象中属性不一致时，使用resultMap。resultMap常用作复杂的映射配置（多表查询）.
 ```
 
 > mapper动态代理，只需要写接口，不需要写实现类，实现类由mybatis框架自动创建。使用规则：

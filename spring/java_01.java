@@ -5,21 +5,21 @@
 
 
     
-#java.util.Collections.singleton()
-    //返回一个不可变集只包含指定对象
+// #java.util.Collections.singleton()
+    // //返回一个不可变集只包含指定对象
     
-        String init[] = { "One", "Two", "Three", "One", "Two", "Three" };
+        // String init[] = { "One", "Two", "Three", "One", "Two", "Three" };
 
-        List<String> list1 = new ArrayList<String>(Arrays.asList(init));
-        List<String> list2 = new ArrayList<String>(Arrays.asList(init));
+        // List<String> list1 = new ArrayList<String>(Arrays.asList(init));
+        // List<String> list2 = new ArrayList<String>(Arrays.asList(init));
 
-        list1.remove("One");
-        // List1 value: [Two, Three, One, Two, Three]
-        System.out.println("List1 value: " + list1);
+        // list1.remove("One");
+        // // List1 value: [Two, Three, One, Two, Three]
+        // System.out.println("List1 value: " + list1);
 
-        list2.removeAll(Collections.singleton("One"));
-        // The SingletonList is :[Two, Three, Two, Three]
-        System.out.println("The SingletonList is :" + list2);
+        // list2.removeAll(Collections.singleton("One"));
+        // // The SingletonList is :[Two, Three, Two, Three]
+        // System.out.println("The SingletonList is :" + list2);
 
 jvm内存可分为三个区域：栈stack，堆heap，方法区method-area（其中，方法区也存在于堆中）。
 

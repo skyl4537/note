@@ -4,6 +4,78 @@
 
 # 基础阶段
 
+## 5
+
+
+
+
+
+## 静态代码块
+
+> 静态代码块 > main方法 > 构造代码块 > 构造函数
+
+```sh
+#父类静态代码块、子类静态代码块、main、父类构造代码块、父类构造函数、子类构造代码块、子类构造数
+
+'静态代码块'：static 声明的代码块。只在 jvm 首次加载类时调用一次，优先于 main() 执行。作用：初始化类的属性
+
+'构造代码块'：直接用 {} 扩起来的代码块。每次 new 对象时都会被调用，优先于所有的构造函数。作用：给所有的对象进行统一、共性的初始化
+
+'构造函数'：每个类都有一个默认的无参构造，访问权限和类保持一致。作用：给通过此构造函数（构造函数不止一种）new 的对象进行初始化
+```
+
+```java
+public class Father {
+    static { System.out.print("Father-static{} "); } //静态代码块
+
+    { System.out.print("Father{} "); } //构造代码块
+
+    Father() { System.out.print("Father() "); } //构造函数
+}
+
+public class Son extends Father {
+    static { System.out.print("Son-static{} "); } //静态代码块
+
+    { System.out.print("Son{} "); } //构造代码块
+
+    Son() { System.out.print("Son() "); } //构造函数
+
+    public static void main(String[] args) {
+        System.out.print("Father-main() ");
+        Father father = new Son(); //F-S{} S-S{} F-M() F{} F() S{} S()
+    }
+}
+```
+
+> 执行顺序：静态变量初始化 ---> 静态代码块
+
+```java
+public class Add {
+    static {
+        int i = 5; //局部变量，不会影响i值。
+    } //执行顺序在静态变量初始化之后（即如果设为非局部变量，则会影响静态变量的值）
+
+    private static int i, j;
+
+    private static void add() {
+        j = i++ + ++i; //输出：0(0)+0(1)
+        System.out.println(i + " - " + j); //输出：1-0
+    }
+
+    public static void main(String[] args) { //i++，先++再使用；++i，先使用再++
+        i--; //输出：-1
+        add();
+        System.out.println(i + " - " + j); //输出：1-0
+    }
+}
+```
+
+
+
+
+
+#高级阶段
+
 ## 运算符
 
 > ④种修饰符
@@ -167,20 +239,6 @@ public void doFinal(final int i, final StringBuilder sb) {
 
 当外部对象在外部线程中生命周期已经结束，而内部线程中还在持续使用，怎样解决问题？'内部线程变量要访问一个已不存在的外部变量？'
 在外部变量前添加 final 修饰符，其实内部线程使用的这个变量就是外部变量的一个'复制品'，即使外部变量生命周期已经结束，内部复制品依然可用。
-```
-
->finally
-
-```java
-int num = 5;
-try {
-    // int _res = num;
-    // return _res;
-    return num + 1; //这一语句 等价为 上面两行语句，所以在 finally 块中对 num 进行操作将不起作用。返回 6
-} finally {
-    num = num + 2;
-    // return num + 2; //7 --> 若 finally 块中也有 return 语句，则以 finally 为主，即返回 7
-}
 ```
 
 > instanceof
@@ -384,6 +442,7 @@ System.out.println(s1 == s4); //false
 ```sh
 对于字符串常量相加的表达式，不是等到运行期才去进行加法运算处理，而是在编译期直接将其编译成一个这些常量相连的结果。
 因此，String s2 = "ab" + "c"; 可转化为 String s2 = "abc"; 但是， s4 并不是字符串常量相加，不能转化。
+s4 底层是使用 new StringBuilder().append(s3).append("c").toString(); 所以，s1 != s4
 ```
 
 > StringBuilder
@@ -479,11 +538,95 @@ for (EnumTest value : values) {
 不同之处是：enum 不能使用 extends 关键字继承其他类，因为 enum 已经继承了 java.lang.Enum（java是单一继承）。
 ```
 
-## Exception
+## 异常
+
+> Throwable
+
+```shell
+#Throwable 有两个子类：Error 和 Exception
+Error    ：一般指与虚拟机相关的问题，程序本身无法恢复，建议程序终止。常见：'系统崩溃，内存溢出等'。
+Exception：是程序正常运行中，可以预料的意外情况，应该捕获并进行相应的处理。
+```
+
+> Exception
+
+```sh
+#编译期异常（CheckedException）：在编译时期，就会检查。如果没有处理异常，则编译失败。
+#CheckedException 不是具体的类，是指 RuntimeException 以外的异常，类型上都属于Exception类及其子类。
+IOException；SQLException；InterruptedException；ParseException（日期格式化异常）
+```
+
+```sh
+#运行时异常（RuntimeException）：在运行时期，检查异常。在编译时期，不处理也不会报错。
+NullPointerException；ClassCastException；ArithmaticException（除数为0）；NumberFormatException；
+ArrayIndexOutOfBoundsException（数组越界）；
+
+Arrays.asList("a", "b").add("c"); #java.lang.UnsupportedOperationException
+list.forEach(x -> {if("b".equals(x)){ list.add("c"); }}); #ConcurrentModificationException
+```
+
+>异常处理：`try、catch、finally、throw、throws`
+
+```java
+throw  ：用在'方法体内'，用来抛出一个异常对象，将这个异常对象传递到调用者处，并'结束'当前方法的执行
+throws ：用在'方法声明上'，用于表示当前方法不处理异常，而是提醒该方法的调用者来处理异常（抛出异常）
+
+try-catch ：捕获异常，对异常进行针对性的处理。 try 和 catch 不能单独使用，必须连用
+finally   ：finally代码块中存放的代码无论异常是否发生，都会执行。如释放IO资源，数据库连接，网络连接等
+
+当只有在 try 或者 catch 中调用退出JVM的相关方法，此时 finally 才不会执行，否则 finally 永远会执行。
+```
+
+```java
+try {
+    //throw new NullPointerException("NPE"); // R：NPE
+    throw new IOException("IOE");            // E：IOE ---> IOE 编译期异常，不能被 RE 捕获
+} catch (RuntimeException e0) {              // catch 中同时处理多个异常，子异常必须先处理
+    System.out.println("R：" + e0.getMessage());
+} catch (Exception e1) {
+    System.out.println("E：" + e1.getMessage());
+}
+```
+
+>注意事项
+
+```sh
+运行时异常被抛出可以不处理。即不捕获也不声明抛出
+
+如果父类抛出了多个异常 ,子类覆盖父类方法时,只能抛出相同的异常或者是他的子集
+父类方法没有抛出异常，子类覆盖父类该方法时也不可抛出异常。此时子类产生该异常，只能捕获处理，不能声明抛出
+
+当多异常处理时，捕获处理，前边的类不能是后边类的父类
+在 try/catch 后可以追加 finally 代码块，其中的代码一定会被执行，通常用于资源回收
+
+如果 finally 有 return 语句，永远返回 finally 中的结果，避免该情况
+```
+
+```java
+private int finallyTest() {
+    int num = 5;
+    try {
+        // int _res = num = num + 1;
+        // return _res;
+        return (num = num + 1); //return语句 <=> 上面两句，所以在 finally 块中对 num 进行操作将不起作用：6
+    } finally {
+        num = num + 2;
+        System.out.println(num); //在 try 代码块 return 之前执行：8
+
+        // return num; //如果 finally 有 return 语句，永远返回 finally 中的结果：8
+    }
+}
+```
+> 自定义异常类
+
+```java
+自定义-编译期异常：自定义类 extends java.lang.Exception
+自定义-运行时异常：自定义类 extends java.lang.RuntimeException
+```
 
 
 
-# 高级阶段
+# 概念相关
 
 ##概念区分
 
@@ -634,64 +777,7 @@ class Sub extends Super {
 
 ## 基础概念
 
-> Exception 和 Error 都继承自 `Throwable` 类，是异常处理机制的基本组成类型
 
-```shell
-Error    ：一般指与虚拟机相关的问题，程序本身无法恢复，建议程序终止。常见：'系统崩溃，内存溢出等'。
-Exception：是程序正常运行中，可以预料的意外情况，应该捕获并进行相应的处理。
-```
-
-> Exception分类： RuntimeException（运行时异常）和 CheckedException（受检查异常，即编译器异常）。
-
->RuntimeException：是 RuntimeException 类及其子类，`编译时能通过，在运行时出现`，出现后程序直接终止。
-
-```java
-（1）NullPointerException，（2）ClassCastException，（3）ArithmaticException（除数为0），
-（4）ArrayIndexOutOfBoundsException（数组下标越界），（5）NumberFormatException（数字格式化）
-
-Arrays.asList("a", "b").add("c"); //java.lang.UnsupportedOperationException
-
-list.forEach(x -> {if("b".equals(x)){ list.add("c"); }}); //ConcurrentModificationException
-```
-
->CheckedException：`不是具体的类`，是 RuntimeException 以外的异常，类型上都属于Exception类及其子类。
-
-```java
-编译时直接报错，必须使用 try-catch 进行异常捕获，或使用 throws 语句声明抛出。
-
-（1）IOException，（2）InterruptedException，（3）SQLException
-```
-
-```java
-try {
-    //throw new NullPointerException("NPE"); //try 抛出的异常被 catch 捕获
-    throw new IOException("IOE");
-} catch (RuntimeException e0) {
-    System.out.println("RuntimeException：" + e0.getMessage());
-} catch (Exception e1) {
-    System.out.println("Exception：" + e1.getMessage());
-}
-
-//结果分别输出: RuntimeException：NPE 和 Exception：IOE
-//原因是 NPE 与 RuntimeE 之间的继承关系比 Exception 近，就近捕获原则。
-```
-
->throws & throw
-
-```shell
-throws：通常被应用在'声明方法时'，用来指定可能抛出的异常。多个异常使用逗号隔开。
-throw ：通常用在'方法体中'，并且抛出一个异常对象。程序在执行到 throw 语句时立即停止，它后面的语句都不执行。
-```
-
-```java
-//throw 抛出异常后，如果想在方法调用处捕获并处理该异常，则需要用 throws 在方法声明中指明要抛出的异常。
-int str2int(String str) throws NumberFormatException {
-    if (str == null) {
-        throw new NumberFormatException("null");
-    }
-    return Integer.parseInt(str);
-}
-```
 
 
 

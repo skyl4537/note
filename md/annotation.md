@@ -1,10 +1,27 @@
 
 
+# Spring
+
+## PropertySource
+
+> 批量读取配置文件
+
+```java
+详见： boot --> 配置相关
+```
+## Configuration
+
+> 定义配置类。被注解的类内部包含有一个或多个被`@Bean`注解的方法
+
+```sh
+@Configuration 不可以是'final'类型
+@Configuration 不可以是匿名类
+嵌套的 @Configuration 必须是静态类
+```
 
 
 
 
-#Spring
 
 ## ComponentScan
 
@@ -63,10 +80,10 @@ public class SpringConfiguration { }
 该后置处理器可以自动装配标记了 @Autowired、@Resource 或 @Inject 注解的属性。
 ```
 
-> `@Autowired` 
+> （1）先使用 `byType`，再使用 `byName`
 
 ```sh
-#（1）首先，会使用 'byType' 的方式进行自动装配，如果能唯一匹配，则装配成功。
+首先，会使用 'byType' 的方式进行自动装配，如果能唯一匹配，则装配成功。
 如果匹配到多个兼容类型的bean，还会尝试使用 'byName' 的方式进行唯一确定，如果能唯一确定，则装配成功。
 如果都不能唯一确定，则装配失败，抛出异常。
 ```
@@ -82,18 +99,14 @@ public class HelloServiceImpl0 implements HelloService {}
 public class HelloServiceImpl1 implements HelloService {}
 ```
 
-```sh
-#（2）如若，在 IOC 容器中通过 'byType''byName' 都未找到相匹配的bean，则也会抛出异常。
-```
+>（2）如若在 IOC 容器中通过 `byType byName` 都未找到相匹配的bean，也会抛出异常
 
 ```java
 @Autowired(required = false) //设置该属性非必须装配
 HelloService helloService;
 ```
 
-```sh
-#（3）如果匹配到多个兼容类型的bean，也可以使用 '@Qualifier' 来进一步指定要装配的bean的 id 值
-```
+>（3）如果匹配到多个兼容类型的bean，也可以使用 `@Qualifier` 来进一步指定要装配的bean的 id 值
 
 ```java
 @Autowired
@@ -103,19 +116,23 @@ HelloService helloService;
 @Service
 public class HelloServiceImpl0 implements HelloService {}
 
-@Service /*("helloService")*/
+@Service/*("helloService")*/
 public class HelloServiceImpl1 implements HelloService {}
 ```
 
-> `@Autowired @Resource @Inject`
+> 区分 `@Autowired @Resource @Inject`
 
 ```sh
 @Resource：先 'byName'，再 'byType'
 @Inject  ：只 'byType'，需要导入 javax.inject 的包
-
-#@Autowired       ： Spring 定义的，使用 Spring 框架，推荐使用。
-#@Resource,@Inject： java 规范，通用性强
 ```
+
+```sh
+@Autowired       ：Spring 定义的，使用 Spring 框架，推荐使用
+@Resource,@Inject：java 规范，通用性强
+```
+
+
 
 
 

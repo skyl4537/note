@@ -1679,17 +1679,17 @@ JAVA8 实现
     // 2.执行jsr指令跳到finally语句里执行
     // 3.执行完finally语句后，返回之前保存在局部变量表里的值
     
-#异常捕获
-    其中, NullPointerException extends RuntimeException extends Exception, 结果如何?
-    try {
-        throw new NullPointerException("b");
-    } catch (RuntimeException e0) {
-        System.out.println("RuntimeException");
-    } catch (Exception e) {
-        System.out.println("Exception");
-    }
+// #异常捕获
+    // 其中, NullPointerException extends RuntimeException extends Exception, 结果如何?
+    // try {
+        // throw new NullPointerException("b");
+    // } catch (RuntimeException e0) {
+        // System.out.println("RuntimeException");
+    // } catch (Exception e) {
+        // System.out.println("Exception");
+    // }
     
-    结果打印: RuntimeException    
+    // 结果打印: RuntimeException    
     
 #用程序给出随便大小的 10 个数, 序号为1-10,按从小到大顺序输出,并输出相应的序号
     //Map 值排序

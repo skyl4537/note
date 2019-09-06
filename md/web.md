@@ -2,15 +2,19 @@
 
 # Tomcat
 
-> 本质就是一个 ServerSocket
+##手动模拟
+
+> 处理流程
 
 ```shell
-ServerSocket 指定端口，启动后等待客户端连接
+本质就是一个 ServerSocket。ServerSocket 指定端口，启动后等待客户端连接
 客户端建立连接后，为每一个客户端开启一个线程去处理
 从客户端的输入流中解析请求信息 Request
 根据请求 url 查找对应的处理 Servlet.（其中，<请求url, 处理Servlet>，映射关系从 web.xml 读取）
 反射调用 Servlet 中的 service() 方法，处理业务逻辑
 封装响应结果 Response，发送到客户端
+
+#核心技术：Socket编程 + IO流 + 线程池 + Http请求响应 + xml解析 + 反射 + html
 ```
 
 > web.xml
@@ -77,6 +81,22 @@ public class WebServer {
         isRunning = false;
     }
 }
+```
+
+##其他概念
+
+> classpath & classpath*
+
+```sh
+classpath ：只能加载找到的第一个资源文件
+classpath*：能够加载多个路径下的资源文件
+```
+
+```sh
+mybatis 需要加载的 xml 文件分别在：'com/example/web/student/sqlxml/*.xml' 和 'com/example/web/teacher/sqlxml/*.xml'
+
+假如，配置文件：'mybatis.mapper-locations=classpath:com/example/web/*/sqlxml/*.xml'，则报：Invalid bound statement (not found)
+修改为：'... classpath* ...'，则不再出问题。
 ```
 
 
@@ -568,12 +588,44 @@ Spring是一个 'IoC'（DI）和 'AOP' 容器框架。
 '组件化'      实现了使用简单的组件配置组合成一个复杂的应用。 在 Spring 中可以使用 XML 和 Java 注解组合这些对象
 ```
 
-## IOC
-
-> IOC & DI
+> 设计模式
 
 ```sh
-#传统的资源查找方式是：组件主动的从容器中获取所需要的资源
+代理模式：AOP
+单例模式：默认 Bean 为单例
+工厂模式：BeanFactory
+IOC：依赖倒置 or 依赖注入
+MVC：spring web
+模版方法模式：JdbcTemplate
+```
+
+## IOC
+
+> Inversion of Control 控制反转。反转了资源的获取方向，改由容器主动的将资源推送给需要的组件
+
+```sh
+#谁控制谁？控制什么？
+传统 JavaSE 程序设计，直接在对象内部通过 new 进行创建对象，是程序主动去创建依赖对象。
+而 IoC 是有专门一个容器来创建这些对象，即由 IoC 容器来控制对象的创建。
+
+谁控制谁？当然是 IoC 容器控制了对象；控制什么？那就是主要控制了外部资源获取（不只是对象，还包括比如文件等）。 
+```
+
+```sh
+#为何是反转，哪些方面反转了？
+有反转就有正转，传统应用程序是由我们自己在对象中主动控制去直接获取依赖对象，也就是正转；而反转则是由容器来帮忙创建及注入依赖对象；
+
+为何是反转？因为由容器帮我们查找及注入依赖对象，对象只是被动的接受依赖对象，所以是反转；哪些方面反转了？依赖对象的获取被反转了。
+```
+
+```sh
+传统应用程序都是由我们在类内部主动创建依赖对象，从而导致类与类之间高耦合，难于测试；
+有了IoC容器后，把创建和查找依赖对象的控制权交给了容器，由容器进行注入组合对象，
+所以对象与对象之间是 松散耦合，这样也方便测试，利于功能复用，更重要的是使得程序的整个体系结构变得非常灵活。
+```
+
+```sh
+#传统的资源查找方式是：直接通过 new 进行创建对象，是程序主动去创建依赖对象
 开发人员往往需要知道在具体容器中特定资源的获取方式，增加了学习成本，同时降低了开发效率。
 
 #IOC（反转控制）的查找方式：反转了资源的获取方向，改由容器主动的将资源推送给需要的组件
@@ -582,9 +634,12 @@ Spring是一个 'IoC'（DI）和 'AOP' 容器框架。
 
 ```sh
 # DI（Dependency Injection）依赖注入
-IOC 的另一种表述方式：即组件以一些预先定义好的方式（例如：setter 方法）接受来自于容器的资源注入。相对于 IOC 而言，这种表述更直接。
+组件之间依赖关系由容器在运行期决定，形象的说，由容器动态的将某个依赖关系注入到组件之中。
+依赖注入的目的并非为软件系统带来更多功能，而是为了提升组件重用的频率，并为系统搭建一个灵活、可扩展的平台。
+通过依赖注入机制，我们只需要通过简单的配置，而无需任何代码就可指定目标需要的资源，完成自身的业务逻辑，而不需要关心具体的资源来自何处，由谁实现。
 
-IOC 描述的是一种思想，而 DI 是对 IOC 思想的具体实现。
+#IOC 描述的是一种思想，而 DI 是对 IOC 思想的具体实现。
+相对 IoC 而言，'依赖注入'明确描述了'被注入对象依赖IoC容器配置依赖对象'。
 ```
 
 > 常见概念
@@ -668,6 +723,28 @@ people 依赖 car，即必须先创建 car 才能创建 people，但 people 不�
 ```xml
 <bean id="car" class="com.x.pojo.Car" p:brand="Audi" p:price="720000"/>
 <bean id="people" class="com.x.pojo.people" p:id="123" p:name="wang" depends-on="car"/> <!--前置依赖-->
+```
+
+> FactoryBean
+
+```sh
+#Spring 中有两种类型的 bean： 一种是普通 bean，另一种是工厂 bean，即 FactoryBean。
+工厂 bean 跟普通 bean 不同，其返回的对象不是指定类的一个实例，其返回的是该工厂 bean 的 getObject 方法所返回的对象。
+工厂 bean 必须实现 org.springframework.beans.factory.FactoryBean 接口。
+
+#其中，mybatis 的 SqlSessionFactoryBean 就是工厂 Bean。
+```
+
+```java
+public interface FactoryBean<T> {
+	T getObject() throws Exception; //将创建好的 bean 返回给 IOC 容器
+    
+	Class<?> getObjectType(); //返回 bean 类型
+    
+	default boolean isSingleton() { //创建的 bean 是否单例
+		return true;
+	}
+}
 ```
 
 > 引用外部属性文件
@@ -912,6 +989,10 @@ web项目启动时，tomcat容器首先会读取 web.xml 里的配置，当这�
 
 >初始化 `SpringIoC` 容器的监听器
 
+```java
+@WebInitParam(name = "contextConfigLocation", value = "classpath:applicationContext.xml") //注解版
+```
+
 ```xml
 <context-param>
     <param-name>contextConfigLocation</param-name>
@@ -955,7 +1036,7 @@ public class ContextLoaderListener extends ContextLoader implements ServletConte
 }
 ```
 
-> 完整配置
+> `web.xml`
 
 ```xml
 <!-- 初始化 SpringIoC 容器的监听器 -->
@@ -987,7 +1068,7 @@ public class ContextLoaderListener extends ContextLoader implements ServletConte
 <!--②. 以".action"结尾的访问,由'前端控制器'解析-->
 <!--③. 错误配置; 当转发到jsp页面时,仍由'前端控制器'解析jsp地址,找不到导致报错-->
 
-<!-- 字符编码过滤器 -->
+<!-- 字符编码 过滤器 -->
 <filter>
     <filter-name>CharacterEncodingFilter</filter-name>
     <filter-class>org.springframework.web.filter.CharacterEncodingFilter</filter-class>
@@ -1022,48 +1103,55 @@ public class ContextLoaderListener extends ContextLoader implements ServletConte
 > `applicationContext.xml`
 
 ```xml
-<!-- SpringIoC 组件扫描 -->
-<context:component-scan base-package="com.example.spring"/>
+<!-- SpringIoC 组件扫描（排除 @Controller） -->
+<context:component-scan base-package="com.example.spring">
+    <context:exclude-filter type="annotation" expression="org.springframework.stereotype.Controller" />
+</context:component-scan>
 
 <!-- 配置数据源 -->
-<context:property-placeholder location="classpath:db.properties"/>
+<context:property-placeholder location="classpath:db.properties"/> <!--引用外部属性文件-->
 <bean id="dataSource" class="com.alibaba.druid.pool.DruidDataSource">
-    <property name="driverClass" value="${jdbc.driver}" />
-    <property name="jdbcUrl" value="${jdbc.url}" />
-    <property name="user" value="${jdbc.username}" />
-    <property name="password" value="${jdbc.password}" />
+    <property name="driverClass" value="${jdbc.driver}"/>
+    <property name="jdbcUrl" value="${jdbc.url}"/>
+    <property name="user" value="${jdbc.username}"/>
+    <property name="password" value="${jdbc.password}"/>
 </bean>
+
+<!-- 事务管理器 -->
+<bean id="transactionManager" class="org.springframework.jdbc.datasource.DataSourceTransactionManager">
+    <property name="dataSource" ref="dataSource"/>
+</bean>
+
+<!-- 开启注解事务 -->
+<tx:annotation-driven transaction-manager="transactionManager"/>
 
 <!-- Spring 整合 Mybatis -->
 <!-- （1）.SqlSession 对象的创建，管理等  -->
 <bean class="org.mybatis.spring.SqlSessionFactoryBean">
-    <property name="dataSource" ref="dataSource" />
-    <property name="configLocation" value="classpath:mybatis-config.xml" /> <!-- Mybatis的全局配置文件 -->
-    <property name="mapperLocations" value="classpath:mybatis/mapper/*.xml" /> <!-- mapper.xml文件位置 -->
-
-    <property name="typeAliasesPackage" value="com.example.spring.beans" /> <!-- （可选）别名处理 -->
+    <property name="dataSource" ref="dataSource"/>
+    <property name="configLocation" value="classpath:mybatis-config.xml"/>    <!-- mybatis配置文件 -->
+    <property name="mapperLocations" value="classpath:mybatis/mapper/*.xml"/> <!-- mapper.xml文件位置 -->
+    <property name="typeAliasesPackage" value="com.example.spring.beans"/>    <!-- （可选）别名处理 -->
 </bean>
 
 <!-- （2-1）.mapper接口扫描 -->
-<bean class="org.mybatis.spring.mapper.MapperScannerConfigurer">
-    <property name="basePackage" value="com.example.spring.**.mapper" />
-</bean>
+<!-- <bean class="org.mybatis.spring.mapper.MapperScannerConfigurer">
+    <property name="basePackage" value="com.example.spring.**.mapper"/>
+</bean> -->
 
 <!-- （2-2）.另一种实现方案(mybatis-spring-1.3.0.jar 整合包提供的实现方案) -->
-<!-- <mybatis-spring:scan base-package="com.example.spring.mapper" /> -->
-
-<!-- 事务管理器 -->
-<bean id="transactionManager" class="org.springframework.jdbc.datasource.DataSourceTransactionManager">
-    <property name="dataSource" ref="dataSource" />
-</bean>
-<tx:annotation-driven transaction-manager="transactionManager" /> <!-- 开启注解事务 -->
+<mybatis-spring:scan base-package="com.example.spring.**.mapper"/>
 ```
 
-## SpringMVC
+## MVC
+
+> `springmvc.xml`
 
 ```xml
-<!-- 1.组件扫描 -->
-<context:component-scan base-package="com.example.spring"/>
+<!-- 1.组件扫描（只扫描 @Controller） -->
+<context:component-scan base-package="com.example.spring" use-default-filters="false">
+    <context:include-filter type="annotation" expression="org.springframework.stereotype.Controller" />
+</context:component-scan>
 
 <!-- 2.配置视图解析器，配置jsp -->
 <bean class="org.springframework.web.servlet.view.InternalResourceViewResolver">
@@ -1071,7 +1159,7 @@ public class ContextLoaderListener extends ContextLoader implements ServletConte
     <property name="suffix" value=".jsp" />
 </bean>
 
-<!-- 3.开启MVC注解支持 -->
+<!-- 3.开启 mvc 注解支持 -->
 <!-- 简化配置:
      (A).自动注册 DefaultAnootationHandlerMapping，AnotationMethodHandlerAdapter。
          是 springMVC 为 @Controllers 分发请求所必须的 
@@ -1083,6 +1171,8 @@ public class ContextLoaderListener extends ContextLoader implements ServletConte
 ```
 
 ## mybatis
+
+> `mybatis-config.xml`
 
 ```xml
 <!-- Spring 整合 MyBatis 后，MyBatis中配置数据源，事务等一些配置都可以迁移到 Spring 的配置中。
