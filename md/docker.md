@@ -926,57 +926,58 @@ spring.cache.ehcache.config=classpath:ehcache.xml
 
 ```xml
 <ehcache xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
-    xsi:noNamespaceSchemaLocation="ehcache.xsd"
-    updateCheck="true" monitoring="autodetect" dynamicConfig="true">
+         xsi:noNamespaceSchemaLocation="ehcache.xsd"
+         updateCheck="true" monitoring="autodetect" dynamicConfig="true">
 
+    <!-- 磁盘缓存位置 -->
     <diskStore path="java.io.tmpdir/ehcache" />
-    
-    <!-- 的默认缓存策略 -->
+
+    <!-- 默认缓存策略 -->
     <defaultCache
-        eternal="false" <!--是否永不过期？ 默认false。true则属性 timeTo* 将不起作用 -->
-        timeToIdleSeconds="120" <!--缓存最大闲置时间. 0无限.-->
-        timeToLiveSeconds="120" <!--........存活.........-->
-        
-        maxEntriesLocalHeap="100" <!--内存缓存最大个数. 0无限. 过时属性 maxElementsInMemory-->
-        maxEntriesLocalDisk="100" <!--磁盘.......................... maxElementsOnDisk-->
-        
-        <!--磁盘缓存相关-->
-        overflowToDisk="true" <!--内存中缓存过量是否输出到磁盘?? 默认true-->
-        diskSpoolBufferSizeMB="30" <!--写入磁盘时IO缓冲区大小. 默认30MB. 每个Cache一个缓冲区-->
-        diskExpiryThreadIntervalSeconds="120" <!--磁盘缓存清理线程的运行间隔. 默认120s.-->
-        diskPersistent="false" <!--磁盘缓存在jvm重启后是否保持. 默认为false-->
-        
-        memoryStoreEvictionPolicy="LRU"> <!--内存中缓存过量后的移除策略. 默认 LRU(最近最少使用)-->
-        
-        <persistence strategy="localTempSwap" />
+                  eternal="false" <!--是否永不过期？ 默认false。true则属性 timeTo* 将不起作用 -->
+    timeToIdleSeconds="120" <!--缓存最大闲置时间. 0无限.-->
+    timeToLiveSeconds="120" <!--........存活.........-->
+
+    maxEntriesLocalHeap="100" <!--内存缓存最大个数. 0无限. 过时属性 maxElementsInMemory-->
+    maxEntriesLocalDisk="100" <!--磁盘.......................... maxElementsOnDisk-->
+
+    <!--磁盘缓存相关-->
+    overflowToDisk="true" <!--内存中缓存过量是否输出到磁盘?? 默认true-->
+    diskSpoolBufferSizeMB="30" <!--写入磁盘时IO缓冲区大小. 默认30MB. 每个Cache一个缓冲区-->
+    diskExpiryThreadIntervalSeconds="120" <!--磁盘缓存清理线程的运行间隔. 默认120s.-->
+    diskPersistent="false" <!--磁盘缓存在jvm重启后是否保持. 默认为false-->
+
+    memoryStoreEvictionPolicy="LRU"> <!--内存中缓存过量后的移除策略. 默认 LRU(最近最少使用)-->
+
+    <persistence strategy="localTempSwap" />
     </defaultCache>
-    
-    <!-- 自定义缓存策略 -->
-    <cache
-        name="system_set"
-        eternal="false"
-        timeToLiveSeconds="300"
-        maxEntriesLocalHeap="2"
-        overflowToDisk="true"
-        maxEntriesLocalDisk="5">
-    </cache>
+
+<!-- 自定义缓存策略 -->
+<cache
+       name="system_set"
+       eternal="false"
+       timeToLiveSeconds="300"
+       maxEntriesLocalHeap="2"
+       overflowToDisk="true"
+       maxEntriesLocalDisk="5">
+</cache>
 </ehcache>
 ```
 >配置说明
 
-```java
-diskStore: 过量缓存输出到磁盘的存储路径.
-    //默认 path="java.io.tmpdir".
-    //windows-> "C:\Users\当前用户\AppData\Local\Temp\"; linux-> "/tmp"
-    //缓存文件名为缓存name, 后缀为data. 如: C:\Users\当前用户\AppData\Local\Temp\system_set.data
+```sh
+diskStore：过量缓存输出到磁盘的存储路径
+#默认 path="java.io.tmpdir".
+#windows-> "C:\Users\当前用户\AppData\Local\Temp\"; linux-> "/tmp"
+#缓存文件名为缓存name, 后缀为data. 如: C:\Users\当前用户\AppData\Local\Temp\system_set.data
 
-当 maxEntriesLocalHeap 过量时,两种情况: 
-    //overflowToDisk=true  --> 过量缓存输出磁盘. 
-    //overflowToDisk=false --> 则按照 memoryStoreEvictionPolicy 从内存中移除缓存
-    
-clearOnFlush: 调用 flush() 方法时,是否清空内存缓存??? 默认true.
-    //设为true, 则系统在初始化时会在磁盘中查找 CacheName.index 缓存文件, 如 system_set.index. 找到后将其加载到内存.
-    //注意: 在使用 net.sf.ehcache.Cache 的 void put (Element element) 方法后要使用 void flush() 方法
+当 maxEntriesLocalHeap 过量时，两种情况：
+#overflowToDisk=true  --> 过量缓存输出磁盘. 
+#overflowToDisk=false --> 则按照 memoryStoreEvictionPolicy 从内存中移除缓存
+
+clearOnFlush：调用 flush() 方法时,是否清空内存缓存？ 默认true
+#设为true，则系统在初始化时会在磁盘中查找 CacheName.index 缓存文件, 如 system_set.index. 找到后将其加载到内存.
+#注意：在使用 net.sf.ehcache.Cache 的 void put (Element element) 方法后要使用 void flush() 方法
 ```
 ##测试DEMO
 
@@ -1269,50 +1270,38 @@ public void test() {
 
 >应用场景。`相比于 Redis 的缺点为：不能设置过期时间`
 
-    高频热点数据 -> 频繁访问数据库，数据库压力过大
-    
-    临时性的数据 -> 手机号发送的验证码，三分钟有效，过期删掉
+```sh
+高频热点数据 -> 频繁访问数据库，数据库压力过大
+
+临时性的数据 -> 手机号发送的验证码，三分钟有效，过期删掉
+```
 >Java缓存规范：JSR107
+
+![](assets/docker0.jpg)
 
 ```java
 Java Caching 定义了5个核心接口：CachingProvider，CacheManager，Cache，Entry 和 Expiry
 //其中，CachingProvider，CacheManager，Cache，Entry：都是一对多的关系！
 ```
 ```java
-'CachingProvider'（类比数据库）：定义创建，配置，获取，管理和控制多个 CacheManager。
+'CachingProvider'（类比数据库）：定义创建，配置，获取，管理和控制多个 CacheManager
 //一个应用在运行期访问多个 CachingProvider。
 ```
 ```java
-'CacheManager'（数据表）：定义创建，配置，获取，管理和控制多个唯一命名的Cache。这些 Cache 存在于 CacheManager 的上下文中。
+'CacheManager'（数据表）：定义创建，配置，获取，管理和控制多个唯一命名的Cache。这些 Cache 存在于 CacheManager 的上下文中
 //CachingProvider 与 CacheManager 是一对多的关系。
 ```
 ```java
-'Cache'（数据行）：一个类似Map的数据结构，并临时存储以Key为索引的值。
+'Cache'（数据行）：一个类似Map的数据结构，并临时存储以Key为索引的值。对缓存的真正CRUD操作是基于Cache对象的
 //CacheManager 与 Cache 是一对多的关系。
 ```
 ```java
-'Entry'（数据字段）：一个存储在Cache中的 key-value 对。
+'Entry'（数据字段）：一个存储在Cache中的 key-value 对
 //Cache 与 Entry 是一对多的关系。
 ```
 ```java
-'Expiry'：每一个存储在 Cache 中的条目有一个定义的有效期。一旦过期，条目将不可访问，更新和删除。缓存有效期可以通过 ExpiryPolicy 设置。
+'Expiry'：每一个存储在 Cache 中的条目有一个定义的有效期。一旦过期，条目将不可访问，更新和删除。缓存有效期可以通过 ExpiryPolicy 设置
 ```
->相关概念
-
-```java
-'cacheManager/cacheResolver'：缓存管理器，默认使用 ConcurrentMapCacheManager
-```
-
-```java
-'cache'：CacheManager管理多个Cache对象，对缓存的真正CRUD操作是基于Cache对象的。默认使用 ConcurrentMapCache
-//每个Cache对象都有唯一一个名字。
-```
-
-
-![](assets/docker0.jpg)
-
-
-
 ## 常用注解
 
 > @EnableCaching：全局注解。系统默认缓存为：ConcurrentMapCacheManager
@@ -1428,6 +1417,19 @@ public class CacheConfig {
 //使用自定义
 @Cacheable(value = "people", keyGenerator = "myKeyGenerator")
 ```
+
+> 相关注解
+
+```sh
+@EnableCaching  开启缓存功能，放在配置类或启动类上
+@CacheConfig    缓存配置，设置缓存名称
+@Cacheable      执行方法前先查询缓存是否有数据。有则直接返回缓存数据；否则查询数据再将数据放入缓存
+@CachePut       执行新增或更新方法后，将数据放入缓存中
+@CacheEvict     清除缓存
+@Caching        将多个缓存操作重新组合到一个方法中
+```
+
+
 
 #ElasticSearch
 

@@ -4,7 +4,7 @@
 
 [TOC]
 
-# 单例模式
+# 单例
 
 > 一个类在内存中仅有一个实例。常用场景：
 
@@ -16,7 +16,7 @@ SpringMVC 中，控制器对象是单例。
 数据库连接池的设计一般也是采用单例模式，因为数据库连接是一种数据库资源
 ```
 
-> 饿汉式
+##饿汉式
 
 ```java
 public class Singleton0 {
@@ -33,7 +33,7 @@ public class Singleton0 {
 }
 ```
 
-> 懒汉式
+##懒汉式
 
 ```java
 public class Singleton1 {
@@ -56,15 +56,17 @@ public class Singleton1 {
 }
 ```
 
+>双重检测锁
+
 ```sh
-#双重检测锁
 '第1层判断'：加锁只需要在第一次初始化的时候用到，之后的调用都没必要再进行加锁。
 '第2层判断'：如果多个线程同时通过第1层检测，并且其中一个线程首先通过了第2层检测并实例化了对象，那么剩余通过了第一次检查的线程就不会再去实例化对象。
 这样，除了初始化的时候会出现加锁的情况，后续的所有调用都会避免加锁而直接返回，解决了性能消耗的问题。
 ```
 
+> 指令重排问题 `volatile`
+
 ```sh
-#volatile：指令重排问题
 实例化对象 new 过程，可以分解成三个步骤：
 （1）分配内存空间 （2）初始化对象 （3）将对象指向刚分配的内存空间
 
@@ -77,6 +79,33 @@ public class Singleton1 {
 T1检测为null --> 获取锁 --> 再次检测null --> 为 instance 分配内存空间 --> 将 instance 指向内存空间（未初始化的对象）
 --> T1释放锁 --> T2获取锁 --> 检测不为null --> 访问 instance 对象（为初始化对象，可能出现问题） --> T1初始化对象
 ```
+
+## 静态内部类
+
+```java
+public class Singleton2 {
+    private Singleton2() {}
+
+    private static class SingletonInner {
+        private static final Singleton2 instance = new Singleton2();
+    }
+
+    public static Singleton2 newInstance() {
+        return SingletonInner.instance;
+    }
+}
+```
+
+```sh
+外部类没有 static 属性，则不会像饿汉式那样立即加载对象
+只有真正调用 newInstance()，才会加载静态内部类，'加载类时是线程安全的'
+static final instance，保证了内存中只有这样一个实例存在，而且只能被赋值一次，从而保证了线程安全性
+兼备了'并发高效调用'和'延迟加载'的优势！
+```
+
+
+
+
 
 >单例注册表
 
@@ -96,7 +125,7 @@ T1检测为null --> 获取锁 --> 再次检测null --> 为 instance 分配内存
 
 
 
-# 代理模式
+# 代理
 
 ## 静态代理
 

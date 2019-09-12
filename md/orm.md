@@ -399,25 +399,25 @@ List<Student> listAllStudent();
 </resultMap>
 ```
 
-> `方法4`：分步查询
+> `方法4`：多次查询
 
 ```xml
 <select id="listAllStudent" resultMap="stuMap">
     select id,name,tid from student
 </select>
 
-<resultMap type="com.example.mybatis.po.Student" id="stuMap">
-    <!--student表的其他列，使用 AutoMapping 自动装配！但对于二次查询的参数tid，必须显示装配一次-->
-    <!--<result column="tid" property="tid"/>-->
+<!--student表的其他列，使用 AutoMapping 自动装配！但对于二次查询的参数tid，必须显示装配一次-->
+<!--<result column="tid" property="tid"/>-->
 
-    <!--association   -> 一对一关联查询-->
-    <!--property      -> Student类中的属性名-->
-    <!--fetchType     -> 是否懒加载：lazy-懒加载，eager-立即加载-->
-    <!--select        -> 通过哪个查询可以查出这个对象的信息-->
-    <!--column        -> 把当前表哪个列的值作为参数传递给select-->
-    <!--对于分步查询传参多列,可以使用形式 column="{key1=id, key2=name}"; mybatis底层将参数封装成map-->
-    <association property="teacher" fetchType="lazy" select="com.example.mybatis.mapper.TeacherMapper.selById"
-                 column="tid" />
+<!--association   -> 一对一关联查询-->
+<!--property      -> Student类中的属性名-->
+<!--fetchType     -> 是否懒加载：lazy-懒加载，eager-立即加载-->
+<!--select        -> 通过哪个查询可以查出这个对象的信息-->
+<!--column        -> 把当前表哪个列的值作为参数传递给select-->
+<!--对于分步查询传参多列,可以使用形式 column="{key1=id, key2=name}"; mybatis底层将参数封装成map-->
+<resultMap type="com.example.mybatis.po.Student" id="stuMap">
+    <association property="teacher" fetchType="lazy" column="tid"
+                 select="com.example.mybatis.mapper.TeacherMapper.selById"/>
 </resultMap>
 ```
 
@@ -455,19 +455,19 @@ List<Teacher> listAllTeacher();
 </select>
 
 <resultMap type="com.example.spring.bean.Teacher" id="teacherMap">
-    <id column="tid" property="id" />
-    <result column="tname" property="name" />
+    <id column="tid" property="id"/>
+    <result column="tname" property="name"/>
 
     <!--collection -> 当property是集合类型时使用-->
     <!--ofType     -> 集合的泛型是哪个类-->
     <collection property="studentList" ofType="com.example.spring.bean.Student">
-        <id column="sid" property="id" />
-        <result column="sname" property="name" />
+        <id column="sid" property="id"/>
+        <result column="sname" property="name"/>
     </collection>
 </resultMap>
 ```
 
-> `方法4`：分步查询
+> `方法4`：多次查询
 
 ```xml
 <select id="listAllTeacher" resultMap="teacherMap">
@@ -475,11 +475,11 @@ List<Teacher> listAllTeacher();
 </select>
 
 <resultMap type="com.example.spring.bean.Teacher" id="teacherMap">
-    <id column="id" property="id" />
-    <result column="name" property="name" />
+    <id column="id" property="id"/>
+    <result column="name" property="name"/>
 
-    <collection property="studentList" column="id" 
-                select="com.example.spring.mapper.StudentMapper.selByTid" />
+    <collection property="studentList" column="id"
+                select="com.example.spring.mapper.StudentMapper.selByTid"/>
 </resultMap>
 ```
 
@@ -489,10 +489,6 @@ List<Teacher> listAllTeacher();
     SELECT id, name FROM student WHERE tid=#{tid}
 </select>
 ```
-
-
-
-
 
 # 其他资料
 
@@ -768,7 +764,7 @@ mybatis 通过xml或注解的方式将java对象和sql语句映射生成'最终�
 - sql 语句依赖于数据库，导致数据库移植性差，不能随意更换数据库。
 ```
 
-> VS jdbc
+> JDBC
 
 ```sh
 - 数据库连接的创建、释放频繁造成系统资源浪费，从而影响系统性能。如果使用数据库链接池，还需要额外配置
@@ -777,7 +773,7 @@ mybatis 通过xml或注解的方式将java对象和sql语句映射生成'最终�
 - 对结果集解析麻烦，sql变化导致解析代码变化，系统不易维护（mybatis将'结果'封装为对象）
 ```
 
-> VS Hibernate
+> Hibernate
 
 ```sh
 - mybatis 和 hibernate 不同，它是一个半自动 ORM 框架，需要程序员自己编写 sql 语句。
@@ -1000,15 +996,13 @@ Mybatis将所有Xml配置信息都封装到 All-In-One 重量级对象Configurat
 
 ```properties
 #mybatis-plus
-#主键策略（默认 ID_WORKER）
+#主键策略（默认 ID_WORKER），表名前缀
 mybatis-plus.global-config.db-config.id-type=ID_WORKER_STR
-#表名前缀
 mybatis-plus.global-config.db-config.table-prefix=tb_
 
 #也支持'mybatis'的配置，配置名换成'mybatis-plus'
-#驼峰命名（默认开启）
+#驼峰命名（默认开启），xml路径
 mybatis-plus.configuration.map-underscore-to-camel-case=true
-#xml路径
 mybatis-plus.mapper-locations=
 ```
 

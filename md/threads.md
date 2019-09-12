@@ -130,36 +130,21 @@ public static void daemonThreadTest() {
 > 三类阻塞状态
 
 ```sh
-'TIMED_WAITING'：计时等待。常见情形是调用 sleep()。单独的线程也可以调用，不一定非要有协作关系
-----------------与资源锁无关，线程睡眠到期自动苏醒，并返回到就绪状态。
+'TIMED_WAITING'：计时等待。与资源锁无关，线程睡眠到期自动苏醒，并返回到就绪状态。如：sleep(n); wait(n); join(n);
 
-'BLOCKED'      ：锁阻塞。线程A与线程B代码中使用同一锁，如果线程A获取到锁，线程A进入到运行状态，
-----------------那么线程B就进入到 'BLOCKED' 锁阻塞状态。
+'WAITING'      ：无限等待。运行中的线程调用了某个对象的 wait() 就会转化为 'WAITING' 无限等待状态
 
-'WAITING'      ：无限等待。运行中的线程调用了某个对象的 wait() 就会转化为 WAITING 无限等待状态
-----------------对于A，B两个线程，如果A线程在运行状态中调用了 wait()，那么A线程就进入 'WAITING' 状态，同时失去了同步锁。
-----------------假如，这个时候B线程获取到了同步锁，在运行状态中调用了 notify()，那么就会将处于 'WAITING' 状态的A线程唤醒。
-----------------注意只是唤醒，如果A线程获取到了锁对象，那么A线程唤醒后就进入就绪状态；如果没有获取锁对象，那么就进入到 'BLOCKED' 状态。
+'BLOCKED'      ：锁阻塞。线程A，B使用同一锁，如果线程A获取到锁进入到运行状态，那么线程B就进入到 'BLOCKED' 锁阻塞状态。
+```
+
+```sh
+对于A，B两个线程，如果A线程在运行状态中调用了 wait()，那么A线程就进入 'WAITING' 状态，同时失去了同步锁。
+假如，这个时候B线程获取到了同步锁，在运行状态中调用了 notify()，那么就会将处于 'WAITING' 状态的A线程唤醒。
+注意只是唤醒，如果A线程获取到了锁对象，那么A线程唤醒后就进入就绪状态；如果没有获取锁对象，那么就进入到 'BLOCKED' 状态。
 ```
 
 ![](assets/thread1.png)
 
-> sleep & wait
-
-```sh
-
-```
-
-
-
-
-
-```sh
-sleep()  ---> 抱着 资源锁 睡大觉，自己不用，也不给别人
-join()   ---> 阻塞指定线程等到另一个线程完成以后再继续执行
-wait()   ---> 释放 资源锁，自己站旁边，看别人使用
-其他.     ---> 如IO中的read()，write();
-```
 
 
 
@@ -232,6 +217,349 @@ new Thread(() -> {
 
 # 线程安全
 
+## 线程同步
+
+> 产生原因
+
+```sh
+线程安全问题都是由'全局变量及静态变量'引起的。
+若每个线程中对全局变量、静态变量只有读操作，而无写操作，一般来说，这个全局变量是线程安全的；
+若有'多个线程同时执行写操作'，一般都需要考虑线程同步，否则的话就可能影响线程安全。
+```
+
+> 锁对象
+
+```sh
+锁对象 可以是任意类型，推荐使用'共享资源'作为锁对象
+多个线程对象 要使用同一把锁
+#在任何时候,最多允许一个线程拥有同步锁,谁拿到锁就进入代码块,其他的线程只能在外等着
+
+非static '同步方法'，同步锁就是 this
+static  '同步方法'，使用当前方法所在类的字节码对象（类名.class）
+```
+
+> 释放锁
+
+```sh
+#释放锁的两种方式
+(1).程序自然离开锁对象的监视的范围（执行完毕，或者抛异常），即离开 synchronized 同步代码块
+(2).在 synchronized 同步代码块中调用监视器对象的 wait()方法
+```
+
+```java
+public static void main(String[] args) throws InterruptedException {
+    new Thread(() -> {
+        synchronized (ThreadTest.class) { //多线程使用同一资源锁
+            System.out.println(LocalTime.now() + " START-1");
+            ThreadTest.class.wait();
+            System.out.println(LocalTime.now() + " END-1");
+        }
+    }).start();
+
+    TimeUnit.SECONDS.sleep(2);
+
+    new Thread(() -> {
+        synchronized (ThreadTest.class) {
+            System.out.println(LocalTime.now() + " START-2");
+            ThreadTest.class.notify();
+
+            TimeUnit.SECONDS.sleep(1);
+            System.out.println(LocalTime.now() + " END-2");
+        }
+    }).start();
+}
+```
+
+```sh
+15:21:41.249 START-1  #线程 1 调用wait()，进入'WAITING'无限等待状态
+15:21:43.238 START-2  #线程 2 notify()将 1 唤醒，但是不释放锁，所以 2 继续执行
+15:21:44.238 END-2    #线程 2 sleep()也不释放锁
+15:21:44.238 END-1    #线程 2 执行完毕，出了同步代码块范围，释放锁，线程 1 得以继续执行
+```
+
+## 对象锁
+
+> `锁与异常`：当同步方法中发生异常时，自动释放锁资源
+
+```java
+private void demo6() {
+    for (int i = 0; i < 3; i++) {
+        int index = i;
+
+        new Thread(() -> {
+            synchronized (ThreadTest.class) {
+                System.out.println(LocalTime.now() + " " + index);
+                TimeUnit.SECONDS.sleep(1);
+
+                if (1 == index) int num = 1 / 0; //制造异常
+            }
+        }).start();
+    }
+}
+```
+
+```sh
+16:23:50.471 0
+java.lang.ArithmeticException: / by zero  #抛异常，释放资源锁
+16:23:52.472 2
+```
+
+>同步方法只能阻塞使用`同一锁资源`的同步方法
+
+```java
+private void demo2() {
+    ThreadTest demo = new ThreadTest();
+    new Thread(() -> demo.m20()).start(); //this
+    new Thread(() -> demo.m21()).start(); //this
+    new Thread(() -> demo.m22()).start(); //obj
+}
+```
+
+```sh
+20:46:28.825 START 20
+20:46:28.858 START 22
+20:46:31.826 START 21  #m21 和 m20 使用相同的资源锁（this），故被阻塞
+```
+
+```java
+synchronized void m20() {
+    System.out.println(LocalTime.now() + " START 20");
+    TimeUnit.SECONDS.sleep(3);
+}
+
+void m21() {
+    synchronized (this) {
+        System.out.println(LocalTime.now() + " START 21");
+        TimeUnit.SECONDS.sleep(3);
+    }
+}
+
+final Object obj = new Object(); //作为同步资源锁，最好 final
+
+void m22() {
+    synchronized (obj) {
+        System.out.println(LocalTime.now() + " START 23");
+        TimeUnit.SECONDS.sleep(3);
+    }
+}
+```
+
+> 定义同步代码块时，不要使用`常量`对象作为锁对象
+
+```java
+String str0 = "hello", str1 = "hello";
+
+new Thread(() -> {
+    synchronized (str0) {
+        while (true) System.out.println(Thread.currentThread().toString());
+    }
+}).start();
+new Thread(() -> {
+    synchronized (str1) {
+        while (true) System.out.println(Thread.currentThread().toString());
+    }
+}).start();
+```
+
+```sh
+16:34:05.468 - Thread-01
+16:34:06.481 - Thread-01  #只有 Thread-01 执行，Thread-02 没有执行。这说明 2 个线程使用同一个锁对象
+16:34:07.481 - Thread-01  #进一步说明，str0 和 str1 是同一个对象
+```
+
+> `锁对象的变更`：不会影响同步代码的执行
+
+```java
+Object obj = new Object(); //作为同步资源锁，最好 final
+
+private void demo0() throws InterruptedException {
+    new Thread(() -> m01(), "Thread-01").start();
+
+    TimeUnit.SECONDS.sleep(2);
+    obj = new Object();
+    new Thread(() -> m01(), "Thread-02").start();
+}
+```
+
+```java
+private void m01() {
+    synchronized (obj1) {
+        while (true) {
+            System.out.println(LocalTime.now() + " - " + Thread.currentThread().getName());
+            TimeUnit.SECONDS.sleep(1);
+        }
+    }
+}
+```
+
+```sh
+16:20:32.612 - Thread-01
+16:20:33.614 - Thread-01
+16:20:34.571 - Thread-02  #锁对象的变更，不影响 Thread-01 的执行，其使用的是线程私有内存中锁对象，
+16:20:34.614 - Thread-01  #和主内存中的对象无关，即 Thread-01，Thread-02 不是同一个锁对象
+```
+
+>同步方法`只能保证当前方法的原子性`，不能保证多个业务方法之间的互相访问的原子性。
+
+```java
+private void demo3() throws InterruptedException {
+    ThreadTest demo = new ThreadTest();
+    for (int i = 0; i < 2000; i++) {
+        new Thread(() -> demo.m30()).start();
+    }
+
+    demo.m31();
+    TimeUnit.SECONDS.sleep(3);
+    demo.m31();
+}
+```
+
+```java
+void m30() {
+    TimeUnit.MILLISECONDS.sleep(100); //模拟网络等耗时操作
+    synchronized (this) { //同步保证原子性
+        this.num += 1;
+    }
+}
+
+void m31() {
+    System.out.println(LocalTime.now() + " - " + this.num);
+}
+```
+
+```sh
+09:31:15.751 - 148  #虽然方法 30 在多线程操作时加了锁，但是 31 在 30 未执行完，就执行读操作，所以结果不正确
+09:31:18.753 - 2000
+```
+
+> `锁重入（1）`：同一个线程，多次调用同步代码，锁定同一个锁对象，可重入。
+
+```java
+synchronized void demo4() throws InterruptedException {
+    System.out.println(LocalTime.now() + " START 4");
+    TimeUnit.SECONDS.sleep(1);
+    m40();
+    System.out.println(LocalTime.now() + " END 4");
+}
+```
+
+```java
+synchronized void m40() throws InterruptedException {
+    System.out.println(LocalTime.now() + " START 40");
+    TimeUnit.SECONDS.sleep(1);
+    System.out.println(LocalTime.now() + " END 40");
+}
+```
+
+```sh
+09:52:01.011 START 4
+09:52:02.014 START 40  #方法 40 和 4 使用的是同一个资源锁。
+09:52:03.014 END 40    #同一个线程从 4 进入到 40 不会阻塞，只会在资源锁的标记上 +1
+09:52:03.014 END 4     #出了方法 40 同步范围后，在资源锁的标记上 -1，直至减到 0，然后释放资源锁
+```
+
+> `锁重入（2）`：同步方法の继承，子类同步方法覆盖父类同步方法。可以指定调用父类的同步方法。
+
+```java
+public static void main(String[] args) throws InterruptedException {
+    SubThreadDemo threadTest = new SubThreadDemo();
+    threadTest.demo5();
+}
+```
+
+```java
+synchronized void demo5() throws InterruptedException {
+    System.out.println(LocalTime.now() + " START SUPER");
+    TimeUnit.SECONDS.sleep(1);
+}
+
+static class SubThreadDemo extends ThreadTest {
+    synchronized void demo5() throws InterruptedException { //子类同步方法
+        System.out.println(LocalTime.now() + " START SUB");
+        super.demo5();
+    }
+}
+```
+
+```sh
+11:08:44.986 START SUB
+11:08:44.986 START SUPER  #子类同步方法 和 父类的同步方法，使用的都是同一个资源锁
+```
+
+## volatile
+
+![](assets/thread2.png)
+
+> 线程的`私有工作内存`和`主内存`之间的联系
+
+```sh
+#线程私有工作内存 类比于 CPU和主内存之间的高速缓存，特点：读写速度比内存快，接近于CPU的速度。
+Java 线程只能对其私有工作内存进行直接的IO读取和写入操作，而不能对主内存进行直接的IO操作。
+'主内存对所有的 Java 线程都可见'，即所有的 Java 线程都可以通过其工作内存来间接的修改主内存中的数据。
+'线程的工作内存只对其对应的 Java 线程可见'，不同的 Java 线程不共享其工作内存。
+```
+
+> 线程修改主内存数据の步骤
+
+```sh
+（1）通过工作内存读取主内存中的变量值，并拷贝一份副本。
+（2）线程修改工作内存中的副本值。
+（3）工作内存将修改后的结果写入到主内存中。
+```
+
+>volatile：用于保证数据同步，即可见性。禁止指令重排。
+
+```sh
+#可见性：多个线程访问同一个变量时，一个线程修改了这个变量的值，其他线程能够立即看到修改后的值。
+
+根据线程修改内存数据的3个步骤，可能出现：Thread-01 在执行完第 2 个步骤之后，CPU时间划分给 Thread-02，
+即，Thread-01 修改的值没有真正的同步到主内存中，导致 Thread-02 从主内存中读取数据还是修改之前的值。
+volitale 关键字提供了一个功能，就是被其修饰的变量在被修改后会被强制刷入到主内存中。
+```
+
+```java
+private /*volatile*/ static int num = 5;
+
+private void doVolatile() {
+    new Thread(() -> num++, "Thread-01").start();
+    new Thread(() -> System.out.println(num), "Thread-02").start(); //5 或 6
+}
+```
+
+```sh
+在 CPU 计算过程中，会将计算过程需要的数据加载到 CPU 计算缓存中，当 CPU 计算中断时，有可能刷新缓存，重新读取内存中的数据。
+在线程运行的过程中，如果某变量被其他线程修改，可能造成数据不一致的情况，从而导致结果错误。
+
+volatile 修饰的变量是线程可见的。当 JVM 解释 volatile 修饰的变量时，会通知 CPU，在计算过程中，每次使用变量参与计算时，
+'都会检查内存中的数据是否发生变化'，而不是一直使用 CPU 缓存中的数据，可以保证计算结果的正确。
+
+#volatile 只是通知底层计算时，CPU 检查内存数据，而不是让一个变量在多个线程中同步。
+```
+
+```java
+volatile boolean flag = false;
+
+private void demo7() throws InterruptedException {
+    new Thread(() -> {
+        System.out.println(LocalTime.now() + " START");
+        while (!flag) { }
+        System.out.println(LocalTime.now() + " END");
+    }).start();
+
+    TimeUnit.SECONDS.sleep(1);
+    flag = true;
+}
+```
+
+```sh
+11:49:56.659 START  #不写 volatile，则while()循环一直执行，每次使用的都是线程私有内存中的值
+11:49:57.764 END    #加上 volatile，则会终止循环，因为每次使用都会获取最新的值
+```
+
+
+
+
+
 
 
 
@@ -253,7 +581,15 @@ new Thread(() -> {
 > VS 线程组
 
 ```sh
+# 线程组 中不仅可以包含线程，也可以包含线程组
+'线程池'：为了在子线程中处理大量的任务，同时又避免频繁的创建和销毁线程带来的系统资源开销而产生的
+'线程组'：为了方便和统一多个线程的管理而产生的
+```
 
+```sh
+注意：当新建一个 线程/线程组 之后，如果没有指定父线程组，默认会将'当前线程所属的父线程组'作为父线程组
+
+同时，一个线程只有调用了其 start() 之后，其才真正算是被添加到了对应的线程组中
 ```
 
 > 生命周期
@@ -417,12 +753,6 @@ public class ThreadPoolExecutor
 当这 （10+5） 个工人中有人空闲时，而新任务增长的速度又比较缓慢，工厂主管可辞掉 5 个临时工。只保持原来的10个工人，毕竟请额外的工人是要花钱
 ```
 
-> 容量合理大小
-
-```sh
-
-```
-
 ## 基本使用
 
 > JDK 内置的 4 种线程池
@@ -498,7 +828,7 @@ ExecutorService threadPool = new ThreadPoolExecutor(5, 200,
 ScheduledExecutorService threadPool = new ScheduledThreadPoolExecutor(1, threadFactory);
 ```
 
-##异常处理
+##线程异常
 
 > 如何正确处理子线程中的异常？
 
@@ -893,3 +1223,131 @@ public class QuartzConfig02 {
 }
 ```
 
+
+
+
+
+#常见问题
+
+##线程池原理
+
+```java
+public class MyThreadPool {
+    private int nThreads = 5;               //初始线程数
+    private TaskThread[] taskThreads;       //工作线程
+    private final List<Runnable> taskQueue; //阻塞队列
+
+    private MyThreadPool() {
+        taskThreads = new TaskThread[nThreads];
+        taskQueue = new CopyOnWriteArrayList<>(); //线程安全的list
+
+        for (int i = 0; i < nThreads; i++) {      //预创建好工作线程
+            taskThreads[i] = new TaskThread();
+            taskThreads[i].start();
+        }
+    }
+
+    private static class ThreadHolder {
+        private static MyThreadPool pool = new MyThreadPool();
+    }
+
+    public static MyThreadPool getInstance() { //单例 --> 静态内部类方式
+        return MyThreadPool.ThreadHolder.pool;
+    }
+
+    //提交任务 ---> 其实只是把任务加入任务队列，什么时候执行有线程池管理器决定
+    public void execute(Runnable r) {
+        synchronized (taskQueue) {
+            taskQueue.add(r);
+            taskQueue.notify(); //唤醒工作线程
+        }
+    }
+
+    // 内部类 --> 工作线程 --> 如果阻塞队列不空，则取出任务执行；否则，等待
+    private class TaskThread extends Thread {
+        public void run() {
+            try {
+                for (; ; ) {
+                    if (taskQueue.isEmpty()) {
+                        synchronized (taskQueue) {
+                            taskQueue.wait(20); //阻塞队列为空，等待
+                        }
+                    } else {
+                        Runnable r = taskQueue.remove(0); //取出第一个任务执行（FIFO模式）
+                        if (null != r) {
+                            r.run();
+                        }
+                    }
+                }
+            } catch (InterruptedException e) {
+                e.printStackTrace();
+            }
+        }
+    }
+}
+```
+
+##概念区分
+
+> `start() & run()`
+
+```sh
+start()：用来启动线程，真正实现多线程运行
+run()  ：不会开启新的线程，直接在调用线程中执行 run()方法体中的内容，程序还是顺序执行
+```
+
+> `execute() & submit()`
+
+```sh
+#可以接受的任务类型
+execute()：Runnable接口
+submit() ：Runnable接口；Callable接口
+```
+
+```sh
+#有无返回值
+execute()：没有返回值
+submit() ：有返回值，通过返回值来判断任务是否成功完成
+```
+
+```sh
+#异常处理
+execute()：参数是Runnable接口的实现，所以只能使用'try-catch'来捕获 Exception
+submit() ：不管提交的是Runnable还是Callable类型的任务，如果不对返回值'Future.get()'方法，都会吃掉异常
+```
+
+> `sleep() & wait()`
+
+```sh
+相同点：二者都可以使线程处于阻塞状态
+```
+
+```sh
+#当二者在同步代码块中使用时，都会让出 CPU 资源。但是，wait 会让出资源锁，而 sleep，notify 不会
+
+sleep：是 Thread 类的方法，可以在'任何地方'使用。
+-------必须设置时间参数，设置的时间到，会自动从阻塞状态切换到就绪状态，等待线程调度器的调度
+
+wait ：是 Object 类的方法，只能在'同步代码块'中使用。
+-------可设置时间参数，也可以不设置。如果不设置，就必须通过 notify 或 notifyAll 方法进行唤醒，唤醒后进入锁池，等待对象锁
+```
+
+> `等待池 & 锁池`
+
+```sh
+'等待池'：调用 wait() 方法后，线程就处于等待池中，等待其他线程 notify() 唤醒。#等待池中的线程不会去争夺锁的拥有权
+'锁池' ：被唤醒的线程，未争夺到资源锁，则处于锁池中，等待下一次的争夺
+
+以上线程拿到锁要干嘛？ '拿到锁，进入就绪状态，等待CPU时间片开始运行'。
+```
+
+
+
+
+
+```sh
+sleep()  ---> 抱着 资源锁 睡大觉，自己不用，也不给别人
+join()   ---> 阻塞指定线程等到另一个线程完成以后再继续执行
+wait()   ---> 释放 资源锁，自己站旁边，看别人使用
+其他.     ---> 如IO中的read()，write();
+```

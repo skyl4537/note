@@ -95,34 +95,303 @@ classpath*：能够加载多个路径下的资源文件
 ```sh
 mybatis 需要加载的 xml 文件分别在：'com/example/web/student/sqlxml/*.xml' 和 'com/example/web/teacher/sqlxml/*.xml'
 
-假如，配置文件：'mybatis.mapper-locations=classpath:com/example/web/*/sqlxml/*.xml'，则报：Invalid bound statement (not found)
-修改为：'... classpath* ...'，则不再出问题。
+假如，配置文件：'mybatis.mapper-locations=classpath:com/example/web/*/sqlxml/*.xml'，
+则报：Invalid bound statement (not found)。修改为：'... classpath* ...'，则不再出问题。
 ```
 
 
 
+# html
 
+## js
 
+> html标签
+
+```sh
+radio：单选框，只有加上'name'才具有互斥效果。表单提交的是'value'值
+```
+
+```html
+男 <input type="radio" name="gender" value="1" />
+女 <input type="radio" name="gender" value="0" />
+```
+
+> js（事件驱动）
+
+```sh
+用户事件：用户操作；如单击，鼠标移入，鼠标移出等
+系统事件：由系统触发的事件；如文档加载完成
+```
+
+```javascript
+document.getElementById("id");            <==>   $('#id')    //根据 id 查询（单个元素）
+document.getElementsByClassName("class"); <==>   $('.class') //根据 class 查询（元素数组）
+document.getElementsByTagName("tag");     <==>   $('tag')    //根据 tag 查询（元素数组）
+
+document.getElementsByName("name");       //返回带有指定 name 的对象集合
+```
+
+> jQuery（js函数库）：通过选取html元素，并对选取的元素执行某些操作
+
+```javascript
+//jQuery 选择器
+$("#test")  --> document.getElementById("test");          //#id 选择器。  查询id为'test'的【单个元素】
+$("p")      --> document.getElementsByTagName("p");       //元素选择器。   查询标签<p>【所有元素】
+$(".test")  --> document.getElementsByClassName("test");  //.class选择器。查询class为'test'的【所有元素】
+```
+
+```javascript
+$(this).hide()       //隐藏当前元素
+$("p").hide()        //隐藏所有 <p> 元素.(tag)
+$("p.test").hide()   //隐藏所有 class="test" 的 <p> 元素
+$("p:first")         //选取第一个 <p> 元素
+$("[href]")          //选取带有 href 属性的元素 
+
+$("#test").hide()    //隐藏所有 id="test" 的元素.(#id)
+```
+
+> 动态绑定事件
+
+```html
+<button id="btn0">动态绑定事件</button>
+```
+
+```javascript
+$(function () { //简写前: $(document).ready(function () {
+    $("#btn0").click(function () {
+        alert("点我上王者..." + $(this).attr('id'));
+    });
+});
+```
+
+>静态指定方法
+
+```html
+<button id="btn1" onclick="clickBtn1(this)">静态指定方法</button>
+```
+
+```javascript
+function clickBtn1(e) {
+    alert("点我上王者..." + $(e).attr('id')); //两种获取对象属性的方法 --> $(e).attr('id')
+}
+```
+
+## ajax
+
+> JSON 方法
+
+```javascript
+var jsonStr = JSON.stringify(jsonObj); //json -> String
+var jsonObj = JSON.parse(jsonStr);     //String -> json
+```
+
+> `$.get(url[,data][,callback][,type])` 通过GET请求从服务器请求数据
+
+```html
+<button id="btnGetJSON" th:attr="url=@{/mvc/getJSON}">getJSON</button> <!--后台返回json-->
+```
+
+```javascript
+$(function () { //简写前: $(document).ready(function () {
+    $('#btnGetJSON').click(function () {
+        $.getJSON($(this).attr('url'),
+                  {username: $('#username').val(), password: $('#password').val()},
+                  function (data) {
+            			alert(data.uName + " - " + data.uPwd);
+        });
+    });
+});
+```
+
+```html
+<button id="getStr" onclick="getStrFun(this)" th:attr="url=@{/mvc/getMsg}">getStr</button> <!--后台返回String-->
+```
+
+```javascript
+function getStrFun(e) {
+    $.get($(e).attr('url'),
+          function (data) {
+        		alert(data);
+    });
+}
+```
+
+>`POST` 
+
+```html
+<button id="postJSON" onclick="postJSONFun(this)" th:attr="url=@{/mvc/postJSON}">postJSON</button>
+```
+
+```javascript
+function postJSONFun(e) {
+    $.post($(e).attr('url'),
+           {username: $('#username').val(), password: $('#password').val()},
+           function (data) {
+        		alert(data.uName + " - " + data.uPwd);
+    }, 'json');
+}
+```
+
+> `DELETE`
+
+```html
+<button id="deleteBtn" th:href="@{/mvc/deleteMsg/5}">deleteMsg</button>
+```
+
+```javascript
+$('#deleteBtn').click(function () {
+    $.ajax({
+        type: 'DELETE', //仅部分浏览器支持
+        url: $(this).attr('href'),
+        dataType: 'text',
+        success: function (data) {
+            $('#showMsg').val(data);
+        }
+    });
+});
+```
+
+> `ajax` 底层原理。如果需要在出错时执行函数，请使用此方法
+
+```html
+<button id="ajaxBtn" onclick="clickAjax(this)" th:attr="url=@{/mvc/getJSON}">ajax</button>
+```
+
+```javascript
+function clickAjax(e) {
+    $.ajax({
+        url: $(e).attr('url'), //url
+        type: 'GET', //GET/POST/DELETE/PUT
+        data: {username: $('#username').val(), password: $('#password').val()}, //args; 后台接收 @RequestParam
+        dataType: 'json', //返回json
+        success: function (data, status) { //成功时,回调
+            alert(JSON.stringify(data) + " - " + status);
+        },
+        error: function (data, status) { 
+            alert(JSON.stringify(data) + " - " + status);
+        }
+    });
+}
+```
+
+## Cookie
+
+> 基本概念
+
+```sh
+HTTP是无状态协议，服务器不能记录浏览器的访问状态。也就是说服务器不能区分两次请求是否由同一个客户端发出。
+
+Cookie 实际上就是服务器保存在浏览器上的一段信息，完成会话跟踪的一种机制。
+第一次访问，没有Cookie，服务器返回，浏览器保存。一旦浏览器有了 Cookie，以后每次请求都会带上，服务器收到请求后，就可以根据该信息处理请求。
+
+储存空间比较小 4KB
+数量限制，每一个域名下最多建 20个
+用户可以清除 Cookie，客户端还可以禁用 Cookie
+```
+
+>持久化Cookie
+
+```sh
+#设置过期时间，浏览器就会把Cookie持久化到磁盘，再次打开浏览器，依然有效，直到过期！
+
+会话Cookie  ---> 是在会话结束时（浏览器关闭）会被删除
+持久Cookie  ---> 在到达失效日期时会被删除
+数量的上限   ---> 浏览器中的 Cookie 数量达到上限（默认20）
+```
+
+>相关属性
+
+```java
+cookie.setMaxAge(30);                 //最大时效，单位秒。 0：立即删除. 负数：永不删除, 默认-1
+cookie.setPath(req.getContextPath()); //Cookie生效的路径，默认当前路径及子路径
+```
+
+##Session
+
+>基本概念
+
+```sh
+当程序需要为某客户端的请求创建一个 session 时，服务器首先检查这个客户端的请求里是否已包含了一个 session 标识（SessionId）
+
+如果已包含，则说明之前已为此客户端创建过session，服务器就按照 SessionId 把这个session检索出来使用（检索不到，新建一个）;
+如果不包含，则为此客户端新建一个Session，并将与此session相关联的 SessionId 返回给客户端保存。
+
+保存 SsessionId 的方式可以采用Cookie，这样在交互过程中浏览器可以自动的按照规则把这个标识发挥给服务器。
+```
+
+> Cookie & Session
+
+```sh
+#Cookie 保存在客户端;
+用户可删除或禁用 Cookie;
+浏览器对 Cookie 的数量限制(20); 
+增加客户端与服务端之间的数据传输量; 
+
+#Session 保存在服务端.
+传递给用户端一个名为'JSESSIONID'的 Cookie，通过它可以获取到用户信息对象 Session.
+```
+
+>Session创建
+
+```sh
+#Session 机制也是依赖于 Cookie 来实现的.
+当'第一次'访问jsp或Servlet，并且该资源显示指定'需要创建Session'。此时服务器才会创建一个 Session 对象。
+Session 创建之后，同时还会自动创建一个名为'JSESSIONID'的 Cookie，返回给客户端。
+客户端收到 Cookie 后，存储在浏览器内存中(可持久化到磁盘)。
+
+以后浏览器在发送就会携带这个特殊的 Cookie 对象。服务器通过'JSESSIONID'查找与之对应的Session对象，以区分不同的用户。
+```
+
+```java
+//显示指定需要创建Session对象
+request.getSession(true);  //若存在则返回,否则新建一个Session.（默认为true）
+request.getSession(false); //若存在则返回,否则返回null
+```
+
+> Session销毁
+
+```sh
+(1).服务器关闭或web应用卸载;
+(2).request.getSession().invalidate(); #服务端显示销毁
+
+(3).Session过期。浏览器关闭，或闲置一段时间(session-timeout值)没有请求服务器，session会自动销毁。
+----这个时间是根据服务器来计算的，而不是客户端。所以在调试程序时。应该修改服务器端时间来测试，而不是客户端。
+
+(4).关闭浏览器，但不意味着Session被销毁。#Session的创建和销毁是在服务器端进行的.
+----当浏览器访问服务器就会创建一个 SessionID，浏览器通过这个ID来访问服务器中所存储的Session。
+----当浏览器关闭再打开，此时浏览器已丢失之前的 SessionID，也就找不到服务器端的Session对象，所以无法自动登录。
+
+之前的Session对象会在<session-timeout>后自动销毁。
+但是，关闭再打开，访问时携带上次的 SessionID，则可以重新找到之前的Session对象。
+//http://127.0.0.1:8090/demo/session;JSESSIONID=FAAABD1D2B89791DEB647E74D49A7C3D #URL重写
+```
+
+>URL重写
+
+```sh
+客户端保存'JSESSIONID'，默认采用 Cookie 实现。
+当浏览器禁用 Cookie 时，可通过URL重写实现： URL;jsessionid=xxx (将JSESSIONID拼接URL后面)
+```
+
+```java
+String encodeURL = response.encodeURL(url); //url重写
+response.sendRedirect(encodeURL);
+```
+
+> 持久化Session
+
+```java
+//持久化Session --> 持久化Cookie --> 设置Cookie过期时间
+Cookie cookie = new Cookie("JSESSIONID",session.getId());
+cookie.setMaxAge(90);       //持久化Cookie
+response.addCookie(cookie); //将Cookie发送浏览器
+
+//默认保存: C:\Users\BlueCard\AppData\Local\Temp\9121B10A811596BD85A3431BFBE71078B2880509\servlet-sessions
+```
 #Web
 
 ## 重定向
 
-> 路径前缀 /
-
-```shell
-#由服务器解析 --> 表示：web应用的根目录 --> http:127.0.0.1:8090/demo/
-
-@GetMapping("/hello")                                  #Serlvet映射的访问路径
-req.getRequestDispatcher("/hello").forward(req, res);  #请求转发
-```
-
-```shell
-#由浏览器解析 --> 表示：web站点的根目录 --> http:127.0.0.1:8090/
-
-<a href="/hello.html">测试</a>         #超链接<a>
-<form method="post" action="/hello">  #Form表单的action
-req.sendRedirect("/hello");           #请求重定向
-```
 > 转发 & 重定向
 
 ```shell
@@ -166,24 +435,20 @@ jsp善于处理页面显示，Servlet善于处理业务逻辑，二者结合使�
 转化过程：java代码照搬，html + css + 表达式等通过流输出'out.write()'
 ```
 
-> 9大内置对象
-
-```shell
-#pageContext < request < session < application （作用域：从小到大）
-
-ServletContext application;
-HttpSession session;
-HttpServletRequest request;            #同一个请求
-PageContext pageContext;               #当前页面的上下文.(可从中获取到其余 8 个隐含对象)
-```
+> 9大内置对象：`pageContext < request < session < application （作用域：从小到大）`
 
 ```sh
-JspWriter out = response.getWriter();  #用于页面显示信息，out.println();
+#内置对象名         类型
+application       ServletContext
+session           HttpSession
+request	          HttpServletRequest   #同一个请求
+pageContext       PageContext          #用于页面显示信息，out.println();
 
-HttpServletResponse response;          #几乎不用（X）
-Throwable exception                    #<%@ page isErrorPage="true" %>，才可以使用（X）
-ServletConfig config;                  #Servlet.ServletConfig.（X）
-Object page = this;                    #jsp对象本身，或编译后的Servlet对象; 实际上就是this.（X）
+response          HttpServletResponse  #几乎不用（X）
+config            ServletConfig        #Servlet.ServletConfig.（X）
+exception         Throwable            #<%@ page isErrorPage="true" %>，才可以使用（X）
+page              Object(this)         #jsp对象本身，或编译后的Servlet对象; 实际上就是this.（X）
+out               JspWriter            #用于页面显示信息，out.println();
 ```
 
 > jsp中的java
@@ -232,8 +497,6 @@ Object page = this;                    #jsp对象本身，或编译后的Servlet
 </c:if>
 ```
 
-
-
 ## Servlet
 
 >HTTP请求
@@ -241,15 +504,14 @@ Object page = this;                    #jsp对象本身，或编译后的Servlet
 ```shell
 建立连接 --> 发送请求信息 --> 回送响应信息 --> 关闭连接
 
-每一次请求，都要重新建立一次连接，都会调用一次 service() 方法
-每次连接只能处理一个请求和响应
+每一次请求，都要重新建立一次连接，都会调用一次 service() 方法。'每次连接只能处理一个请求和响应'。
 ```
 
 > Servlet是什么
 
 ```shell
 浏览器发送一个HTTP请求，HTTP请求由Servlet容器（如tomcat）分配给特定的Servlet进行处理
-Servlet的本质是一个Java对象，这个对象拥有一系列的方法来处理HTTP请求。常见的方法有doGet()，doPost()等。
+Servlet的本质是'一个Java对象'，这个对象拥有一系列的方法来处理HTTP请求。常见的方法有doGet()，doPost()等。
 Web容器中包含了多个Servlet，特定的HTTP请求该由哪一个Servlet来处理是由Web容器中的 web.xml 来决定的。
 ```
 
@@ -294,7 +556,7 @@ destory()  #只被调用一次。应用被卸载前调用。用于释放Servlet�
 同一浏览器多个窗口，同时访问，多线程'顺序'执行。不同浏览器，同时访问，多线程'并行'执行。
 ```
 
-> BOOTの自定义Servlet
+> `BootのServlet`
 
 ```java
 @ServletComponentScan //全局注解; 启动时自动扫描 @WebServlet,并将该类实例化
@@ -306,7 +568,6 @@ public class TestServlet extends HttpServlet {
 
     @Override
     protected void service(HttpServletRequest req, HttpServletResponse resp) throws IOException {
-        resp.setContentType("text/html;charset=utf-8");
         resp.getWriter().write("自定义 Servlet");
     }
 }
@@ -357,17 +618,9 @@ public void init(ServletConfig config) {
 }
 ```
 
+## 监听器
 
-
-## Filter
-
-> 过滤器：对发送到 Servlet 的请求，以及对发送到客户端的响应进行拦截
-
-
-
-## Listener
-
-> 监听器
+> Listener
 
 ```shell
 #四大域对象: ServletContext; HttpSession; ServletRequest; PageContext
@@ -432,8 +685,100 @@ ServletRequestAttributeListener { }
 public class MyListener implements HttpSessionBindingListener, HttpSessionActivationListener, Serializable { }
 ```
 
+## 过滤器
 
+> 生命周期 `与Servlet一样`
 
+```sh
+init（仅调用一次，单例） --> filter（每次调用） --> destory（仅调用一次）
+```
+
+> `Bootの过滤器`
+
+```java
+/**
+ * @param filterName      Filter名称，首字母小写
+ * @param urlPatterns     指定拦截的路径
+ * @param servletNames    指定对哪些Servlet进行过滤（与上一个注解互补使用）
+ * @param initParams      初始化参数
+ */
+@Order(1) //@ServletComponentScan 全局注解。order越小，优先级越高
+@WebFilter(filterName = "testFilter", urlPatterns = "/servlet/*", servletNames = "helloServlet")
+public class TestFilter extends HttpFilter {
+
+    @Override
+    public void doFilter(ServletRequest request, ServletResponse response, FilterChain chain)
+        throws IOException, ServletException {
+        chain.doFilter(request, response); //过滤器核心逻辑，每次请求过滤都会调用一次
+    }
+}
+```
+
+## 拦截器
+
+>`Interceptor`：拦截用户的请求并进行相应的处理
+
+```sh
+'preHandle'      ：在目标方法之前执行              #适用于权限. 日志, 事务等
+'postHandle'     ：在目标方法之后，渲染视图之前执行  #可以对请求域中的属性或视图做出修改
+'afterCompletion'：在渲染视图之后执行              #释放资源
+```
+
+> 多个拦截器的执行顺序
+
+```sh
+#（1）.第二个拦截器的 preHandle()返回 true
+interceptor1: preHandle()
+interceptor2: preHandle() #return true;
+...调用目标方法
+interceptor2: postHandle()
+interceptor1: postHandle()
+...渲染视图
+interceptor2: afterCompletion()
+interceptor1: afterCompletion()
+```
+
+```sh
+#（2）.第二个拦截器的 preHandle()返回 false
+interceptor1: preHandle()
+interceptor2: preHandle() #return false;
+...不再调用目标方法
+...不再渲染视图
+interceptor1: afterCompletion()
+```
+
+> `Bootの拦截器`
+
+```java
+@Slf4j
+@Component
+public class MyInterceptor1 implements HandlerInterceptor {
+
+    @Override
+    public boolean preHandle(HttpServletRequest request, HttpServletResponse response, Object handler) {
+        log.info("preHandle...");
+        return true;
+    }
+}
+```
+
+```java
+@Configuration
+public class WebMvcConfig implements WebMvcConfigurer {
+
+    @Autowired
+    MyInterceptor1 myInterceptor1;
+
+    @Autowired
+    MyInterceptor2 myInterceptor2;
+
+    @Override
+    public void addInterceptors(InterceptorRegistry registry) {
+        registry.addInterceptor(loginInterceptor1).order(1);
+        registry.addInterceptor(loginInterceptor2).order(2); //注册两个拦截器
+    }
+}
+```
 
 
 ## ServletContext
@@ -848,6 +1193,12 @@ Bean 此时可以使用了                    #Car [brand=Audi, price=720000.0]
 因此，它可以很好的对业务逻辑的各个部分进行隔离，从而使得业务逻辑各部分之间的耦合度降低，提高程序的可重用性，同时提高了开发的效率
 ```
 
+```sh
+#Spring创建代理的规则为：
+默认，使用Java动态代理来创建AOP代理，这样就可以为任何接口实例创建代理了
+当需要代理的类不是代理接口的时候，Spring会切换为使用CGLIB代理，也可强制使用CGLIB
+```
+
 ```xml
 <dependency>
     <groupId>org.springframework.boot</groupId>
@@ -968,6 +1319,191 @@ public class AopConfig {
         String methodName = signature.getName(); // 方法名
         return className.concat(".").concat(methodName).concat("()");
     }
+}
+```
+
+
+
+# MVC
+
+## 数据校验
+
+> 常见校验
+
+```java
+/** 
+ * @Null                   必须为 null
+ * @NotNull                必须不为 null
+ * @AssertTrue             必须为 true
+ * @AssertFalse            必须为 false
+ *
+ * @Min(value)             必须是数字，其值必须 >= 指定的最小值
+ * @Max(value)             必须是数字，其值必须 <= 指定的最大值
+ * @DecimalMin(value)      必须是数字，其值必须 >= 指定的最小值
+ * @DecimalMax(value)      必须是数字，其值必须 <= 指定的最大值
+ * @Size(max=, min=)       大小必须在指定的范围内
+ *
+ * @Digits(integer, fraction) 必须是数字,其值必须在可接受的范围内。
+ *                                (integer->指定整数部分的数字位数; fraction->指定小数部分的数字位数)
+ *
+ * @Past                     必须是一个过去的日期
+ * @Future                   必须是一个将来的日期
+ *
+ * @Pattern(regex=,flag=)    必须符合指定的正则表达式
+ *                             regex->正则表达式；flag->指定 Pattern.Flag 的数组，表示正则表达式的相关选项
+ */
+```
+
+```java
+/**
+ * @NotBlank(message=)           字符串非null,非空. (去掉首尾空格)
+ * @NotEmpty                     字符串必须非空. (不会去掉...)
+ * @Length(min=,max=)            字符串长度必须在指定的范围内
+ * @Range(min=,max=,message=)    数值必须在合适的范围内 
+ *
+ * @Email                        必须是电子邮箱地址
+ * @URL(protocol=,host=,port=,regexp=,flags=)    合法的url
+ */
+
+```
+
+> 在实体类中添加校验规则
+
+```java
+public class Car {
+    @NotBlank(message = "车标不能为空")
+    @Length(min = 3, max = 10, message = "车标长度必须在3-10之间")
+    @Pattern(regexp = "^[a-zA-Z_]\\w{2,9}$", message = "车标必须以字母下划线开头")
+    public String brand;
+
+    @Range(max = 1000000, min = 0, message = "价格必须在0-10000之间")
+    @NumberFormat(pattern = "####.##")
+    public Double price;
+
+    @Past(message = "日期不能晚于当前时间")
+    @DateTimeFormat(pattern = "yyyy-MM-dd HH:mm:ss")
+    public Date birth;
+}
+```
+
+>也可将校验信息抽取到配置文件
+
+```properties
+#在'resources'目录下新建配置文件 ValidationMessages.properties
+car.brand.length=车标长度必须在{min}-{max}之间
+```
+
+```java
+@Length(min = 3, max = 10, message = "{car.brand.length}") //对应属性的注解设置
+public String brand;
+```
+
+>控制器中开启校验
+
+```java
+//注意: @Valid 和 BindingResult 两个入参必须紧挨着，中间不能插入其他入参
+@PostMapping("/car")
+public String car(@Valid @RequestParam Car car, BindingResult result) {
+    if (result.hasErrors()) { //校验有错
+        result.getAllErrors().forEach(x -> log.info(x.getDefaultMessage()));//错误信息
+        return "car";
+    }
+    return "success";
+}
+```
+
+> 前台页面回显校验错误
+
+```html
+<!--使用 thymeleaf 的内置标签 th:errors-->
+<!--第一次跳转该页面时，没有局部变量 car，所以应该判断: th:if="${null!=car}"-->
+<form th:action="@{/save}" method="post">
+    车标：<input type="text" name="brand"/> 
+    <font color="red" th:if="${null!=car}" th:errors="${car.name}"></font><br/>
+    <input type="submit" value="添加"/>
+</form>
+```
+
+
+
+## 国际化
+
+>两种方式
+
+```sh
+（1）页面根据'浏览器的语言设置'对文本（不是内容），时间，数值等自动进行本地化处理
+（2）页面可以通过'超链接'切换，而不再依赖于浏览器的语言设置
+```
+
+> 资源文件
+
+```sh
+目录'/resources/i18n/'下新建三个属性文件：login; login_zh_CN; login_en_US
+分别对应: ①默认配置; ②中文环境; ③英文环境
+分别编辑: login.user=用户名; login.user=用户名; login.user=user
+```
+
+> 配置文件
+
+```xml
+<bean id="messageSource" class="org.springframework.context.support.ResourceBundleMessageSource">
+    <property name="basename" value="i18n.login"></property>
+</bean>
+```
+
+```properties
+#springboot 默认已配置 ResourceBundleMessageSource，即只需配置 basename。
+#此属性默认值为 message。所以，在 /resources 下新建 message 资源文件，则可以省去此配置
+spring.messages.basename=i18n.login 
+```
+
+> 前台页面
+
+```html
+<span th:text="#{login.user}"/> <!--thymeleaf页面使用标签： #{} -->
+```
+
+```jsp
+<%@ taglib prefix="fmt" uri="http://java.sun.com/jsp/jstl/fmt"%> <!--jsp页面使用标签： fmt -->
+<fmt:bundle basename="i18n.login"> <!--可省，由basename指定-->
+    <fmt:message key="login.user"/>
+</fmt:bundle>
+```
+
+> 点击链接切换
+
+```sh
+到此，已经可以实现方式(1)，对于方式(2)，还需以下两步配置。#注意: 实现方式(2)，则方式(1)不起作用
+```
+
+> 页面配置超链接
+
+```html
+<a th:href="@{/?l=zh_CN}">中文</a>
+<a th:href="@{/?l=en_US}">英文</a>
+<span th:text="#{login.user}"/>
+```
+
+>后台注册自定义国际化配置
+
+```java
+@Bean
+public LocaleResolver localeResolver() { //注册自定义国际化配置
+    return new LocaleResolver() {
+        @Override
+        public Locale resolveLocale(HttpServletRequest request) {
+            Locale locale = Locale.getDefault(); //默认
+            String parameter = request.getParameter("l"); //获取自定义
+            if (!StringUtils.isEmpty(parameter)) {
+                String[] split = parameter.split("_"); //zh_CN
+                locale = new Locale(split[0], split[1]);
+            }
+            return locale;
+
+            @Override
+            public void setLocale(HttpServletRequest request, HttpServletResponse response, Locale locale) {}
+        }
+    };
 }
 ```
 
@@ -1145,29 +1681,79 @@ public class ContextLoaderListener extends ContextLoader implements ServletConte
 
 ## MVC
 
-> `springmvc.xml`
+> 组件扫描：只扫描 @Controller
 
 ```xml
-<!-- 1.组件扫描（只扫描 @Controller） -->
 <context:component-scan base-package="com.example.spring" use-default-filters="false">
     <context:include-filter type="annotation" expression="org.springframework.stereotype.Controller" />
 </context:component-scan>
+```
 
-<!-- 2.配置视图解析器，配置jsp -->
+> 视图解析器
+
+```xml
 <bean class="org.springframework.web.servlet.view.InternalResourceViewResolver">
     <property name="prefix" value="/WEB-INF/views/" />
     <property name="suffix" value=".jsp" />
 </bean>
+```
 
-<!-- 3.开启 mvc 注解支持 -->
-<!-- 简化配置:
-     (A).自动注册 DefaultAnootationHandlerMapping，AnotationMethodHandlerAdapter。
-         是 springMVC 为 @Controllers 分发请求所必须的 
-     (B).提供: 数据绑定，数字和日期的format，@NumberFormat，@DateTimeFormat，xml，json默认读写支持 -->
+>开启 mvc 注解支持
+
+```sh
+将在 SpringMVC 上下文中定义一个 DefaultServletHttpRequestHandler，
+它会对进入 DispatcherServlet 的请求进行筛查，如果发现是没有经过映射的请求，
+就将该请求交由 WEB 应用服务器默认的 Servlet 处理，如果是由映射的请求，才由 DispatcherServlet 继续处理
+
+如果web应用服务器的默认的Serlvet的名字不叫"default",则需要通过default-servlet-name来进行指定.
+
+配置了default-serlvet-handler后，RequestMapping的映射会失效，需要加上annotation-driven的配置。
+```
+
+```sh
+#简化配置
+（1）自动注册 DefaultAnootationHandlerMapping，AnotationMethodHandlerAdapter。是 SpringMVC 为 @Controllers 分发请求所必须的
+（2）提供：数据绑定，数字和日期的format，@NumberFormat，@DateTimeFormat，xml，json默认读写支持
+```
+
+```xml
 <mvc:annotation-driven />
+```
 
-<!-- 4.释放静态资源：(A).加入对静态资源的处理: js,gif,png (B).允许使用"/"做整体映射 -->
+>释放静态资源
+
+```sh
+（A）加入对静态资源的处理: js,gif,png
+（B）允许使用"/"做整体映射 
+```
+
+```xml
 <mvc:default-servlet-handler />
+```
+
+> 修相关问题
+
+```sh
+#需要在 Spring 配置中整合 SpringMVC 吗 ?
+#还是否需要再加入 Spring 的 IOC 容器 ?
+#是否需要再 web.xml 文件中配置启动 Spring IOC 容器的 ContextLoaderListener ?
+
+（1）需要: 通常情况下, 类似于数据源, 事务, 整合其他框架都是放在 Spring 的配置文件中（而不是放在 SpringMVC 的配置文件中）
+实际上放入 Spring 配置文件对应的 IOC 容器中的还有 Service 和 Dao. 
+（2）不需要: 都放在 SpringMVC 的配置文件中. 也可以分多个 Spring 的配置文件, 然后使用 import 节点导入其他的配置文件
+```
+
+```sh
+#若 Spring 的 IOC 容器和 SpringMVC 的 IOC 容器扫描的包有重合的部分, 就会导致有的 bean 会被创建 2 次.
+
+（1）使 Spring 的 IOC 容器扫描的包和 SpringMVC 的 IOC 容器扫描的包没有重合的部分. 
+（2）使用 exclude-filter 和 include-filter 子节点来规定只能扫描的注解
+```
+
+```sh
+#SpringMVC 的 IOC 容器中的 bean 可以来引用 Spring IOC 容器中的 bean返回来呢? 
+
+反之则不行。Spring IOC 容器中的 bean 却不能来引用 SpringMVC IOC 容器中的 bean!
 ```
 
 ## mybatis
@@ -1184,5 +1770,66 @@ public class ContextLoaderListener extends ContextLoader implements ServletConte
         <setting name="aggressiveLazyLoading" value="false"/>   <!-- 配置按需加载-->
     </settings>
 </configuration>
+```
+
+#常见问题
+
+## 概念区分
+
+> 路径前缀 /
+
+```sh
+'由服务器解析'：web应用的根目录 --> http:localhost:8090/demo/
+'由浏览器解析'：web站点的根目录 --> http:localhost:8090/
+```
+
+```shell
+@GetMapping("/hello")                                 #由服务器解析
+req.getRequestDispatcher("/hello").forward(req, res);
+```
+
+```shell
+<a th:href="@{/hello}">测试</a>                        #由浏览器解析
+<form method="post" th:action="@{/hello}">
+req.sendRedirect("/demo/hello");
+```
+> 过滤器 & 拦截器 & AOP
+
+```sh
+#过滤器
+'过滤器拦截web访问url地址'。严格意义上讲，filter只是适用于web中，依赖于Servlet容器，利用'Java的回调机制'进行实现。
+Filter过滤器：和框架无关，可以控制最初的http请求，但是更细一点的类和方法控制不了。
+过滤器可以拦截到方法的请求和响应(ServletRequest, ServletResponse)，并对请求响应做出像响应的过滤操作，
+比如设置字符编码，鉴权操作等
+```
+
+```sh
+#拦截器
+'拦截器拦截以 .action结尾的url，拦截Action的访问'。Interfactor是基于'Java的反射机制（APO思想）'进行实现，不依赖Servlet容器。
+拦截器可以在方法执行之前(preHandle)和方法执行之后(afterCompletion)进行操作，回调操作(postHandle)，可以获取执行的方法的名称，请求(HttpServletRequest)
+Interceptor：可以控制请求的控制器和方法，但控制不了请求方法里的参数(只能获取参数的名称，不能获取到参数的值)
+用于处理页面提交的请求响应并进行处理（例如做国际化，做主题更换，过滤等）。
+```
+
+```sh
+#AOP
+只能拦截Spring管理Bean的访问（业务层Service）。具体AOP详情参照 Spring-AOP：原理、通知、连接点、切点、切面、表达式
+实际开发中，AOP常和事务结合：Spring的事务管理 ---> 声明式事务管理（切面）
+AOP操作可以对操作进行横向的拦截，最大的优势在于他可以获取执行方法的参数( ProceedingJoinPoint.getArgs() )，对方法进行统一的处理。
+Aspect: 可以自定义切入的点，有方法的参数，但是拿不到http请求，可以通过其他方式如RequestContextHolder获得
+常见使用日志，事务，请求参数安全验证等
+```
+
+```sh
+#拦截器 VS 过滤器
+拦截器是基于java的反射机制，使用代理模式，而过滤器是基于函数回调。
+拦截器不依赖servlet容器，依赖于Spring容器；过滤器依赖于servlet容器。
+拦截器只能对action起作用，而过滤器可以对几乎所有的请求起作用（可以保护资源）。
+拦截器可以访问action上下文，堆栈里面的对象，而过滤器不可以。
+```
+
+```sh
+#执行顺序：过滤前-拦截前-Action处理-拦截后-过滤后。
+拦截器相比过滤器有更细粒度的控制，依赖于Spring容器，可以在请求之前或之后启动，过滤器主要依赖于servlet，过滤器能做的，拦截器基本上都能做。
 ```
 

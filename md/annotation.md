@@ -19,6 +19,17 @@
 嵌套的 @Configuration 必须是静态类
 ```
 
+## Bean
+
+> 只会被Spring调用一次，产生一个id为方法名的Bean对象，对象管理在IOC容器中
+
+```java
+@Bean("infoService1") //默认，bean的id和方法名相同，也可通过name属性自定义
+public TnfoService infoService() {
+    return new TnfoServiceImpl();
+}
+```
+
 
 
 
@@ -138,58 +149,89 @@ public class HelloServiceImpl1 implements HelloService {}
 
 # MVC
 
-## RequestParam
+## RequestMapping
 
-> 将`请求行或请求体`的参数（String）转化为简单类型
+> 指定映射 URL，可标注类或方法上
 
 ```sh
-#可以处理 GET POST 的请求行，也可以处理 POST 的请求体
-本质是将 Request.getParameter(); 获取的 String 转换为简单类型（由 ConversionService 配置的转换器来完成）
+value      #映射url，默认属性
+method     #请求方式。RequestMethod.GET/POST/PUT/DELETE
+
+name       #给这个mapping分配一个名称，类似于注释
+params     #请求参数必须满足条件，才能进行处理
+headers    #同上，不常用
 ```
 
 ```java
-//GET，请求行 ---> 默认格式（application/x-www-form-urlencoded）
+//参数必须包含'name'。如有'age'，则不能等于10
+@GetMapping(value = "/hello", params = { "name", "age!=10" })
+public String hello() { }
+```
 
-@GetMapping("/param0")
-public ResultVO param0(@RequestParam(value = "name", required = true) String uName,
-                       @RequestParam(value = "age", required = false, defaultValue = "18") Integer uAge) {
-    System.out.println("param0: " + uName + "-" + uAge);
-    return ResultVOUtil.success();
-}
+## RequestParam
+
+> 将 `GET POST 请求行/请求体` 中的 `键值对` 解析为简单类型，不能解析为自定义Bean
+
+```java
+@PostMapping("/hello")
+public String hello0(@RequestParam(value = "id", required = false, defaultValue = "1") Integer id,
+                     @RequestParam String name) { }
+```
+
+```sh
+使用 @RequestParam 接收参数时，请求参数必须携带，不然报错。
+#可使用 required = false 或者 直接不写，来避免这种错误。【不推荐】
 ```
 
 ```java
-//POST，请求行 ---> 默认格式 或 JSON
-//POST，请求体 ---> 默认格式
-
-@PostMapping("/param1")
-public ResultVO param1(@RequestParam(value = "name", required = true) String uName,
-                       @RequestParam(value = "age", required = false, defaultValue = "18") Integer uAge) {
-    System.out.println("param1: " + uName + "-" + uAge);
-    return ResultVOUtil.success();
-}
+@PostMapping("/hello")
+public String hello0(Integer id, @RequestParam(required = false) String name) { }
 ```
 
 ##RequestBody
 
-> 将`请求体`的参数（JSON）转化为 Bean 或者 Map
+> 将`POST 请求体` 中的 `JSON` 解析为 Bean 或者 Map
 
-```sh
-#@RequestParam 和 @RequestBody 可以相结合使用
-本质是用 HandlerAdapter 配置的 HttpMessageConverters 来解析请求体，然后绑定到相应的 bean 上
+```java
+@PostMapping("/hello")
+public String hello1(@RequestBody City city) { }
+```
+
+## PathVariable
+
+>将 URL 中的 `占位符` 映射到方法的入参
+
+```java
+@GetMapping("/hello/{name}")
+public String hello(@PathVariable("name") String args) { }//括号内 == 占位符
+```
+
+## NULL
+
+> 什么也不写，可以将 `GET POST 请求行/请求体` 的 `键值对` 解析为自定义Bean
+
+```java
+@GetMapping("/hello")
+public String hello11(Person person) { } //支持级联解析 Person.Address.Name
+```
+
+## CookieValue
+
+> `RequestHeader/CookieValue` 获取 `请求头/Cookie` 中的参数
+
+```java
+@GetMapping("/hello")
+public String hello(@RequestHeader("header") String arg) { }
 ```
 
 ```java
-//POST，请求体 ---> JSON
-
-@PostMapping("/param3")
-public ResultVO param3(@RequestBody Student student) {
-    System.out.println("param3: " + student);
-    return ResultVOUtil.success(student);
-}
+@GetMapping("/hello")
+public String hello(@CookieValue("JSESSIONID") String arg) { }
 ```
 
+##1
 
+>
 
 
 

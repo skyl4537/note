@@ -267,7 +267,11 @@ https://blog.csdn.net/small_mouse0/article/details/77506060
 > 快捷键
 
 ```shell
-Ctrl+Shift+F       #全局查找 
+Ctrl+Shift+F   #全局查找 
+```
+
+```sh
+Ctrl+Alt+T     #try-catch
 ```
 
 
@@ -277,7 +281,7 @@ Ctrl+Shift+F       #全局查找
 |                  main方法                  |            psvm             |  main（Alt+/补全）   |
 |                 输出控制台                 |            sout             |         syso         |
 |               for普通 / 增强               |         fori / iter         |   for（Alt+/选择）   |
-|                 try/catch                  |         Ctrl+Alt+T          |          *           |
+|                                            |                             |                      |
 |          自动生成Get/Set/实现方法          |         Alt+Insert          |          *           |
 |                                            |                             |                      |
 |                  抽取方法                  |         Ctrl+Alt+M          |     Shift+Alt+M      |

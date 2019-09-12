@@ -70,7 +70,106 @@ public class Add {
 }
 ```
 
+##方法相关
 
+> 方法传参：递遵循值传递原则`（传递的是值或引用的拷贝，不改变原有值）`
+
+```shell
+基本类型传递的是数据值的拷贝。在方法内对值类型操作不会改变原有值。
+
+引用类型传递的是该对象的堆内存地址，即引用拷贝，但指向同一个对象。所以，在方法内对引用类型进行'重新赋引用'，不会改变原有值。
+但是'对原有引用的属性进行操作'时，可改变这个引用的属性值。
+```
+
+```java
+private void doSth(int i, String s, Person p) {
+    i += 1;
+    s += "hello";
+    p = new Person("li", 20);
+    // p.age = 30; //将改变原有引用的属性值，其他则不会改变原有值
+}
+```
+
+>重写 & 重载`（与返回值无关）`
+
+```shell
+'重写'：在子类中，出现和父类中一摸一样的方法。
+'重载'：同一类中，出现多个方法名一样，但参数列表（参数类型 + 个数 + 顺序）不一样的方法。
+```
+
+```java
+private + static + final 各修饰的方法，子类都不可重写。
+其中，子类中的 private + static 同名方法，表示重新定义的方法，与父类无关。而子类的 final 方法则编译报错。
+
+protected, default, public 对子类可见，可重写。但重写时不能缩小修饰符范围，即不能将父类 public 方法重写为 protected 方法。
+
+//当方法被重写后，调用子类实例的同名方法时会优先调用子类的重写方法，不会再调用父类的方法。
+```
+
+```java
+public class Parent {
+    private void fun1(){}
+    void fun2(){}
+    protected void fun3(){}
+    public static void fun4(){}
+}
+
+//fun1：私有权限，无法被子类继承，因此无法被重写
+//fun2：包权限，因此在同一个包内继承时，可以重写，但其他包继承无法重写
+//fun3：子类访问权限，因此无论如何继承，都可以被重写。
+//fun4：虽然是公有的访问权限，但为静态方法，无法被继承。
+```
+
+```java
+public void test() {
+    Father father = new Son(); //多态
+
+    //所有属性 和 静态方法 --> 看左，即和父类保持一致，调用父类的
+    System.out.println(father.staticNum);
+    System.out.println(father.num);
+    father.doStatic(); //FATHER-STATIC
+
+    //非静态方法 --> 若子类有重写，则调用子类方法。否则调用父类方法
+    father.doSth(); //Father 或 SON
+}
+```
+
+> 构造方法
+
+```shell
+'this'：子类调用【子类】的同名成员或方法。'super'： 子类调用【父类】的同名成员或方法。
+构造方法间调用使用 this() 或 super(name) 语句，并且该语句只能放在构造函数第一行。
+
+#对于子类的构造函数，不管无参还是有参，如果没有显示指明调用哪个父类构造时，默认调用父类无参构造。
+#当编译器尝试在子类中往这两个构造方法插入 super() 方法时，因为父类没有默认无参构造方法，所以编译器报错。下面 DEMO
+```
+
+```java
+class Super {
+    private int id;
+    public Super(int id) { this.id = id; } //没有无参构造
+}
+
+class Sub extends Super {    
+    public Sub() { } //编译错误
+
+    public Sub(int id) { } //编译错误
+}
+```
+
+> static 方法
+
+```shell
+#static 方法不可以调用非 static 方法
+因为非 static 方法是要与对象关联在一起的，必须创建一个对象后，才可以在该对象上进行方法调用。
+而 static 方法调用时不需要创建对象，可以通过类直接调用。
+
+在 static 方法中调用非 static 方法时，可能还没有实例化对象， 这就与以上逻辑不符。
+```
+
+```shell
+
+```
 
 
 
@@ -101,7 +200,7 @@ public void test() {
 }
 ```
 
-> `Math.round(double num);`函数是取整函数，只关注小数点后第一位小数值。
+> `Long l = Math.round(double num);`返回值类型
 
 ```java
 long l = Math.round(-1.45); //-1
@@ -117,6 +216,8 @@ double d = Math.floor(-10 % -3); //-1.0 -->同sql，结果符号位和被除数�
 > 保留两位有效小数（2种方式）
 
 ```java
+//round()返回与参数最接近的长整数，参数加1/2后求其 floor()
+
 double val0 = (Math.round(1.1249 * 100)) / 100.0;
 double val1 = (Math.round(1.1250 * 100)) / 100.0;
 System.out.println(val0 + " - " + val1); //1.12 - 1.13
@@ -128,27 +229,22 @@ String val1 = String.format("%.2f", 1.1250);
 System.out.println(val0 + " - " + val1); //1.12 - 1.13
 ```
 
-> &，&&：都是逻辑 "与" 运算符，但后者为短路运算
+> &，&&：都是逻辑 "与" 运算符，但后者为`短路运算`
 
-```java
+```sh
+&  是逻辑操作符，不仅能操作布尔型，而且可以操作数值型
+&& 是条件操作符，只能操作 boolean 类型。'会短路操作'
+```
+
+```sh
 &  ：左边无论真假，右边都要运算
 && ：如果左边为真，右边参与运算； 如果左边为假，那么右边不参与运算。
 ```
 
 ```java
-if (x < 1 && ++y > 0) {} System.out.println(x + "-" + y);
-
-int x = 0, y = 0; //&：0-1； &&：0-1
-int x = 2, y = 0; //&：2-1； &&：2-0
-//&& 属于短路运算，即当 x=2 时，x<1 为 false。不管右侧如何，整体恒为 false。所以，不再进行 ++y>0 判断，即 y 不再自增。
-```
-
-```java
-if (x < 1 || ++y > 0) {} System.out.println(x + "-" + y);
-
-int x = 0, y = 0; //|：0-1； ||：0-0
-int x = 2, y = 0; //|：2-1； ||：2-1
-//||也是短路运算，道理同上。
+int x = 0;
+if (1 < 0 && x++ > 0) {}
+System.out.println(x); //&& 短路运算，左边 false，所以右边不执行。即 x 依旧等于 0
 ```
 
 > 其他运算符
@@ -248,7 +344,11 @@ A a = new B(); //class B extends A{}
 System.out.println(a instanceof A); //true. instanceof 用来判断对象是否是一个类的一个实例
 ```
 
+> 
 
+```sh
+
+```
 
 
 
@@ -257,10 +357,10 @@ System.out.println(a instanceof A); //true. instanceof 用来判断对象是否�
 >基本数据类型：三大类，八小种。引用类型：类，接口，数组。
 
 ```java
-布尔类型： boolean （1byte，8位） //以前，误以为是 1bit，1位。好像是错误的。
-字符类型： char （2byte，2字节，8位，[-128, 127]）
-数值类型-整型： byte （1byte）， short （2byte）， int （4byte）, long （8byte） 
-数值类型-浮点型： float （4byte）， double （8byte）
+布尔类型     ： boolean （1byte，8位） //以前，误以为是 1bit，1位。好像是错误的。
+字符类型     ： char （2byte，2字节，16位，[-128, 127]）
+数值类型整型  ： byte （1byte）， short （2byte）， int （4byte）, long （8byte） 
+数值类型浮点型： float （4byte）， double （8byte）
 ```
 
 > 使用标准
@@ -318,15 +418,15 @@ System.out.println(m1 == n1);      //true
 
 > 类型的自动提升
 
-```java
-short s1 = 1; s1=s1+1; '与' s1+=1; '二者的区别？'
+```sh
+#short s1 = 1; s1=s1+1; 与 s1+=1; 二者的区别？
 
 （1）s1本是 short 类型，与 1 相加，自动提升为 int 类型，即等号右侧的结果已是 int 类型，将 int 赋值给 short 将报类型转换异常。
 （2）对于运算符 +=，编译器会做特殊处理，不会报错。
 ```
 
-```java
-int x = 10; double res = (x > 10) ? 9.9 : 9; '结果 res 为何？'
+```sh
+#int x = 10; double res = (x > 10) ? 9.9 : 9; 结果 res 为何？
 
 程序将计算后的结果，自动提升为两者之间较大的数据类型，即 double 类型： 9.0。
 ```
@@ -341,7 +441,7 @@ Double d1 = 2;  //但是，包装类Double接收 int 时，不会进行自动类
 
 > char 类型存储中文
 
-```java
+```sh
 char 类型变量用来存储 Unicode 编码的字符集，Unicode 编码字符集中包含了汉字。所以，char 型变量中当然可以存储汉字。
 不过，如果某个特殊的汉字没有被包含在 Unicode 编码字符集中，那么，这个 char 型变量中就不能存储这个特殊汉字。
 
@@ -375,10 +475,8 @@ final 类不一定线程安全，如: StringBuilder。
 
 ```shell
 #String 不可变特性的应用
-'高效性'：不可变能保证其 hashcode 永远保持一致，不需要重新计算。这就使得字符串很适合作为 Map 中的 Key，字符串的处理速度要快过其它的键对象。
-
-'安全性'：String被广泛的使用在其他Java类中充当参数。比如网络连接、打开文件等操作。如果字符串可变，那么类似操作可能导致安全问题。
-
+'高效性' ：不可变性能保证其 hashcode 永远保持一致，不需要重新计算。这就使得字符串很适合作为 Map 中的 Key，字符串的处理速度要快过其它的键对象。
+'安全性' ：String被广泛的使用在其他Java类中充当参数。比如网络连接、打开文件等操作。如果字符串可变，那么类似操作可能导致安全问题。
 '线程安全'：因为不可变对象不能被改变，所以他们可以自由地在多个线程之间共享。不需要任何同步处理。
 ```
 
@@ -399,7 +497,7 @@ final 类不一定线程安全，如: StringBuilder。
 与之相反，堆中的对象是'在运行期才确定'，在代码执行到 new 的时候创建的。
 ```
 
-> `intern()`：①.将字符串字面量放入常量池（如果池中没有的话）②.返回这个常量的引用。
+> `intern()`：①.将字符串字面量放入常量池（如果池中没有的话）②.返回这个常量的引用
 
 ```java
 String s1 = "Hollis"; 
@@ -440,27 +538,24 @@ System.out.println(s1 == s4); //false
 ```
 
 ```sh
-对于字符串常量相加的表达式，不是等到运行期才去进行加法运算处理，而是在编译期直接将其编译成一个这些常量相连的结果。
+对于'字符串常量相加'的表达式，不是等到'运行期'才去进行加法运算处理，而是在'编译期'直接将其编译成一个这些常量相连的结果。
 因此，String s2 = "ab" + "c"; 可转化为 String s2 = "abc"; 但是， s4 并不是字符串常量相加，不能转化。
 s4 底层是使用 new StringBuilder().append(s3).append("c").toString(); 所以，s1 != s4
 ```
 
 > StringBuilder
 
-```sh
-#内部拥有一个数组用来存放字符串内容。当进行字符串拼接时，直接在数组中加入新内容，并自动维护数组的扩容，不会产生中间字符串。
-```
-
-```sh
-String          线程安全     直接进行字符串拼接，会产生大量中间字符串，并且时间消耗长。
-StringBuffer    线程安全     支持同步锁，性能稍差。
-StringBuilder   线程不安全   单线程进行大量字符串操作时，推荐使用（√）。
-```
-
 ```java
-String res = str0 + str1;
+//内部拥有一个数组用来存放字符串内容。当进行字符串拼接时，直接在数组中加入新内容，并自动维护数组的扩容，不会产生中间字符串。
 
-String res = new StringBuilder(str0).append(str1).toString(); //底层实现
+String res = str0 + str1;
+String res = new StringBuilder(str0).append(str1).toString(); // + 的底层原理
+```
+
+```sh
+String          #线程安全     直接进行字符串拼接，会产生大量中间字符串，并且时间消耗长。
+StringBuffer    #线程安全     支持同步锁，性能稍差。
+StringBuilder   #线程不安全   单线程进行大量字符串操作时，推荐使用（√）。
 ```
 
 ```sh
@@ -594,12 +689,12 @@ try {
 运行时异常被抛出可以不处理。即不捕获也不声明抛出
 
 如果父类抛出了多个异常 ,子类覆盖父类方法时,只能抛出相同的异常或者是他的子集
-父类方法没有抛出异常，子类覆盖父类该方法时也不可抛出异常。此时子类产生该异常，只能捕获处理，不能声明抛出
+父类方法没有抛出异常，子类覆盖父类该方法时也不可抛出异常。此时子类产生该异常，只能捕获处理，不能声明抛出（如，run方法）
 
 当多异常处理时，捕获处理，前边的类不能是后边类的父类
 在 try/catch 后可以追加 finally 代码块，其中的代码一定会被执行，通常用于资源回收
 
-如果 finally 有 return 语句，永远返回 finally 中的结果，避免该情况
+#如果 finally 有 return 语句，永远返回 finally 中的结果，避免该情况
 ```
 
 ```java
@@ -626,147 +721,17 @@ private int finallyTest() {
 
 
 
-# 概念相关
-
-##概念区分
-
->== & equals()
-
-```shell
-#==  System.out.println(2 == 2.0); //true
-当比较的是基本数据类型时，比较的是值；
-当比较的是引用数据类型时，比较的是地址值。
-```
-
-```shell
-#equals
-不能用于基本数据类型的比较；
-当比较的是引用数据类型时，默认也是比较地址值（即调用==）。
-只不过像String、Date、File、包装类等都重写了Object类中的 equals()。实际开发中，常常需要根据业务需要重写 equals()。
-```
-
-
-
-> 抽象类 & 接口
-
-```shell
-二者的定义 #抽象类使用关键字 abstract，接口使用 interface
-共同点    #不能实例化；用于被其他类实现和继承，以多态的方式使用；都可以包含抽象方法
-```
-
-```shell
-#不同点    单继承，多实现
-接口不能包含构造器。    抽象类可以包含构造器（让抽象类的子类调用这些构造器来完成属于抽象类的初始化操作）
-接口不能包含初始化块。  抽象类可以包含初始代码块
-
-接口只能定义静态常量，不能定义普通成员变量。抽象类既可以定义普通成员变量，也可以定义静态常量
-接口只包含抽象方法、静态方法和默认方法（java8新增），不能为普通方法提供方法实现。抽象类完全包含普通方法
-```
 
 
 
 
 
-##方法相关
 
-> 方法传参：递遵循值传递原则`（传递的是值或引用的拷贝，不改变原有值）`
 
-```shell
-基本类型传递的是数据值的拷贝。在方法内对值类型操作不会改变原有值。
 
-引用类型传递的是该对象的堆内存地址，即引用拷贝，但指向同一个对象。所以，在方法内对引用类型进行'重新赋引用'，不会改变原有值。
-但是'对原有引用的属性进行操作'时，可改变这个引用的属性值。
-```
 
-```java
-private void doSth(int i, String s, Person p) {
-    i += 1;
-    s += "hello";
-    p = new Person("li", 20);
-    // p.age = 30; //将改变原有引用的属性值，其他则不会改变原有值
-}
-```
 
->重写 & 重载`（与返回值无关）`
 
-```shell
-'重写'：在子类中，出现和父类中一摸一样的方法。
-'重载'：同一类中，出现多个方法名一样，但参数列表（参数类型 + 个数 + 顺序）不一样的方法。
-```
-
-```java
-private + static + final 各修饰的方法，子类都不可重写。
-其中，子类中的 private + static 同名方法，表示重新定义的方法，与父类无关。而子类的 final 方法则编译报错。
-
-protected, default, public 对子类可见，可重写。但重写时不能缩小修饰符范围，即不能将父类 public 方法重写为 protected 方法。
-
-//当方法被重写后，调用子类实例的同名方法时会优先调用子类的重写方法，不会再调用父类的方法。
-```
-
-```java
-public class Parent {
-    private void fun1(){}
-    void fun2(){}
-    protected void fun3(){}
-    public static void fun4(){}
-}
-
-//fun1：私有权限，无法被子类继承，因此无法被重写
-//fun2：包权限，因此在同一个包内继承时，可以重写，但其他包继承无法重写
-//fun3：子类访问权限，因此无论如何继承，都可以被重写。
-//fun4：虽然是公有的访问权限，但为静态方法，无法被继承。
-```
-
-```java
-public void test() {
-    Father father = new Son(); //多态
-
-    //所有属性 和 静态方法 --> 看左，即和父类保持一致，调用父类的
-    System.out.println(father.staticNum);
-    System.out.println(father.num);
-    father.doStatic(); //FATHER-STATIC
-
-    //非静态方法 --> 若子类有重写，则调用子类方法。否则调用父类方法
-    father.doSth(); //Father 或 SON
-}
-```
-
-> 构造方法
-
-```shell
-'this'：子类调用【子类】的同名成员或方法。'super'： 子类调用【父类】的同名成员或方法。
-构造方法间调用使用 this() 或 super(name) 语句，并且该语句只能放在构造函数第一行。
-
-#对于子类的构造函数，不管无参还是有参，如果没有显示指明调用哪个父类构造时，默认调用父类无参构造。
-#当编译器尝试在子类中往这两个构造方法插入 super() 方法时，因为父类没有默认无参构造方法，所以编译器报错。下面 DEMO
-```
-
-```java
-class Super {
-    private int id;
-    public Super(int id) { this.id = id; } //没有无参构造
-}
-
-class Sub extends Super {    
-    public Sub() { } //编译错误
-
-    public Sub(int id) { } //编译错误
-}
-```
-
-> static 方法
-
-```shell
-#static 方法不可以调用非 static 方法
-因为非 static 方法是要与对象关联在一起的，必须创建一个对象后，才可以在该对象上进行方法调用。
-而 static 方法调用时不需要创建对象，可以通过类直接调用。
-
-在 static 方法中调用非 static 方法时，可能还没有实例化对象， 这就与以上逻辑不符。
-```
-
-```shell
-
-```
 
 
 
@@ -1207,5 +1172,95 @@ helloArray.invoke(null, (Object) new String[]{"aaa", "bbb"}); //正确1
 // helloArray.invoke(null, new Object[]{new String[]{"aaa", "bbb"}}); //正确2
 
 // helloArray.invoke(null, new String[]{"aaa", "bbb"}); //错误写法
+```
+
+
+
+
+
+# 概念区分
+
+## 基础概念
+
+> == & equals
+
+```sh
+#==  System.out.println(2 == 2.0); //true
+当比较的是'基本数据类型'时，比较的是值
+当比较的是'引用数据类型'时，比较的是地址值
+```
+
+```sh
+#equals
+不能用于基本数据类型的比较；
+当比较的是引用数据类型时，默认也是比较地址值（即调用==）。
+只不过像String、Date、File、包装类等都重写了Object类中的 equals()。实际开发中，常常需要根据业务需要重写 equals()。
+```
+
+> 抽象类 & 接口
+
+```sh
+二者的定义 #抽象类使用关键字 abstract，接口使用 interface
+共同点    #不能实例化；用于被其他类实现和继承，以多态的方式使用；都可以包含抽象方法
+```
+
+```sh
+#不同点   单继承，多实现
+接口不能包含构造器。       抽象类可以包含构造器（让抽象类的子类调用这些构造器来完成属于抽象类的初始化操作）
+接口不能包含初始化代码块。  抽象类可以包含初始代码块（静态代码块和非静态代码块）
+
+接口只能定义静态常量，不能定义普通成员变量。    抽象类既可以定义普通成员变量，也可以定义静态常量
+接口只包含抽象方法、静态方法和默认方法（java8新增），不能为普通方法提供方法实现。     抽象类完全包含普通方法
+```
+
+> 静态变量 & 实例变量
+
+```sh
+'静态变量'：static 修饰，随着类的加载而分配内存空间，随着类的消失而消失。存在于'方法区'，被类的所有实例共享
+'实例变量'：随着对象的建立而分配内存空间，随着对象的消失而消失。存在于'堆内存'
+```
+
+```java
+class Test{
+    Test(){
+        staticNum++; //静态变量
+        num++;       //实例变量
+
+        //对于 staticNum，全局唯一份。每实例化一个Test对象，staticNum 就加1
+        //但是，对于 num，每实例化一个Test对象，就会重新分配一个，所以一直都是1
+        sout(staticNum + " - " + num);
+    }
+}
+```
+
+>Collection & Collections
+
+```sh
+'Collection'  是集合类的上级接口，继承与他的接口主要有 Set和List
+'Collections' 是针对集合类的一个帮助类，他提供一系列静态方法实现对各种集合的搜索、排序、线程安全化等操作
+```
+
+
+
+## 基础知识
+
+> 字符串与数组中的 Length
+
+```sh
+'数组和字符串都是对象'。数组在创建的时候，长度就已经确定了，所以,可以利用 'length属性' 表示其长度。
+而字符串本质也是一个字符数组，没必要再用这个属性表示其长度，于是就封装了一个 'length方法'，其源码如下：
+```
+
+```java
+public int length() {
+    return value.length;
+}
+```
+
+>JVM加载class文件的原理机制？
+
+```sh
+JVM中类的装载是由 ClassLoader 和它的子类来实现的。
+Java ClassLoader 是一个重要的Java运行时系统组件，它负责在运行时查找和装入类文件的类。
 ```
 

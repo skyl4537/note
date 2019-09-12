@@ -1950,7 +1950,10 @@ https://cloud.tencent.com/developer/article/1443918
 
 
 
-
+<!--(1).使用此标签后必须配置 <mvc:annotation-driven />，否则会造成所有的 @Controller 注解无法解析，导致404错误-->
+<!--(2).如果请求存在处理器，则这个标签对应的请求处理将不起作用。因为请求是先去找处理器处理，如果找不到才会去找这个标签配置-->
+<mvc:view-controller path="/toView" view-name="view"/>
+<mvc:annotation-driven />
 
 
 

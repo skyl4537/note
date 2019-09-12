@@ -230,7 +230,9 @@ spring.datasource.username=ENC(kZ11PHFbXpNzLsJ7bKq2atpDiCzJOAs8)
 ```sh
 #（1）在项目部署的时候使用命令传入salt值
 java -jar -Djasypt.encryptor.password=G0CvDz7oJn6 xxx.jar
+```
 
+```sh
 #（2）在服务器的环境变量里配置，进一步提高安全性
 vim /etc/profile
 export JASYPT_PASSWORD = G0CvDz7oJn6 #末尾插入
@@ -239,7 +241,7 @@ source /etc/profile
 java -jar -Djasypt.encryptor.password=${JASYPT_PASSWORD} xxx.jar
 ```
 
-# 高级功能
+# 基础功能
 
 ## druid
 
@@ -379,11 +381,6 @@ public class MyWebMvcConfigurer implements WebMvcConfigurer {
 ```xml
 <dependency>
     <groupId>org.webjars</groupId>
-    <artifactId>webjars-locator</artifactId> <!--页面引用时，可省略版本号（如 jquery-3.3.1）-->
-    <version>0.32</version>
-</dependency>
-<dependency>
-    <groupId>org.webjars</groupId>
     <artifactId>bootstrap</artifactId>
     <version>3.3.7-1</version>
 </dependency>
@@ -391,6 +388,11 @@ public class MyWebMvcConfigurer implements WebMvcConfigurer {
     <groupId>org.webjars</groupId>
     <artifactId>jquery</artifactId>
     <version>3.3.1</version>
+</dependency>
+<dependency>
+    <groupId>org.webjars</groupId>
+    <artifactId>webjars-locator</artifactId> <!--页面引用时，可省略版本号（如 jquery-3.3.1）-->
+    <version>0.32</version>
 </dependency>
 ```
 
@@ -402,102 +404,6 @@ public class MyWebMvcConfigurer implements WebMvcConfigurer {
     <script th:src="@{/webjars/bootstrap/js/bootstrap.min.js}"></script>
     <link rel="stylesheet" th:href="@{/webjars/bootstrap/css/bootstrap.min.css}"/>
 </head>
-```
-
-## 拦截器
-
-> 定义拦截器
-
-```java
-@Slf4j
-@Component
-public class LoginInterceptor implements HandlerInterceptor {
-
-    @Override
-    public boolean preHandle(HttpServletRequest request, HttpServletResponse response, Object handler) {
-        log.info("preHandle...");
-        return true;
-    }
-
-    @Override
-    public void postHandle(HttpServletRequest request, HttpServletResponse response, Object handler,
-                           ModelAndView modelAndView) {
-        log.info("postHandle...");
-    }
-}
-```
-
-> 注册拦截器
-
-```java
-@Configuration
-public class WebMvcConfig implements WebMvcConfigurer {
-
-    @Autowired
-    LoginInterceptor loginInterceptor;
-
-    @Override
-    public void addInterceptors(InterceptorRegistry registry) {
-        registry.addInterceptor(loginInterceptor)
-            .addPathPatterns("/**")
-            .excludePathPatterns("/webjars/**", "/img/**", "/html/**", "/log/**") //不拦截：静态资源
-            .excludePathPatterns("/", "/login"); //不拦截：登陆接口
-    }
-}
-```
-
-## 监听器
-
-> 定义监听器
-
-```java
-@Slf4j
-@WebListener //注解
-public class MyServletContextListener implements ServletContextListener {
-
-    @Override
-    public void contextInitialized(ServletContextEvent sce) {
-        LocalDateTime startTime = LocalDateTime.now();
-        log.info("项目启动: {}", startTime);
-        sce.getServletContext().setAttribute("startTime", startTime);
-    }
-
-    @Override
-    public void contextDestroyed(ServletContextEvent sce) {
-        LocalDateTime startTime = (LocalDateTime) sce.getServletContext().getAttribute("startTime");
-        LocalDateTime endTime = LocalDateTime.now();
-        long between = ChronoUnit.MILLIS.between(startTime, endTime);
-        log.info("项目关闭: {}. 运行总时长: {}ms", endTime, between);
-    }
-}
-```
-
-> 注册监听器
-
-```java
-@ServletComponentScan //全局注解
-```
-
-## Servlet
-
-> 定义Servlet
-
-```java
-@Slf4j
-@WebServlet(name = "myServlet", urlPatterns = {"/my", "/servlet/my"}, loadOnStartup = -1,
-            initParams = @WebInitParam(name = "name", value = "li"))
-public class MyServlet extends HttpServlet {
-    @Override
-    protected void service(HttpServletRequest req, HttpServletResponse resp) throws ServletException, IOException {
-        log.info("MyServlet.service()....");
-    }
-}
-```
-
-> 注册Servlet
-
-```java
-@ServletComponentScan //全局注解
 ```
 
 ## CORS跨域
@@ -512,7 +418,7 @@ has been blocked by CORS policy: No 'Access-Control-Allow-Origin' header is pres
 > 问题原因
 
 ```sh
-'跨域'：指的是浏览器不能执行其他网站的脚本。域名、端口、协议任一不同，就是跨域。
+'跨域'：指的是浏览器不能执行其他网站的脚本。'域名、端口、协议任一不同'，就是跨域。
 采用前后端分离开发，前后端分离部署，必然会存在跨域问题。
 
 CORS（Cross-Origin Resource Sharing，跨源资源共享）是 w3c 出的一个标准，其思想是使用自定义的HTTP头部让浏览器与服务器进行沟通，
@@ -545,7 +451,7 @@ http://www.123.com:8080/index.html  --->  http://www.123.com:8081/server.php
  * 细粒度的跨域注解
  *
  * @origins 允许可访问的域列表
- * @maxAge 准备响应前的 缓存持续的 最大时间（以秒为单位）
+ * @maxAge  准备响应前的 缓存持续的 最大时间（以秒为单位）
  */
 @CrossOrigin(origins = "http://localhost:9005", maxAge = 3600)
 @GetMapping("/java")
@@ -567,6 +473,14 @@ public class WebMvcConfig implements WebMvcConfigurer {
     }
 }
 ```
+
+
+
+
+
+
+
+
 
 
 
@@ -1528,9 +1442,19 @@ spring.servlet.multipart.max-file-size=10MB
 spring.servlet.multipart.max-request-size=20MB
 ```
 
-##文件下载
+## 文件下载
 
-> 下载
+> 文件下载一般都借助于以下两个 `响应头` 达到效果
+
+```sh
+'Content—Type'：告知浏览器当前的响应体是什么类型的数据
+---------------当为'application/octet-stream'时，就说明 body 里是一堆不知道是啥的二进制数据
+
+'Content—Disposition'：用于向浏览器提供一些关于如何处理响应内容的额外的信息，同时也可以附带一些其它数据
+----------------------比如，在保存响应体到本地的时候应该使用什么样的文件名
+```
+
+> 代码实现
 
 ```java
 @GetMapping("/{name}")
@@ -1538,7 +1462,7 @@ public void download(@PathVariable String name, HttpServletResponse resp) {
     try (InputStream in = new FileInputStream(new File(getUploadDir(), name));
          OutputStream out = resp.getOutputStream()) {
         resp.setContentType("application/x-download");
-        resp.addHeader("Content-Disposition", "attachment;filename=" + name);
+        resp.addHeader("Content-Disposition", "attachment;filename=" + name); //注意中文乱码
         IOUtils.copy(in, out);
     } catch (Exception e) {
         e.printStackTrace();
@@ -1629,3 +1553,303 @@ public class ExceptionConfig {
  * @return  ModelAndView; Model; Map; View; String; @ResponseBody; HttpEntity<?>或ResponseEntity<?>; 以及void
  */
 ```
+# CRUD
+
+## 基础概念
+
+> restful
+
+```sh
+#http请求的安全和幂等，是指多次调用同一个请求对资源状态的影响
+'安全' ---> 请求不会影响资源的状态。只读的请求：GET，HEAD，OPTIONS
+'幂等' ---> 多次相同的请求，效果一致
+```
+
+```sh
+GET    /crud/list  查询员工列表  -> 只是请求，不改变资源状态                   #安全，幂等
+POST   /crud/emp   新增一个员工  -> 多次请求会新增多条相同的数据                #不安全，不幂等
+PUT    /crud/emp   更新员工信息  -> 多次请求都是将id为 5 的员工姓名修改成'wang'  #不安全，幂等
+DELETE /crud/{id}  删除员工信息  -> 多次请求目的都是删除id为 5 的员工           #不安全，幂等
+```
+
+```sh
+#第一次成功删除，第二次及以后虽资源已不存在，但也得返回 200 OK，不能返回 404
+
+GET    /crud/emp  跳转新增页面
+GET    /crud/{id} 跳转更新页面
+```
+
+> GET POST
+
+```sh
+get ：默认方式，用于获取资源，请求参数在url上可见，不安全。
+post：用于请求资源，
+```
+
+> `POST 转化为 PUT DELETE`
+
+```xml
+<!--（1）配置 HiddenHttpMethodFilter，SpringBoot 默认已配置-->
+<filter>
+    <filter-name>HiddenHttpMethodFilter</filter-name>  
+    <filter-class>org.springframework.web.filter.HiddenHttpMethodFilter</filter-class>  
+</filter>
+```
+
+```html
+<!--（2）页面创建（POST表单 + 隐藏标签）-->
+<form method="post" th:action="@{/emp/}+${emp.id}">
+    <input type="hidden" name="_method" value="delete"> <!--隐藏标签 name + value-->
+    <a href="#" onclick="delEmp(this)" th:attr="url=@{/emp/}+${emp.id}">删除</a>
+</form>
+```
+## 后台逻辑
+
+> 列表：超链接跳转
+
+```java
+//员工列表页面
+@GetMapping("/list")
+public String list(Model model) {
+    List<Emp> emps = empMapper.selectList(null); //使用 mybatis-plus
+    List<EmpVO> empVOs = emps.stream().map(emp -> {
+        Long cityId = emp.getCityId();
+        City city = cityMapper.selectById(cityId);
+
+        EmpVO empVO = new EmpVO();
+        BeanUtils.copyProperties(emp, empVO);
+        empVO.setCity(city);
+        return empVO;
+    }).collect(Collectors.toList());
+    log.info("empVOs: {}", JSON.toJSONString(empVOs, true));
+
+    model.addAttribute("emps", empVOs);
+    return "/emps/list";
+}
+```
+
+> 新增：超链接跳转
+
+```java
+//跳转新增页面
+@GetMapping("/emp")
+public String toAdd(Model model) {
+    List<City> cities = cityMapper.selectList(null);
+    log.info("city: {}", JSON.toJSONString(cities, true));
+
+    model.addAttribute("citys", cities); //初始化新增页面：城市列表
+    return "/emps/emp";
+}
+```
+
+```java
+//新增员工，跳转列表页面
+@PostMapping("/emp")
+public String addOne(/*@RequestBody*/ EmpVO empVO, Model model) { //表单提交不能用 @RequestBody
+    Emp emp = new Emp();
+    BeanUtils.copyProperties(empVO, emp);
+    emp.setCityId(empVO.getCity().getId());
+    int insert = empMapper.insert(emp);
+    log.info("insert: {}", JSON.toJSONString(emp, true));
+
+    return "redirect:/crud/list"; //重定向，/代表站点根目录
+}
+```
+
+> 更新：超链接跳转
+
+```java
+//跳转修改页面
+@GetMapping("/{id}")
+public String toUpdate(@PathVariable Long id, Model model) {
+    Emp emp = empMapper.selectById(id);
+    City city = cityMapper.selectById(emp.getCityId());
+    EmpVO empVO = new EmpVO();
+    BeanUtils.copyProperties(emp, empVO);
+    empVO.setCity(city);
+    log.info("empVO: {}", JSON.toJSONString(empVO, true));
+
+    List<City> citys = cityMapper.selectList(null);
+
+    model.addAttribute("emp", empVO);   //用于修改回显 
+    model.addAttribute("citys", citys); //初始化修改页面：城市列表
+    return "/emps/emp";
+}
+```
+
+```java
+//修改员工，跳转列表页面
+@PutMapping("/emp")
+public String update(EmpVO empVO) {
+    Emp emp = new Emp();
+    BeanUtils.copyProperties(empVO, emp);
+    emp.setCityId(empVO.getCity().getId());
+    int update = empMapper.updateById(emp);
+    log.info("update: {}", JSON.toJSONString(emp, true));
+
+    return "redirect:/crud/list";
+}
+```
+
+>删除（1）：表单提交删除 `POST 转 DELETE`
+
+```html
+<a href="#" onclick="deleteByForm(this)" th:attr="url=@{/crud/}+${emp.id}">表单删除</a>
+```
+
+```html
+<form id="deleteForm" method="post" action="#">
+    <input type="hidden" name="_method" value="DELETE">
+</form>
+```
+
+```javascript
+function deleteByForm(e) {
+    //$(e).attr('url')      --> 获取url属性
+    //$(e).attr('url', xxx) --> 为url属性赋值
+    $('#deleteForm').attr('action', $(e).attr('url')).submit();
+
+    return false; //取消<a>的默认行为
+}
+```
+
+```java
+//删除员工，跳转列表页面
+@DeleteMapping("/{id}")
+public String delete(@PathVariable Long id) {
+    int delete = empMapper.deleteById(id);
+
+    return "redirect:/crud/list";
+}
+```
+
+> 删除（2）：ajax异步删除
+
+```html
+<a href="#" onclick="deleteByAjax(this)" th:attr="url=@{/crud/}+${emp.id}">ajax删除</a>
+```
+
+```javascript
+function deleteByAjax(e) {
+    $.ajax({
+        type: 'delete',
+        url: $(e).attr('url'),
+        dataType: 'text',
+        success: function (data) {
+            //e表示<a>, parent表示<td>, 再parent表示<tr>
+            $(e).parent().parent().remove();
+            alert(data);
+        }
+    });
+    return false;
+}
+```
+
+```java
+//ajax异步删除员工
+@ResponseBody
+@DeleteMapping("/{id}")
+public String delete(@PathVariable Long id) {
+    int delete = empMapper.deleteById(id);
+
+    return "SUCCESS";
+}
+```
+
+## 前台页面
+
+> 存放于 `\templates\emps\` 的 `list.html + emp.html`
+
+```html
+<!DOCTYPE html>
+<html lang="en" xmlns:th="http://www.thymeleaf.org">
+<head>
+    <meta charset="UTF-8">
+    <title>列表页面</title>
+
+    <script th:src="@{/webjars/jquery/jquery.min.js}"></script>
+    <script th:src="@{/webjars/bootstrap/js/bootstrap.min.js}"></script>
+    <link th:href="@{/webjars/bootstrap/css/bootstrap.min.css}"/>
+
+    <script>/*单独叙述*/</script>
+</head>
+<body>
+<table>
+    <tr>
+        <th>姓名</th>
+        <th>年龄</th>
+        <th>城市</th>
+        <th>操作</th>
+    </tr>
+    <tr th:if="${null==emps || 0==emps.size()}">
+        <td colspan="4" th:text="员工列表为空"></td>
+    </tr>
+    <tr th:each="emp:${emps}" th:object="${emp}"> <!--th:object 和 *{...} 配合使用-->
+        <td th:text="${emp.name}"></td>
+        <td th:text="*{gender}?'男':'女'"></td>
+        <td th:text="*{city.name}"></td>
+        <td>
+            <a th:href="@{/crud/}+*{id}">修改</a> <!--路径拼接-->
+            <a href="#" onclick="deleteByForm(this)" th:attr="url=@{/crud/}+${emp.id}">删除</a>
+            <a href="#" onclick="deleteByAjax(this)" th:attr="url=@{/crud/}+${emp.id}">删除</a>
+        </td>
+    </tr>
+</table>
+<a th:href="@{/crud/emp}">新增员工</a>
+
+<form id="deleteForm" method="post" action="#">
+    <input type="hidden" name="_method" value="DELETE">
+</form>
+</body>
+</html>
+```
+
+```html
+<!DOCTYPE html>
+<html lang="en" xmlns:th="http://www.thymeleaf.org">
+<head>
+    <meta charset="UTF-8">
+    <title>员工信息页</title>
+</head>
+<body>
+<form method="post" th:action="@{/crud/emp}">
+    <!--新增和修改使用同一页面，区分方式：回显 emp 是否为空 ${null!=person}-->
+    <input type="hidden" name="_method" value="put" th:if="${null!=emp}">
+    <!--修改：PUT请求 + emp.id-->
+    <input type="hidden" name="id" th:value="${emp.id}" th:if="${null!=emp}">
+
+    <table>
+        <tr>
+            <td>姓名：</td>
+            <td><input type="text" name="name" th:value="${null!=emp}?${emp.name}"></td>
+        </tr>
+        <tr>
+            <td>性别：</td>
+            <td>
+                <!--th:checked radio标签是否选中-->
+                <input type="radio" name="gender" value="1" th:checked="${null!=emp}?${1==emp.gender}">男
+                <input type="radio" name="gender" value="0" th:checked="${null!=emp}?${1!=emp.gender}">女
+            </td>
+        </tr>
+        <tr>
+            <td>住址：</td>
+            <td>
+                <select name="city.id">
+                    <!--th:selected 回显emp.city.id == 遍历city.id，则选中-->
+                    <option th:each="city:${citys}" th:object="${city}" th:value="*{id}" th:text="*{name}"
+                            th:selected="${null!=emp}?${emp.city.id}==*{id}"></option>
+                </select>
+            </td>
+        </tr>
+        <tr>
+            <td colspan="2">
+                <!--回显 emp 为空，则显示'新增'；否则显示'修改'-->
+                <input type="submit" th:value="${null==emp}?'新增':'修改'">
+            </td>
+        </tr>
+    </table>
+</form>
+</body>
+</html>
+```
+
