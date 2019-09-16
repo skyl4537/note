@@ -109,59 +109,24 @@ String getNameById(int id);
 
 ## 基本语法
 
-> 多个入参：当mybatis接口中有多个入参时，`④种解决方案`
+> 参数相关
 
-```shell
-【推荐】在Mapper接口的参数列表使用注解 @Param("passageId")
+```sh
+多个入参：'推荐'在接口中使用注解定义别名 @Param("id")，也可以将多个入参封装 pojo 或Map
 
-【不推荐】手动将多参数封装成 pojo 或 Map<String, Object>
-【不推荐】第 1 个参数 ---> #{param1}
-【不推荐】第 1 个参数 ---> #{arg0}
+一行回参：返回多列，'推荐'封装 pojo 接收，不推荐直接使用Map
+多行回参：接口返回值定义'List<Pojo>'，但xml中的'resultType=pojo'，因为mybatis是对jdbc的封装，一行一行读取数据
 ```
 
-```java
-String getMemo(@Param("mark") String mark, @Param("passageId") int passageId);
-```
-
-```xml
-<select id="getMemo" resultType="java.lang.String">
-    SELECT memo FROM system_set WHERE mark=#{mark} and passage_id=#{passageId}
-</select>
-```
-
-> 多个回参：对于多列返回值，可以使用Map接收，也可以自定义pojo
-
-```java
-Map<String, Object> getMemoAndTypeId(String args);
-```
-
-```xml
-<select id="getMemoAndTypeId" resultType="java.util.Map">
-    SELECT memo,type_id typeId FROM system_set WHERE mark=#{args}
-</select>
-```
-
-> 多行，多列回参：接口返回 List<map>，但xml的 resultType="map"
-
-```java
-List<Map<String, Object>> getAllPassage();
-```
-
-```xml
-<select id="getAllPassage" resultType="java.util.Map">
-    select id,old_park_id,park_id from passage where state=1
-</select>
-```
-
-> 回参Map：`对于有驼峰命名的key，必须将数据表中的字段使用别名`
+> 回参Map：`有坑`
 
 ```shell
 #其中，key为某一列name，value为每一行封装成的 pojo 或 Map。
-如：{"喇叭花":{"flowerName":"喇叭花","flowerId":1},"牵牛花":{"flowerName":"牵牛花","flowerId":2}...}
+{"喇叭花":{"flowerName":"喇叭花","flowerId":1},"牵牛花":{"flowerName":"牵牛花","flowerId":2}...}
 ```
 
 ```java
-@MapKey("flowerName") //‘flowerName’表示java属性名，而非数据库字段名。所以xml中的 flower_name 必须改别名。切记！
+@MapKey("flowerName") //‘flowerName’表示java属性名，而非数据库字段名。所以，xml中的 flower_name 必须改别名。切记！
 Map<String, Flower> listByName(String flowerName);
 ```
 
@@ -175,14 +140,14 @@ Map<String, Flower> listByName(String flowerName);
 
 ```xml
 <sql id="ref">
-    id,name,age,address,companyId <!-- sql标签 用于抽取可重用的sql片段 -->
+    id,name,age,address,companyId
 </sql>
 ```
 
 ```xml
 <select id="selById" resultType="com.heiketu.pojo.Users">
     select
-    <include refid="ref" /> <!-- include标签 用于引用前者 -->
+    <include refid="ref" /> <!-- 引用 -->
     from usrs where id = #{id}
 </select>
 ```
@@ -203,13 +168,13 @@ select order_id id, order_price price, order_no orderNo from orders where order_
 
 ```xml
 <resultMap type="com.x.order" id="orderMap">
-    <id property="id" column="order_id" /> <!-- id-主键 -->
-    <result property="price" column="order_price" /> <!-- result-非主键 -->
-    <result property="orderNo" column="order_no" /> <!-- property-属性名; column-字段名 -->
+    <id property="id" column="order_id"/> <!-- id-主键，result-非主键 -->
+    <result property="price" column="order_price"/>
+    <result property="orderNo" column="order_no"/>
 </reslutMap>
 ```
 
-> 模糊查询：`④种解决方案`
+> 模糊查询
 
 ```sql
 -- java代码中拼接参数：%张%
@@ -219,13 +184,6 @@ SELECT * FROM user WHERE name LIKE #{name}
 ```sql
 -- 使用sql函数 concat()
 SELECT * FROM user WHERE name LIKE concat('%', #{username}, '%') -- 张
-```
-
-```sql
--- xml中使用标签 $
-SELECT * FROM user WHERE name LIKE '%${name}%' -- 张 -> '%张%'
-
-SELECT * FROM user WHERE name LIKE '%#{name}%' -- 张 -> "%'张'%" --> 错误
 ```
 
 ```xml
@@ -906,7 +864,7 @@ mybatis使用JDK的动态代理，为需要拦截的接口生成代理对象以�
 > 特殊符号 `${} #{}`
 
 ```sh
-${} 是properties文件中的变量占位符，它可用于标签属性值和sql内部，属于'静态文本替换'，比如 ${driver} 会被静态替换为 com.mysql.jdbc.Driver。
+${} 是属性文件中的变量占位符，可用于标签属性值和sql内部，属于'静态文本替换'，比如 ${driver} 会被静态替换为 com.mysql.jdbc.Driver。
 
 #{} 是sql的参数占位符，mybatis会将sql中的#{}替换为 ? 号。在sql执行前会使用 PreparedStatement 的参数设置方法，
 按序给sql的 ? 号占位符设置参数值，比如 ps.setInt(0, parameterValue)

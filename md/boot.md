@@ -506,9 +506,23 @@ public class WebMvcConfig implements WebMvcConfigurer {
 ```java
 @RunWith(SpringRunner.class)
 @SpringBootTest//(classes = {SpringMain.class}) //加载项目启动类，当测试类的路径同启动类时，可省。
-public class HelloServiceTest {
-    
-}
+public class HelloServiceTest { }
+```
+
+## 热部署
+
+```xml
+<dependency>
+    <groupId>org.springframework.boot</groupId>
+    <artifactId>spring-boot-devtools</artifactId>
+    <scope>runtime</scope> <!--只在运行时起作用-->
+    <optional>true</optional>
+</dependency>
+```
+
+```sh
+原理：使用两个'ClassLoader'，一个加载那些不会改变的类（第三方Jar包），另一个加载会更改的类，称为 restart-ClassLoader。
+这样在有代码更改的时候，原来的 restart-C.. 被丢弃，重新创建一个，由于需要加载的类相比较少，所以实现了较快的重启时间（5秒以内）。
 ```
 
 ## 常用接口
@@ -676,21 +690,9 @@ public class SecurityPermitAllConfig extends WebSecurityConfigurerAdapter {
 </dependency>
 ```
 
-> 添加 servlet-api
-
-```xml
-<dependency>
-    <groupId>javax.servlet</groupId>
-    <artifactId>javax.servlet-api</artifactId>
-    <version>3.1.0</version>
-    <scope>provided</scope> <!--该依赖参与编译，测试，运行，但不会被打进项目包。由容器tomcat提供-->
-</dependency>
-```
-
 > 修改启动类
 
 ```java
-@MapperScan(value = "com.example.*.mapper")
 @SpringBootApplication
 public class Application extends SpringBootServletInitializer { //新增 extends
 
@@ -700,7 +702,7 @@ public class Application extends SpringBootServletInitializer { //新增 extends
 
     @Override //新增方法
     protected SpringApplicationBuilder configure(SpringApplicationBuilder builder) {
-        return super.configure(builder);
+        return builder.sources(this.getClass());
     }
 }
 ```

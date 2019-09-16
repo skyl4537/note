@@ -418,7 +418,7 @@ log4j.logger.com.x.controller = ${logging.level}, ctrl
 %d{yyyy-MM-dd HH:mm:ss.SSS} [%5p] [%t] - %m%n
 ```
 ```sh
-#不建议使用的参数，影响效率
+#【不建议】使用的参数，影响效率
 %c -> 类全名相关；%l -> 日志发生位置； %r -> 自应用启动到输出该log信息耗费的毫秒数
 ```
 

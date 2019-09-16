@@ -64,9 +64,9 @@ DESC city;              --DESC 查看表的详细信息
 ```
 
 ```sql
-CREATE TABLE city0 LIKE city; -- 仅复制表的整体结构
+CREATE TABLE city0 LIKE city; --仅复制表的整体结构
 
-CREATE TABLE city1 SELECT id,name FROM city WHERE id=2; -- 复制表的部分结构 + 数据（id，name两列）
+CREATE TABLE city1 SELECT id,name FROM city WHERE id=2; --复制表的部分结构 + 数据（id，name两列）
 ```
 
 > DROP
@@ -98,25 +98,22 @@ INSERT INTO city(id,name) VALUES --列与值要严格对应。不写则默认为
 
 ```sql
 INSERT INTO city(id,name)
-SELECT id,name FROM employee WHERE id=3; --将查询结果插入到表中
-```
-
-```sql
---(1).第一种方式支持批量插入，第二种不支持
---(2).第二种方式支持子查询，第一种不支持
+SELECT id,name FROM employee WHERE id>3; --将查询结果插入到表中
 ```
 
 > UPDATE
 
 ```sql
-UPDATE city SET age=900 WHERE name='苏州'; --修改字段值，必须添加条件，否则全表修改
+UPDATE city SET age=900 WHERE name='苏州'; --必须添加条件，否则全表修改
 ```
 
 > DELETE
 
 ```sql
 DELETE FROM city WHERE name='晋州'; --单表删除
+```
 
+```sql
 DELETE city,student
 FROM city JOIN student ON student.name=city.name
 WHERE city.name='晋州';             --联表删除
