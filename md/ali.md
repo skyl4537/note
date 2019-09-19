@@ -122,8 +122,6 @@ private static final Logger logger = LoggerFactory.getLogger(Abc.class);
 
 ## ORM映射
 
-> 
-
 ```java
 获取多个对象的方法用 'list' 做前缀，复数形式结尾如：listObjects
 获取单个对象的方法用 'get' 做前缀

@@ -278,12 +278,6 @@ Create An Anonymous Account: 新建一个匿名用户，只可连接，不可操
 
 五种子句严格顺序：`where → group by → having → order by → limit`
 
-## 数据类型
-
-
-
-
-
 ## 约束相关
 
 > 约束：一种限制，用于限制表中的数据，为了保证表中数据的准确性和可靠性。
@@ -344,278 +338,11 @@ ALTER TABLE `coupon` ADD UNIQUE key (索引名); -- 新增 唯一索引
 
 
 
-## 函数
 
->函数：存储着一系列sql语句，调用函数就是一次性执行这些语句。所以函数可以降低语句重复。
 
-```sql
--- 【区别】存储过程
-函数：    返回值 - 有且仅有一个，'不允许返回一个结果集'。函数强调返回值，所以函数不允许返回多个值的情况，即使是查询语句。
-存储过程： 返回值 - 有0个或者多个。
 
-函数：    适合做处理数据，并返回一个结果。
-存储过程： 适用于批量插入，或批量更新等
-```
-
-> 函数创建
-
-```sql
-CREATE FUNCTION 函数名([参数列表]) RETURNS 数据类型 -- 参数列表的格式是： 变量名 数据类型
-BEGIN
-    SQL语句;
-    RETURN 值;
-END;
-```
-
-```sql
--- 定义有参函数
-create function fun_test(name varchar(15)) returns int
-begin 
-    declare c int default 0; --定义局部变量
-    select id from class where cname=name into c; --局部变量赋值
-    return c;
-end;
-
--- 调用函数
-select fun_test("python");
-```
-
-> 查看
-
-```sql
-show create function 函数名; --查看指定函数
-
-show function status [like 'pattern']; --查看所有函数
-```
-
-> 修改：只能修改一些如 comment 的选项，不能修改内部的sql语句和参数列表。
-
-```sql
-alter function 函数名 选项；
-```
-
-> 删除
-
-```sql
-drop function 函数名;
-```
-
-## 执行结构
-
-代码执行结构：多条sql语句的执行顺序。主要用于触发器、存储过程和函数等存储多条sql语句中。
-
-> 顺序结构：默认结构，即从上到下依次执行sql语句
-
->分支结构：依据一定条件选择执行路径，会依据给定的条件来选择执行那些sql语句
-
-```sql
-
-```
-
-```sql
-
-```
-
-```sql
-
-```
-
-> 循环结构：在程序中需要反复执行某个功能而设置的一种程序结构。mysql中循环结构用于循环多次运行同一sql语句。
-
-```sql
-
-```
-
-```sql
-
-```
 
 # 查询命令
-
-##基础查询
-
-> 起别名：对于别名含有特殊符号的（如空格，#等），使用`双引号`括起来。此外，#是sql的注释符号
-
-```sql
-
-```
-
-> 去重：DISTINCT 和 GROUP BY ，二者都是针对给定字段进行去重。
-
-
-
-```sql
-
-```
-
-```sql
-
-```
-
->  模糊查询：通配符`%` 零到多个字符，`_`一个字符，`[]`括号内的一个字符
-
-```sql
-
-```
-
-```sql
-
-```
-
-> 安全等于`<=>`
-
-```sql
-
-```
-
-| 区别：<=> 和 IS NULL | 普通类型的数值 | null值 | 可读性 |
-| :------------------: | :------------: | :----: | :----: |
-|         <=>          |      可以      |  可以  |   低   |
-|       IS NULL        |       不       |  可以  |   高   |
-
-> ANY 和 ALL
-
-- ANY：和子查询返回的`某一值`比较。``
-
-
-- ALL：和子查询返回的`所有值`比较。``
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-## 单行函数
-
-> IFNULL
-
-```sql
--- 表 passage_set 中有符合条件的记录，则取之；反之，取表 system_set 的记录
-SELECT 
-    (CASE WHEN (SELECT memo FROM passage_set WHERE mark="p_number") IS NULL
-        THEN (SELECT memo FROM system_set WHERE mark="p_number")
-        ELSE (SELECT memo FROM passage_set WHERE mark="p_number") END
-    ) memo
-```
-```sql
-
-```
-```sql
-
-```
-
-> IS NULL 或 IS NOT NULL
-
-```sql
-SELECT * FROM student WHERE `name` IS NOT NULL;
-```
-
-> CONCAT 连接符：
-
-```sql
-
-```
-
-> BETWEEN...AND...（`包括临界值 [5,10]`）
-
-```sql
-
-```
-
-> IN 区间取值，包含临界值
-
-```sql
-
-```
-
-> CASE THEN - 两种格式：(1).简单CASE函数。(2).CASE搜索函数。`容易忘记 END 结束符`
-
-```sql
-
-```
-
-> 数学函数（`a%b = a-a/b*b`）
-
-```sql
-
-```
-
-```java
-long l = Math.round(-1.45); //-1
-long l = Math.round(-1.65); //-2 --> 同sql
-
-double d = Math.ceil(-1.455);  //-1.0
-double d = Math.floor(-1.455); //-2.0 -->同sql
-```
-
-> 字符串命令（`SUBSTR() 方法是 SUBSTRING() 的简写，索引从1开始`）
-
-```sql
-
-```
-
-> 时间命令
-
-```sql
-
-```
-
-
-
-## 分组函数
-
-SUM，AVG，MIN，MAX，COUNT`（统计非NULL）`用作统计使用，又称为聚合函数，统计函数，组函数。
-
-> SUM，AVG 一般用于数值类型。MAX，MIN 可处理任何类型，如日期类型，字符串类型
-
-```sql
-
-```
-
-> 所有函数 都忽略NULL。其中，对于SUM函数 `NULL和任何数相加结果都为 NULL`
-
-```sql
-
-```
-
-> 所有函数都可以结合 DISTINCT
-
-```sql
-
-```
-
-> COUNT 专题
-
-**count(*)**：所有行进行统计，包括NULL行。
-**count(1)**：所有行进行统计，包括NULL行。
-**count(column)**：对 column 中非Null进行统计。
-
-`由于 COUNT 统计时，不计入NULL值`。所以，可通过 `COUNT(*)` 统计当前表中的所有记录数，其原理是：当前行只要有一列值不为NULL，计数器就会增加1。但是，这将会造成全表扫描？ mysql有优化，只扫描索引列！
-
-**效率比较**：`COUNT(*) = COUNT(1) = COUNT(PK) > COUNT(N-PK)`
-
-**解释说明**：若表中有索引，COUNT(\*) 与 COUNT(1) 均会使用索引。由于mysql默认对主键添加索引，所以对存在主键的表进行 COUNT(*)、COUNT(1) 查询也都会使用主键索引。
-
-
-
-> 关键字 `WHERE`用于分组前筛选，作用于原始表。`HAVING`用于分组后筛选，作用于分组后的表。
->
-> 分组函数同时查询的字段要求是`GROUP BY`后的字段，分组函数作为条件肯定是放在`HAVING`语句中。
-
-```sql
-
-```
-```sql
-
-```
 
 ## 子查询
 
@@ -709,12 +436,6 @@ NOT IN 等同于'<>all'。IN 等同于'=any'。
 select s1 from t1 where s1 <>any (select s1 from t2);
 select s1 from t1 where s1 <>some (select s1 from t2); -- 表t1中有部分s1与t2表中的s1不相等
 ```
-
-
-
-## 分页查询
-
-> LIMIT offset, size：起始索引从0开始，`offset=(page-1)*size`
 
 
 
@@ -928,21 +649,13 @@ CROSS JOIN departments d; -- 交叉连接 a*b
 > 数据库优化：设计优化（必须熟悉业务，利于扩展） + 查询优化
 
 ```sql
-查询语句不要用 SELECT * FROM
 
-避免全局扫描，即涉及到 非 逻辑，不要用 NOT IN，可以用 EXISTS 代替。
-
-创建索引，加速查询，但影响增删改
 ```
 
 
 
 
 #函数原理
-
-##常用函数
-
-## 函数原理
 
 > IN语句内部原理（数据量 A >> B）。如果确定且有限的集合时，可以使用 IN（0，1，2）
 
@@ -1001,44 +714,6 @@ for (int i = 0; i < A.length; i++) {
 
 ## 其他练习
 
-> 把num值处于[20, 29]之间改为20，处于[30, 39]之间的,改为30。
-
-```sql
-UPDATE tName SET num = floor(num/10)*10 WHERE num BETWEEN 20 AND 39;
-```
-
-> 把goods表中商品名为 '诺基亚xxxx' 的商品，改为 'HTCxxxx。'
-
-```sql
--- substring(str, index)函数是截取字符串，其中index是从1开始算起
-UPDATE goods SET goods_name=concat('HTC',substring(goods_name, 4))
-WHERE goods_name LIKE '诺基亚%';
-```
-
-> 查询比市场价省钱200元以上的商品及该商品所省的钱（where和having分别实现）。
-
-```sql
--- WHERE 实现
-select goods_id,goods_name,market_price-shop_price as k from goods
-where market_price-shop_price >200;
-```
-
-```sql
--- HAVING 实现
-select goods_id,goods_name,market_price-shop_price as k from goods
-having k >200;
-```
-
-```sql
--- 以下报错
-select goods_id,goods_name,market_price-shop_price as k from goods
-WHERE k >200;
-
--- sql解析器 先从原始表中查出 SELECT 后面的各个字段值，保存到内存表中（表中字段有 id, name, k）。
--- WHERE 是对原始表中的字段进行筛选，原始表并不存在 K 这一列，所以会报错。
--- 而 HAVING 是对内存表中的数据进行筛选，所以可行。
-```
-
 > 查询出2门及2门以上不及格者的平均成绩。
 
 ```sql
@@ -1093,44 +768,12 @@ WHERE department_id=(
 
 ```
 
-![(assets/sql0.png)
-
 ## 练习01-10
 
-> 2.查询"生物"课程比"物理"课程成绩高的所有学生的学号
+> 
 
 ```sql
 
-```
-
-> 4.查询所有同学的学号、姓名、选课数、总成绩
-
-```sql
--- 不能使用 COUNT(*)，当前行只要有一列不为NULL，就会增加1。应该针对具体某一行进行统计
-
-SELECT s.sid,s.sname,COUNT(sc.course_id) cnt_course,SUM(IFNULL(sc.num,0)) sum_num
-FROM student s LEFT JOIN score sc ON sc.student_id=s.sid
-GROUP BY s.sid;
-```
-
-> 6.查询没学过"李平老师"老师课的同学的学号、姓名
-
-```sql
--- 1."李平老师"所有课程id
--- 2.学过课程①的学生id
--- 3.对②进行取反
-
-SELECT sid,sname -- ③
-FROM student
-WHERE sid NOT IN(
-    SELECT DISTINCT student_id -- ②
-    FROM score
-    WHERE course_id IN(
-        SELECT cid -- ①
-        FROM teacher t JOIN course c ON c.teacher_id=t.tid
-        WHERE tname='李平老师'
-    )
-);
 ```
 
 > *7.查询学过"001"并且也学过编号"002"课程的同学的学号，姓名

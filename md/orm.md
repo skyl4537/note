@@ -112,7 +112,7 @@ String getNameById(int id);
 > 参数相关
 
 ```sh
-多个入参：'推荐'在接口中使用注解定义别名 @Param("id")，也可以将多个入参封装 pojo 或Map
+多个入参：'推荐'在接口中使用注解定义别名 @Param("id")，也可以将多个入参封装 pojo 或Map。然后，xml也不需要指定 paramType
 
 一行回参：返回多列，'推荐'封装 pojo 接收，不推荐直接使用Map
 多行回参：接口返回值定义'List<Pojo>'，但xml中的'resultType=pojo'，因为mybatis是对jdbc的封装，一行一行读取数据
@@ -691,9 +691,107 @@ readOnly       -> 是否只读，默认false
   需要使用集中式缓存将 MyBatis 的 Cache 接口实现，有一定的开发成本，直接使用 Redis、Memcached 等分布式缓存可能成本更低，安全性也更高。
 ```
 
-
-
 # 相关概念
+
+## 底层原理
+
+> 基本原理
+
+````java
+public void test() throws IOException {
+    InputStream is = Resources.getResourceAsStream("mybatis.xml");
+    SqlSessionFactory factory = new SqlSessionFactoryBuilder().build(is);
+    SqlSession session = factory.openSession();
+
+    //根据 JDK动态代理设计模式，动态生成一个接口 EmpMapper 的实现类
+    EmpMapper empMapper = session.getMapper(EmpMapper.class);
+
+    //根据多态原则，调用接口的 selectList()，其实际调用的是：实现类的 selectList()
+    List<Emp> emps = empMapper.selectList(null);
+    session.commit(); //可省
+    session.close();
+}
+````
+
+> 过滤器优化
+
+```java
+@WebFilter("/*")
+public class OpenSessionInView implements Filter {
+    @Override
+    public void doFilter(ServletRequest req, ServletResponse resp, FilterChain chain) {
+        SqlSession sqlSession = MyBatisUtil.getSqlSession();
+        try {
+            chain.doFilter(req, resp);
+            sqlSession.commit();           //提交
+        } catch (Exception e) {
+            sqlSession.rollback();         //回滚
+        } finally {
+            MyBatisUtil.closeSqlSession(); //关闭
+        }
+    }
+}
+```
+
+```java
+public class MyBatisUtil {
+    private static SqlSessionFactory factory;
+    //过滤器 和 DAO 都同属于同一个线程，可使用 ThreadLocal 存储线程变量
+    private static ThreadLocal<SqlSession> tl = new ThreadLocal();
+
+    //静态代码块：factory实例化的过程是一个比较耗费性能的过程。保证有且只有一个factory
+    static {
+        InputStream is = Resources.getResourceAsStream("mybatis.xml");
+        factory = new SqlSessionFactoryBuilder().build(is);
+    }
+
+    //获取 SqlSession ---> ThreadLocal的经典案例
+    public static SqlSession getSqlSession() {
+        SqlSession sqlSession = tl.get();
+        if (null == sqlSession) {
+            sqlSession = factory.openSession();
+            tl.set(sqlSession);
+        }
+        return sqlSession;
+    }
+
+    public static void closeSqlSession() {
+        SqlSession sqlSession = tl.get();
+        if (null != sqlSession) {
+            sqlSession.close();
+            tl.set(null);
+        }
+    }
+}
+```
+
+```java
+//简化后的测试方法
+public void test() throws IOException {
+    EmpMapper empMapper = session.getMapper(EmpMapper.class);
+    List<Emp> emps = empMapper.selectList(null);
+    emps.forEach(System.out::println);
+}
+```
+
+> 运行原理
+
+```sh
+在 MyBatis 运行开始时需要先通过 Resources 加载全局配置文件.下面
+需要实例化 SqlSessionFactoryBuilder 构建器.帮助 SqlSessionFactory 接
+口实现类 DefaultSqlSessionFactory.
+在实例化 DefaultSqlSessionFactory 之前需要先创建 XmlConfigBuilder
+解析全局配置文件流,并把解析结果存放在 Configuration 中.之后把
+Configuratin 传递给 DefaultSqlSessionFactory.到此 SqlSessionFactory 工
+厂创建成功.
+由 SqlSessionFactory 工厂创建 SqlSession.
+每次创建 SqlSession 时,都需要由 TransactionFactory 创建 Transaction
+对象,同时还需要创建 SqlSession 的执行器 Excutor,最后实例化
+DefaultSqlSession,传递给 SqlSession 接口.
+根据项目需求使用 SqlSession 接口中的 API 完成具体的事务操作.
+如果事务执行失败,需要进行 rollback 回滚事务.
+如果事务执行成功提交给数据库.关闭 SqlSession
+```
 
 ## 基础概念
 
@@ -753,8 +851,6 @@ mybatis 通过xml或注解的方式将java对象和sql语句映射生成'最终�
 Hibernate属于全自动ORM映射工具，使用Hibernate查询关联对象或者关联集合对象时，可以根据对象关系模型直接获取，所以它是全自动的。
 而，Mybatis在查询关联对象或关联集合对象时，需要手动编写sql来完成，所以，称之为半自动ORM映射工具。
 ```
-
-
 
 ##高级概念
 
@@ -1547,6 +1643,31 @@ public void findMany2Many() {
     System.out.println(optional.get().getRoles());
 }
 ```
+
+
+
+# 开发手册
+
+```sh
+#【参考】各层命名规约：
+--获取多个对象的方法用 'list' 做前缀，复数形式结尾如：listObjects
+--获取单个对象的方法用 'get' 做前缀
+--插入的方法用 save/'insert' 做前缀
+--修改的方法用 'update' 做前缀
+--删除的方法用 remove/'delete' 做前缀
+--获取统计值的方法用 'count' 做前缀
+
+#【强制】 在表查询中，一律不要使用 * 作为查询的字段列表，需要哪些字段必须明确写明。
+-- 说明：(1).增加查询分析器解析成本。(2).增减字段容易与 resultMap 配置不一致。
+
+#【强制】 xml 配置中参数注意使用：#{}，#param# 不要使用${}，此种方式容易出现 SQL 注入。
+
+#【推荐】 不要写一个大而全的数据更新接口，传入为 POJO 类，不管是不是自己的目标更新字段，
+---都进行 update table set c1=value1, c2=value2, c3=value3; 这是不对的。
+-- 执行 SQL时，尽量不要更新无改动的字段，一是易出错； 二是效率低； 三是 binlog 增加存储。
+```
+
+
 
 
 

@@ -122,7 +122,7 @@ public class Parent {
 
 ```java
 public void test() {
-    Father father = new Son(); //多态
+    Father father = new Son(); //多态思想
 
     //所有属性 和 静态方法 --> 看左，即和父类保持一致，调用父类的
     System.out.println(father.staticNum);
@@ -264,7 +264,7 @@ System.out.println(x); //&& 短路运算，左边 false，所以右边不执行�
 > switch - break
 
 ```shell
-switch：支持 byte，char,short,int（都可转换成 int），enum，String（jdk7新增）
+switch：参数是一个整数表达式。支持 byte，char,short,int（都可转换成 int），enum，String（jdk7新增）
 
 break ：当遇到break，switch语句终止。如果没有break出现，程序会继续执行下一条case语句，'直到出现 break 语句'。
 ```
@@ -344,10 +344,15 @@ A a = new B(); //class B extends A{}
 System.out.println(a instanceof A); //true. instanceof 用来判断对象是否是一个类的一个实例
 ```
 
-> 
+> 序列化
 
 ```sh
+序列化就是一种用来处理对象流的机制，所谓对象流也就是将对象的内容进行流化。可以对流化后的对象进行读写操作，也可将流化后的对象传输于网络之间。
+序列化是为了解决在对对象流进行读写操作时所引发的问题。
 
+'序列化的实现'：将需要被序列化的类 implements Serializable 接口，该接口没有需要实现的方法，只是为了标注该对象是可被序列化的，
+然后使用一个输出流(如：FileOutputStream)来构造一个ObjectOutputStream(对象流)对象，
+接着，使用ObjectOutputStream对象的writeObject(Object obj)方法就可以将参数为obj的对象写出(即保存其状态)，要恢复的话则用输入流。
 ```
 
 
@@ -833,7 +838,7 @@ public boolean add(E e) {
 
 
 
-# IO
+# IO流
 
 ## IO
 
@@ -843,7 +848,7 @@ public boolean add(E e) {
 按流向        ：输入流，输出流。
 按操作数据     ：字节流 （如音频，图片等），字符流（如文本）。
 
-字节流的抽象基类：InputStream，OutputStream。字符流的抽象基类：Reader，Writer。
+字节流的'抽象基类'：InputStream，OutputStream。字符流的'抽象基类'：Reader，Writer。
 ```
 
 ```java
@@ -1240,6 +1245,14 @@ class Test{
 'Collections' 是针对集合类的一个帮助类，他提供一系列静态方法实现对各种集合的搜索、排序、线程安全化等操作
 ```
 
+>重写 & 重载`（与返回值无关）`
+
+```shell
+方法的重写和重载是'Java多态性'的不同表现。重写是父类与子类之间多态性的一种表现，重载是一个类中多态性的一种表现。
+
+'重写'：在子类中，出现和父类中一摸一样的方法。
+'重载'：同一类中，出现多个方法名一样，但参数列表（参数类型 + 个数 + 顺序）不一样的方法。
+```
 
 
 ## 基础知识
@@ -1262,5 +1275,55 @@ public int length() {
 ```sh
 JVM中类的装载是由 ClassLoader 和它的子类来实现的。
 Java ClassLoader 是一个重要的Java运行时系统组件，它负责在运行时查找和装入类文件的类。
+```
+
+>两个对象值相同(x.equals(y) == true)，但却可有不同的hash code，这句话对`不对`？
+
+```sh
+Java对于eqauls方法和hashCode方法是这样规定的：
+#（1）相等的对象应该具有相同的hashCode（equals方法返回true，则hashCode一定相同）。
+#（2）如果两个对象的hashCode相同，它们并不一定相同。
+当然，你未必要按照要求去做，但是如果你违背了上述原则就会发现在使用容器时，相同的对象可以出现在Set集合中，
+同时增加新元素的效率会大大下降（对于使用哈希存储的系统，如果哈希码频繁的冲突'hash冲突'将会造成存取性能急剧下降）。
+```
+
+```sh
+equals() 方法必须满足：
+#自反性（x.equals(x)必须返回true）、
+#对称性（x.equals(y)返回true时，y.equals(x)也必须返回true）、
+#传递性（x.equals(y)和y.equals(z)都返回true时，x.equals(z)也必须返回true）
+#一致性（当x和y引用的对象信息没有被修改时，多次调用x.equals(y)应该得到同样的返回值）
+#而且对于任何非null值的引用x， x.equals(null) 必须返回false。
+```
+
+```sh
+实现高质量的equals方法的诀窍包括：
+（1）使用==操作符检查"参数是否为这个对象的引用"；
+（2）使用instanceof操作符检查"参数是否为正确的类型"；
+（3）对于类中的关键属性，检查参数传入对象的属性是否与之相匹配；
+（4）编写完equals方法后，问自己它是否满足对称性、传递性、一致性；
+（5）重写equals时总是要重写hashCode；
+（6）不要将equals方法参数中的Object对象替换为其他的类型，在重写时不要忘掉@Override注解。
+```
+
+```java
+@Override
+public boolean equals(Object o) {
+    if (this == o) return true;
+    if (o == null || getClass() != o.getClass()) return false;
+    City city = (City) o;
+    return Objects.equals(id, city.id) && Objects.equals(name, city.name);
+}
+
+@Override
+public int hashCode() {
+    return Objects.hash(id, name);
+}
+```
+
+> 当一个对象被当作参数传递到一个方法后，此方法可改变这个对象的属性，并可返回变化后的结果，那么这里到底是值传递还是引用传递
+
+```sh
+
 ```
 

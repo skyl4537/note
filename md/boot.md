@@ -474,6 +474,31 @@ public class WebMvcConfig implements WebMvcConfigurer {
 }
 ```
 
+## 异步调用
+
+> 可以使用线程池实现，也可以使用`Spring注解`
+
+```sh
+'【注意】'异步方法和调用方法'一定要写在不同的类中'，写在同一类中则不起作用。此种情况类似于 @Transactional
+
+原因：Spring扫描具有 @Transactional 注解方法的类时，是生成一个代理类，由代理类去开启关闭事务。
+-----而在同一个类中，方法调用是在类体内执行的，Spring无法截获这个方法调用。
+```
+
+```java
+@EnableAsync //全局注解
+@Async       //异步注解，可配置自定义的线程池Bean，如 @Async("demoThreadPool")
+public void sendA() throws Exception {
+    //...
+}
+```
+
+```sh
+
+```
+
+
+
 
 
 

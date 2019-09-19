@@ -2,7 +2,7 @@
 
 # 基础命令
 
-## 名词
+## 基础命令
 
 > 名词解析
 
@@ -36,9 +36,23 @@ find / -name my.cnf(mysql.cnf) #查找这两个文件所在位置
 log-error=/var/log/mysql.log   #在上述两个文件中配置
 ```
 
+> 常用命令
 
+```sql
+-- [-h] 服务器ip; [-P] 端口号(默认3306，非默认则必须显示指定); [-u] 用户名; [-p] 密码（#$%_BC13439677375）
+mysql -h 192.168.5.25 -P 33306 -u bluecardsoft -p
+```
 
-## DDL
+```sql
+ select version();   -- 版本
+ 
+ use test0806;       -- 切换数据库
+ show tables;        -- 当前数据库下的所有表
+ select database();  -- 当前所使用的数据库
+ 
+ SELECT ROW_COUNT(); -- 返回受影响的行数
+```
+## 定义-DDL
 
 > sql分类
 
@@ -86,7 +100,7 @@ ALTER TABLE tbName DROP COLUMN 列名;                                 --删除�
 ALTER TABLE tbName RENAME TO newName; -- 修改表名
 ```
 
-## DML
+## 操作-DML
 
 > INSERT
 
@@ -119,7 +133,7 @@ FROM city JOIN student ON student.name=city.name
 WHERE city.name='晋州';             --联表删除
 ```
 
-## DQL
+## 查询-DQL
 
 > 别名：对于别名含有特殊符号的（如空格，#等），使用`双引号`括起来。
 
@@ -160,11 +174,14 @@ SELECT * FROM employee WHERE first_name like '%%';
 SELECT * FROM student WHERE `name` <=> '如花'; -- 对于非NULL，等同于 =
 
 SELECT * FROM student WHERE `name` <=> NULL;  -- 对于NULL，等同于 IS
-SELECT * FROM student WHERE `name` IS NULL;   -- IS NULL 
+SELECT * FROM student WHERE `name` IS NULL;
 ```
 
-```sql
+> ANY & ALL
 
+```sql
+ANY：和子查询返回的'某一值'比较。
+ALL：和子查询返回的'所有值'比较。
 ```
 
 
@@ -237,23 +254,6 @@ datetime ：占用8个字节，表示范围 '1000-01-01 00:00:00.000000' to '999
 
 #基础函数
 
-> 常用命令
-
-```sql
--- [-h] 服务器ip; [-P] 端口号(默认3306，非默认则必须显示指定); [-u] 用户名; [-p] 密码（#$%_BC13439677375）
-mysql -h 192.168.5.25 -P 33306 -u bluecardsoft -p
-```
-
-```sql
- select version();   -- 版本
- 
- use test0806;       -- 切换数据库
- show tables;        -- 当前数据库下的所有表
- select database();  -- 当前所使用的数据库
- 
- SELECT ROW_COUNT(); -- 返回受影响的行数
-```
-
 ## 单行函数
 
 > NULL
@@ -282,8 +282,8 @@ SELECT CONCAT(5,'a') caoncat; -- 字符串拼接：'5a'
 > BETWEEN 和 IN
 
 ```sql
-BETWEEN 5 AND 10 <==> 5<= x <=10
-IN(5, 10)        <==> x=5 || x=10
+BETWEEN 5 AND 10 --[5,10]
+IN(5, 10)        --x=5 || x=10
 ```
 
 > CASE简单函数：SWITCH `（适合离散的等值条件）`
@@ -449,6 +449,43 @@ GROUP BY department_id
 HAVING count > 2
 ORDER BY count ASC; -- 查询哪个部门的员工数大于2 --> HAVING
 ```
+
+> `count()`
+
+```sql
+count(*)     ：当前行有一列不为 NULL，则计数器 +1
+count(1)     ：同上
+count(column)：当前行的当前列不为 NULL,计数器 +1
+```
+
+```sql
+由于 COUNT 统计时，不计入NULL值。所以，可通过 COUNT(*) 统计当前表中的所有记录数，其原理是：当前行只要有一列值不为NULL，计数器就会增加1。
+但是，这将会造成全表扫描？ mysql有优化，只扫描索引列！
+
+效率比较：COUNT(*) = COUNT(1) = COUNT(PK) > COUNT(N-PK)
+
+解释说明：若表中有索引，COUNT(*) 与 COUNT(1) 均会使用索引。
+由于mysql默认对主键添加索引，所以，对存在主键的表进行 COUNT(*)、COUNT(1) 查询也都会使用主键索引。
+```
+
+
+
+# 查询相关
+
+## 子查询
+
+> IN
+
+```sql
+
+
+select colname … from A表 where a.id not in (select b.id from B表);
+select colname … from A表 Left join B表 on where a.id = b.id where b.id is null; --等同于上（取出A表不在B表中的数据）
+```
+
+
+
+> EXISTS
 
 
 
@@ -709,7 +746,7 @@ mysql> SELECT JSON_UNQUOTE(memo -> '$.datas.name') name FROM log WHERE id=470941
 ```
 
 ```sql
-show engines; --查看当前数据库支持的存储引擎，只有 Innodb 支持事务
+SHOW engines; --查看当前数据库支持的存储引擎，只有 Innodb 支持事务
 
 SHOW VARIABLES LIKE 'autocommit'; -- 查看《自动提交》功能是否开启
 
@@ -1095,10 +1132,33 @@ select 值 into var;
 > 函数：存储着一系列sql语句，调用函数就是一次性执行这些语句。所以，函数可以降低语句重复。
 
 ```sql
+-- 【区别】存储过程
+函数   ： 返回值 - 有且仅有一个，'不允许返回一个结果集'。函数强调返回值，所以函数不允许返回多个值的情况，即使是查询语句。
+存储过程： 返回值 - 有0个或者多个。
 
+函数   ： 适合做处理数据，并返回一个结果。
+存储过程： 适用于批量插入，或批量更新等
 ```
 
-> 
+> 函数创建
+
+```sql
+-- 定义有参函数
+CREATE FUNCTION fun_test(name varchar(15)) RETURNS int
+BEGIN 
+    declare c int default 0; --定义局部变量
+    select id from class where cname=name into c; --局部变量赋值
+    return c;
+END;
+```
+
+```sql
+select fun_test("python");  --调用函数
+
+show create function 函数名; --查看指定函数
+show function status [like 'pattern']; --查看所有函数
+drop function 函数名;        --删除函数
+```
 
 
 
@@ -1149,8 +1209,135 @@ TRUNCATE TABLE city; -- 清空表（2）
 -- DELETE 清空表后，添加新的数据时自增列接着自增。TRUNCATE 则是从1开始重新计数
 ```
 
+## 优化相关
 
+>基础优化
 
+```sql
+查询语句不要用 SELECT *            --增加很多不必要的消耗（CPU、IO、内存、网络带宽）
+创建索引，加速查询，但影响增删改
+
+如果排序字段没有用到索引，就尽量少排序 
+
+避免全局扫描，即涉及到 非 逻辑，不要用 NOT IN，可以用 EXISTS 代替
+```
+
+```sql
+--尽量用 union-all 代替 union
+后者需要将结果集合并后再进行唯一性过滤操作，这就会涉及到排序，增加大量的CPU运算，加大资源消耗及延迟
+当然，union all的前提条件是两个结果集没有重复数据
+
+--避免在where子句中对字段进行null值判断
+对于null的判断会导致引擎放弃使用索引而进行全表扫描。
+
+--避免隐式类型转换
+where子句中出现column字段的类型和传入的参数类型不一致的时候发生的类型转换，建议先确定where中的参数类型。
+
+```
+
+>操作符`<>`优化（无法使用索引）
+
+```sql
+select id from orders where amount != 100;
+
+(select id from orders where amount > 100)
+ union all
+(select id from orders where amount < 100 and amount > 0); --如果金额为100的订单极少，这种数据分布严重不均的情况下，有可能使用索引。
+```
+
+>`OR`优化（在Innodb引擎下or无法使用组合索引）
+
+```sql
+select id，product_name from orders where mobile_no = '13421800407' or user_id = 100;
+
+(select id，product_name from orders where mobile_no = '13421800407')
+ union
+(select id，product_name from orders where user_id = 100); --此时id和product_name字段都有索引
+```
+
+> 使用`exists/join`代替 IN
+
+```sql
+select * from 表A where id in (select id from 表B); --IN包含的值不应过多
+
+select * from 表A where exists(select * from 表B where 表B.id = 表A.id); --等同于上
+```
+
+```sql
+select * from A表 where a.id not in (select b.id from B表);
+
+select * from A表 left join B表 on where a.id = b.id where b.id is null;
+```
+
+```sql
+select id from orders where user_id in (select id from user where level = 'VIP');
+
+select o.id from orders o left join user u on o.user_id = u.id where u.level = 'VIP';
+```
+
+>不做列运算（在where子句中对字段进行运算操作，导致索引失效）
+
+```sql
+select user_id,user_project from user_base where age*2=36;
+select user_id,user_project from user_base where age=36/2; --优化后
+
+select id from order where date_format(create_time，'%Y-%m-%d') = '2019-07-01';
+select id from order where create_time between '2019-07-01 00:00:00' and '2019-07-01 23:59:59'; --优化后
+```
+
+>`Limit`优化（分页查询时越往后翻性能越差）
+
+```sql
+select id,name from emp limit 1747390, 10;         --随着表数据量的增加，直接使用 limit 分页查询会越来越慢
+
+select id,name from emp WHERE id>1747390 LIMIT 10; --优化：取前一页的最大行数的id，然后以此id来限制下一页的起点
+```
+
+> 
+
+```sql
+
+```
+
+>不建议使用 `%前缀` 模糊查询
+
+```sql
+例如LIKE"%name"或者LIKE"%name%"，这种查询会导致索引失效而进行全表扫描。但是可以使用LIKE "name%"
+
+那如何查询%name%？ 使用全文索引
+ALTER TABLE `dynamic_201606` ADD FULLTEXT INDEX `idx_user_name` (`user_name`);  --创建全文索引
+select id,fnum,fdst from dynamic_201606 where match(user_name) against('zhangsan' in boolean mode); --使用全文索引
+```
+
+>分批处理
+
+```sql
+update status=0 FROM `coupon` WHERE expire_date <= #{currentDate} and status=1;
+
+--如果大量优惠券需要更新为不可用状态，执行这条SQL可能会堵死其他SQL，分批处理伪代码：
+private void updateState() {
+    int pageNo = 1;
+    int PAGE_SIZE = 100;
+    while (true) {
+        List<Integer> batchIdList = queryList("select id FROM `coupon` WHERE expire_date <= #{currentDate}" +
+                                              "and status = 1 limit #{(pageNo-1) * PAGE_SIZE},#{PAGE_SIZE}");
+        if (CollectionUtils.isEmpty(batchIdList)) {
+            return;
+        }
+        update("update status = 0 FROM `coupon` where status = 1 and id in #{batchIdList}");
+        pageNo++;
+    }
+}
+```
+
+>索引优化
+
+```sql
+分页查询很重要，如果查询数据量超过30%，MYSQL不会使用索引。
+单表索引数不超过5个、单个索引字段数不超过5个。
+字符串可使用前缀索引，前缀长度控制在5-8个字符。
+字段唯一性太低，增加索引没有意义，如：是否删除、性别。
+```
 ## 常见问题
 
 >删除重复数据，保留重复数据中最大id所在行的数据
@@ -1180,6 +1367,38 @@ AND id NOT IN
 
 
 # 练习相关
+
+## 其他练习
+
+```sql
+--把num值处于[20, 29]之间改为20，处于[30, 39]之间的,改为30。
+UPDATE tName SET num = floor(num/10)*10 WHERE num BETWEEN 20 AND 39;
+
+--把goods表中商品名为'诺基亚xxxx'的商品，改为'HTCxxxx'
+UPDATE goods SET goods_name=concat('HTC',substring(goods_name, 4)) --substring从 1 开始
+WHERE goods_name LIKE '诺基亚%';
+```
+
+> 查询比市场价省钱200元以上的商品，及该商品所省的钱（where和having分别实现）
+
+```sql
+select goods_id,goods_name,market_price-shop_price as k from goods -- WHERE 实现
+where market_price-shop_price >200;
+
+select goods_id,goods_name,market_price-shop_price as k from goods -- HAVING 实现
+having k >200;
+```
+
+```sql
+select goods_id,goods_name,market_price-shop_price as k from goods -- 报错，先执行 where，再执行 select
+WHERE k >200;
+
+-- sql解析器 先从原始表中查出 SELECT 后面的各个字段值，保存到内存表中（表中字段有 id, name, k）。
+-- WHERE 是对原始表中的字段进行筛选，原始表并不存在 K 这一列，所以会报错。
+-- 而 HAVING 是对内存表中的数据进行筛选，所以可行。
+```
+
+
 
 ## 数据准备
 
@@ -1303,6 +1522,23 @@ WHERE sw.num > IF(ISNULL(wl.num),0,wl.num);
 ```
 
 > 查询所有同学的学号、姓名、选课数、总成绩
+
+```sql
+-- 不能使用 COUNT(*)，当前行只要有一列不为NULL，就会增加1。应该针对具体某一行进行统计
+SELECT s.id,s.name,COUNT(sc.course_id) course_count,SUM(IFNULL(sc.num,0)) score_sum 
+FROM score sc RIGHT JOIN student s ON s.id=sc.student_id
+GROUP BY s.id;
+```
+
+> 查询没学过"李平老师"老师课的同学的学号、姓名
+
+```sql
+SELECT id,`name` FROM student WHERE id NOT IN(
+    SELECT DISTINCT student_id FROM score WHERE course_id IN(
+        SELECT c.cid FROM teacher t LEFT JOIN course c ON c.teacher_id=t.id WHERE t.`name`='李平老师'
+    )
+);
+```
 
 ```sql
 

@@ -83,6 +83,64 @@ public class WebServer {
 }
 ```
 
+## web.xml
+
+> `web.xml` 基本作用
+
+```shell
+#用来初始化配置信息：比如 welcome页面、servlet、servlet-mapping、filter、listener、启动加载级别等。
+
+web项目启动时，tomcat容器首先会读取 web.xml 里的配置，当这一步骤没有出错并且完成之后，项目才能正常地被启动起来。
+```
+
+>初始化 `SpringIoC` 容器的监听器
+
+```java
+@WebInitParam(name = "contextConfigLocation", value = "classpath:applicationContext.xml") //注解版
+```
+
+```xml
+<context-param>
+    <param-name>contextConfigLocation</param-name>
+    <param-value>classpath:applicationContext.xml</param-value>
+</context-param>
+<listener>
+    <listener-class>org.springframework.web.context.ContextLoaderListener</listener-class>
+</listener>
+```
+
+> 加载过程
+
+```shell
+（1）.启动 web 项目时，tomcat 首先读取 web.xml 中的两个节点: <context-param/> 和 <listener/>
+
+（2）.紧接着，容器创建一个 ServletContext（application），应用范围内即整个 web 项目都能使用这个上下文
+（3）.再接着，容器会将读取到 <context-param> 转化为键值对，存入 ServletContext
+
+（4）.容器创建 <listener/> 中的类实例，即创建监听。在监听器的 contextInitialized() 方法中，通过
+     'event.getServletContext().getInitParameter("contextConfigLocation")'方法来得到 <context-param/> 设定的值。
+
+（6）.得到 <context-param/> 值之后，就可以 '初始化 Spring-IoC 容器'。
+
+（7）.注意，以上都是在 web 项目还没有完全启动起来的时候就已经完成了的工作，比所有的 Servlet 都要早。
+
+（8）.总的来说，加载顺序是：'<context-param> ---> <listener> ---> <filter> ---> <servlet>'
+     其中，如果 web.xml 中出现了相同的元素，则按照在配置文件中出现的先后顺序来加载。
+```
+
+> Spring 源码
+
+```java
+public class ContextLoaderListener extends ContextLoader implements ServletContextListener {
+
+    @Override
+    public void contextInitialized(ServletContextEvent event) {
+        servletContext sc = event.getServletContext();
+        String configLocationParam = sc.getInitParameter(CONFIG_LOCATION_PARAM); //"contextConfigLocation"
+        //... 初始化 SpringIoc 容器 ...
+    }
+}
+```
 ##其他概念
 
 > classpath & classpath*
@@ -1515,19 +1573,8 @@ public LocaleResolver localeResolver() { //注册自定义国际化配置
 
 ##web
 
-> `web.xml` 基本作用
 
-```shell
-#用来初始化配置信息：比如 welcome页面、servlet、servlet-mapping、filter、listener、启动加载级别等。
-
-web项目启动时，tomcat容器首先会读取 web.xml 里的配置，当这一步骤没有出错并且完成之后，项目才能正常地被启动起来。
-```
-
->初始化 `SpringIoC` 容器的监听器
-
-```java
-@WebInitParam(name = "contextConfigLocation", value = "classpath:applicationContext.xml") //注解版
-```
+> 初始化 SpringIoC 容器
 
 ```xml
 <context-param>
@@ -1539,52 +1586,9 @@ web项目启动时，tomcat容器首先会读取 web.xml 里的配置，当这�
 </listener>
 ```
 
-> 加载过程
-
-```shell
-（1）.启动 web 项目时，tomcat 首先读取 web.xml 中的两个节点: <context-param/> 和 <listener/>
-
-（2）.紧接着，容器创建一个 ServletContext（application），应用范围内即整个 web 项目都能使用这个上下文
-（3）.再接着，容器会将读取到 <context-param> 转化为键值对，存入 ServletContext
-
-（4）.容器创建 <listener/> 中的类实例，即创建监听。在监听器的 contextInitialized() 方法中，通过
-     'event.getServletContext().getInitParameter("contextConfigLocation")'方法来得到 <context-param/> 设定的值。
-
-（6）.得到 <context-param/> 值之后，就可以 '初始化 Spring-IoC 容器'。
-
-（7）.注意，以上都是在 web 项目还没有完全启动起来的时候就已经完成了的工作，比所有的 Servlet 都要早。
-
-（8）.总的来说，加载顺序是：'<context-param> ---> <listener> ---> <filter> ---> <servlet>'
-     其中，如果 web.xml 中出现了相同的元素，则按照在配置文件中出现的先后顺序来加载。
-```
-
-> Spring 源码
-
-```java
-public class ContextLoaderListener extends ContextLoader implements ServletContextListener {
-
-    @Override
-    public void contextInitialized(ServletContextEvent event) {
-        servletContext sc = event.getServletContext();
-        String configLocationParam = sc.getInitParameter(CONFIG_LOCATION_PARAM); //"contextConfigLocation"
-        //... 初始化 SpringIoc 容器 ...
-    }
-}
-```
-
-> `web.xml`
+>SpringMVC 核心控制器，拦截所有请求
 
 ```xml
-<!-- 初始化 SpringIoC 容器的监听器 -->
-<context-param>
-    <param-name>contextConfigLocation</param-name>
-    <param-value>classpath:applicationContext.xml</param-value>
-</context-param>
-<listener>
-    <listener-class>org.springframework.web.context.ContextLoaderListener</listener-class>
-</listener>
-
-<!-- 配置 SpringMVC 核心控制器 -->
 <servlet>
     <servlet-name>springmvc</servlet-name>
     <servlet-class>org.springframework.web.servlet.DispatcherServlet</servlet-class>
@@ -1598,13 +1602,18 @@ public class ContextLoaderListener extends ContextLoader implements ServletConte
     <servlet-name>springmvc</servlet-name>
     <url-pattern>/</url-pattern> <!-- 3种可选值 -->
 </servlet-mapping>
+```
 
-<!-- 可选参数: ①/ ②*.action ③/* -->
-<!--①. 所有地址的访问都要由'前端控制器'进行解析, 静态文件另配不解析-->
-<!--②. 以".action"结尾的访问,由'前端控制器'解析-->
-<!--③. 错误配置; 当转发到jsp页面时,仍由'前端控制器'解析jsp地址,找不到导致报错-->
+```sh
+#可选参数: ①/ ②*.action ③/*
+①. 所有地址的访问都要由'前端控制器'进行解析, 静态文件另配不解析
+②. 以".action"结尾的访问,由'前端控制器'解析
+③. 错误配置; 当转发到jsp页面时,仍由'前端控制器'解析jsp地址,找不到导致报错
+```
 
-<!-- 字符编码 过滤器 -->
+>字符编码过滤器 `第1个过滤器`
+
+```xml
 <filter>
     <filter-name>CharacterEncodingFilter</filter-name>
     <filter-class>org.springframework.web.filter.CharacterEncodingFilter</filter-class>
@@ -1617,8 +1626,11 @@ public class ContextLoaderListener extends ContextLoader implements ServletConte
     <filter-name>CharacterEncodingFilter</filter-name>
     <url-pattern>/*</url-pattern>
 </filter-mapping>
+```
 
-<!-- REST 过滤器，POST 转换成 PUT DELETE -->
+>REST过滤器，POST 转换成 PUT DELETE
+
+```xml
 <filter>
     <filter-name>HiddenHttpMethodFilter</filter-name>
     <filter-class>org.springframework.web.filter.HiddenHttpMethodFilter</filter-class>
@@ -1627,24 +1639,21 @@ public class ContextLoaderListener extends ContextLoader implements ServletConte
     <filter-name>HiddenHttpMethodFilter</filter-name>
     <url-pattern>/*</url-pattern>
 </filter-mapping>
-
-<!-- 欢迎页面 -->
-<welcome-file-list>
-    <welcome-file>/index.html</welcome-file>
-</welcome-file-list>
 ```
 
 ##Spring
 
-> `applicationContext.xml`
+> SpringIoC 组件扫描：`排除控制器`
 
 ```xml
-<!-- SpringIoC 组件扫描（排除 @Controller） -->
 <context:component-scan base-package="com.example.spring">
     <context:exclude-filter type="annotation" expression="org.springframework.stereotype.Controller" />
 </context:component-scan>
+```
 
-<!-- 配置数据源 -->
+>配置数据源
+
+```xml
 <context:property-placeholder location="classpath:db.properties"/> <!--引用外部属性文件-->
 <bean id="dataSource" class="com.alibaba.druid.pool.DruidDataSource">
     <property name="driverClass" value="${jdbc.driver}"/>
@@ -1652,36 +1661,35 @@ public class ContextLoaderListener extends ContextLoader implements ServletConte
     <property name="user" value="${jdbc.username}"/>
     <property name="password" value="${jdbc.password}"/>
 </bean>
+```
 
-<!-- 事务管理器 -->
+>事务管理器 + 注解事务
+
+```xml
 <bean id="transactionManager" class="org.springframework.jdbc.datasource.DataSourceTransactionManager">
     <property name="dataSource" ref="dataSource"/>
 </bean>
-
-<!-- 开启注解事务 -->
 <tx:annotation-driven transaction-manager="transactionManager"/>
+```
 
-<!-- Spring 整合 Mybatis -->
+>Spring 整合 Mybatis
+
+```xml
 <!-- （1）.SqlSession 对象的创建，管理等  -->
 <bean class="org.mybatis.spring.SqlSessionFactoryBean">
     <property name="dataSource" ref="dataSource"/>
-    <property name="configLocation" value="classpath:mybatis-config.xml"/>    <!-- mybatis配置文件 -->
     <property name="mapperLocations" value="classpath:mybatis/mapper/*.xml"/> <!-- mapper.xml文件位置 -->
+    <property name="configLocation" value="classpath:mybatis-config.xml"/>    <!-- （可选）mybatis配置文件 -->    
     <property name="typeAliasesPackage" value="com.example.spring.beans"/>    <!-- （可选）别名处理 -->
 </bean>
 
-<!-- （2-1）.mapper接口扫描 -->
-<!-- <bean class="org.mybatis.spring.mapper.MapperScannerConfigurer">
-    <property name="basePackage" value="com.example.spring.**.mapper"/>
-</bean> -->
-
-<!-- （2-2）.另一种实现方案(mybatis-spring-1.3.0.jar 整合包提供的实现方案) -->
+<!-- （2）.mapper接口扫描 -->
 <mybatis-spring:scan base-package="com.example.spring.**.mapper"/>
 ```
 
 ## MVC
 
-> 组件扫描：只扫描 @Controller
+> 组件扫描：`只扫控制器`
 
 ```xml
 <context:component-scan base-package="com.example.spring" use-default-filters="false">
@@ -1698,16 +1706,19 @@ public class ContextLoaderListener extends ContextLoader implements ServletConte
 </bean>
 ```
 
->开启 mvc 注解支持
+>开启 mvc 注解支持：映射动态请求
+
+```xml
+<mvc:annotation-driven />
+```
 
 ```sh
 将在 SpringMVC 上下文中定义一个 DefaultServletHttpRequestHandler，
 它会对进入 DispatcherServlet 的请求进行筛查，如果发现是没有经过映射的请求，
 就将该请求交由 WEB 应用服务器默认的 Servlet 处理，如果是由映射的请求，才由 DispatcherServlet 继续处理
+如果web应用服务器的默认的Serlvet的名字不叫"default",则需要通过default-servlet-name来进行指定
 
-如果web应用服务器的默认的Serlvet的名字不叫"default",则需要通过default-servlet-name来进行指定.
-
-配置了default-serlvet-handler后，RequestMapping的映射会失效，需要加上annotation-driven的配置。
+配置了 default-serlvet-handler 后，RequestMapping的映射会失效，需要加上 annotation-driven 的配置。
 ```
 
 ```sh
@@ -1716,27 +1727,17 @@ public class ContextLoaderListener extends ContextLoader implements ServletConte
 （2）提供：数据绑定，数字和日期的format，@NumberFormat，@DateTimeFormat，xml，json默认读写支持
 ```
 
-```xml
-<mvc:annotation-driven />
-```
-
->释放静态资源
-
-```sh
-（A）加入对静态资源的处理: js,gif,png
-（B）允许使用"/"做整体映射 
-```
+>释放静态资源：将MVC不能处理的请求交给Tomcat
 
 ```xml
 <mvc:default-servlet-handler />
 ```
 
-> 修相关问题
+> 相关问题
 
 ```sh
-#需要在 Spring 配置中整合 SpringMVC 吗 ?
-#还是否需要再加入 Spring 的 IOC 容器 ?
-#是否需要再 web.xml 文件中配置启动 Spring IOC 容器的 ContextLoaderListener ?
+#需要在 Spring 配置中整合 SpringMVC 吗？ 还是否需要再加入 SpringIOC 容器 ?
+#是否需要在 web.xml 中配置启动 SpringIOC 容器的 ContextLoaderListener ?
 
 （1）需要: 通常情况下, 类似于数据源, 事务, 整合其他框架都是放在 Spring 的配置文件中（而不是放在 SpringMVC 的配置文件中）
 实际上放入 Spring 配置文件对应的 IOC 容器中的还有 Service 和 Dao. 
@@ -1751,9 +1752,9 @@ public class ContextLoaderListener extends ContextLoader implements ServletConte
 ```
 
 ```sh
-#SpringMVC 的 IOC 容器中的 bean 可以来引用 Spring IOC 容器中的 bean返回来呢? 
+#SpringMVC-IOC 容器中的bean可以来引用 Spring-IOC 容器中的 bean，反过来呢? 
 
-反之则不行。Spring IOC 容器中的 bean 却不能来引用 SpringMVC IOC 容器中的 bean!
+反之则不行。Spring-IOC 容器中的 bean 却不能来引用 SpringMVC-IOC 容器中的 bean！
 ```
 
 ## mybatis

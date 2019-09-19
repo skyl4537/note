@@ -387,7 +387,7 @@ Build,Exe... - Build Tools - Gradle - Offline work
 
 ## 基础概念
 
-> 日志级别：`TRACE < DEBUG < INFO < WARN < ERROR`
+> 日志级别：`OFF < TRACE < DEBUG < INFO < WARN < ERROR`
 
 ```shell
 日志门面，日志的接口 #如：slf4j（√），jcl，jboss-logging
