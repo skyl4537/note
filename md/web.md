@@ -981,8 +981,12 @@ public String token(HttpSession session) {
 
 > 基础概念
 
+```sh
+
+```
+
 ```shell
-Spring是一个 'IoC'（DI）和 'AOP' 容器框架。
+Spring是一个'IoC'（DI）和'AOP'容器框架。
 
 '非侵入式'     基于 Spring 开发的应用中的对象可以不依赖于 Spring 的 API
 '依赖注入'     DI——Dependency Injection，反转控制（IOC）思想的经典实现
@@ -1140,13 +1144,13 @@ people 依赖 car，即必须先创建 car 才能创建 people，但 people 不�
 
 ```java
 public interface FactoryBean<T> {
-	T getObject() throws Exception; //将创建好的 bean 返回给 IOC 容器
-    
-	Class<?> getObjectType(); //返回 bean 类型
-    
-	default boolean isSingleton() { //创建的 bean 是否单例
-		return true;
-	}
+    T getObject() throws Exception; //将创建好的 bean 返回给 IOC 容器
+
+    Class<?> getObjectType(); //返回 bean 类型
+
+    default boolean isSingleton() { //创建的 bean 是否单例
+        return true;
+    }
 }
 ```
 
@@ -1159,8 +1163,12 @@ public interface FactoryBean<T> {
 > bean的作用域
 
 ```sh
-'singleton': 默认值，单例。只在IoC容器初始化时创建一次
-'prototype': 原型的，多实例的。IoC容器初始化时并不会创建，而是在每次调用时重新创建一个新的对象。
+'singleton': 默认值，唯一实例。只在IoC容器初始化时创建一次，以后每次获取都是从容器中直接拿
+'prototype': 原型的，多实例的。IoC容器初始化时并不会创建，而是在每次调用时重新创建一个新的对象
+```
+
+```java
+@Scope("prototype") //使用注解，定义作用域
 ```
 
 ```xml
@@ -1253,8 +1261,8 @@ Bean 此时可以使用了                    #Car [brand=Audi, price=720000.0]
 
 ```sh
 #Spring创建代理的规则为：
-默认，使用Java动态代理来创建AOP代理，这样就可以为任何接口实例创建代理了
-当需要代理的类不是代理接口的时候，Spring会切换为使用CGLIB代理，也可强制使用CGLIB
+默认，使用'Java动态代理'来创建AOP代理，这样就可以为任何接口实例创建代理了
+当需要代理的类不是代理接口的时候，Spring会切换为使用'CGLIB动态代理'，也可强制使用CGLIB
 ```
 
 ```xml
@@ -1574,7 +1582,7 @@ public LocaleResolver localeResolver() { //注册自定义国际化配置
 ##web
 
 
-> 初始化 SpringIoC 容器
+> 初始化`SpringIoC`容器的监听器
 
 ```xml
 <context-param>
@@ -1586,7 +1594,7 @@ public LocaleResolver localeResolver() { //注册自定义国际化配置
 </listener>
 ```
 
->SpringMVC 核心控制器，拦截所有请求
+>`SpringMVC`核心控制器，拦截所有请求
 
 ```xml
 <servlet>
@@ -1643,7 +1651,7 @@ public LocaleResolver localeResolver() { //注册自定义国际化配置
 
 ##Spring
 
-> SpringIoC 组件扫描：`排除控制器`
+> SpringIoC 组件扫描：`排除@Controller`
 
 ```xml
 <context:component-scan base-package="com.example.spring">
@@ -1689,7 +1697,7 @@ public LocaleResolver localeResolver() { //注册自定义国际化配置
 
 ## MVC
 
-> 组件扫描：`只扫控制器`
+> 组件扫描：`只扫描@Controller`
 
 ```xml
 <context:component-scan base-package="com.example.spring" use-default-filters="false">
@@ -1757,7 +1765,7 @@ public LocaleResolver localeResolver() { //注册自定义国际化配置
 反之则不行。Spring-IOC 容器中的 bean 却不能来引用 SpringMVC-IOC 容器中的 bean！
 ```
 
-## mybatis
+## Mybatis
 
 > `mybatis-config.xml`
 
@@ -1773,7 +1781,27 @@ public LocaleResolver localeResolver() { //注册自定义国际化配置
 </configuration>
 ```
 
-#常见问题
+# 常见问题
+
+## 基础知识
+
+> xml解析
+
+```sh
+#xml解析：DOM SAX
+DOM：解析时先将整个文档加载到内存。占用内存大，解析大型文件时性能有所下降。适合对xml进行随机访问
+SAX：顺序读取xml文件，不需要一次性加载整个文件。属于事件驱动型解析，当遇到文档开头/结束，标签开头/结束时，都会触发一个事件，
+-----用户只需要在事件对应的回调函数中写入响应的处理逻辑即可。适合对xml进行顺序访问
+```
+
+> Spring 的 bean 有哪些作用域
+
+```sh
+'singleton': 默认值，唯一实例。只在IoC容器初始化时创建一次，以后每次获取都是从容器中直接获取
+'prototype': 原型的，多实例的。IoC容器初始化时并不会创建，而是在每次调用时重新创建一个新的对象
+```
+
+
 
 ## 概念区分
 

@@ -1063,6 +1063,9 @@ https://blog.csdn.net/w1196726224/article/details/54428493
             // System.out.println(s1 == "hello-world"); //true
             // System.out.println(s2 == "hello-world"); //false
         // }
+        
+        
+
 
     // 2.DEMO解析
     
@@ -1125,7 +1128,7 @@ https://blog.csdn.net/w1196726224/article/details/54428493
 
 //}
 
-//{--------<<<Collection>>>------------------------
+//{--------<<<Collection>>>------------------------X
 #Collection
     数组 -> 固定长度, 只能放一种类型
   集合 -> 可变长度, 可以存多种类型(不考虑泛型)

@@ -637,7 +637,6 @@ String response = HttpClients.createDefault().execute(httpPost, new BasicRespons
 ```java
 @Configuration
 public class AppConfig {
-
     @Bean
     public RestTemplate restTemplate() {
         return new RestTemplate();

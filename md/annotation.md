@@ -1,4 +1,4 @@
-# Annotation
+# 注解基础
 
 > 基本概念
 
@@ -156,7 +156,7 @@ public class SpringConfiguration { }
 
 ```sh
 #通用注解     持久层注解      业务逻辑层注解   控制层注解
-@Component  @Respository  @Service       @Controller
+@Component   @Respository  @Service       @Controller
 ```
 
 ```sh
@@ -257,14 +257,32 @@ public String hello() { }
 
 ```java
 @PostMapping("/hello")
-public String hello0(@RequestParam(value = "id", required = false, defaultValue = "1") Integer id,
+public String hello(@RequestParam(value = "id", required = false, defaultValue = "1") Integer id,
                      @RequestParam String name) { }
 ```
 
 ```java
-//使用 @RequestParam 接收参数时，请求参数必须携带，不然报错。可使用 required = false 或者 直接不写，来避免这种错误。【不推荐】
+//使用 @RequestParam 接收参数时，请求参数必须携带，不然报错。可使用 required = false 或者 直接不写（不推荐），来避免这种错误。
 @PostMapping("/hello")
-public String hello0(Integer id, @RequestParam(required = false) String name) { }
+public String hello(Integer id, @RequestParam(required = false) String name) { }
+```
+
+##RequestBody
+
+> 将`POST 请求体` 中的 `JSON` 解析为 Bean 或者 Map
+
+```java
+@PostMapping("/hello")
+public String hello(@RequestBody City city) { }
+```
+
+## NULL
+
+> 什么也不写，可以将 `GET POST 请求行/体` 的 `键值对` 解析为自定义Bean
+
+```java
+@GetMapping("/hello")
+public String hello(Person person) { } //支持级联解析 Person.Address.Name
 ```
 
 ## PathVariable
@@ -276,15 +294,6 @@ public String hello0(Integer id, @RequestParam(required = false) String name) { 
 public String hello(@PathVariable("name") String args) { }//括号内 == 占位符
 ```
 
-## NULL
-
-> 什么也不写，可以将 `GET POST 请求行/体` 的 `键值对` 解析为自定义Bean
-
-```java
-@GetMapping("/hello")
-public String hello11(Person person) { } //支持级联解析 Person.Address.Name
-```
-
 ## CookieValue
 
 > `RequestHeader/CookieValue` 获取 `请求头/Cookie` 中的参数
@@ -294,14 +303,6 @@ public String hello11(Person person) { } //支持级联解析 Person.Address.Nam
 public String hello(@RequestHeader("header") String header, @CookieValue("JSESSIONID") String jsessionId) { }
 ```
 
-##RequestBody
-
-> 将`POST 请求体` 中的 `JSON` 解析为 Bean 或者 Map
-
-```java
-@PostMapping("/hello")
-public String hello1(@RequestBody City city) { }
-```
 ##1
 
 >
@@ -328,3 +329,8 @@ public String hello1(@RequestBody City city) { }
 
 
 
+#其他问题
+
+## Spring
+
+>

@@ -366,12 +366,11 @@ spring.resources.static-locations=classpath:/logs/,file:/logs/,classpath:/static
 
 ```java
 @Configuration
-public class MyWebMvcConfigurer implements WebMvcConfigurer {
-
+public class WebMvcConfig implements WebMvcConfigurer {
     @Override
     public void addResourceHandlers(ResourceHandlerRegistry registry) {
-        registry.addResourceHandler("/log/**")
-            .addResourceLocations("classpath:/logs/", "file:/logs/");
+        registry.addResourceHandler("/img/**")
+            .addResourceLocations("classpath:/img/", "file:./imgs/"); //不会覆盖默认配置
     }
 }
 ```
@@ -1423,6 +1422,7 @@ public class Websocket {
 <form action="/upload" method="post" enctype="multipart/form-data">
     File0: <input type="file" name="file"><br>
     <!-- File1: <input type="file" name="file"><br> --> <!-- 多文件上传，name必须一致 -->
+    <!-- Files：<input type="file" name="file" multiple> --> <!-- multiple标签表示支持多文件上传 -->
     Desc: <input type="text" name="desc"><br>
     <input type="submit" value="提交">
 </form>
@@ -1597,16 +1597,23 @@ GET    /crud/list  查询员工列表  -> 只是请求，不改变资源状态  
 POST   /crud/emp   新增一个员工  -> 多次请求会新增多条相同的数据                #不安全，不幂等
 PUT    /crud/emp   更新员工信息  -> 多次请求都是将id为 5 的员工姓名修改成'wang'  #不安全，幂等
 DELETE /crud/{id}  删除员工信息  -> 多次请求目的都是删除id为 5 的员工           #不安全，幂等
+#第一次成功删除，第二次及以后虽资源已不存在，但也得返回 200 OK，不能返回 404
 ```
 
 ```sh
-#第一次成功删除，第二次及以后虽资源已不存在，但也得返回 200 OK，不能返回 404
+#restful特点
+用 URL 描述资源
+使用http方法描述行为，使用http状态码来表示不同的结果
+使用json交互数据
+restful只是一种风格，并不是强制的标准
+```
 
+```sh
 GET    /crud/emp  跳转新增页面
 GET    /crud/{id} 跳转更新页面
 ```
 
-> GET POST
+> GET，POST
 
 ```sh
 get ：默认方式，用于获取资源，请求参数在url上可见，不安全。

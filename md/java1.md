@@ -4,91 +4,354 @@
 
 # 基础阶段
 
-## 5
+## 运算符
 
+> ④种修饰符
 
+```shell
+private ---> 当前类
+default ---> 当前类  当前包
+protect ---> 当前类  当前包  子孙类
+public  ---> 当前类  当前包  子孙类  其他包
+```
 
+> 数组拷贝
 
+```java
+public void test() {
+    String[] src = {"a", "b", "c"};
+    String[] dest = new String[2];
 
-## 静态代码块
+    //从原数组的第1个开始拷贝，目标数组从第0个位置开始接收，拷贝2个元素
+    System.arraycopy(src, 1, dest, 0, 2);
+    Arrays.stream(dest).forEach(System.out::println); //b-c
+}
+```
 
-> 静态代码块 > main方法 > 构造代码块 > 构造函数
+> `Long l = Math.round(double num);`返回值类型
+
+```java
+long l = Math.round(-1.45); //-1
+long l = Math.round(-1.55); //-2 --> 同sql，x轴上向最近的整数取整
+
+double d = Math.ceil(-1.45);  //-1.0
+double d = Math.floor(-1.45); //-2.0 -->同sql，x轴上向最近（最远）的整数取整
+
+double d = Math.floor(-10 / -3); //3.0
+double d = Math.floor(-10 % -3); //-1.0 -->同sql，结果符号位和被除数（-10）一致。a%b = a-a/b*b
+```
+
+> 保留两位有效小数（2种方式）
+
+```java
+//round()返回与参数最接近的长整数，参数加1/2后求其 floor()
+double val0 = (Math.round(1.1249 * 100)) / 100.0; //1.12
+double val1 = (Math.round(1.1250 * 100)) / 100.0; //1.13
+```
+
+```java
+String val0 = String.format("%.2f", 1.1249); //1.12
+String val1 = String.format("%.2f", 1.1250); //1.13
+```
+
+> &，&&：都是逻辑 "与" 运算符，但后者为`短路运算`
 
 ```sh
-#父类静态代码块、子类静态代码块、main、父类构造代码块、父类构造函数、子类构造代码块、子类构造数
-
-'静态代码块'：static 声明的代码块。只在 jvm 首次加载类时调用一次，优先于 main() 执行。作用：初始化类的属性
-
-'构造代码块'：直接用 {} 扩起来的代码块。每次 new 对象时都会被调用，优先于所有的构造函数。作用：给所有的对象进行统一、共性的初始化
-
-'构造函数'：每个类都有一个默认的无参构造，访问权限和类保持一致。作用：给通过此构造函数（构造函数不止一种）new 的对象进行初始化
+'& ' 既是逻辑运算符，也是位运算符。既能操作布尔类型，也能操作数值类型
+'&&' 只是逻辑运算符，只能操作 boolean 类型。'短路操作：左为false，则右不再计算'
 ```
 
 ```java
-public class Father {
-    static { System.out.print("Father-static{} "); } //静态代码块
-
-    { System.out.print("Father{} "); } //构造代码块
-
-    Father() { System.out.print("Father() "); } //构造函数
-}
-
-public class Son extends Father {
-    static { System.out.print("Son-static{} "); } //静态代码块
-
-    { System.out.print("Son{} "); } //构造代码块
-
-    Son() { System.out.print("Son() "); } //构造函数
-
-    public static void main(String[] args) {
-        System.out.print("Father-main() ");
-        Father father = new Son(); //F-S{} S-S{} F-M() F{} F() S{} S()
-    }
-}
+int x = 0;
+if (1 < 0 && x++ > 0) {} //&& 短路运算，左边 false，所以右边不执行。即 x 依旧等于 0
 ```
 
-> 执行顺序：静态变量初始化 ---> 静态代码块
+> 其他运算符
+
+```sh
+# 7%4 = 3; 7%-4 = 3; -7%4 = -3; -7%-4 = -3; 7%9 = 7; -7%-9 = -7; -7%-1= 0
+%(取模)      --> 先取绝对值，再进行运算。符号同左。
+
+^(异或)      --> 左右同为 false，左右不同为 true。(和其他差别很大)
+
+<<(位运算-左) --> 乘以 2 的移动位数次幂  #3<<2 = 3 * 2^2 =12
+>>(位运算-右) --> 除以 2 ...........   #6>>2 = 6 / 2^2 =1
+
+b=a++; #先使用，再++
+```
+
+##关键字
+
+> switch - break
+
+```shell
+switch：参数是一个整数表达式。支持 byte，char,short,int（都可转换成 int），enum，String（jdk7新增）
+
+break ：当遇到break，switch语句终止。如果没有break出现，程序会继续执行下一条case语句，'直到出现 break 语句'。
+```
+
+> for
+
+```shell
+for(初始化； boolean表达式; 更新){ }
+
+'初始化'   ：对循环可能要用到的值进行初始化，相当于for循环内部的一个局部变量
+'布尔表达式'：当表达式结果为 true 时继续执行，为 false 时终止循环
+'更新'     ：在一次循环结束后进行更新，一般用于修改初始化值，从而影响循环布尔表达式的值
+```
 
 ```java
-public class Add {
-    static {
-        int i = 5; //局部变量，不会影响i值。
-    } //执行顺序在静态变量初始化之后（即如果设为非局部变量，则会影响静态变量的值）
+int count = 0;
+int num = 0;
+for (int i = 0; i < 100; i++) {
+    num = ++num;     //先自增，再使用
+    count = count++; //先使用，再自增
+}
+System.out.println(num +" - "+ count); //100 - 0
+```
 
-    private static int i, j;
-
-    private static void add() {
-        j = i++ + ++i; //输出：0(0)+0(1)
-        System.out.println(i + " - " + j); //输出：1-0
-    }
-
-    public static void main(String[] args) { //i++，先++再使用；++i，先使用再++
-        i--; //输出：-1
-        add();
-        System.out.println(i + " - " + j); //输出：1-0
+```java
+//如何跳出当前的多重嵌套循环？让外层的循环条件表达式的结果，可以受到里层循环体代码的控制。
+public void test() {
+    int arr[][] = {{1, 2, 3}, {4, 5, 6, 7}, {9}};
+    
+    boolean found = false;        
+    for (int i = 0; i < arr.length && !found; i++) {
+        for (int j = 0; j < arr[i].length; j++) {
+            System.out.println("i =" + i + ", j = " + j);
+            if (arr[i][j] == 5) {
+                found = true;
+                break;
+            }
+        }
     }
 }
 ```
+> final & finally & finalize
+
+```shell
+'finally'：异常处理的一部分，代码肯定会被执行，常用于释放资源。
+'finalize'：Object类的一个方法，用于垃圾回收。
+```
+
+```shell
+'final-类'：不可被继承，即 final 类没有子类。 final 类中的所有方法默认全是 final 方法。
+'final-方法'：不能被重写。#其中 private 和 static 方法默认就是 final
+
+'final-变量'：即常量。值类型，不能修改其值；引用类型，不能修改其对应的堆内存地址，即不能重新再赋值。
+             #但是，该内存地址所指向的那个对象还是可以变的。就像你记住了人家的门牌号，但你不能管人家家里人员数量。
+```
+
+```java
+public void doFinal(final int i, final StringBuilder sb) {
+    // i = i + 1; //编译报错，因为final修饰的基本类型  --> 值不能变
+    // sb = new StringBuilder(); //同上，修饰引用类型 --> 堆内存地址不能变,即引用不能变
+
+    sb.append("java"); //编译通过 -> 引用变量所指向的对象中的内容，可以改变
+}
+```
+```shell
+#为什么内部线程中引用外部对象要加final修饰符呢？
+被内部线程引用的外部对象受到外部线程作用域的制约，有其特定的生命周期。
+
+当外部对象在外部线程中生命周期已经结束，而内部线程中还在持续使用，怎样解决问题？'内部线程变量要访问一个已不存在的外部变量？'
+在外部变量前添加 final 修饰符，其实内部线程使用的这个变量就是外部变量的一个'复制品'，即使外部变量生命周期已经结束，内部复制品依然可用。
+```
+
+> instanceof
+
+```java
+A a = new B(); //class B extends A{}
+System.out.println(a instanceof A); //true. instanceof 用来判断对象是否是一个类的一个实例
+```
+
+> 序列化
+
+```sh
+序列化就是一种用来处理对象流的机制，所谓对象流也就是将对象的内容进行流化。可以对流化后的对象进行读写操作，也可将流化后的对象传输于网络之间。
+序列化是为了解决在对对象流进行读写操作时所引发的问题。
+
+'序列化的实现'：将需要被序列化的类 implements Serializable 接口，该接口没有需要实现的方法，只是为了标注该对象是可被序列化的，
+然后使用一个输出流(如：FileOutputStream)来构造一个ObjectOutputStream(对象流)对象，
+接着，使用ObjectOutputStream对象的writeObject(Object obj)方法就可以将参数为obj的对象写出(即保存其状态)，要恢复的话则用输入流。
+```
+## 对象初始化
+
+> 堆，栈，方法区
+
+```sh
+#栈
+- JVM为每个线程创建一个栈，用于存放该线程执行方法的信息（实际参数、局部变量等）。
+- 栈属于线程私有，不能实现线程间的共享！
+- 栈是由系统自动分配，速度快！栈是一个连续的内存空间（相比于堆）。 
+- 栈的存储特性是 "先进后出，后进先出"。
+- 每个方法被调用都会创建一个栈帧（存储局部变量、操作数、方法出口等）。
+
+#堆
+- 用于存储创建好的对象和数组（'数组也是对象'）。
+- JVM只有一个堆，被所有线程共享！
+- 堆是一个不连续的内存空间，分配灵活，速度慢!
+
+#方法区（特殊的堆）
+- 方法区实际也是堆，用来存放程序中永远不变或唯一的内容（'类信息{Class对象}、静态变量、字符串常量等'）。
+- JVM只有一个方法区，被所有线程共享！
+```
+
+```java
+public class Dog {
+    private String name;
+
+    public Dog(String name) {
+        this.name = name;
+    }
+}
+
+public class Student {
+    public static Boolean gender = false;
+    private Integer age;
+    private String name;
+
+    public Dog dog;
+
+    public Student(int age, String name) {
+        this.age = age;
+        this.name = name;
+    }
+
+    public void play() {
+        System.out.println("play with " + this.dog.name);
+    }
+}
+```
+
+```java
+public class Test {
+    public static void main(String[] args) { //程序入口
+        Student stu = new Student(18, "王");
+        stu.dog = new Dog("Yello");
+        stu.play();
+    }
+}
+```
+
+![](assets/java3.jpg)
+
+>对象初始化
+
+```sh
+#对于语句 Person p = new Person(“zhangsan”,20); 在内存中究竟做了什么事？
+
+- 动态加载 Person.class 文件并加载到内存中。
+- 静态字段初始化
+- 静态代码块
+- 在堆内存中开辟空间，分配内存地址。
+- '普通字段的默认初始化' #（String默认 null，int默认 0）
+- 开始执行构造函数的第一行，默认是 super(); 跳转到父类的构造函数
+- '普通字段的显示初始化' # int age = 18
+- 构造代码块
+- 构造函数初始化
+- 在栈内存中生成变量 p，将内存地址赋给栈内存中的 p 变量。
+
+'静态字段 -> 静态代码块' -> 开辟堆内存 -> '普通字段默认初始化 -> 普通字段显示初始化 -> 构造代码块 -> 构造函数' ---> 赋值引用
+```
+
+```java
+public class A {
+    B b = new B();
+
+    A() { System.out.print("A"); }
+}
+
+public class B {
+    B() { System.out.print("B"); }
+}
+
+public class C extends A {
+    B b = new B();
+
+    C() { System.out.print("C"); }
+}
+```
+
+```java
+public static void main(String[] args) {
+    new C(); //C 构造函数的第一行是 super(); 跳到父类 A中，A先进行 b=new B();即打印 B。再执行构造函数，打印 A
+}            //执行完 A 的构造函数，跳转回 C 中，C也先进行 b=new B(); 即打印 B，然后再执行 C 的构造，打印 C ---> BABC
+```
+
+> 静态代码块
+
+```sh
+静态代码块 -> main -> 构造代码块 -> 构造函数
+
+父类静态代码块 -> 子类静态代码块 -> main -> 父类构造代码块 -> 父类构造函数 -> 子类构造代码块 -> 子类构造数
+```
+
+```sh
+'静态代码块'：只在jvm首次加载类时调用一次，优先于 main()执行。  #作用：初始化类的属性
+'构造代码块'：每次 new 对象时都会被调用，优先于所有的构造函数。  #作用：给所有的对象进行统一、共性的初始化
+'构造函数'  ：每个类都有一个默认的无参构造，访问权限和类保持一致。#作用：给通过此构造函数（构造函数不止一种）new 的对象进行初始化
+```
+
+
 
 ##方法相关
 
-> 方法传参：递遵循值传递原则`（传递的是值或引用的拷贝，不改变原有值）`
+> 方法传参：遵循`值传递`原则
 
-```shell
-基本类型传递的是数据值的拷贝。在方法内对值类型操作不会改变原有值。
+```sh
+#基本类型：传递的是该数据值的copy
+所以，在方法内对值类型操作不会改变原有值
 
-引用类型传递的是该对象的堆内存地址，即引用拷贝，但指向同一个对象。所以，在方法内对引用类型进行'重新赋引用'，不会改变原有值。
-但是'对原有引用的属性进行操作'时，可改变这个引用的属性值。
+#引用类型：传递的是对象引用的copy，即堆内存的地址，真正的值是放在堆内存中。但指向的是同一个对象
+所以，在方法内对引用类型进行'重新赋引用'，不会改变原有值。但是，'对原有引用的属性进行操作'时，可改变这个引用的属性值
 ```
 
 ```java
-private void doSth(int i, String s, Person p) {
-    i += 1;
-    s += "hello";
-    p = new Person("li", 20);
-    // p.age = 30; //将改变原有引用的属性值，其他则不会改变原有值
+int num = 30;
+
+public void add(int param) {
+    param = 100;
 }
 ```
+
+```sh
+当执行了 int num = 30; 这句代码后，程序在栈内存中开辟了一块地址为AD8500的内存，里边放的值是30
+
+执行到add()方法时，程序在栈内存中又开辟了一块地址为AD8600的内存，将num的值30传递进来，此时这块内存里边放的值是30，
+执行param = 100;后，AD8600中的值变成了100。
+
+地址AD8600中用于存放param的值，和存放num的内存没有任何关系，无论你怎么改变param的值，实际改变的是地址为AD8600的内存中的值，
+而AD8500中的值并未改变，所以num的值也就没有改变。
+```
+
+![](assets/java00.jpg) ![](assets/java0.jpg)
+
+```java
+String[] array = new String[] { "huixin" }; 
+
+public void reset(String[] param) {
+    param[0] = "hello,world!";
+}
+```
+
+```sh
+当程序执行了 String[] array = new String[] {"huixin"}; 后，程序在栈内存中开辟了一块地址编号为AD9500内存空间，
+用于存放array[0]的引用地址，里边放的值是堆内存中的一个地址，示例中的值为BE2500，可以理解为有一个指针指向了堆内存中的编号为BE2500的地址。
+堆内存中编号为BE2500的这个地址中存放的才是array[0]的值：'huixin'。
+
+当程序进入 reset() 方法后，将array的值，也就是对象的引用BE2500传了进来。这时，程序在栈内存中又开辟了一块编号为AD9600的内存空间，
+里边放的值是传递过来的值，即AD9600。可以理解为栈内存中的编号为AD9600的内存中有一个指针，也指向了堆内存中编号为BE2500的内存地址。
+这样一来，栈内存AD9500和AD9600(即array[0]和param的值)都指向了编号为BE2500的堆内存。
+
+在 reset() 方法中将param的值修改为'hello,world!'后，改变对象param的值实际上是改变param这个栈内存所指向的堆内存中的值。
+param这个对象在栈内存中的地址是AD9600，里边存放的值是BE2500，所以堆内存BE2500中的值就变成了hello,world!。
+
+程序放回main方法之后，堆内存BE2500中的值仍然为hello,world!，main方法中array[0]的值时，从栈内存中找到array[0]的值是BE2500，
+然后去堆内存中找编号为BE2500的内存，里边的值是hello,world!。所以main方法中打印出来的值就变成了'hello,world!'
+```
+
+![](assets/java1.jpg)![](assets/java2.jpg)
 
 >重写 & 重载`（与返回值无关）`
 
@@ -101,7 +364,7 @@ private void doSth(int i, String s, Person p) {
 private + static + final 各修饰的方法，子类都不可重写。
 其中，子类中的 private + static 同名方法，表示重新定义的方法，与父类无关。而子类的 final 方法则编译报错。
 
-protected, default, public 对子类可见，可重写。但重写时不能缩小修饰符范围，即不能将父类 public 方法重写为 protected 方法。
+protected, default, public 对子类可见，可重写。'但重写时不能缩小修饰符范围'，即不能将父类 public 方法重写为 protected 方法。
 
 //当方法被重写后，调用子类实例的同名方法时会优先调用子类的重写方法，不会再调用父类的方法。
 ```
@@ -175,188 +438,6 @@ class Sub extends Super {
 
 #高级阶段
 
-## 运算符
-
-> ④种修饰符
-
-```shell
-private ---> 当前类
-default ---> 当前类  当前包
-protect ---> 当前类  当前包  子孙类
-public  ---> 当前类  当前包  子孙类  其他包
-```
-
-> 数组拷贝
-
-```java
-//数组拷贝，非常高效 ---> 此方法隶属于System
-public void test() {
-    String[] src = {"a", "b", "c"}; //src
-    String[] dest = new String[2]; //dest
-
-    //从原数组的第1个开始拷贝，目标数组从第0个位置开始接收，拷贝2个元素
-    System.arraycopy(src, 1, dest, 0, 2);
-    Arrays.stream(dest).forEach(System.out::println); //b-c
-}
-```
-
-> `Long l = Math.round(double num);`返回值类型
-
-```java
-long l = Math.round(-1.45); //-1
-long l = Math.round(-1.55); //-2 --> 同sql，x轴上向最近的整数取整
-
-double d = Math.ceil(-1.45);  //-1.0
-double d = Math.floor(-1.45); //-2.0 -->同sql，x轴上向最近（最远）的整数取整
-
-double d = Math.floor(-10 / -3); //3.0
-double d = Math.floor(-10 % -3); //-1.0 -->同sql，结果符号位和被除数（-10）一致。a%b = a-a/b*b
-```
-
-> 保留两位有效小数（2种方式）
-
-```java
-//round()返回与参数最接近的长整数，参数加1/2后求其 floor()
-
-double val0 = (Math.round(1.1249 * 100)) / 100.0;
-double val1 = (Math.round(1.1250 * 100)) / 100.0;
-System.out.println(val0 + " - " + val1); //1.12 - 1.13
-```
-
-```java
-String val0 = String.format("%.2f", 1.1249);
-String val1 = String.format("%.2f", 1.1250);
-System.out.println(val0 + " - " + val1); //1.12 - 1.13
-```
-
-> &，&&：都是逻辑 "与" 运算符，但后者为`短路运算`
-
-```sh
-&  是逻辑操作符，不仅能操作布尔型，而且可以操作数值型
-&& 是条件操作符，只能操作 boolean 类型。'会短路操作'
-```
-
-```sh
-&  ：左边无论真假，右边都要运算
-&& ：如果左边为真，右边参与运算； 如果左边为假，那么右边不参与运算。
-```
-
-```java
-int x = 0;
-if (1 < 0 && x++ > 0) {}
-System.out.println(x); //&& 短路运算，左边 false，所以右边不执行。即 x 依旧等于 0
-```
-
-> 其他运算符
-
-```java
-// 7%4 = 3; 7%-4 = 3; -7%4 = -3; -7%-4 = -3; 7%9 = 7; -7%-9 = -7; -7%-1= 0
-%(取模)      --> 先取绝对值，再进行运算。符号同左。
-
-^(异或)      --> 左右同为 false，左右不同为 true。(和其他差别很大)
-
-<<(位运算-左) --> 乘以 2 的移动位数次幂 //3<<2 = 3 * 2^2 =12
->>(位运算-右) --> 除以 2 ...........  //6>>2 = 6 / 2^2 =1
-```
-
-##关键字
-
-> switch - break
-
-```shell
-switch：参数是一个整数表达式。支持 byte，char,short,int（都可转换成 int），enum，String（jdk7新增）
-
-break ：当遇到break，switch语句终止。如果没有break出现，程序会继续执行下一条case语句，'直到出现 break 语句'。
-```
-
-> for
-
-```shell
-for(初始化； boolean表达式; 更新){ }
-
-'初始化'   ：对循环可能要用到的值进行初始化，相当于for循环内部的一个局部变量
-'布尔表达式'：当表达式结果为 true 时继续执行，为 false 时终止循环
-'更新'     ：在一次循环结束后进行更新，一般用于修改初始化值，从而影响循环布尔表达式的值
-```
-
-```java
-int count = 0;
-int num = 0;
-for (int i = 0; i < 100; i++) {
-    num = ++num; //先自增，再使用
-    count = count++; //先使用，再自增
-}
-System.out.println(num +" - "+ count); //100 - 0
-```
-
-```java
-//如何跳出当前的多重嵌套循环？让外层的循环条件表达式的结果，可以受到里层循环体代码的控制。
-public void test() {
-    int arr[][] = {{1, 2, 3}, {4, 5, 6, 7}, {9}};
-    
-    boolean found = false;        
-    for (int i = 0; i < arr.length && !found; i++) {
-        for (int j = 0; j < arr[i].length; j++) {
-            System.out.println("i =" + i + ", j = " + j);
-            if (arr[i][j] == 5) {
-                found = true;
-                break;
-            }
-        }
-    }
-}
-```
-> final & finally & finalize
-
-```shell
-'finally'：异常处理的一部分，代码肯定会被执行，常用于释放资源。
-'finalize'：Object类的一个方法，用于垃圾回收。
-```
-
-```shell
-'final-类'：不可被继承，即 final 类没有子类。 final 类中的所有方法默认全是 final 方法。
-'final-方法'：不能被重写。#其中 private 和 static 方法默认就是 final
-
-'final-变量'：即常量。值类型，不能修改其值；引用类型，不能修改其对应的堆内存地址，即不能重新再赋值。
-             #但是，该内存地址所指向的那个对象还是可以变的。就像你记住了人家的门牌号，但你不能管人家家里人员数量。
-```
-
-```java
-public void doFinal(final int i, final StringBuilder sb) {
-    // i = i + 1; //编译报错，因为final修饰的基本类型  --> 值不能变
-    // sb = new StringBuilder(); //同上，修饰引用类型 --> 堆内存地址不能变,即引用不能变
-
-    sb.append("java"); //编译通过 -> 引用变量所指向的对象中的内容，可以改变
-}
-```
-```shell
-#为什么内部线程中引用外部对象要加final修饰符呢？
-被内部线程引用的外部对象受到外部线程作用域的制约，有其特定的生命周期。
-
-当外部对象在外部线程中生命周期已经结束，而内部线程中还在持续使用，怎样解决问题？'内部线程变量要访问一个已不存在的外部变量？'
-在外部变量前添加 final 修饰符，其实内部线程使用的这个变量就是外部变量的一个'复制品'，即使外部变量生命周期已经结束，内部复制品依然可用。
-```
-
-> instanceof
-
-```java
-A a = new B(); //class B extends A{}
-System.out.println(a instanceof A); //true. instanceof 用来判断对象是否是一个类的一个实例
-```
-
-> 序列化
-
-```sh
-序列化就是一种用来处理对象流的机制，所谓对象流也就是将对象的内容进行流化。可以对流化后的对象进行读写操作，也可将流化后的对象传输于网络之间。
-序列化是为了解决在对对象流进行读写操作时所引发的问题。
-
-'序列化的实现'：将需要被序列化的类 implements Serializable 接口，该接口没有需要实现的方法，只是为了标注该对象是可被序列化的，
-然后使用一个输出流(如：FileOutputStream)来构造一个ObjectOutputStream(对象流)对象，
-接着，使用ObjectOutputStream对象的writeObject(Object obj)方法就可以将参数为obj的对象写出(即保存其状态)，要恢复的话则用输入流。
-```
-
-
-
 ## Integer
 
 >基本数据类型：三大类，八小种。引用类型：类，接口，数组。
@@ -364,7 +445,7 @@ System.out.println(a instanceof A); //true. instanceof 用来判断对象是否�
 ```java
 布尔类型     ： boolean （1byte，8位） //以前，误以为是 1bit，1位。好像是错误的。
 字符类型     ： char （2byte，2字节，16位，[-128, 127]）
-数值类型整型  ： byte （1byte）， short （2byte）， int （4byte）, long （8byte） 
+数值类型整型  : byte （1byte）， short （2byte）， int （4byte）, long （8byte） 
 数值类型浮点型： float （4byte）， double （8byte）
 ```
 
@@ -385,23 +466,19 @@ Date editTime = new Date();
 ```
 
 ```shell
-（1）某业务的交易报表上显示成交总额涨跌情况。调用的RPC服务，调用不成功时，返回的是默认值，页面显示：0%，这是不合理的，应该显示成：中划线-。
+（1）某业务的交易报表上显示成交总额涨跌情况。调用的RPC服务，调用不成功时返回默认值，页面显示：0%，这是不合理的，应该显示成：中划线-。
 （2）搜索条件对象，一般 null 值表示该字段不做限制，而 0 表示该字段的值必须为0。
-
 #所以，包装数据类型的 null 值，能够表示额外的信息，如：远程调用失败，异常退出等
 ```
 
 > 装箱 & 拆箱
 
 ```java
-Integer i0 = new Integer(3);
-Integer i1 = Integer.valueOf(3); //装箱：基本类型 --> 包装类
-int num0 = i0.intValue();        //拆箱：包装类 --> 基本类型
-```
-
-```java
-Integer i = 4; //自动装箱：相当于 Integer i = Integer.valueOf(4);
-i = i + 5;     //自动拆箱：等号右边，将i对象转成基本数值 i.intValue() + 5，加法运算完成后，再次装箱，把基本数值转成对象
+Integer v1 = 100;
+// Integer v1 = Integer.valueOf(100); //底层：自动装箱（触发IntegerCache）
+Integer v2 = 200;
+int sum = v1 + v2;
+//int sum = v1.intValue() + v2.intValue(); //底层：自动拆箱
 ```
 
 >缓存策略
@@ -581,6 +658,8 @@ replaceFirst(); #参数也是 regex，但不同的是只替换第一个，即基
 
 
 
+
+
 ## 枚举
 
 >`java.lang.Enum` 是一个抽象类，默认有两个属性：name + ordinal
@@ -644,197 +723,182 @@ for (EnumTest value : values) {
 
 ```shell
 #Throwable 有两个子类：Error 和 Exception
-Error    ：一般指与虚拟机相关的问题，程序本身无法恢复，建议程序终止。常见：'系统崩溃，内存溢出等'。
-Exception：是程序正常运行中，可以预料的意外情况，应该捕获并进行相应的处理。
+Error    ：程序无法处理的系统错误，一般指与虚拟机相关的问题，建议程序终止。常见：'内存溢出，深递归导致栈溢出等'。
+Exception：程序可以处理的异常，应该捕获并进行相应的处理。
 ```
 
 > Exception
 
 ```sh
-#编译期异常（CheckedException）：在编译时期，就会检查。如果没有处理异常，则编译失败。
-#CheckedException 不是具体的类，是指 RuntimeException 以外的异常，类型上都属于Exception类及其子类。
-IOException；SQLException；InterruptedException；ParseException（日期格式化异常）
+#CheckedException：编译期异常。编译时期就会检查，不处理则编译不通过
+#不是具体的java类，是指 RuntimeException 以外的异常，类型上属于Exception类及其子类
+IOException；SQLException；InterruptedException；ParseException（日期格式化异常），ClassNotFoundException（反射）
 ```
 
 ```sh
 #运行时异常（RuntimeException）：在运行时期，检查异常。在编译时期，不处理也不会报错。
-NullPointerException；ClassCastException；ArithmaticException（除数为0）；NumberFormatException；
-ArrayIndexOutOfBoundsException（数组越界）；
+空指针；类型强制转换（ClassCastException）；除数为0；数组越界；数字格式（String转数字）；非法参数异常
+
+#java.lang.IllegalArgumentException: Non-positive period.
+Timer timer = new Timer();
+timer.schedule(timerTask, new Date(), 0);
 
 Arrays.asList("a", "b").add("c"); #java.lang.UnsupportedOperationException
 list.forEach(x -> {if("b".equals(x)){ list.add("c"); }}); #ConcurrentModificationException
 ```
 
->异常处理：`try、catch、finally、throw、throws`
+>异常处理：`try-catch 比 if 更耗性能`
 
 ```java
-throw  ：用在'方法体内'，用来抛出一个异常对象，将这个异常对象传递到调用者处，并'结束'当前方法的执行
-throws ：用在'方法声明上'，用于表示当前方法不处理异常，而是提醒该方法的调用者来处理异常（抛出异常）
+throw ：用在'方法体内'，用来抛出一个异常对象，将这个异常对象传递到调用者处，并'结束'当前方法的执行
+throws：用在'方法声明'，用于表示当前方法不处理异常，而是提醒该方法的调用者来处理异常（抛出异常）
 
 try-catch ：捕获异常，对异常进行针对性的处理。 try 和 catch 不能单独使用，必须连用
 finally   ：finally代码块中存放的代码无论异常是否发生，都会执行。如释放IO资源，数据库连接，网络连接等
-
-当只有在 try 或者 catch 中调用退出JVM的相关方法，此时 finally 才不会执行，否则 finally 永远会执行。
-```
-
-```java
-try {
-    //throw new NullPointerException("NPE"); // R：NPE
-    throw new IOException("IOE");            // E：IOE ---> IOE 编译期异常，不能被 RE 捕获
-} catch (RuntimeException e0) {              // catch 中同时处理多个异常，子异常必须先处理
-    System.out.println("R：" + e0.getMessage());
-} catch (Exception e1) {
-    System.out.println("E：" + e1.getMessage());
-}
 ```
 
 >注意事项
 
 ```sh
-运行时异常被抛出可以不处理。即不捕获也不声明抛出
-
 如果父类抛出了多个异常 ,子类覆盖父类方法时,只能抛出相同的异常或者是他的子集
 父类方法没有抛出异常，子类覆盖父类该方法时也不可抛出异常。此时子类产生该异常，只能捕获处理，不能声明抛出（如，run方法）
 
 当多异常处理时，捕获处理，前边的类不能是后边类的父类
 在 try/catch 后可以追加 finally 代码块，其中的代码一定会被执行，通常用于资源回收
 
-#如果 finally 有 return 语句，永远返回 finally 中的结果，避免该情况
+#finally 代码块中，如果有 return 语句，永远返回 finally 中的结果，避免该情况
 ```
 
 ```java
-private int finallyTest() {
-    int num = 5;
+private int doWork() {
     try {
-        // int _res = num = num + 1;
-        // return _res;
-        return (num = num + 1); //return语句 <=> 上面两句，所以在 finally 块中对 num 进行操作将不起作用：6
+        int i = 1 / 0;
+        System.out.println("结果为: " + i); //不执行。抛出异常，直接跳出
+    } catch (ArithmeticException e) {
+        System.out.println("被除数为0");    //会执行。捕获异常的'就近原则'
+        return 0;
+    } catch (RuntimeException e) {
+        System.out.println("捕获大异常");   //不执行。异常只会被捕获一次
+        return 1;
     } finally {
-        num = num + 2;
-        System.out.println(num); //在 try 代码块 return 之前执行：8
-
-        // return num; //如果 finally 有 return 语句，永远返回 finally 中的结果：8
+        System.out.println("finally");    //肯定执行。最终结果返回：2
+        return 2;
     }
 }
 ```
-> 自定义异常类
+> 自定义异常：`extends RuntimeException`
 
-```java
-自定义-编译期异常：自定义类 extends java.lang.Exception
-自定义-运行时异常：自定义类 extends java.lang.RuntimeException
+```sh
+
 ```
 
+## 接口
 
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-# Collection
-
-## 基础概念
-
-
-
-
-
-# Collection-Plus
-
-##list去重
-
-> 目标：取出 Id 不重复的元素
+> 接口的变迁
 
 ```java
-List<User> users = Arrays.asList(new User(1, "a"), new User(2, "b"), new User(1, "aa")); //源集合
-```
+public interface IMyInterface {
+    //java7 --> 只能声明 全局常量 和 抽象方法
+    /*public static final*/ int STATIC_NUM = 7; //变量的默认修饰符，即全局常量
 
-> （1）遍历源集合，用遍历元素和结果集中的每个元素比较
+    /*public abstract*/ void method();          //方法的默认修饰符
 
-```java
-ArrayList<User> list = new ArrayList<>(); //结果集
-users.forEach(x -> {
-    boolean match = list.stream().anyMatch(y -> y.getId().equals(x.getId()));
-    if (!match) {
-        list.add(x);
+    //java8 --> 声明 静态方法 和 默认方法
+    static void staticMethod() {
+        System.out.println("java8-静态方法");
     }
-});
-```
 
-> （2）使用HashSet。`重写 hashCode() + equals()`
+    default void defaultMethod() {
+        System.out.println("java8-默认方法");
+    }
 
-```java
-//先放入 Set 去重，再取出来放入 list
-Set<User> set = new HashSet<>(users);
-List<User> list = new ArrayList<>(set);
-```
+    //java9 --> 声明 私有方法（静态和非静态两种）
+    private void privateMethod() {
+        //当有多个 java8的静态方法和默认方法时，可以将冗余代码提取到通用的私有方法中
+        System.out.println("java9-私有方法");
+    }
 
-> （3）对于大数据量，应采用 Stream 并行流的 distinct 方法。`重写 hashCode() + equals() `
-
-```java
-List<User> list = users.parallelStream()
-    .distinct() //底层是通过 equals() 进行去重
-    .collect(Collectors.toList());
-```
-
-> （0）重写 hashCode + equals
-
-```java
-@Override
-public boolean equals(Object o) {
-    if (this == o) return true;
-    if (o == null || getClass() != o.getClass()) return false;
-    User user = (User) o;
-    return Objects.equals(id, user.id) /*&& Objects.equals(name, user.name)*/;
-}
-
-@Override
-public int hashCode() {
-    return Objects.hash(id/*, name*/); //只比较 id
+    private static void privateStaticMethod() {
+        System.out.println("java9-私有静态方法");
+    }
 }
 ```
 
-> 总结向
+> `类优先原则`：当父类和父接口（default方法）中都实现了相同的方法时，应该以父类中的方法优先。
 
 ```java
-//HashSet 底层是通过 HashMap 实现
-//HashMap 确保key值唯一：先比较 hashCode()，如果相同；继续比较 equals() 是否为同一个对象
-public HashSet() {
-    map = new HashMap<>();
-}
-
-//存在则返回 false，不存在的返回 true
-public boolean add(E e) {
-    return map.put(e, PRESENT)==null;
+public class FatherClass {
+    public void sayHello() {
+        System.out.println("say hello");
+    }
 }
 ```
 
-```shell
-#equals() 返回 true 的时候，hashcode() 的返回值必须相同。
-
-如果两个对象相同（equals 返回 true），则它们的 hashCode 必须相同。但如果两个对象不同，则它们的 hashCode 不一定不同。
-如果两个不同对象的 hashCode 相同，这种现象称为"哈希冲突"。冲突会导致操作哈希表的时间开销增大，所以尽量定义好的hashCode()方法，能加快哈希表的操作。
+```java
+public interface IFatherInterface {
+    default void sayHello() {
+        System.out.println("default say hello");
+    }
+}
 ```
 
-```shell
-#覆写了 equals() 方法之后，一定要覆盖 hashCode() 方法
-
-对于，String a = new String(“abc”); String b = new String(“abc”);
-如果只覆写 equals()，不覆写 hashCode() 的话，那么 a和b 的 hashCode 就会不同。
-把这两个类当做 key 存到 HashMap 中的话就会出现问题，就会和 key 的唯一性相矛盾。
+```java
+public class Test extends FatherClass implements IFatherInterface {
+    public static void main(String[] args) {
+        Test test = new Test();
+        test.sayHello(); //输出："say hello"
+    }
+}
 ```
+
+> `接口冲突`：当实现多个接口，且每个接口中都有同名的 default 方法，就会报错。必须手动选择一个 default 方法作为实现。
+
+```java
+public interface IFatherInterface1 {
+    default void sayHi() {
+        System.out.println("默认方法-1");
+    }
+}
+```
+
+```java
+public interface IFatherInterface2 {
+    default void sayHi() {
+        System.out.println("默认方法-2");
+    }
+}
+```
+
+```java
+public class Test implements IFatherInterface1, IFatherInterface2 {
+    @Override
+    public void sayHi() {
+        IFatherInterface2.super.sayHi(); //手动指定
+    }
+
+    public static void main(String[] args) {
+        Test test = new Test();
+        test.sayHi();
+    }
+}
+```
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
 
 
 
@@ -883,13 +947,6 @@ try (BufferedReader br = new BufferedReader(new FileReader(src));
 
 ```java
 BufferedReader br = new BufferedReader(new InputStreamReader(new FileInputStream(filePath)));
-```
-
-> close() & flush()
-
-```sh
-close(); #先刷新一次缓冲区，再关闭流对象。关闭之后，流对象将不可用
-flush(); #仅仅刷新缓冲区（一般写字符时，先写入缓冲区）。刷新之后，流对象还可以继续使用
 ```
 
 > 字符编码
@@ -946,7 +1003,7 @@ boolean renameTo(); //重命名
 
 ##Properties
 
-> 继承Hashtable，所以具有 map 集合的特点
+> `class Properties extends Hashtable` 线程安全
 
 ```java
 String filePath = "application.properties";
@@ -1181,25 +1238,32 @@ helloArray.invoke(null, (Object) new String[]{"aaa", "bbb"}); //正确1
 
 
 
+# 常见问题
 
 
-# 概念区分
 
-## 基础概念
 
-> == & equals
+## 概念区分
+
+> ==，equals
 
 ```sh
-#==  System.out.println(2 == 2.0); //true
+#System.out.println(2 == 2.0); //true（类型转换？）
 当比较的是'基本数据类型'时，比较的是值
 当比较的是'引用数据类型'时，比较的是地址值
 ```
 
 ```sh
 #equals
-不能用于基本数据类型的比较；
-当比较的是引用数据类型时，默认也是比较地址值（即调用==）。
+不能用于基本数据类型的比较
+当比较的是引用数据类型时，默认也是比较地址值（即'调用=='）。
 只不过像String、Date、File、包装类等都重写了Object类中的 equals()。实际开发中，常常需要根据业务需要重写 equals()。
+```
+
+```java
+public boolean equals(Object obj) { //Object 中的方法
+    return (this == obj);
+}
 ```
 
 > 抽象类 & 接口
@@ -1238,30 +1302,83 @@ class Test{
 }
 ```
 
->Collection & Collections
+>
 
 ```sh
-'Collection'  是集合类的上级接口，继承与他的接口主要有 Set和List
-'Collections' 是针对集合类的一个帮助类，他提供一系列静态方法实现对各种集合的搜索、排序、线程安全化等操作
+
+```
+
+> int & Integer
+
+```sh
+int 是java提供的8种原始数据类型之一，默认值为0。
+Integer是java为 int 提供的封装类，默认值为 null，即 Integer 可以区分出未赋值和值为0的区别，int 则无法表达出未赋值的情况，
+例如，要想表达出没有参加考试和考试成绩为0的区别，则只能使用 Integer。
+
+另外， Integer 提供了多个与整数相关的操作方法，例如，将一个字符串转换成整数，Integer中还定义了表示整数的最大值和最小值的常量。
+```
+
+```java
+String str = num + "";      //速度最慢. new StringBuilder()
+str = String.valueOf(num);
+str = Integer.toString(num);
+
+num = Integer.parseInt(str);
+num = Integer.valueOf(str);
 ```
 
 >重写 & 重载`（与返回值无关）`
 
 ```shell
-方法的重写和重载是'Java多态性'的不同表现。重写是父类与子类之间多态性的一种表现，重载是一个类中多态性的一种表现。
-
-'重写'：在子类中，出现和父类中一摸一样的方法。
+'重写'：在子类中，出现和父类中一摸一样的方法。子类对象调用此方法时，将调用子类中的定义，对它而言，父类中的定义如同被"屏蔽"了。
 '重载'：同一类中，出现多个方法名一样，但参数列表（参数类型 + 个数 + 顺序）不一样的方法。
+
+方法的重写和重载是'Java多态性'的不同表现。重写是父类与子类之间多态性的一种表现，重载是一个类中多态性的一种表现。
+```
+
+> close() & flush()
+
+```sh
+close(); #先刷新一次缓冲区，再关闭流对象。关闭之后，流对象将不可用
+flush(); #仅仅刷新缓冲区（一般写字符时，先写入缓冲区）。刷新之后，流对象还可以继续使用
+```
+
+> CheckedException & UncheckedException
+
+```sh
+CheckedException  ：
+UncheckedException：
+```
+
+```sh
+
 ```
 
 
-## 基础知识
+
+## 概念知识
+
+> 一些常识
+
+```sh
+#一个.java文件
+.java文件可以包含多个类。但是，只能有一个 public 类，并且此类的类名必须和文件名相同。
+
+#导包注意
+import java.util.*; 只能导入'java.util'包下的所有类，但不能导入'java.util.concurrent'包下的类
+
+#数组相关
+数组是一个对象，不同类型的数组具有不同的类（如，int数组 和 double数组）。数组长度不可以动态调整。
+数组中的元素'连续存储'在同一块内存中，所以，可以通过下标（偏移量）的方式访问
+两个数组使用 equals()方法进行比较时，其实际比较的还是 内存地址。数组没有覆写 Object.equals()方法。
+
+```
 
 > 字符串与数组中的 Length
 
 ```sh
-'数组和字符串都是对象'。数组在创建的时候，长度就已经确定了，所以,可以利用 'length属性' 表示其长度。
-而字符串本质也是一个字符数组，没必要再用这个属性表示其长度，于是就封装了一个 'length方法'，其源码如下：
+'数组和字符串都是对象'。数组在创建的时候，长度就已经确定了，所以，可以利用 'length属性' 表示其长度。
+而字符串本质也是一个字符数组，没必要再用这个属性表示其长度。于是，就封装了一个 'length方法'，其源码如下：
 ```
 
 ```java
@@ -1327,3 +1444,78 @@ public int hashCode() {
 
 ```
 
+
+
+
+
+# 开发手册
+
+## 命名风格
+
+> 变量，常量
+
+```sh
+方法名、参数名、成员变量、局部变量都统一使用'小驼峰'风格。
+'常量'命名全部大写，单词间用'下划线'隔开，力求语义表达完整清楚，不要嫌名字长。
+#POJO类中布尔类型的变量，都不要加 is，否则部分框架解析会引起序列化错误。
+
+long或Long初始赋值时，必须使用大写的L，不能是小写的l，小写容易跟数字1混淆，造成误解。
+```
+
+> 包名，类名
+
+```sh
+包名统一使用'单数'形式，但是类名如果有复数含义，类名可以使用'复数'形式。 #com.example.safe.util.CommonUtils
+'接口类'中的方法和属性不要加任何修饰符号（public也不要加）。
+
+枚举类名建议带上'Enum'后缀，枚举成员名称需要全大写，单词间用下划线隔开。
+测试类命名以它要测试的类的名称开始，以'Test'结尾。
+```
+
+##OOP规约
+
+>避免在`循环体`中声明创建对象，也不要使用 `+` 进行字符串拼接
+
+```java
+Object obj = null;
+for (int i = 0; i < 100; i++) {
+    obj = new Object(); //推荐方式。字符串拼接使用 StringBuilder
+}
+```
+
+>推荐使用 `Integer.valueOf()`
+
+```java
+properties.put("CCSID", new Integer(5));
+properties.put("CCSID", Integer.valueOf(5)); //触发 IntegerCache 机制，范围：[-128 ,127]
+```
+
+> 所有的相同类型的`包装类对象`之间值的比较，全部使用 equals 方法比较
+
+```sh
+#对于 Integer 在[-128,127]范围内的赋值，对象是在 IntegerCache.cache 产生，会复用已有对象。
+所以，在此范围内的 v1==v2 效果同 v1.equals(v2) 相同，都是 true
+但是，此范围之外的不会复用已有的对象，而是在堆空间新生成。所以，v1==v2 返回 false。v1.equals(v2) 返回 true
+```
+
+> 字符串比较时，将常量放在 `equals()` 方法的左侧
+
+```java
+if (str.equalsIgnoreCase("123")){} 
+if ("123".equalsIgnoreCase(str)){} //避免 str 的空指针问题
+```
+
+> `String.indexOf(char)` 速度更快
+
+```java
+int index = str.indexOf("s");
+int index = str.indexOf('s'); //速度更快
+```
+
+> String 的 `split()` 得到数组后，需做最后一个分隔符后有无内容的检查，否则会有抛 `数组越界` 的风险
+
+```java
+String str = "a,b,c,,";
+String[] ary = str.split(",");
+System.out.println(ary.length); // 预期大于 3，结果是 3
+```

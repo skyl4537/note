@@ -266,32 +266,57 @@ https://blog.csdn.net/small_mouse0/article/details/77506060
 
 > 快捷键
 
+```sh
+psvm           #main方法
+sout           #输出到控制台
+fori           #for循环
+iter           #增强for循环
+```
+
 ```shell
-Ctrl+Shift+F   #全局查找 
+Ctrl+Alt+Space #代码补全
+Ctrl+Alt+L     #格式化
+Ctrl+Alt+O     #优化导包
+Ctrl+Shift+F   #全局查找
 ```
 
 ```sh
 Ctrl+Alt+T     #try-catch
+Alt+Insert     #GET/SET，Test方法
+
+```
+
+```sh
+Ctrl+Alt+L     #抽取局部变量
+Ctrl+Alt+M     #抽取方法
+
+Ctrl+Alt+C     #抽取静态常量 public static final
+Ctrl+Alt+F     #局部变量 -> 成员变量
+```
+
+```sh
+Ctrl+Shift+T   #创建对应的测试类
+F8 / F7        #调试：跳到下一步（进入代码）
 ```
 
 
 
 |                    描述                    |            idea             |       eclipse        |
 | :----------------------------------------: | :-------------------------: | :------------------: |
-|                  main方法                  |            psvm             |  main（Alt+/补全）   |
-|                 输出控制台                 |            sout             |         syso         |
-|               for普通 / 增强               |         fori / iter         |   for（Alt+/选择）   |
 |                                            |                             |                      |
-|          自动生成Get/Set/实现方法          |         Alt+Insert          |          *           |
 |                                            |                             |                      |
-|                  抽取方法                  |         Ctrl+Alt+M          |     Shift+Alt+M      |
-|                抽取局部变量                |         Ctrl+Alt+V          |     Shift+Alt+L      |
-|        抽取成员变量（静态+非静态）         |         Ctrl+Alt+C          |                      |
-|            局部变量 -> 成员变量            |         Ctrl+Alt+F          |                      |
 |                                            |                             |                      |
-|                   格式化                   |         Ctrl+Alt+L          |     Ctrl+Shift+F     |
-|               代码提示/补全                |       Ctrl+Alt+Space        |        Alt+/         |
-|                  导包优化                  |         Ctrl+Alt+O          |     Ctrl+Shift+O     |
+|                                            |                             |                      |
+|                                            |                             |                      |
+|                                            |                             |                      |
+|                                            |                             |                      |
+|                                            |                             |                      |
+|                                            |                             |                      |
+|                                            |                             |                      |
+|                                            |                             |                      |
+|                                            |                             |                      |
+|                                            |                             |                      |
+|                                            |                             |                      |
 |                                            |                             |                      |
 |        上下移动单行语句（整个方法）        | Shift+Alt+↑（Shift+Ctrl+↑） |      Alt+↑（）       |
 |                 批量重命名                 |          Shift+F6           |     Shift+Alt+R      |
@@ -309,8 +334,8 @@ Ctrl+Alt+T     #try-catch
 | 在全局（当前类）查找方法调用，可配合F3使用 |      Alt+F7（Ctrl+F7）      |      Ctrl+Alt+H      |
 |             折叠（展开）代码块             |   Shift+Ctrl+减号（加号）   | Shift+Ctrl+/（*号）  |
 |                                            |                             |                      |
-|                 创建测试类                 |        Ctrl+Shift+T         |                      |
-|        调试：跳到下一步（进入代码）        |          F8（F7）           |       F6（*）        |
+|                                            |                             |                      |
+|                                            |                             |                      |
 
 > 基本设置
 
@@ -816,7 +841,7 @@ log4j.appender.CTRL_ERROR.layout.ConversionPattern=%d{HH:mm:ss.SSS} [%5p] [%t] -
 
 #jar包版本不一致的风险
 不同的项目在使用jar包的时候，有可能会导致各个项目的jar包版本不一致，导致未知错误。
-借助于maven，所有的jar包都放在“仓库”中，所有的项目都使用仓库的一份jar包。
+借助于maven，所有的jar包都放在'仓库'中，所有的项目都使用仓库的一份jar包。
 
 #一个jar包依赖其他的jar包需要自己手动的加入到项目中
 借助maven，它会自动的将依赖的jar包导入进来。
@@ -831,7 +856,7 @@ log4j.appender.CTRL_ERROR.layout.ConversionPattern=%d{HH:mm:ss.SSS} [%5p] [%t] -
 测试-test    ：自动测试，自动调用junit程序
 报告-report  ：测试程序执行的结果
 打包-package ：动态Web工程打War包，java工程打jar包
-安装-install ：Maven特定的概念-----将打包得到的文件复制到“仓库”中的指定位置
+安装-install ：Maven特定的概念--->将打包得到的文件复制到'仓库'中的指定位置
 部署-deploy  ：将动态Web工程生成的war包复制到Servlet容器下，使其可以运行
 ```
 
@@ -842,14 +867,13 @@ mvn clean        ：清理
 mvn compile      ：编译主程序
 mvn test-compile ：编译测试程序
 mvn test         ：执行测试
-mvn package      ：打包
-mvn install      ：安装
+mvn package      ：项目打包
+mvn install      ：项目打包，'并将jar/war复制到本地仓库'
 ```
 
->依赖：如果依赖的是自己或者团队开发的maven工程，需要先使用 install 命令把被依赖的maven工程的jar包导入到本地仓库中
+>依赖范围
 
 ```shell
-#依赖范围
 compile  ：默认值，适用于所有阶段（开发、测试、部署、运行），本jar会一直存在所有阶段。 #如: spring-core
 provided ：只在开发、测试阶段使用，目的是不让Servlet容器和你本地仓库的jar包冲突 。   #如: servlet-api（tomcat提供），lombok
 runtime  ：只在运行时使用，如JDBC驱动，适用运行和测试阶段。       #如: mysql-connector-java
@@ -858,6 +882,17 @@ system   ：类似 provided，需要显式提供包含依赖的jar，Maven不会
 
 #例如，在开发 web 应用时，编译期需要一个 servlet.jar 来编译程序中的 servlet，但打包时，不需要此 servlet.jar。
 #因为，程序运行时，由servlet容器（tomcat）来提供 servlet.jar。
+
+#如果依赖的是自己或者团队开发的maven工程，需要先使用 install 命令把被依赖的maven工程的jar包导入到本地仓库中
+```
+
+```xml
+<!-- 如需将 SpringBoot 项目放在外置 tomcat 中运行，可将tomcat依赖的使用范围改写为 provided -->
+<dependency>
+    <groupId>org.springframework.boot</groupId>
+    <artifactId>spring-boot-starter-tomcat</artifactId>
+    <scope>provided</scope>
+</dependency>
 ```
 
 >依赖的传递性：Optional
@@ -884,7 +919,7 @@ Web -> Java1 -> Java2
 >依赖版本的原则
 
 ```shell
-#（1）路径最短者优先原则
+#（1）最短路径原则
 Web（log4j-1.2.9.jar） -> Java1（log4j-1.2.9.jar） -> Java2（log4j-1.2.7.jar）
 
 Java2 的 log4j 版本是1.2.7，Java1 排除了此包的依赖，自己加了一个 log4j-1.2.9.jar，
@@ -892,7 +927,7 @@ Java2 的 log4j 版本是1.2.7，Java1 排除了此包的依赖，自己加了�
 ```
 
 ```shell
-#（2）路径相同先声明优先原则
+#（2）声明优先原则
 Web（log4j-1.2.9.jar） 
     -> Java1（log4j-1.2.9.jar）
     -> Java2（log4j-1.2.7.jar）

@@ -1956,6 +1956,11 @@ https://cloud.tencent.com/developer/article/1443918
 <mvc:annotation-driven />
 
 
+3-3
+    在url声明中使用正则表达式，约束传参类型
+
+    @JsonView 控制json输出内容
+    展示用户列表时，不需要显示密码。查询个人信息时，展示用户密码
 
 
 

@@ -248,6 +248,45 @@ datetime ：占用8个字节，表示范围 '1000-01-01 00:00:00.000000' to '999
 无论 datetime 还是 timestamp：数据长度一栏选择 3，不然不保留毫秒值。'2019-5-17 20:09:10.456'
 ```
 
+> char & varchar
+
+```sql
+--区别1：定长和变长
+char 表示定长，长度固定，varchar表示变长，即长度可变。
+当所插入的字符串超出它们的长度时，视情况来处理，如果是严格模式，则会拒绝插入并提示错误信息，如果是宽松模式，则会截取然后插入。
+如果插入的字符串长度小于定义长度时，则会以不同的方式来处理。
+如char（10），表示存储的是10个字符，无论你插入的是多少，都是10个，如果少于10个，则用空格填满。
+而varchar（10），小于10个的话，则插入多少个字符就存多少个。
+
+varchar 怎么知道所存储字符串的长度呢？
+实际上，对于varchar字段来说，需要使用一个（如果字符串长度小于255）或两个字节（长度大于255）来存储字符串的长度。
+```
+
+```sql
+--区别2：存储的容量不同
+对 char 来说，最多能存放的字符个数 255，和编码无关。而 varchar 呢，最多能存放 65532 个字符。
+在 varchar 存字符串的时候，第 1 个字节是空的，然后还需要 2 个字节来存放字符串的长度。所以有效长度就是 65535 - 1 - 2 = 65532
+```
+
+```sql
+无论是否通过索引，varchar类型的数据检索略优于char的扫描。那实际开发中，我们使用哪种呢？
+当确定字符串为定长、数据变更频繁、数据检索需求少时，使用 char；
+当不确定字符串长度、对数据的变更少、查询频繁时，使用 varchar。
+
+相关题目：若一个表定义为 create table t1(c int, c2 char(30), c3 varchar(N)) charset=utf8; 问 N 的最大值又是多少？
+（65535 - 1 - 2 - 4 - 30 * 3 ）/3
+```
+
+> ip如何保存？
+
+```sql
+SELECT INET_ATON('192.168.5.25'); --3232236825
+SELECT INET_NTOA(3232236825);     --192.168.5.25
+
+--查出范围在 192.168.1.3 到 192.168.1.20 之间的 ip 地址
+select * from ip_table where inet_aton(ip) > inet_aton('192.168.1.3') and inet_aton(ip) < inet_aton('192.168.1.20');
+```
+
 
 
 
@@ -259,13 +298,9 @@ datetime ：占用8个字节，表示范围 '1000-01-01 00:00:00.000000' to '999
 > NULL
 
 ```sql
-ISNULL(expr)  -- 表达式为 NULL，返回 1，否则返回 0
-```
-
-```sql
-IFNULL(v1,v2) -- v1 为 NULL，返回 v2，否则返回 v1
-
-IF(expr,v1,v2) -- 表达式成立，返回 v1；否则返回 v2
+ISNULL(expr)    -- 表达式为 NULL，返回 1，否则返回 0
+IFNULL(v1,v2)   -- v1 为 NULL，返回 v2，否则返回 v1
+IF(expr,v1,v2)  -- 表达式成立，返回 v1；否则返回 v2
 ```
 
 > CONCAT
@@ -468,24 +503,176 @@ count(column)：当前行的当前列不为 NULL,计数器 +1
 由于mysql默认对主键添加索引，所以，对存在主键的表进行 COUNT(*)、COUNT(1) 查询也都会使用主键索引。
 ```
 
+```sql
+--统计每个老师的学生个数
+SELECT t.*,COUNT(t.id),COUNT(s.id) FROM teacher t LEFT JOIN student s ON s.tid=t.id GROUP BY t.id;
+
+--其中，COUNT(t.id)统计有问题，对于没有学生的老师，也会得到结果：1
+1	张磊老师	6	6
+3	刘燕老师	5	5
+5	李杰老师	1	0
+```
+
 
 
 # 查询相关
 
 ## 子查询
 
-> IN
+> FROM：子查询结果作为一张虚拟表使用，必须为虚拟表起别名
 
 ```sql
-
-
-select colname … from A表 where a.id not in (select b.id from B表);
-select colname … from A表 Left join B表 on where a.id = b.id where b.id is null; --等同于上（取出A表不在B表中的数据）
+-- 查询各课程中成绩比本门平均成绩高的课程号，学生号，成绩
+SELECT sc.course_id,sc.student_id,sc.num 
+FROM score sc LEFT JOIN(
+    SELECT course_id,AVG(num) num_avg FROM score GROUP BY course_id
+) tmp ON tmp.course_id=sc.course_id WHERE sc.num>tmp.num_avg;
 ```
 
+> WHERE`/`HAVING
 
+```sql
+-- 查询最高成绩小于【4号课程平均成绩】的课程id和其最高成绩
+SELECT course_id,max(num) num_max FROM score GROUP BY course_id HAVING num_max<(
+    SELECT avg(num) num_avg FROM score WHERE course_id=4
+);
+```
+
+> IN：`包含的值不应过多，转化为 exists`
+
+```sql
+select * from 表A where id in (select id from 表B);
+select * from 表A where exists(select * from 表B where 表B.id = 表A.id); --等同于上
+```
+
+```sql
+IN 查询适合 B 表数据量不多的情况。这是因为： IN 只执行一次，它查出 B 表中的所有id字段并缓存起来。
+之后，检查 A 表的id是否与 B 表中的id相等，如果相等则将 A 表的记录加入结果集中，直到遍历完 A 表的所有记录。
+```
 
 > EXISTS
+
+```sql
+-- 查询有选课的学生id和学生名
+SELECT id,`name` FROM student WHERE id IN(
+    SELECT student_id FROM score
+);
+```
+
+```sql
+SELECT id,`name` FROM student s WHERE EXISTS(
+    SELECT sc.student_id FROM score sc WHERE sc.student_id=s.id
+);
+```
+
+> IN，SOME，ANY，ALL
+
+```sql
+IN  ：范围之内。等同于'=ANY()'
+SOME：ANY的别名，用法相同
+
+ANY：和子查询结果中的任一数值进行比较。
+ALL：.............所有...........。ANY，ALL必须和比较操作符一起使用。-- >ANY() 相当于'>MIN()'。>ALL() 相当于'>MAX()'
+```
+
+## 92连接
+
+> 基础概念
+
+```sql
+将多张表需要全部放在 FROM 之后，所有的连接条件都放在 WHERE 当中。
+因此 sql92 中的等值连接、非等值链接、外连接等等，其实只是 WHERE 中的条件不同罢了。
+```
+
+> 非等值连接
+
+```sql
+-- 查询每门课程平均成绩的成绩等级
+SELECT tmp.*,sl.num_level FROM(
+    SELECT course_id,AVG(num) num_avg FROM score GROUP BY course_id
+) tmp,score_level sl WHERE tmp.num_avg BETWEEN sl.lowest_num AND sl.highest_num;
+```
+
+> 自连接
+
+```sql
+-- 查询员工名和其领导名
+SELECT e.first_name,e.manager_id,m.first_name
+FROM employees e, employees m WHERE e.manager_id=m.employee_id;
+```
+
+## 99连接
+
+> 基础概念
+
+```sql
+使用 FROM t1 JOIN t2 ON t1.c1=t2.c2 的语法来表示哪张表和哪张表进行什么样的连接。连接类型一目了然，并且底层支持地更好。
+sql99支持功能的较多，实现'连接条件'和'筛选条件'的分离，使得可读性强
+```
+
+>非等值连接
+
+```sql
+-- 查询每门课程平均成绩的成绩等级
+SELECT tmp.*,sl.num_level FROM(
+    SELECT course_id,AVG(num) num_avg FROM score GROUP BY course_id
+) tmp LEFT JOIN score_level sl ON tmp.num_avg BETWEEN sl.lowest_num AND sl.highest_num; -- 非等值连接
+```
+
+> 自连接
+
+```sql
+-- 查询员工名和其领导名
+SELECT e.first_name,e.manager_id,m.first_name
+FROM employees e LEFT JOIN employees m ON e.manager_id=m.employee_id;
+```
+
+> 常见 JOIN
+
+```sql
+-- （1）[INNER] JOIN：内连接。效果同 sql92 的等值连接
+SELECT * FROM A INNER JOIN B ON A.id=B.id;
+
+-- （2）LEFT [OUTER] JOIN：左外连接。A 的所有记录和 A.id=B.id 的所有 B 的记录
+SELECT * FROM A LEFT JOIN B ON A.id=B.id;
+
+-- （3）A 表独有的记录
+SELECT * FROM A LEFT JOIN B ON A.id=B.id WHERE B.id IS NULL;
+```
+
+```sql
+-- （4）RIGHT [OUTER] JOIN：右外连接。B 的所有记录和 A.id=B.id 的所有 A 的记录
+SELECT * FROM A RIGHT JOIN B ON A.id=B.id;
+
+-- （5）B 表独有的记录
+SELECT * FROM A RIGHT JOIN B ON A.id=B.id WHERE A.id IS NULL;
+```
+
+```sql
+-- （6）A + B 所有的记录
+SELECT * FROM A LEFT JOIN B ON A.id=B.id
+UNION
+SELECT * FROM A RIGHT JOIN B ON A.id=B.id;
+
+-- 	（7）A，B 表中单独出现的记录
+SELECT * FROM A LEFT JOIN B ON A.id=B.id WHERE B.id IS NULL
+UNION
+SELECT * FROM A RIGHT JOIN B ON A.id=B.id WHERE A.id IS NULL;
+```
+
+![](assets/inner.png) ![](assets/left_outer.png) ![](assets/left.png) 
+
+![](assets/right_outer.jpg) ![](assets/right.jpg) 
+
+![](assets/full.png) ![](assets/none.png)
+
+
+
+>
+
+```
+
+```
 
 
 
@@ -808,6 +995,10 @@ CAP 定理中的数据一致性，其实是说分布式系统中的各个节点�
 
 >编程式事务管理器：使用原生JDBC
 
+```sh
+Spring 事务有两种：（1）编程式事务 （2）声明式事务
+```
+
 ```sql
 --> （1）获取数据库连接 Connection 对象 --> （2）取消事务的自动提交 --> （3）执行操作
 --> （4）正常完成操作时手动提交事务 --> （4）执行失败时回滚事务
@@ -848,14 +1039,9 @@ Spring 的核心事务管理抽象是'PlatformTransactionManager'。它为事务
 ```java
 @Transactional
 public void purchase(int bookId, int bookCount) {
-    //（1）获取书籍信息（单价，库存）
-    Book book = helloMapper.findBookById(bookId);
-    
-    //（2）扣除书籍库存
-    boolean update = helloMapper.updateBookStock(bookId, bookStock);
-
-    //（3）扣除用户金额
-    update = helloMapper.updateUserAccount(1, userAccount);
+    Book book = helloMapper.findBookById(bookId);                    //（1）获取书籍信息（单价，库存）
+    boolean update = helloMapper.updateBookStock(bookId, bookStock); //（2）扣除书籍库存
+    update = helloMapper.updateUserAccount(1, userAccount);          //（3）扣除用户金额
 }
 ```
 
@@ -899,9 +1085,9 @@ public void purchase(int bookId, int bookCount) {
 ```shell
 丢失修改    -> 更新   #T1,T2 读入同一数据并修改，T2提交的结果被 T1 破坏了，导致 T1 的修改丢失。（订票系统）
 
-脏读       -> 更新   #T2改  T1读   T2回滚（T1读取的无效值）
-不可重复读  -> 更新   #T1读  T2改提  T1读（和第一次读取的不一样）
-幻读       -> 新增   #T1读  T2新增  T1读（多了几行）
+脏读       -> 更新   #T2改  T1读  T2回滚（T1读取的无效值）
+不可重复读  -> 更新   #T1读  T2提  T1读（和第一次读取的不一样）
+幻读       -> 新增   #T1读  T2增  T1读（多了几行）
 ```
 
 > 事务的隔离级别要得到底层数据库引擎的支持，而不是应用程序或者框架的支持。`mysql支持4种 > oracle的2种`
@@ -938,7 +1124,7 @@ SET global transaction isolation level read committed; -- 设置全局的隔离�
 ```
 ##传播行为
 
-> 当事务方法被另一个事务方法调用时，必须指定事务应该如何传播？
+> 当事务方法被另一个事务方法调用时，事务如何传播？
 
 ```java
 场景：用户买 5 本书，结账 checkout() 时，调用5次 purchase() 方法，这两个方法都是 声明式事务管理。这就涉及到'事务的传播行为'。
@@ -962,18 +1148,18 @@ public void purchase(String userId, Integer bookId) {
 }
 ```
 
->REQUIRED：默认配置。在当前已有的事务中继续执行
+>REQUIRED：默认配置。在原有方法的事务中执行当前方法
 
 ```java
 当 purchase() 方法被另一个事务方法 checkout() 调用时，它默认会在 checkout() 方法的事务内运行。
-因此在 checkout() 方法的开始和终止边界内只有一个事务，这个事务只在 checkout() 方法结束的时候被提交。
+因此，在 checkout() 方法的开始和终止边界内只有一个事务，这个事务只在 checkout() 方法结束的时候被提交。
 
 所以，当用户余额不足购买 5 本书时，整个事务都会回滚，结果导致用户一本书都买不了。
 ```
 
 ![](assets/sql01.png)
 
->REQUIRES_NEW：挂起当前已有的事务，开启新的事务执行
+>REQUIRES_NEW：挂起原有方法的事务，开启新的事务执行当前方法
 
 ```java
 每一次调用 purchase()方法，都会开启一个新的事务去执行。 checkout()方法会被挂起，直到所有 purchase()方法执行结束，才会提交。
@@ -1209,6 +1395,32 @@ TRUNCATE TABLE city; -- 清空表（2）
 -- DELETE 清空表后，添加新的数据时自增列接着自增。TRUNCATE 则是从1开始重新计数
 ```
 
+> where & having
+
+```sql
+where  语句在 GROUP BY 语句之前；sql会在分组之前计算 where 语句。 
+having 语句在 GROUP BY 语句之后；sql会在分组之后计算 having 语句。
+```
+
+```sql
+-- where 和 having 都可以使用的场景
+select addtime,name from dw_users where addtime> 1500000000
+select addtime,name from dw_users having addtime> 1500000000
+
+解释：上面的 having 可以用的前提是已经筛选出了addtime字段，在这种情况下和 where 的效果是等效的。但是如果我没有 select addtime 就会报错！！
+因为 having 是'从前面筛选的字段再筛选'，而 where 是从数据表中的字段直接进行的筛选的。
+```
+
+```sql
+--只可以用having，不可以用where情况
+select category_id,avg(price) as ag from dw_goods group by goods_category having ag > 100
+select category_id,avg(price) as ag from dw_goods where ag>100 group by goods_category 
+
+注意: where 后面要跟的是'数据表里的字段'，如果把 ag 换成 avg(price) 也是错误的！！因为表里没有该字段。
+而 having 只是根据前面查询出来的是什么就可以后面接什么。
+```
+
+
 ## 优化相关
 
 >基础优化
@@ -1259,20 +1471,17 @@ select id，product_name from orders where mobile_no = '13421800407' or user_id 
 
 ```sql
 select * from 表A where id in (select id from 表B); --IN包含的值不应过多
-
 select * from 表A where exists(select * from 表B where 表B.id = 表A.id); --等同于上
 ```
 
 ```sql
-select * from A表 where a.id not in (select b.id from B表);
-
-select * from A表 left join B表 on where a.id = b.id where b.id is null;
+select id from orders where user_id in (select id from user where level = 'VIP');
+select o.id from orders o left join user u on o.user_id = u.id where u.level = 'VIP';
 ```
 
 ```sql
-select id from orders where user_id in (select id from user where level = 'VIP');
-
-select o.id from orders o left join user u on o.user_id = u.id where u.level = 'VIP';
+select * from A表 where a.id not in (select b.id from B表);
+select * from A表 left join B表 on a.id = b.id where b.id is null;
 ```
 
 >不做列运算（在where子句中对字段进行运算操作，导致索引失效）
@@ -1280,7 +1489,9 @@ select o.id from orders o left join user u on o.user_id = u.id where u.level = '
 ```sql
 select user_id,user_project from user_base where age*2=36;
 select user_id,user_project from user_base where age=36/2; --优化后
+```
 
+```sql
 select id from order where date_format(create_time，'%Y-%m-%d') = '2019-07-01';
 select id from order where create_time between '2019-07-01 00:00:00' and '2019-07-01 23:59:59'; --优化后
 ```
@@ -1312,9 +1523,11 @@ select id,fnum,fdst from dynamic_201606 where match(user_name) against('zhangsan
 >分批处理
 
 ```sql
+--如果大量优惠券需要更新为不可用状态，执行这条SQL可能会堵死其他SQL，分批处理伪代码
 update status=0 FROM `coupon` WHERE expire_date <= #{currentDate} and status=1;
+```
 
---如果大量优惠券需要更新为不可用状态，执行这条SQL可能会堵死其他SQL，分批处理伪代码：
+```java
 private void updateState() {
     int pageNo = 1;
     int PAGE_SIZE = 100;
@@ -1338,64 +1551,189 @@ private void updateState() {
 字符串可使用前缀索引，前缀长度控制在5-8个字符。
 字段唯一性太低，增加索引没有意义，如：是否删除、性别。
 ```
-## 常见问题
 
->删除重复数据，保留重复数据中最大id所在行的数据
+
+
+## 开发手册
+
+> 建表规约
 
 ```sql
---重复记录：部分字段相同。
---两个查询条件：（1）查询name字段有重复值，且count>1的name值 （2）name字段有重复，且count>1数据的最大id
+【强制】表达是与否概念的字段，必须使用 is_xxx 的方式命名，数据类型是 unsigned tinyint（1表示是，0表示否），此规则同样适用于 odps 建表。
+--说明：任何字段如果为非负数，必须是 unsigned
+--注意：POJO 类中的任何布尔类型的变量，都不要加 is 前缀，所以，需要在<resultMap/>设置从 is_xxx 到 Xxx 的映射关系。
+--数据库表示是与否的值，使用 tinyint 类型，坚持 is_xxx 的命名方式是为了明确其取值含义与取值范围。
+--正例：表达逻辑删除的字段名 is_deleted，1 表示删除，0 表示未删除。
 
-DELETE FROM city WHERE name IN
-(SELECT pname FROM (SELECT name AS pname FROM city GROUP BY name HAVING COUNT(name)>1) a)
-AND id NOT IN
-(SELECT pid FROM (SELECT MAX(id) AS pid FROM city GROUP BY name HAVING COUNT(name) > 1) b);
+CREATE TABLE `grade` (
+    `id` int(11) NOT NULL AUTO_INCREMENT,
+    `is_delete` tinyint(1) unsigned DEFAULT 0,
+    PRIMARY KEY (`id`)
+);
 ```
 
 ```sql
---错误的sql
---[Err] 1093 - You can't specify target table 'city' for update in FROM clause
+【强制】数据库名、表名、字段名，必须使用小写字母或数字。禁止出现数字开头，禁止两个下划线中间只出现数字。
+【强制】表名不使用复数名词。对应于 DO 类名也是单数形式，符合表达习惯。
 
-DELETE FROM city WHERE name IN
-(SELECT name FROM city GROUP BY name HAVING COUNT(name)>1)
-AND id NOT IN
-(SELECT max(id) FROM city GROUP BY name HAVING COUNT(name) > 1);
+【强制】表必备三字段：id, gmt_create, gmt_modified
+--说明：其中 id 必为主键，类型为 bigint unsigned、单表时自增、步长为 1。 
+--gmt_create，gmt_modified 的类型均为 datetime 类型，前者现在时表示主动创建，后者过去分词表示被动更新。
+
+【强制】小数类型为 decimal，禁止使用 float 和 double。
+--说明：float 和 double 在存储的时候，存在精度损失的问题，很可能在值的比较时，得到不正确的结果。
+--如果存储的数据范围超过 decimal 的范围， 建议将数据拆成整数和小数分开存储。
+
+【强制】如果存储的字符串长度几乎相等，使用 char 定长字符串类型。
+【强制】变长字符串 varchar不预先分配存储空间，长度不要超过 5000
+--如果存储长度大于此值，定义字段类型为 text，独立出来一张表，用主键来对应，避免影响其它字段索引效率。
+
+【推荐】单表行数超过 500 万行或者单表容量超过 2 GB，才推荐进行分库分表。
+--说明：如果预计三年后的数据量根本达不到这个级别，请不要在创建表时就分库分表。
+```
+
+```sql
+【参考】合适的字符存储长度，不但节约数据库表空间、节约索引存储，更重要的是提升检索速度。
+--正例：如下表，其中无符号值可以避免误存负数，且扩大了表示范围
+
+人       150岁以内    tinyint unsigned    1个字节     无符号值：0 ~ 255
+龟       数百岁       smallint unsigned   2          无符号值：0 ~ 65535
+恐龙化石  数千万年     int unsigned        4          0 ~ 2^(4*8)-1
+```
+
+```sql
+【强制】禁用保留字，如desc、range、match、delayed等，请参考 MySQL 官方保留字。
+【强制】唯一索引名为 uk_字段名； 普通索引名则为 idx_字段名。-- 说明：uk_ 即 unique key；idx_ 即 index 的简称。
+
+【推荐】表的命名最好是加上'业务名称_表的作用'。-- alipay_task / force_project / trade_config
+【推荐】库名与应用名称尽量一致
+【推荐】如果修改字段含义或对字段表示的状态追加时，需要及时更新字段注释。
+
+【推荐】字段允许适当冗余，以提高查询性能，但必须考虑数据一致。冗余字段应遵循：
+1）不是频繁修改的字段。
+2）不是 varchar 超长字段，更不能是 text 字段。
+--正例：商品类目名称使用频率高，字段长度短，名称基本一成不变，可在相关联的表中冗余存储类目名称，避免关联查询。
+```
+
+## 设计相关
+
+> 10分钟内只允许 3 此登陆错误
+
+```sql
+
 ```
 
 
 
+```sql
+
+```
 
 
 # 练习相关
 
-## 其他练习
+## 基础练习
+
+> 学生成绩练习
 
 ```sql
---把num值处于[20, 29]之间改为20，处于[30, 39]之间的,改为30。
-UPDATE tName SET num = floor(num/10)*10 WHERE num BETWEEN 20 AND 39;
+--学生成绩表（grade）：id,s_id,s_name,s_brith,chinese,english,math； 
 
---把goods表中商品名为'诺基亚xxxx'的商品，改为'HTCxxxx'
-UPDATE goods SET goods_name=concat('HTC',substring(goods_name, 4)) --substring从 1 开始
-WHERE goods_name LIKE '诺基亚%';
+--将id为1的学生，数学成绩加 1 分
+UPDATE grade SET math=math+1 WHERE s_id=1;
+
+--将学生姓名由"马XX"改为"李XX"
+UPDATE grade SET s_name=CONCAT('李',SUBSTR(s_name,2)) WHERE s_name LIKE '马%'; --substr从 1 开始计数
+
+--把数学成绩在[20, 29]之间改为20，处于[30, 39]之间的,改为30
+UPDATE grade SET math=floor(math/10)*10 WHERE math BETWEEN 20 AND 39;
+
+-- 查出生日在2000年到2019年之间，以及1995年之前的学生 【DATEDIFF()函数: 前者-后者】
+SELECT s_id FROM grade WHERE (s_brith BETWEEN '20000101' AND '20190101') OR (DATEDIFF(s_brith,'19950101')<0);
+
+-- 姓名相同的学生
+SELECT * FROM grade WHERE s_name IN(
+    SELECT s_name FROM grade GROUP BY s_name HAVING COUNT(s_name)>1
+);
 ```
 
-> 查询比市场价省钱200元以上的商品，及该商品所省的钱（where和having分别实现）
+```sql
+--每个学生的总成绩，总成绩在200-300之间 【where和having两种实现】
+SELECT s_id,(chinese+english+math) grade_sum FROM grade WHERE (chinese+english+math) BETWEEN 200 AND 300;
+SELECT s_id,(chinese+english+math) grade_sum FROM grade HAVING grade_sum BETWEEN 200 AND 300;
+
+--查询语文比英语低50分以上的学生，及低的分【where和having两种实现】
+SELECT s_id,(english-chinese) grade_sub FROM grade WHERE (english-chinese)>50;
+SELECT s_id,(english-chinese) grade_sub FROM grade HAVING grade_sub>50;
+--错误：SELECT s_id,(english-chinese) grade_sub FROM grade WHERE grade_sub>50; --->先执行 where，再执行 select
+```
+
+> 交易流水
 
 ```sql
-select goods_id,goods_name,market_price-shop_price as k from goods -- WHERE 实现
-where market_price-shop_price >200;
+--交易表（trade）：id,day,code,money,flag(1表示扣款成功，2表示扣款失败)
 
-select goods_id,goods_name,market_price-shop_price as k from goods -- HAVING 实现
-having k >200;
+--查询每天扣款成功必输、成功金额、失败笔数、失败金额
+select `day` '日期',
+sum(case when flag=1 then 1 else 0 end) as '成功笔数',
+sum(case when flag=1 then money else 0 end) '成功金额',
+sum(case when flag=2 then 1 else 0 end) as '失败笔数',
+sum(case when flag=2 then money else 0 end) '失败金额'
+from trade group by `day`;
+```
+
+
+
+
+> 删除重复数据，保留重复数据中最大id所在行的数据
+
+```sql
+DELETE FROM city WHERE id NOT IN(
+    SELECT tmp.maxid FROM (
+        SELECT MAX(id) AS maxid FROM city GROUP BY `name` where count(name)>1
+    ) tmp
+);
 ```
 
 ```sql
-select goods_id,goods_name,market_price-shop_price as k from goods -- 报错，先执行 where，再执行 select
-WHERE k >200;
+--错误的sql：[Err] 1093 - You can't specify target table 'city' for update in FROM clause
+DELETE FROM city WHERE id NOT IN(
+    SELECT MAX(id) AS maxid FROM city GROUP BY `name` where count(name)>1
+);
+```
+> 足球比赛
 
--- sql解析器 先从原始表中查出 SELECT 后面的各个字段值，保存到内存表中（表中字段有 id, name, k）。
--- WHERE 是对原始表中的字段进行筛选，原始表并不存在 K 这一列，所以会报错。
--- 而 HAVING 是对内存表中的数据进行筛选，所以可行。
+```sql
+--表 team : t_id, t_name
+--表 match: match_id, host_id, guest_id, match_result, match_time
+--查出 2006-6-1 到 2006-7-1 之间举行的所有比赛，用以下形式列出：拜仁 2：0 不来梅 2006-6-21
+SELECT t1.t_name '主队',m.match_result '比赛成绩',t2.t_name '客队',m.match_time '比赛时间' 
+FROM `match` m 
+LEFT JOIN team t1 ON t1.t_id=m.host_id
+LEFT JOIN team t2 ON t2.t_id=m.guest_id
+WHERE match_time BETWEEN '2006-6-1' AND '2006-7-1';
+```
+
+```sql
+
+```
+
+```sql
+
+```
+
+
+
+```sql
+
+```
+
+<http://cache.baiducontent.com/c?m=9d78d513d9d431af4f9a9f697d17c0121d4380123cd5d21168d5e35f93124c403762f4ba57351072c4c40c6416af384b9af72102411420c69bca8a4ecabae23f2ffe30350019914062c419d9dc4755c237902bfed91df0c98725e3dfc5a4d94352ba44750d9786804d7616dd19f2033093b1e94f022e16adec40728e29605d943436b7508fe2256f779686de4b3dc93da16b06e3de21f77e4cba49e259596553a13fac15146375f74f50ae186d5acfbe1cf02a0e117ee955f2e396eaa313d59bb63299f9cdb26d886ae6c1e0fc734367528d7ff8f4e3&p=8736cc0085cc43eb08e2947d0b4092&newp=882a9546d0830ae917fec7710f4c88231610db2151d3d601298ffe0cc4241a1a1a3aecbf22231503d6c07e6107aa4c58e0f631723d0034f1f689df08d2ecce7e6fc3617b63&user=baidu&fm=sc&query=%B2%E9%B3%F6+2006%2D6%2D1+%B5%BD+2006%2D7%2D1+%D6%AE%BC%E4%BE%D9%D0%D0%B5%C4%CB%F9%D3%D0%B1%C8%C8%FC&qid=c98579f4000e7597&p1=1>
+
+> 学生总成绩
+
+```sql
+
 ```
 
 
@@ -1428,13 +1766,13 @@ INSERT INTO `class` VALUES ('4', '二年九班');
 -- ----------------------------
 DROP TABLE IF EXISTS `student`;
 CREATE TABLE `student` (
-  `id` int(11) NOT NULL AUTO_INCREMENT,
+  `sid` int(11) NOT NULL AUTO_INCREMENT,
   `gender` char(1) NOT NULL,
-  `tid` int(11) NOT NULL,
-  `name` varchar(32) DEFAULT NULL,
-  PRIMARY KEY (`id`),
-  KEY `fk_class` (`tid`),
-  CONSTRAINT `fk_class` FOREIGN KEY (`tid`) REFERENCES `class` (`cid`)
+  `class_id` int(11) NOT NULL,
+  `sname` varchar(32) DEFAULT NULL,
+  PRIMARY KEY (`sid`),
+  KEY `fk_class` (`class_id`),
+  CONSTRAINT `fk_class` FOREIGN KEY (`class_id`) REFERENCES `class` (`cid`)
 ) ENGINE=InnoDB AUTO_INCREMENT=18 DEFAULT CHARSET=utf8;
 
 -- ----------------------------
@@ -1449,9 +1787,9 @@ COMMIT;
 -- ----------------------------
 DROP TABLE IF EXISTS `teacher`;
 CREATE TABLE `teacher` (
-  `id` int(11) NOT NULL AUTO_INCREMENT,
-  `name` varchar(32) NOT NULL,
-  PRIMARY KEY (`id`)
+  `tid` int(11) NOT NULL AUTO_INCREMENT,
+  `tname` varchar(32) NOT NULL,
+  PRIMARY KEY (`tid`)
 ) ENGINE=InnoDB AUTO_INCREMENT=6 DEFAULT CHARSET=utf8;
 
 -- ----------------------------
@@ -1471,7 +1809,7 @@ CREATE TABLE `course` (
   `teacher_id` int(11) NOT NULL,
   PRIMARY KEY (`cid`),
   KEY `fk_course_teacher` (`teacher_id`),
-  CONSTRAINT `fk_course_teacher` FOREIGN KEY (`teacher_id`) REFERENCES `teacher` (`id`)
+  CONSTRAINT `fk_course_teacher` FOREIGN KEY (`teacher_id`) REFERENCES `teacher` (`tid`)
 ) ENGINE=InnoDB AUTO_INCREMENT=5 DEFAULT CHARSET=utf8;
 
 -- ----------------------------
@@ -1495,7 +1833,7 @@ CREATE TABLE `score` (
   KEY `fk_score_student` (`student_id`),
   KEY `fk_score_course` (`course_id`),
   CONSTRAINT `fk_score_course` FOREIGN KEY (`course_id`) REFERENCES `course` (`cid`),
-  CONSTRAINT `fk_score_student` FOREIGN KEY (`student_id`) REFERENCES `student` (`id`)
+  CONSTRAINT `fk_score_student` FOREIGN KEY (`student_id`) REFERENCES `student` (`sid`)
 ) ENGINE=InnoDB AUTO_INCREMENT=53 DEFAULT CHARSET=utf8;
 
 -- ----------------------------
@@ -1540,7 +1878,9 @@ SELECT id,`name` FROM student WHERE id NOT IN(
 );
 ```
 
-```sql
+>查询两门及两门以上不及格同学的平均分
 
+```sql
+SELECT student_id,AVG(num),SUM(num<60) bjg FROM score GROUP BY student_id HAVING bjg>1;
 ```
 

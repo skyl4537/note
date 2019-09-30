@@ -205,7 +205,7 @@ SELECT * FROM user WHERE name LIKE concat('%', #{username}, '%') -- 张
 
 ##分页查询
 
-> `插件版`：在插件的拦截方法内拦截待执行的sql，然后重写sql，添加对应的物理分页语句和分页参数。
+> `插件版`：在插件的拦截方法内拦截待执行的sql，然后重写sql，添加对应的物理分页语句和分页参数
 
 ```xml
 <dependency>
@@ -225,14 +225,22 @@ SELECT * FROM user WHERE name LIKE concat('%', #{username}, '%') -- 张
 </dependency>
 ```
 
+```properties
+###pageHelper分页插件
+pagehelper.helper-dialect=MYSQL
+pagehelper.reasonable=true
+pagehelper.support-methods-arguments=true
+pagehelper.params=count=countSql
+```
+
 ```java
 @GetMapping("/person/{pageNum}/{pageSize}")
 public PageInfo<Person> listByPage(@PathVariable int pageNum, @PathVariable int pageSize) {
     PageHelper.startPage(pageNum, pageSize); //查询之前设置：页码数，页容量
     List<Person> list = service.listAll();
 
-    //PageInfo包含了非常全面的分页属性【详见附表】
-    PageInfo<Person> pageInfo = new PageInfo<>(res);
+    //PageInfo包含了非常全面的分页属性【详见附表】 arg2为连续显示的页码个数
+    PageInfo<Person> pageInfo = new PageInfo<>(res, 5);
     return pageInfo;
 }
 ```
@@ -257,32 +265,32 @@ List<People> list = service.listPage(map);
 
 ```java
 public class PageInfo<T> extends PageSerializable<T> {
-    private int pageNum; //当前页
+    private int pageNum;  //当前页
     private int pageSize; //每页的数量
-    private int size; //当前页的数量
+    private int size;     //当前页的数量
 
     protected long    total; //总记录数
-    protected List<T> list; //结果集
+    protected List<T> list;  //结果集
 
     //由于startRow和endRow不常用，这里说个具体的用法
     //可以在页面中"显示startRow到endRow 共size条数据"
 
     private int startRow; //当前页面第一个元素在数据库中的行号
-    private int endRow; //当前页面最后一个元素在数据库中的行号
+    private int endRow;   //当前页面最后一个元素在数据库中的行号
 
-    private int pages; //总页数
-    private int prePage; //前一页
+    private int pages;    //总页数
+    private int prePage;  //前一页
     private int nextPage; //下一页
 
-    private boolean isFirstPage = false; //是否为第一页
-    private boolean isLastPage = false; //是否为最后一页
+    private boolean isFirstPage = false;     //是否为第一页
+    private boolean isLastPage = false;      //是否为最后一页
     private boolean hasPreviousPage = false; //是否有前一页
-    private boolean hasNextPage = false; //是否有下一页
+    private boolean hasNextPage = false;     //是否有下一页
 
-    private int navigatePages; //导航页码数
+    private int navigatePages;      //导航页码数
     private int[] navigatepageNums; //所有导航页号
-    private int navigateFirstPage; //导航条上的第一页
-    private int navigateLastPage; //导航条上的最后一页
+    private int navigateFirstPage;  //导航条上的第一页
+    private int navigateLastPage;   //导航条上的最后一页
 }
 ```
 
@@ -835,6 +843,9 @@ mybatis 通过xml或注解的方式将java对象和sql语句映射生成'最终�
 - mybatis 和 hibernate 不同，它是一个半自动 ORM 框架，需要程序员自己编写 sql 语句。
 - mybatis 直接编写原生态sql，可以严格控制sql执行性能，灵活度高。
 - Hibernate 对象/关系映射能力强，能够做到数据库无关性。mybatis 如果要实现数据无关性，则需要编写多套sql映射文件，工作量大。
+
+Hibernate 属于全自动ORM映射工具，查询关联对象或者关联集合对象时，可以根据对象关系模型直接获取，所以它是全自动的。
+而，mybatis 在查询关联对象或关联集合对象时，需要手动编写sql来完成，所以，称之为半自动ORM映射工具。
 ```
 
 > 结论
@@ -843,13 +854,6 @@ mybatis 通过xml或注解的方式将java对象和sql语句映射生成'最终�
 - JDBC     ：sql包含在代码中，硬编码高耦合。实际开发中sql频繁修改，维护不易。
 - mybatis  ：半自动化ORM框架。sql和java编码分开，一个专注数据，一个专注业务，低耦合。
 - Hibernate：全自动ORM。自动产生sql，但不灵活。
-```
-
-> 为什么说Mybatis是半自动ORM映射工具？它与全自动的区别在哪里？
-
-```sh
-Hibernate属于全自动ORM映射工具，使用Hibernate查询关联对象或者关联集合对象时，可以根据对象关系模型直接获取，所以它是全自动的。
-而，Mybatis在查询关联对象或关联集合对象时，需要手动编写sql来完成，所以，称之为半自动ORM映射工具。
 ```
 
 ##高级概念
@@ -1650,12 +1654,7 @@ public void findMany2Many() {
 
 ```sh
 #【参考】各层命名规约：
---获取多个对象的方法用 'list' 做前缀，复数形式结尾如：listObjects
---获取单个对象的方法用 'get' 做前缀
---插入的方法用 save/'insert' 做前缀
---修改的方法用 'update' 做前缀
---删除的方法用 remove/'delete' 做前缀
---获取统计值的方法用 'count' 做前缀
+get，list，count（统计值），insert/save（推荐），delete/remove（推荐），update
 
 #【强制】 在表查询中，一律不要使用 * 作为查询的字段列表，需要哪些字段必须明确写明。
 -- 说明：(1).增加查询分析器解析成本。(2).增减字段容易与 resultMap 配置不一致。
@@ -1668,6 +1667,22 @@ public void findMany2Many() {
 ```
 
 
+
+# 常见问题
+
+## 概念区分
+
+
+
+
+
+## 常见错误
+
+> 关系数据模型 & 对象数据模型
+
+```sh
+表对应类；记录对应对象；表的字段对应类的属性
+```
 
 
 

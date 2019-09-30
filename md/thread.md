@@ -27,10 +27,16 @@
 
 > 线程创建
 
-```sh
-extends Thread     ：'不推荐使用'。单继承，多实现     #每个线程执行自己的 run()方法（Thread implements Runnable）
-implements Runnable：'推荐使用'，作为参数传入 Thread。#多个.......同一个 run()...
-implements Callable：使用线程池调用
+```java
+extends Thread     ：'不推荐使用'。单继承，多实现     //每个线程执行自己的 run()方法（Thread implements Runnable）
+implements Runnable：'推荐使用'，作为参数传入 Thread。//多个.......同一个 run()...
+implements Callable：有返回值的任务
+```
+
+```java
+FutureTask<Object> futureTask = new FutureTask<Object>(() -> "SUCCESS"); //Future：未来结果，代表线程任务执行结束后的返回结果
+new Thread(futureTask).start();
+Object res = futureTask.get(); //获取结果，默认一直等待，直到任务结束
 ```
 
 ```sh
@@ -50,6 +56,16 @@ implements Callable：使用线程池调用
 那么,在可运行池中，会有多个线程处于就绪状态等到CPU，JVM就负责了线程的调度。
 JVM采用的是'抢占式调度'，没有采用分时调度，因此可以能造成多线程执行结果的的随机性。
 ```
+
+> 获取线程的返回值
+
+```sh
+（1）.主线程阻塞
+（2）.线程的 join() 方法
+（3）.实现 Callable 接口
+```
+
+
 
 ## 高级概念
 
@@ -274,6 +290,8 @@ Object.notifyAll();
 ----------（1）.线程被强制性地终止，如通过执行 stop() 来终止一个线程【不推荐使用】
 ----------（2）.线程代码正常的执行完毕
 ----------（3）.线程代码抛出未捕获的异常
+
+NEW -> RUNNABLE -> BLOCKED -> WAITING -> TIMED_WAITING -> TERMINATED
 ```
 
 ![](assets/thread0.png)
@@ -370,6 +388,12 @@ new Thread(() -> {
 
 ## 线程同步
 
+> 什么是线程安全
+
+```sh
+
+```
+
 > 产生原因
 
 ```sh
@@ -427,11 +451,10 @@ public static void main(String[] args) throws InterruptedException {
 15:21:44.238 END-1    #线程 2 执行完毕，出了同步代码块范围，释放锁，线程 1 得以继续执行
 ```
 
-> `ReentrantLock`重入锁，比`synchronized`高，量级较轻
+> 
 
 ```sh
-synchronized 在 JDK1.5 版本开始，尝试优化。到 JDK1.7 版本后，优化效率已经非常好了。在绝对效率上，不比 reentrantLock 差多少。
-使用重入锁，'必须必须必须' 手工释放锁标记。一般都是在 finally 代码块中定义释放锁标记的 unlock 方法。
+
 ```
 
 ## 对象锁
@@ -468,14 +491,9 @@ private void demo2() {
     ThreadTest demo = new ThreadTest();
     new Thread(() -> demo.m20()).start(); //this
     new Thread(() -> demo.m21()).start(); //this
-    new Thread(() -> demo.m22()).start(); //obj
+    new Thread(() -> demo.m22()).start(); //非同步方法
+    new Thread(() -> demo.m23()).start(); //obj
 }
-```
-
-```sh
-20:46:28.825 START 20
-20:46:28.858 START 22
-20:46:31.826 START 21  #m21 和 m20 使用相同的资源锁（this），故被阻塞
 ```
 
 ```java
@@ -491,6 +509,11 @@ void m21() {
     }
 }
 
+void m22() {
+    System.out.println(LocalTime.now() + " START 22");
+    TimeUnit.SECONDS.sleep(3);
+}
+
 final Object obj = new Object(); //作为同步资源锁，最好 final
 
 void m22() {
@@ -499,6 +522,15 @@ void m22() {
         TimeUnit.SECONDS.sleep(3);
     }
 }
+```
+
+```sh
+19:34:28.482 START 20
+19:34:28.482 START 22 #m22 非同步方法 ---> 可以执行，详见下面说明
+19:34:28.482 START 23 #m23 和 m20 使用不同的资源锁，所以可同时执行
+19:34:31.483 START 21 #m21 和 m20 ..............（this），故 m21 被阻塞
+
+当一个线程调用一个对象的 synchronize 方法后，其他线程'只能访问该对象的其他非同步方法'，同步方法被锁定，不可调用。
 ```
 
 > 定义同步代码块时，不要使用`常量`对象作为锁对象
@@ -642,6 +674,57 @@ static class SubThreadDemo extends ThreadTest {
 11:08:44.986 START SUB
 11:08:44.986 START SUPER  #子类同步方法 和 父类的同步方法，使用的都是同一个资源锁
 ```
+
+## Reentr*
+
+> `ReentrantLock`重入锁，比`synchronized`高，量级较轻
+
+```sh
+synchronized 在 JDK1.5 版本开始，尝试优化。到 JDK1.7 版本后，优化效率已经非常好了。在绝对效率上，不比 reentrantLock 差多少。
+使用重入锁，'必须必须必须' 手工释放锁标记。一般都是在 finally 代码块中定义释放锁标记的 unlock 方法。
+```
+
+> 三个线程交替打印：1-9
+
+```java
+public static void main(String[] args) {
+    Resource resource = new Resource();
+    List<Runnable> runList = new ArrayList<>();
+    runList.add(() -> resource.printNnm(resource.first, resource.second));
+    runList.add(() -> resource.printNnm(resource.second, resource.third));
+    runList.add(() -> resource.printNnm(resource.third, resource.first));
+
+    for (int i = 0; i <= runList.size() - 1; i++) {
+        new Thread(runList.get(i), i + 1 + "").start();
+    }
+}
+
+static class Resource {
+    int num = 1; // 初始值
+    Lock lock = new ReentrantLock();
+    Condition first = lock.newCondition();
+    Condition second = lock.newCondition();
+    Condition third = lock.newCondition();
+
+    void printNnm(Condition self, Condition next) {
+        lock.lock();
+        try {
+            while (num < 10) {// 打印到9
+                System.out.println(Thread.currentThread().getName() + ": " + num++);
+                next.signal();
+                self.await();
+            }
+            next.signal(); // 最后一个打印9结束也要唤醒下一个线程，保证下一个线程不在阻塞状态
+        } catch (Exception e) {
+            e.printStackTrace();
+        } finally {
+            lock.unlock();
+        }
+    }
+}
+```
+
+
 
 ## volatile
 
@@ -797,9 +880,9 @@ if (atomicNum.get() != 5) {
 ```sh
 #一个可以容纳多个线程的容器，其中的线程可以反复使用，省去了频繁创建和销毁线程的系统开销
 
-降低资源消耗：通过重复利用已有的线程，降低线程创建和销毁造成的消耗
-提高响应速度：当任务到达时，任务可以不需要等待线程的创建就能立即执行
-提高可管理性：线程是稀缺资源，如果无限制的创建，不仅会消耗系统资源，还会降低系统的稳定性，使用线程池可以进行统一的分配，调优和监控。
+'降低资源消耗'：通过重复利用已有的线程，降低线程创建和销毁造成的消耗
+'提高响应速度'：当任务到达时，任务可以不需要等待线程的创建就能立即执行
+'提高可管理性'：线程是稀缺资源，如果无限制的创建，不仅会消耗系统资源，还会降低系统的稳定性，使用线程池可以进行统一的分配，调优和监控。
 ```
 
 > VS 线程组
@@ -823,27 +906,6 @@ if (atomicNum.get() != 5) {
 如果手工调用 shutdown()，那么线程池执行所有的任务后，自动关闭。
 ```
 
-> 五种状态
-
-```java
-public class ThreadPoolExecutor extends AbstractExecutorService {
-    volatile int runState;
-    private static final int RUNNING    = -1 << COUNT_BITS;
-    private static final int SHUTDOWN   =  0 << COUNT_BITS;
-    private static final int STOP       =  1 << COUNT_BITS;
-    private static final int TIDYING    =  2 << COUNT_BITS;
-    private static final int TERMINATED =  3 << COUNT_BITS;
-}
-```
-
-```sh
-#runState：线程池的状态，volatile 保证线程之间的可见性
-'RUNNING'   ：线程池创建后，初始处于 RUNNING 状态。接受新的任务，处理队列任务
-'SHUTDOWN'  ：调用 shutdown()后的状态。不再接受新的任务，处理队列任务
-'STOP'      ：调用 shutdownNow()....。.............，不处理队列任务，并尝试中断正在执行的任务线程
-'TERMINATED'：线程池已结束，即 terminated()方法执行完。
-```
-
 > 线程池初始化
 
 ```sh
@@ -858,6 +920,66 @@ prestartAllCoreThreads(); #初始化 core 个核心线程
 ```sh
 shutdown();    #不再接受新的任务，处理队列任务，以及当前任务
 shutdownNow(); #.............，不处理队列任务，并尝试中断正在执行的任务线程
+```
+
+## 五种状态
+
+> 五种状态
+
+```java
+public class ThreadPoolExecutor extends AbstractExecutorService {
+    volatile int runState; //线程池的状态，volatile 保证线程之间的可见性
+    private static final int RUNNING    = -1 << COUNT_BITS;
+    private static final int SHUTDOWN   =  0 << COUNT_BITS;
+    private static final int STOP       =  1 << COUNT_BITS;
+    private static final int TIDYING    =  2 << COUNT_BITS;
+    private static final int TERMINATED =  3 << COUNT_BITS;
+}
+```
+
+![](assets/pool.png)
+
+>RUNNING
+
+```sh
+状态说明：线程池处在 RUNNING 状态时，能够接收新任务，以及对已添加的任务进行处理。
+状态切换：线程池的初始化状态是 RUNNING。换句话说，线程池被一旦被创建，就处于 RUNNING 状态！
+```
+
+```java
+//道理很简单，在ctl的初始化代码中(如下)，就将它初始化为 RUNNING 状态，并且"任务数量"初始化为0。
+private final AtomicInteger ctl = new AtomicInteger(ctlOf(RUNNING, 0));
+```
+
+>SHUTDOWN
+
+```sh
+状态说明：线程池处在 SHUTDOWN 状态时，不接收新任务，但能处理已添加的任务。
+状态切换：调用线程池的 'shutdown()' 接口时，线程池由 'RUNNING -> SHUTDOWN'。
+```
+
+>STOP
+
+```sh
+状态说明：线程池处在 STOP 状态时，不接收新任务，不处理已添加的任务，并且会中断正在处理的任务。
+状态切换：调用线程池的 'shutdownNow()' 接口时，线程池由'(RUNNING or SHUTDOWN ) -> STOP'。
+```
+
+> TIDYING（整理）
+
+```sh
+状态说明：当所有的任务已终止，ctl记录的"任务数量"为0，线程池会变为 TIDYING 状态。此状态会执行钩子函数 terminated()。
+--------terminated()在 ThreadPoolExecutor 类中是空的，若用户想在线程池变为TIDYING时，进行相应的处理，可重载此方法。
+
+状态切换：当线程池在SHUTDOWN状态下，阻塞队列为空并且线程池中执行的任务也为空时，就会由'SHUTDOWN -> TIDYING'。
+--------当线程池在STOP状态下，线程池中执行的任务为空时，就会由'STOP -> TIDYING'。
+```
+
+> TERMINATED
+
+```sh
+状态说明：线程池彻底终止，就变成TERMINATED状态。
+状态切换：线程池处在TIDYING状态时，执行完terminated()之后，就会由'TIDYING -> TERMINATED'。
 ```
 
 ## 高级概念
@@ -888,7 +1010,7 @@ public ThreadPoolExecutor(int corePoolSize,
 ```
 
 ```sh
-'keepAliveTime'：线程池中《非核心线程》允许闲置的最大时间，超过这个时间将会被回收
+'keepAliveTime'：线程池中【非核心线程】允许闲置的最大时间，超过这个时间将会被回收
 ----------------对于任务很多，并且每个任务处理时间较短的的情况，可以适当增大这个参数来提高线程利用率。
 ----------------当设置 allowCoreThreadTimeOut(true) 时，此参数也会作用到核心线程上，即 corePoolSize 也会被回收。
 ```
@@ -1131,65 +1253,6 @@ try {
 }
 
 //父线程中捕获异常: java.util.concurrent.ExecutionException: java.lang.RuntimeException: / by zero
-```
-
-## 常见问题
-
-> 当缓存队列已满时，新来一个任务，恰好核心线程有一个空闲，哪种情况正确：`（1）`
-
-```sh
-（1）.新任务直接在空闲的核心线程中执行
-（2）.空闲的核心线程从缓冲队列中获取任务，然后将新任务放入到缓存队列
-
-#正确答案（1）：有空闲的核心线程就直接使用；没有则加入队列（队列未满）或新建线程（队列已满）。以下demo可验证
-```
-
-> 线程池最大容量为 4+2，依次添加 7 个任务，怎么执行？
-
-```java
-ThreadPoolExecutor executor = new ThreadPoolExecutor(2, 4, 200,  //线程池最大容量 4+2
-                                                     TimeUnit.MILLISECONDS, new ArrayBlockingQueue<>(2));
-printPoolProperty(executor); //任务开始执行前，获取线程池属性
-for (int i = 1; i < 8; i++) {
-    int taskNum = i;
-    try {
-        executor.submit(() -> {
-            System.out.println(LocalTime.now() + " - " + Thread.currentThread().getName() + " START " + taskNum);
-            TimeUnit.SECONDS.sleep(1);
-        });
-        printPoolProperty(executor); //任务添加后，获取线程池属性
-    } catch (Exception e) {
-        log.error("任务执行异常: {}", e.toString());
-    }
-}
-
-Thread.sleep(6 * 1000);
-printPoolProperty(executor); //所有任务执行完毕后，获取线程池属性
-executor.shutdown();
-```
-
-```sh
-13:21:17.983 - poolSize: 0; queueSize: 0; completedTask: 0 #初始状态
-
-13:21:17.992 - poolSize: 1; queueSize: 0; completedTask: 0 #Task-1.
-13:21:17.992 - poolSize: 2; queueSize: 0; completedTask: 0 #Task-2.（poolSize = core）
-
-13:21:17.992 - poolSize: 2; queueSize: 1; completedTask: 0 #Task-3.
-13:21:17.992 - poolSize: 2; queueSize: 2; completedTask: 0 #Task-4.（queue 已满）
-
-13:21:17.992 - poolSize: 3; queueSize: 2; completedTask: 0 #Task-5.（扩充 poolSize -> max）
-13:21:17.992 - poolSize: 4; queueSize: 2; completedTask: 0 #Task-6.（poolSize = max）
-
-13:21:17.995 - 任务执行异常: java.util.concurrent.RejectedExecutionException: ... #Task-7.（拒绝策略）
-
-13:21:17.994 - pool-1-thread-1 START 1
-13:21:17.994 - pool-1-thread-2 START 2
-13:21:18.006 - pool-1-thread-4 START 6 #后提交的 6和5 先于 3和4 执行
-13:21:18.007 - pool-1-thread-3 START 5
-13:21:18.995 - pool-1-thread-2 START 3
-13:21:18.995 - pool-1-thread-1 START 4
-
-13:21:24.007 - poolSize: 2; queueSize: 0; completedTask: 6 #所有任务完毕后，poolSize = core
 ```
 
 #定时调度
@@ -1619,7 +1682,7 @@ public static void doTestWithCountDown() throws InterruptedException {
 如果 ArrayList 线程安全，最后结果应该是2000，但并不安全，所以结果应该是：'小于2000 或 出现下标越界'
 ```
 
-> 5
+> 写两个线程，线程1添加10个元素到容器中，线程2实现监控元素的个数，当个数到5个时，线程2给出提示并结束
 
 ```java
 private static void doTestWithCountDown1() {
@@ -1639,6 +1702,86 @@ private static void doTestWithCountDown1() {
     }).start();
 }
 ```
+
+##CyclicBarrier
+
+
+
+## ForkJoinPool
+
+> 分支合并线程池
+
+```sh
+分支合并线程池（mapduce 类似的设计思想）。可以递归完成复杂任务。
+
+要求可分支合并的任务必须是 ForkJoinTask 类型的子类型。ForkJoinTask 类型提供了两个抽象子类型：
+'RecursiveTask'有返回结果的分支合并任务，'RecursiveAction'无返回结果的分支合并任务。
+（Callable / Runnable）compute 方法：就是任务的执行逻辑。
+
+ForkJoinPool 没有所谓的容量。默认都是 1 个线程，初始化线程容量与 CPU 核心数相关。根据任务自动的分支新的子线程。
+当子线程任务结束后，自动合并。所谓自动是根据 fork 和 join 两个方法实现的。
+
+应用： 主要是做科学计算或天文计算的。数据分析的。
+```
+
+```java
+final static int[] NUMBERS = new int[1000000]; //100w个随机数
+final static int MAX_SIZE = 50000;
+final static Random RANDOM = new Random();
+
+static {
+    for (int i = 0; i < NUMBERS.length; i++) {
+        NUMBERS[i] = RANDOM.nextInt(1000);
+    }
+}
+
+static class AddTask extends RecursiveTask<Long> { // RecursiveAction
+    int begin, end;
+
+    public AddTask(int begin, int end) {
+        this.begin = begin;
+        this.end = end;
+    }
+
+    protected Long compute() {
+        if ((end - begin) < MAX_SIZE) {
+            long sum = 0L;
+            for (int i = begin; i < end; i++) {
+                sum += NUMBERS[i];
+            }
+            return sum;
+        } else {
+            int middle = begin + (end - begin) / 2;
+            AddTask task1 = new AddTask(begin, middle);
+            AddTask task2 = new AddTask(middle, end);
+            task1.fork();// 就是用于开启新的任务的。 就是分支工作的。 就是开启一个新的线程任务。
+            task2.fork();
+            // join - 合并。将任务的结果获取。 这是一个阻塞方法。一定会得到结果数据。
+            return task1.join() + task2.join();
+        }
+    }
+}
+
+public static void main(String[] args) throws InterruptedException, ExecutionException, IOException {
+    long start = System.currentTimeMillis();
+    long result = 0L;
+    for (int i = 0; i < NUMBERS.length; i++) {
+        result += NUMBERS[i];
+    }
+    System.out.println(result + " - " + (System.currentTimeMillis() - start));
+
+    ForkJoinPool pool = new ForkJoinPool();
+    start = System.currentTimeMillis();
+    AddTask task = new AddTask(0, NUMBERS.length);
+
+    Future<Long> future = pool.submit(task);
+    System.out.println(future.get() + " - " + (System.currentTimeMillis() - start));
+}
+```
+
+
+
+
 
 #常见问题
 
@@ -1680,7 +1823,53 @@ t2.start();
 t1.start(); //无论启动顺序，执行顺序都是：1-2-3
 ```
 
+> 当缓存队列已满时，新来一个任务，恰好核心线程有一个空闲，哪种情况正确：`（1）`
 
+```sh
+（1）.新任务直接在空闲的核心线程中执行
+（2）.空闲的核心线程从缓冲队列中获取任务，然后将新任务放入到缓存队列
+
+#正确答案（1）：有空闲的核心线程就直接使用；没有则加入队列（队列未满）或新建线程（队列已满）。以下demo可验证
+```
+
+> 线程池最大容量为 4+2，依次添加 7 个任务，怎么执行？
+
+```java
+ThreadPoolExecutor executor = new ThreadPoolExecutor(1, 2, 200,  //线程池最大容量 1+2
+                                                     TimeUnit.MILLISECONDS, new ArrayBlockingQueue<>(1));
+printPoolProperty(executor); //任务开始执行前，获取线程池属性
+for (int i = 1; i < 5; i++) {
+    int taskNum = i;
+    try {
+        executor.submit(() -> {
+            System.out.println(LocalTime.now() + " - " + Thread.currentThread().getName() + " START " + taskNum);
+            TimeUnit.SECONDS.sleep(1);
+        });
+        printPoolProperty(executor); //任务添加后，获取线程池属性
+    } catch (Exception e) {
+        log.error("任务执行异常: {}", e.toString());
+    }
+}
+
+Thread.sleep(2 * 1000);
+printPoolProperty(executor); //所有任务执行完毕后，获取线程池属性
+executor.shutdown();
+```
+
+```sh
+11:10:55.354 - poolSize: 0; queueSize: 0; completedTask: 0 #初始状态
+
+11:10:55.356 - poolSize: 1; queueSize: 0; completedTask: 0 #Task-1.（poolSize = core）
+11:10:55.356 - poolSize: 1; queueSize: 1; completedTask: 0 #Task-2.（queue 已满）
+11:10:55.356 - poolSize: 2; queueSize: 1; completedTask: 0 #Task-3.（扩充 poolSize = max）
+11:10:55.358 - 任务执行异常: java.util.concurrent.RejectedExecutionException: #Task-4.（拒绝策略）
+
+11:10:55.356 - pool-1-thread-1 START 1
+11:10:55.357 - pool-1-thread-2 START 3 #后提交的 3 先于 2 执行
+11:10:56.356 - pool-1-thread-1 START 2
+
+11:11:01.364 - poolSize: 1; queueSize: 0; completedTask: 3 #所有任务完毕后，poolSize = core
+```
 
 > 线程池原理
 
@@ -1718,34 +1907,30 @@ public class MyThreadPool {
     // 内部类 --> 工作线程 --> 如果阻塞队列不空，则取出任务执行；否则，等待
     private class TaskThread extends Thread {
         public void run() {
-            try {
-                for (; ; ) {
-                    if (taskQueue.isEmpty()) {
-                        synchronized (taskQueue) {
-                            taskQueue.wait(20); //阻塞队列为空，等待
-                        }
-                    } else {
-                        Runnable r = taskQueue.remove(0); //取出第一个任务执行（FIFO模式）
-                        if (null != r) {
-                            r.run();
-                        }
+            for (; ; ) {
+                if (taskQueue.isEmpty()) {
+                    synchronized (taskQueue) {
+                        taskQueue.wait(20); //阻塞队列为空，等待
+                    }
+                } else {
+                    Runnable r = taskQueue.remove(0); //取出第一个任务执行（FIFO模式）
+                    if (null != r) {
+                        r.run();
                     }
                 }
-            } catch (InterruptedException e) {
-                e.printStackTrace();
             }
         }
     }
 }
 ```
 
-##概念区分
+## 概念区分
 
 > `start() & run()`
 
 ```sh
 start()：用来启动线程，真正实现多线程运行
-run()  ：不会开启新的线程，直接在调用线程中执行 run()方法体中的内容，程序还是顺序执行
+run()  ：不会开启新的线程，直接在调用线程中执行 run()方法内容，相当于调用普通方法
 ```
 
 > `execute() & submit()`
@@ -1780,7 +1965,7 @@ sleep：是 Thread 类的方法，可以在'任何地方'使用。
 -------必须设置时间参数，设置的时间到，会自动从阻塞状态切换到就绪状态，等待线程调度器的调度
 
 wait ：是 Object 类的方法，只能在'同步代码块'中使用。
--------可设置时间参数，也可以不设置。如果不设置，就必须通过 notify 或 notifyAll 方法进行唤醒，唤醒后进入锁池，等待对象锁
+-------可设置时间参数，也可以不设置。必须通过 notify 或 notifyAll 方法进行唤醒，唤醒后进入锁池，等待对象锁
 ```
 
 > `等待池 & 锁池`
@@ -1791,6 +1976,13 @@ wait ：是 Object 类的方法，只能在'同步代码块'中使用。
 
 以上线程拿到锁要干嘛？ '拿到锁，进入就绪状态，等待CPU时间片开始运行'。
 #notify的作用相当于叫醒睡着的人，而并不会给他分配任务。就是说，notify只是让之前调用wait的线程有权利重新参与争夺线程锁
+```
+
+> `sleep() & yield()`
+
+```sh
+yield：只是让出分配给自己的 CPU 时间片，并且会立刻进入就绪状态参与CPU时间的竞争   #Thread 方法
+sleep：让出 CPU 时间进入阻塞状态，等到阻塞时间结束，然后进入就绪状态，竞争CPU时间 #Object 方法
 ```
 
 
