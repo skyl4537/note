@@ -57,7 +57,7 @@ String val1 = String.format("%.2f", 1.1250); //1.13
 > &，&&：都是逻辑 "与" 运算符，但后者为`短路运算`
 
 ```sh
-'& ' 既是逻辑运算符，也是位运算符。既能操作布尔类型，也能操作数值类型
+'& ' 既是逻辑运算符，也是位运算符。既能操作 boolean 类型，也能操作数值类型
 '&&' 只是逻辑运算符，只能操作 boolean 类型。'短路操作：左为false，则右不再计算'
 ```
 
@@ -1250,13 +1250,13 @@ helloArray.invoke(null, (Object) new String[]{"aaa", "bbb"}); //正确1
 ```sh
 #System.out.println(2 == 2.0); //true（类型转换？）
 当比较的是'基本数据类型'时，比较的是值
-当比较的是'引用数据类型'时，比较的是地址值
+当比较的是'引用数据类型'时，比较的是内存地址值。#常用于判断两个变量是否指向同一个对象
 ```
 
 ```sh
 #equals
 不能用于基本数据类型的比较
-当比较的是引用数据类型时，默认也是比较地址值（即'调用=='）。
+当比较的是引用数据类型时，默认也是比较地址值（即'调用=='）。#常用于判断两个对象的内容是否相同
 只不过像String、Date、File、包装类等都重写了Object类中的 equals()。实际开发中，常常需要根据业务需要重写 equals()。
 ```
 
@@ -1271,6 +1271,8 @@ public boolean equals(Object obj) { //Object 中的方法
 ```sh
 二者的定义 #抽象类使用关键字 abstract，接口使用 interface
 共同点    #不能实例化；用于被其他类实现和继承，以多态的方式使用；都可以包含抽象方法
+
+抽象类和普通类的区别：不能创建实例对象 和 拥有抽象方法。
 ```
 
 ```sh
@@ -1487,13 +1489,14 @@ for (int i = 0; i < 100; i++) {
 
 ```java
 properties.put("CCSID", new Integer(5));
-properties.put("CCSID", Integer.valueOf(5)); //触发 IntegerCache 机制，范围：[-128 ,127]
+properties.put("CCSID", Integer.valueOf(5)); //触发 IntegerCache 机制，范围：[-128, 127]
 ```
 
 > 所有的相同类型的`包装类对象`之间值的比较，全部使用 equals 方法比较
 
 ```sh
-#对于 Integer 在[-128,127]范围内的赋值，对象是在 IntegerCache.cache 产生，会复用已有对象。
+#享元模式（Flyweight Pattern）：复用内存中已存在的对象。
+对于 Integer 在[-128,127]范围内的赋值，对象是在 IntegerCache.cache 产生，会复用已有对象。
 所以，在此范围内的 v1==v2 效果同 v1.equals(v2) 相同，都是 true
 但是，此范围之外的不会复用已有的对象，而是在堆空间新生成。所以，v1==v2 返回 false。v1.equals(v2) 返回 true
 ```

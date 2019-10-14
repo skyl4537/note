@@ -92,7 +92,7 @@ public void test() throws InterruptedException {
 }
 ```
 
-> 方案1：只在需要的时候创建实例，不用static修饰。`缺点`：加重了创建对象的负担，会频繁地创建和销毁对象，效率较低。
+> 方案1：只在需要的时候创建实例，不用static修饰。`缺点`：加重了创建对象的负担，会频繁地创建和销毁对象，效率较低
 
 ```java
 public static String formatDate(Date date) throws ParseException {
@@ -106,7 +106,7 @@ public static Date parse(String strDate) throws ParseException {
 }
 ```
 
-> 方案2： synchronized大法好。`缺点`：并发量大的时候会对性能有影响，线程阻塞。
+> 方案2： synchronized大法好。`缺点`：并发量大的时候会对性能有影响，线程阻塞
 
 ```java
 private static final SimpleDateFormat sdf = new SimpleDateFormat("yyyy-MM-dd HH:mm:ss");
@@ -124,19 +124,11 @@ public static Date parse(String strDate) throws ParseException {
 }
 ```
 
-> 方案3：ThreadLocal，确保每个线程单独一个SimpleDateFormat对象。
+> 方案3：ThreadLocal，确保每个线程单独一个SimpleDateFormat对象
 
 ```java
-private static ThreadLocal<DateFormat> threadLocal = new ThreadLocal<DateFormat>() {
-    @Override
-    protected DateFormat initialValue() {
-        return new SimpleDateFormat("yyyy-MM-dd HH:mm:ss");
-    }
-};
-
-//上式的lambda简化版
-//private static ThreadLocal<DateFormat> threadLocal = 
-//        ThreadLocal.withInitial(() -> new SimpleDateFormat("yyyy-MM-dd HH:mm:ss"));
+private static ThreadLocal<DateFormat> threadLocal = 
+    ThreadLocal.withInitial(() -> new SimpleDateFormat("yyyy-MM-dd HH:mm:ss"));
 
 public static Date parse(String dateStr) throws ParseException {
     return threadLocal.get().parse(dateStr);
@@ -152,11 +144,11 @@ public static String format(Date date) {
 ```java
 private static final DateTimeFormatter formatter = DateTimeFormatter.ofPattern("yyyy-MM-dd HH:mm:ss");
 
-public static String formatDate2(LocalDateTime date) {
+public static String formatDate(LocalDateTime date) {
     return formatter.format(date);
 }
 
-public static LocalDateTime parse2(String dateNow) {
+public static LocalDateTime parse(String dateNow) {
     return LocalDateTime.parse(dateNow, formatter);
 }
 ```

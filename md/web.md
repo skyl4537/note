@@ -1513,12 +1513,12 @@ public String car(@Valid @RequestParam Car car, BindingResult result) {
 
 ```xml
 <bean id="messageSource" class="org.springframework.context.support.ResourceBundleMessageSource">
-    <property name="basename" value="i18n.login"></property>
+    <property name="basename" value="i18n.login"/>
 </bean>
 ```
 
 ```properties
-#springboot 默认已配置 ResourceBundleMessageSource，即只需配置 basename。
+#SpringBoot 默认已配置 ResourceBundleMessageSource，即只需配置 basename。
 #此属性默认值为 message。所以，在 /resources 下新建 message 资源文件，则可以省去此配置
 spring.messages.basename=i18n.login 
 ```

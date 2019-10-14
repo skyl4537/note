@@ -6,9 +6,14 @@
 
 ## 概念相关
 
+> 优点
 
-
-
+```sh
+'简化依赖管理'：提供一系列的Starter，将各种功能性模块进行了划分与封装
+'自动化配置'：为每一个Starter都提供了自动化的java配置类
+'嵌入式容器'：嵌入式tomcat，无需部署war文件
+'监控の端点'：通过 Actuator 模块暴露的http接口，可以轻松的了解和控制应用的运行情况
+```
 
 
 
@@ -403,74 +408,6 @@ public class WebMvcConfig implements WebMvcConfigurer {
     <script th:src="@{/webjars/bootstrap/js/bootstrap.min.js}"></script>
     <link rel="stylesheet" th:href="@{/webjars/bootstrap/css/bootstrap.min.css}"/>
 </head>
-```
-
-## CORS跨域
-
-> 问题描述
-
-```sh
-Access to XMLHttpRequest at 'http://localhost:9005/qrcode/java' from origin 'http://localhost:9006' 
-has been blocked by CORS policy: No 'Access-Control-Allow-Origin' header is present on the requested resource.
-```
-
-> 问题原因
-
-```sh
-'跨域'：指的是浏览器不能执行其他网站的脚本。'域名、端口、协议任一不同'，就是跨域。
-采用前后端分离开发，前后端分离部署，必然会存在跨域问题。
-
-CORS（Cross-Origin Resource Sharing，跨源资源共享）是 w3c 出的一个标准，其思想是使用自定义的HTTP头部让浏览器与服务器进行沟通，
-从而决定请求或响应是应该成功，还是应该失败。因此，要想实现CORS进行跨域，需要服务器进行一些设置，同时前端也需要做一些配置和分析。
-
-#注意：localhost 和 127.0.0.1 虽然都指向本机，但也属于跨域。
-```
-
-```properties
-# 非跨域
-http://www.123.com/index.html  --->  http://www.123.com/server.PHP
-
-# 跨域（主域名不同：123/456）
-http://www.123.com/index.html  --->  http://www.456.com/server.php
-
-# 跨域（子域名不同：abc/def）
-http://abc.123.com/index.html  --->  http://def.123.com/server.php
-
-# 跨域（协议不同：http/https）
-http://www.123.com/index.html  --->  https://www.123.com/server.php
-
-# 跨域（端口不同：8080/8081）
-http://www.123.com:8080/index.html  --->  http://www.123.com:8081/server.php
-```
-
-> 服务端配置（1）：细粒度
-
-```java
-/**
- * 细粒度的跨域注解
- *
- * @origins 允许可访问的域列表
- * @maxAge  准备响应前的 缓存持续的 最大时间（以秒为单位）
- */
-@CrossOrigin(origins = "http://localhost:9005", maxAge = 3600)
-@GetMapping("/java")
-public String java() {
-    return LocalDateTime.now().toString();
-}
-```
-
-> 服务端配置（2）：粗粒度
-
-```java
-@Configuration
-public class WebMvcConfig implements WebMvcConfigurer {
-
-    @Override
-    public void addCorsMappings(CorsRegistry registry) {
-        registry.addMapping("/**")
-            .allowedOrigins("http://localhost:9005"); //允许端口 9005 访问
-    }
-}
 ```
 
 ## 异步调用
@@ -1887,3 +1824,143 @@ public String delete(@PathVariable Long id) {
 </html>
 ```
 
+# 跨域问题
+
+##基础概念
+
+> 什么是跨域？
+
+```sh
+'跨域'：是指跨域名的访问，浏览器不能执行其他网站的脚本。'域名、端口、协议任一不同'，就是跨域。
+采用前后端分离开发，前后端分离部署，必然会存在跨域问题。
+#注意：localhost 和 127.0.0.1 虽然都指向本机，但也属于跨域。
+```
+
+```sh
+#非跨域
+http://www.123.com/index.html  --->  http://www.123.com/server.PHP
+
+# 跨域（主域名不同：123/456）
+http://www.123.com/index.html  --->  http://www.456.com/server.php
+
+# 跨域（子域名不同：abc/def）
+http://abc.123.com/index.html  --->  http://def.123.com/server.php
+
+# 跨域（端口不同：8080/8081）
+http://www.123.com:8080/index.html  --->  http://www.123.com:8081/server.php
+
+# 跨域（协议不同：http/https）
+http://www.123.com/index.html  --->  https://www.123.com/server.php
+```
+
+> 为什么有跨域问题？
+
+```sh
+#跨域不一定会有跨域问题。
+因为跨域问题是浏览器对于ajax请求的一种安全限制：一个页面发起的ajax请求，只能用于当前页同域名的路径，这能有效的阻止跨站攻击。
+因此：'跨域问题是针对ajax的一种限制'。
+但是，这却给开发带来了不便，而且在实际生成环境中，肯定会有很多台服务器之间交互，地址和端口都可能不同，怎么办？
+```
+
+> 解决方案
+
+```sh
+#Jsonp
+最早的解决方案，利用 <script/> 标签可以跨域的原理实现。限制：
+（1）需要服务的支持
+（2）只能发起GET请求
+```
+
+```sh
+#nginx反向代理
+思路：利用 nginx 反向代理把跨域转为不跨域，支持各种请求方式
+缺点：需要在 nginx 进行额外配置，语义不清晰
+
+在 manage.leyou.com 中需要访问接口 api.leyou.com/api/item/list，这就涉及到跨域访问。
+nginx反向代理的实现方案做法是：不直接访问 api.leyou.com，而是访问 manage.leyou.com/api/item/list，
+在 nginx 中将路径 /api/item/list 单独做一个映射，将其映射到 api.leyou.com 服务器。
+
+server{
+    listen 80
+    server_name manage.leyou.com
+    location /api/item/list{ #单独映射跨域路径。跨域访问多，此配置就越多
+    	proxy_pass http://127.0.0.1:10010; #api.leyou.com 端口
+    }
+}
+```
+
+```sh
+#CORS
+规范化的跨域请求解决方案，安全可靠。
+优势：在服务端进行控制是否允许跨域，可自定义规则。支持各种请求方式
+缺点：会产生额外的请求
+```
+
+## CORS
+
+> 什么是 CORS？
+
+```sh
+CORS是一个 w3c 标准，全称是"跨域资源共享"（Cross-origin resource sharing）。
+它允许浏览器向跨源服务器，发出'XMLHttpRequest'请求，从而克服了'ajax'只能'同源使用'的限制。
+
+CORS需要浏览器和服务器同时支持。目前，所有浏览器都支持该功能，IE浏览器不能低于IE10。
+#浏览器端：
+目前，所有浏览器都支持该功能（IE10以下不行）。整个CORS通信过程，都是浏览器自动完成，不需要用户参与。
+#服务端：
+CROS通信与ajax没有任何差别，因此不需要改变以前的业务逻辑。
+只不过，浏览器会在请求中携带一些头信息，需要以此判断是否运行其跨域，然后在响应头中加入一些信息即可。这一般通过'过滤器'完成即可。
+```
+
+> 基本原理
+
+```sh
+浏览器会将ajax请求分为两类，其处理方案略有差异：简单请求、特殊请求。
+
+#简单请求：HEAD，GET，POST
+当浏览器发现发现的ajax请求是简单请求时，会在请求头中携带一个字段：Origin。如 'Origin: http://manage.leyou.com'
+Origin中会指出当前请求属于哪个域（'协议+域名+端口'）。服务会根据这个值决定是否允许其跨域。
+
+如果服务器允许跨域，需要在返回的响应头中携带下面信息：
+Access-Control-Allow-Origin: http://manage.leyou.com #可接受的域，是一个具体域名 或 代表任意的 *
+Access-Control-Allow-Credentials: true #是否允许携带cookie，默认情况下，cors不会携带cookie，除非这个值是true
+Content-Type: text/html; charset=utf-8
+```
+
+```sh
+#特殊请求：除简单以外的请求
+特殊请求会在正式通信之前，增加一次HTTP查询请求，称为'预检请求'（preflight）。
+
+浏览器先询问服务器，当前网页所在的域名是否在服务器的许可名单之中，以及可以使用哪些HTTP动词和头信息字段。
+只有得到肯定答复，浏览器才会发出正式的'XMLHttpRequest'请求，否则就报错。
+```
+
+##解决方案
+
+> 细粒度
+
+```java
+//允许可访问的域列表；准备响应前的[缓存持续]的最大时间（以秒为单位）
+@CrossOrigin(origins = "http://manage.leyou.com", maxAge = 3600)
+@GetMapping("/java")
+public String java() {
+    return LocalDateTime.now().toString();
+}
+```
+
+> 粗粒度
+
+```java
+@Configuration
+public class WebMvcConfig implements WebMvcConfigurer {
+
+    @Override
+    public void addCorsMappings(CorsRegistry registry) {
+        registry.addMapping("/**")
+            .allowedOrigins("http://manage.leyou.com") //允许端口 9005 访问
+            .allowedMethods("POST", "GET", "PUT", "OPTIONS", "DELETE", "HEAD", "PATCH")
+            .maxAge(3600)
+            .allowCredentials(true);
+    }
+}
+```

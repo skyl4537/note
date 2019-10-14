@@ -211,7 +211,7 @@ list.add(5); //集合放基本类型，其实是通过【装箱拆箱】来实�
 //通过 new 得到 HashMap 的子类的实例化，然后上转型为 Map 的引用，得到的 map 实际上是 HashMap 的子类的引用。
 //但在功能上没有任何改变，相比于常规标准方式进行初始化要简洁许多，但代码可读性相对会差
 Map<Integer, String> map = new HashMap<Integer, String>() {{
-    put(1, "a"); put(2, "b"); put(3, "c");
+    put(1, "a"); put(2, "b");
 }};
 ```
 
@@ -263,7 +263,7 @@ TreeMap   -> 线程不安全        k不为,v可为 null    底层二叉树实�
 当再次调用 next()方法时，迭代器的索引会指向第二个元素并将该元素返回。
 依此类推，直到 hasNext()方法返回 false，表示到达了集合的末尾，终止对元素的遍历。
 
-#增强for循环：底层原理也是Iterator迭代器，所以在遍历的过程中，不能对集合中的元素进行增删操作。【faset-fail】
+#增强for循环：底层原理也是迭代器 Iterator，所以在遍历的过程中，不能对集合中的元素进行增删操作。【faset-fail】
 ```
 
 > 泛型
@@ -272,7 +272,7 @@ TreeMap   -> 线程不安全        k不为,v可为 null    底层二叉树实�
 集合是可以存放任意类型的，将元素存入集合后，元素都会被提升为 Object 类型。那么在取出元素时，就必须采用类型转换。
 在存储过程中，存入其他类型也不会报错。但是，在取出时进行类型转换时则报异常。
 
-'泛型'：（1）将运行时期的 ClassCastException，转移到了编译时期变成了编译失败。（2）避免了类型强转的麻烦。
+'泛型优点'：（1）将运行时期的 ClassCastException，转移到了编译时期变成了编译失败。（2）避免了类型强转的麻烦。
 ```
 
 
@@ -316,7 +316,7 @@ TreeMap   -> 线程不安全        k不为,v可为 null    底层二叉树实�
 
 ```sh
 链表：linked_list，由一系列结点node（链表中每一个元素称为结点）组成，结点可以在运行时i动态生成。
-每个结点包括'两个部分'：一个是存储数据元素的数据域，另一个是存储'下一个结点地址的指针域'。常说的链表结构有单向链表与双向链表。
+每个结点包括'两个部分'：一个是存储数据元素的'数据域'，另一个是存储下一个结点地址的'指针域'。常说的链表结构有单向链表与双向链表。
 
 （1）多个结点之间，通过地址进行连接
 （2）查找元素慢：想查找某个元素，需要通过连接的节点，依次向后查找指定元素
@@ -341,8 +341,8 @@ TreeMap   -> 线程不安全        k不为,v可为 null    底层二叉树实�
 ```sh
 顶级接口：Collection（单列集合） + Map（键值对集合）。#List Set 是 Collection 的二级接口。
 
-List：存取有序，可重复。可通过索引操作元素
-Set ：存取无序，不可重复
+List：存取有序，元素可重复。可通过索引操作元素
+Set ：存取无序，元素不可重复
 ```
 
 ```sh
@@ -354,12 +354,24 @@ List 是通过 equals 来比较两个对象是否相等，如 contains() remove(
 在同样的哈希值下顺延（可认为哈希值相同的元素放在一个哈希桶中），也就是哈希一样的存一列。
 ```
 
+> ArrayList
+
 ```sh
 Vector     -> 线程安全      效率低，被 ArrayList 替代
 ArrayList  -> 线程不安全    查询快，增删慢        底层'数组'实现，新增时会涉及到数组拷贝
 LinkedList -> 线程不安全    查找慢，增删快        底层'双向循环链表'实现
+```
 
-#Vector和ArrayList 底层采用'数组'实现。当需要增长时，Vector 默认增长一倍，ArrayList 却是 0.5
+```sh
+#Vector & ArrayList
+底层都是采用'数组'实现。
+'同步性'：前者是线程安全的，后者非线程安全
+'扩容'：当需要扩容时，Vector 默认增长一倍，ArrayList 却是 0.5
+```
+
+```sh
+#Vector & ArrayList & LinkedList
+Vector 和 ArrayList 都是使用数组方式存储数据，
 ```
 
 > LinkedList
@@ -372,7 +384,7 @@ public E removeFirst();
 ```
 
 ```java
-//在开发时，LinkedList集合也可以作为堆栈，队列的结构使用
+//在开发时，LinkedList集合也可以作为【堆栈，队列】的结构使用
 public E pop();           //从此列表所表示的堆栈处弹出一个元素。
 public void push(E e);    //将元素推入此列表所表示的堆栈。
 public boolean isEmpty(); //如果列表不包含元素，则返回true。
@@ -388,6 +400,14 @@ TreeSet  -> 线程不安全    排序存储（可排序）    底层'二叉树'�
 ```
 
 ```sh
+#Set 元素唯一性？
+Set 中的元素不能重复，使用 hashCode()和 equals()用来判断两个元素是否相同。
+'=='是判断内存地址是否相等，用来决定引用值是否指向同一个对象。
+```
+
+
+
+```sh
 #TreeSet 排序是如何进行的呢？【二者都有，以后者为主】
 （1）元素 implements Comparable
 
@@ -398,9 +418,10 @@ TreeSet<Dog> dogSet = new TreeSet<>((o1, o2) -> Integer.compare(o1.getAge(), o2.
 >HashSet
 
 ```sh
-HashSet 底层的实现其实是一个 HashMap。
+#HashSet 底层的实现其实是一个 HashMap。
 根据对象的 hashCode 来确定元素在集合中的存储位置，因此具有良好的存取和查找性能。
-#保证元素唯一性的方式依赖于： hashCode() 与 equals() 方法。
+保证元素唯一性的方式依赖于： hashCode() 与 equals() 方法。
+#通过 hashCode()定位数组中的位置，通过 equals()判断已有元素和待插入元素是否为同一对象
 ```
 
 ```sh
@@ -482,7 +503,7 @@ public V put(K key, V value);
 >HashMap
 
 ```sh
-'HashMap'      ：'哈希表'结构。元素'存取无序'。由于要保证键的唯一、不重复，需要重写 key 的'hashCode()方法、equals()方法'。
+'HashMap'      ：'哈希表'结构。元素存取无序。由于要保证键的唯一、不重复，需要重写 key 的'hashCode()方法、equals()方法'。
 'LinkedHashMap'：HashMap 的子类，'链表+哈希表'结构。元素'存取有序'（链表保证）。也需要重写以上两个方法
 ```
 
@@ -514,7 +535,7 @@ ConcurrentHashMap的'读取操作没有用到锁定',所以读取操作几乎是
 
 ##List去重
 
-> 目标：取出 Id 不重复的元素
+> `目标`：取出 Id 不重复的元素
 
 ```java
 List<User> users = Arrays.asList(new User(1, "a"), new User(2, "b"), new User(1, "aa")); //源集合
@@ -596,32 +617,19 @@ equals相同，但hashCode不同，称为'哈希冲突'。冲突会导致操作�
 
 > 禁止在 foreach 里进行元素的 remove/add 操作。
 
-```java
-public void test() {
-    List<String> list = new ArrayList<>(Arrays.asList("a", "b", "c"));
-    for (String s : list) {
-        if ("a".equalsIgnoreCase(s)) {
-            list.remove(s); //抛异常 -> ConcurrentModificationException
-        }
-    }
-    System.out.println(JSON.toJSON(list));
-}
-```
-
 ```sh
-增强for循环，其实是Java提供的'语法糖'，其实现底层原理还是借助 Iterator 迭代器实现。
-
+'增强for循环'，其实是Java提供的'语法糖'，其实现底层原理还是借助'迭代器-Iterator'实现。
 ArrayList 非线程安全，因此在使用迭代器的过程中，如果有其他线程修改了list，那么将抛出并发修改异常，即'fast-fail'机制。
 ```
 
-> 快速失败
-
-```sh
-主要是通过 modCount（修改次数）实现，对 ArrayList 内容的修改都将增加这个值。
-
-在 Iterator 初始化过程中，会将这个值赋给迭代器的 expectedModCount。
-在迭代过程中，判断 modCount 跟 expectedModCount 是否相等，如果不相等就表示已经有其他线程修改了 list。
-#注意：modCount 声明为 volatile，保证线程之间修改的可见性。
+```java
+List<String> list = new ArrayList<>(Arrays.asList("a", "b", "c"));
+for (String s : list) {
+    if ("a".equalsIgnoreCase(s)) {
+        list.remove(s); //抛异常 -> ConcurrentModificationException
+    }
+}
+System.out.println(JSON.toJSON(list));
 ```
 
 > 解决方案
@@ -666,15 +674,83 @@ list = list.stream().filter(x -> !x.equalsIgnoreCase("a")).collect(Collectors.to
 
 ```java
 //方案5： 使用 fail-safe 的集合类 ConcurrentLinkedDeque
-ConcurrentLinkedDeque<String> list = new ConcurrentLinkedDeque<>();
-list.add("a");
-list.add("b");
-for (String s : list) {
+ConcurrentLinkedDeque<String> deque = new ConcurrentLinkedDeque<>(list);
+for (String s : deque) {
     if (s.equals("a")) {
-        list.remove();
+        deque.remove();
+    }
+}
+
+List<String> list = new ArrayList<>(Arrays.asList("a", "b", "c"));
+list = new CopyOnWriteArrayList<>(list);
+for (String s : list) {
+    if ("a".equalsIgnoreCase(s)) {
+        list.remove(s);
     }
 }
 ```
+
+> 快速失败（Fail-Fast）
+
+```sh
+#什么是并发修改？
+当一个或多个线程正在遍历一个集合Collection，此时另一个线程修改了这个集合的内容（'增删改'）。这就是并发修改
+
+#什么是 fail-fast 机制？
+在使用'迭代器-Iterator'遍历集合时，当集合结构被修改，会抛出异常 ConcurrentModificationException
+
+#两种场景
+（1）单线程环境：在集合遍历过程中，修改了结构。
+（2）多线程环境：当一个线程在遍历集合，而另一个线程对集合的结构进行了修改。
+
+#注意：这里异常的抛出条件是检测到 modCount！=expectedmodCount 这个条件。
+如果集合发生变化时，修改 modCount 值，刚好又设置为了 expectedmodCount 值，则异常不会抛出。
+因此，不能依赖于这个异常是否抛出而进行并发操作的编程，这个异常只建议用于检测并发修改的bug。
+```
+
+```sh
+#底层原理
+迭代器在遍历过程中是直接访问集合数据的，因此集合数据在遍历的过程中不能被修改。
+为了保证不被修改，迭代器内部维护了一个修改次数的标记 'modCount'，当集合结构改变（增删改），标记都会被修改。
+
+在 Iterator 初始化过程中，会将这个值赋给迭代器的 expectedModCount = modCount。
+在迭代过程中，判断 modCount == expectedModCount？ 如果不相等，就表示已经有其他线程修改了集合，然后抛出异常。
+#注意：modCount 声明为 volatile，保证线程之间修改的可见性。
+```
+
+```java
+private class Itr implements Iterator<E> {
+    int expectedModCount = ArrayList.this.modCount; //迭代器初始化过程时，保存当前的修改次数
+
+    public E next() {
+        checkForComodification();
+        /** 省略此处代码 */
+    }
+
+    final void checkForComodification() { //在迭代器遍历集合过程中，检查集合是否被修改
+        if (ArrayList.this.modCount == this.expectedModCount)
+            return;
+        throw new ConcurrentModificationException();
+    }
+}
+```
+
+> 安全失败（Fail-Safe）
+
+```sh
+'原理'：fail-safe集合，在进行结构修改时（增删改 + 遍历）,都是先拷贝原有集合，在拷贝上进行修改，修改完成之后再改变原有集合的引用。
+所以，遍历是在原集合的拷贝上进行，修改是在原集合上进行，所以互不干扰
+
+'缺点'：迭代器并不能访问到修改后的内容，即：迭代器遍历的是开始遍历那一刻拿到的集合拷贝，在遍历期间原集合发生的修改迭代器是不知道的。
+并且，拷贝将产生大量的中间对象，同时数组的拷贝也是相当损耗资源的
+```
+
+```sh
+场景：'java.util'包下的集合类都是快速失败的，不能在多线程下发生并发修改（迭代过程中被修改）。
+场景：'java.util.concurrent'包下的容器都是安全失败，可以在多线程下并发使用，并发修改。
+```
+
+
 
 
 
@@ -718,69 +794,122 @@ System.out.println(list1); //差集：[1, 7]
 
 
 
-# 算法相关
+# 排序算法
 
-## 排序算法
+##冒泡排序
 
-> 冒泡排序
+> 基础概念
 
 ```sh
-#比较相邻的元素。如果第一个比第二个大，就交换它们两个
-最佳情况：T(n) = O(n)  最差情况：T(n) = O(n2)  平均情况：T(n) = O(n2)
+#一次比较两个元素，如果它们的顺序错误就把它们交换过来。
+最佳情况：T(n) = O(n)  最差情况：T(n) = O(n^2)  '平均情况：T(n) = O(n^2)'
 ```
 
 ```java
 private static void bubbleSort() {
-    int[] arr = {9, 56, 72, 16}; //升序排列：相邻比较，大者排后
-    int temp;
-    for (int i = 0; i < arr.length; i++) { //表示趟数，一共 arr.length-1 次
-        for (int j = 0; j < arr.length - 1 - i; j++) { //每趟遍历元素个数，和当前趟数有关
-            if (arr[j] > arr[j + 1]) {
-                temp = arr[j];
+    int[] arr = {9, 7, 5, 12};
+
+    for (int i = 0; i < arr.length - 1; i++) { //总共遍历 len-1
+        for (int j = 0; j < arr.length - 1 - i; j++) { //第 i 次比较 len-1-i 个元素
+            if (arr[j + 1] < arr[j]) { //升序
+                int temp = arr[j];
                 arr[j] = arr[j + 1];
                 arr[j + 1] = temp;
             }
         }
+        System.out.println(Arrays.toString(arr));
     }
 }
 ```
 
-```sh
-#改进方案：
-数据的顺序排好之后，冒泡算法仍然会继续进行下一轮的比较，直到 arr.length-1 次，后面的比较没有意义的。
+>改进方案
 
-设置标志位flag，如果发生了交换flag设置为 true；如果没有交换就设置为 false。
-这样当一轮比较结束后如果flag仍为 false，即：这一轮没有发生交换，说明数据的顺序已经排好，没有必要继续进行下去。
+```sh
+数据的顺序排好之后，冒泡算法仍然会继续进行下一轮的比较，直到 arr.length-1 次，后面的比较没有意义的。
+设置'置换标志-flag'，如果发生了交换flag设置为 true；如果没有交换就设置为 false。
+这样当一轮比较结束后如果flag仍为 false，即：这一轮没有发生交换，'说明数据的顺序已经排好'，没有必要继续进行下去。
 ```
 
 ```java
-private static void bubbleSort() {
-    int[] arr = {9, 56, 72, 16}; //升序排列：相邻比较，大者排后
-    int temp;
-    boolean flag; //置换标识位
-    for (int i = 0; i < arr.length; i++) { //表示趟数，一共 arr.length-1 次
+private static void bubbleSortSuper() {
+    int[] arr = {9, 7, 5, 12};
+
+    boolean flag; //置换标识
+    for (int i = 0; i < arr.length - 1; i++) {
         flag = false;
-        for (int j = 0; j < arr.length - 1 - i; j++) { //每趟遍历元素个数，和当前趟数有关
-            if (arr[j] > arr[j + 1]) {
-                temp = arr[j];
+        for (int j = 0; j < arr.length - 1 - i; j++) {
+            if (arr[j + 1] < arr[j]) {
+                int temp = arr[j];
                 arr[j] = arr[j + 1];
                 arr[j + 1] = temp;
                 flag = true;
             }
         }
-        if (!flag) break;
+        if (!flag) break; //已排序完成
+        System.out.println(Arrays.toString(arr));
     }
 }
 ```
 
-> 选择排序
+## 选择排序
+
+> 基础概念
+
+```sh
+表现'最稳定'的排序算法之一，时间复杂度恒为'O(n^2)'，所以'数据规模越小越好'。不占用额外的内存空间。
+最佳情况：T(n) = O(n^2)  最差情况：T(n) = O(n^2)  '平均情况：T(n) = O(n^2)'
+
+首先，在原始数据中找到最小（大）元素，存放到排序序列的起始位置
+然后，再从剩余未排序元素中继续寻找最小（大）元素，放到已排序序列的末尾位置
+以此类推，直到所有元素均排序完毕
+```
 
 ```java
-//首先，在未排序序列中找到最小（大）元素，存放到排序序列的起始位置
-//然后，再从剩余未排序元素中继续寻找最小（大）元素，放到已排序序列的末尾。
-//以此类推，直到所有元素均排序完毕
+private static void selectionSort() {
+    int[] arr = {9, 7, 5, 12};
 
+    int maxIndex;
+    for (int i = 0; i < arr.length; i++) {
+        maxIndex = i;
+        for (int j = 0; j < arr.length - i; j++) {
+            if (arr[j] > arr[maxIndex]) { //找出 [最大元素] 的将其放在集合的末位
+                maxIndex = j;
+            }
+        }
+        int exchangeIndex = arr.length - 1 - i; //待置换index
+        if (maxIndex != exchangeIndex) {
+            int temp = arr[exchangeIndex];
+            arr[exchangeIndex] = arr[maxIndex];
+            arr[maxIndex] = temp;
+        }
+        System.out.println(Arrays.toString(arr));
+    }
+}
 ```
+
+```java
+private static void selectionSort() {
+    int[] arr = {9, 8, 5, 2, 4};
+
+    int minIndex;
+    for (int i = 0; i < arr.length - 1; i++) {
+        minIndex = i;
+        for (int j = i + 1; j < arr.length; j++) {
+            if (arr[j] < arr[minIndex]) { //最小元素
+                minIndex = j;
+            }
+        }
+        if (minIndex != i) {
+            int temp = arr[i];
+            arr[i] = arr[minIndex];
+            arr[minIndex] = temp;
+        }
+        System.out.println(Arrays.toString(arr));
+    }
+}
+```
+
+## 插入排序
 
 
 
@@ -789,26 +918,33 @@ private static void bubbleSort() {
 > 单词计数 & map值排序
 
 ```java
-//(1).单词计数
-String str = "我是中华人民共和国公民";
-HashMap<Character, Integer> map = new HashMap<>();
-char[] chars = str.toCharArray();
-for (char aChar : chars) {
-    // if (null == count) { //未统计到的字符
-    //     map.put(aChar, 1);
-    // } else {
-    //     map.put(aChar, 1 + count);
-    // }
-    map.merge(aChar, 1, (a, b) -> b + a); //lambda简化
+private static void wordCount() {
+    char[] arr = "我是中华人民共和国公民".toCharArray();
+    Map<Character, Integer> map = new HashMap<>();
+    for (char c : arr) {
+        Integer count = map.get(c);
+        if (null == count) {
+            map.put(c, 1);
+        } else {
+            map.put(c, count + 1);
+        }
+        //map.merge(c, 1, (a, b) -> a + b); //简化版
+    }
+    System.out.println(map);
 }
-map.forEach((x, y) -> System.out.println(x + " - " + y));
 ```
 
 ```java
-//(2).Map值排序
-List<Map.Entry<Character, Integer>> list = new ArrayList<>(map.entrySet());
-Collections.sort(list, (o1, o2) -> o1.getValue().compareTo(o2.getValue()));
-System.out.println(JSON.toJSONString(list));
+private static void sortMapByValue(Map<Character, Integer> map) {
+    Set<Map.Entry<Character, Integer>> entries = map.entrySet();
+    List<Map.Entry<Character, Integer>> list = new ArrayList<>(entries);
+    Collections.sort(list, (o1, o2) -> o1.getValue().compareTo(o2.getValue())); //值排序
+    System.out.println(list);
+}
+```
+
+```java
+
 ```
 
 
@@ -828,14 +964,13 @@ System.out.println(JSON.toJSONString(list));
 
 ```java
 if (0 == imageSet.size()){}
-if (imageSet.isEmpty()){} //size()是通过迭代集合得到，随着元素数量增加，调用 size()变得越来越慢。
+if (imageSet.isEmpty()){} //size()是通过迭代集合得到，随着元素数量增加 size()会越来越慢。
 ```
 > 初始值大小
 
 ```sh
-initialCapacity = (需要存储的元素个数 / 负载因子) + 1。
-#注意负载因子（即loaderfactor）默认为 0.75， 如果暂时无法确定初始值大小，请设置为 16（即默认值）。
-
+#initialCapacity = (需要存储的元素个数 / 负载因子) + 1。
+注意：负载因子（即loaderfactor）默认为 0.75， 如果暂时无法确定初始值大小，请设置为 16（即默认值）。
 HashMap 需要放置 1024 个元素，由于没有设置容量初始大小，随着元素不断增加，容量 7 次被迫扩大， resize 需要重建 hash 表，严重影响性能。
 ```
 
@@ -847,8 +982,16 @@ List<String> list = new ArrayList<>(5); //默认16，加载因子0.75
 > 不要使用集合实现来赋值静态成员变量
 
 ```java
-//对于集合类型的静态成员变量，不要使用集合实现来赋值，应该使用【静态代码块】赋值
-private static Map<String, Integer> map = new HashMap<>();
+//对于集合类型的静态成员变量，不要使用集合实现来赋值【双括号初始化】，应该使用【静态代码块】赋值
+private static Map<String, Integer> map = new HashMap<String, Integer>() { //反例
+    {
+        put("a", 1);
+    }
+};
+```
+
+```java
+private static Map<String, Integer> map = new HashMap<>(); //正例
 static {
     map.put("a", 1);
 };
@@ -858,7 +1001,7 @@ static {
 
 ```sh
 'asList()'  返回的是 Arrays 内部类，并不是真正的 ArrayList。它没有实现集合的修改方法，如 add()/remove()/clear()
-'subList()' 返回的是 ArrayList 的内部类，是 ArrayList 的一个视图，对于 SubList 子列表的所有操作最终会反映到原列表上
+'subList()' 返回的是 ArrayList 内部类，是 ArrayList 的一个视图，对于 SubList 子列表的所有操作最终会反映到原列表上
 ```
 
 ```java
@@ -892,11 +1035,9 @@ public void test() {
 
 > `foreach()`
 
-```sh
-Map遍历推荐使用 entrySet() 集合，而不是 keySet() 方式进行遍历
-```
-
 ```java
+'Map遍历推荐使用 entrySet() 集合，而不是 keySet() 方式进行遍历';
+
 //(1).keySet() 其实遍历了 2 次：一次是转为 Iterator 对象，另一次是从Map中取出 key 所对应的 value
 for (String key : map.keySet()) {
     System.out.println(key + ":" + map.get(key));

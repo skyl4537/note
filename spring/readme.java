@@ -1964,9 +1964,16 @@ https://cloud.tencent.com/developer/article/1443918
 
 
 
+#Spring Security技术栈开发企业级认证与授权@
+3-1.
+    url描述资源。 传统url描述对资源的操作行为
+    使用HTTP请求方式（GET POST PUT DELETE）描述行为。使用HTTP状态码来表示不同的结果
+    使用json交互数据
+    restful只是一种风格，并不是强制的标准
+    
+    
 
-
-
+支付开闸-outTradeNo: 本地-p180929163009_3_1368442_192934 轮询推送-p180929163009_0_1368842_192949
 
 
 
