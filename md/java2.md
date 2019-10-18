@@ -343,6 +343,9 @@ TreeMap   -> 线程不安全        k不为,v可为 null    底层二叉树实�
 
 List：存取有序，元素可重复。可通过索引操作元素
 Set ：存取无序，元素不可重复
+
+#为什么会出现这么多的容器？ 
+因为每一个容器的存储方式（数据结构）都有不同
 ```
 
 ```sh
@@ -352,6 +355,41 @@ List 是通过 equals 来比较两个对象是否相等，如 contains() remove(
 
 "Set的 hashCode 相同，但 equals 不同，怎么存存储？"
 在同样的哈希值下顺延（可认为哈希值相同的元素放在一个哈希桶中），也就是哈希一样的存一列。
+```
+
+> 迭代器
+
+```sh
+#迭代器-Iterator 是取出集合中元素的一种方式 。
+因为 Collection 中有 iterator 方法，所以每一个子类集合对象都具备迭代器。
+迭代器替代了 Vector 类中的 Enumeration(枚举)。迭代器的 next 方法是自动向下取元素，要避免出现 NoSuchElementException。
+迭代器的 next 方法返回值类型是 Object， 所以要记得'类型转换'。 （学到泛型就可以消除强转！）
+```
+
+```sh
+#集合遍历方式
+（1）.Iterable接口   适用于 Collection 所有子类
+（2）.foreach       适用于 数组 + Collection。底层实现方式为（1）
+（3）.for           适用于 数组 + List
+（4）.toArray()     转化为 数组
+```
+
+> ###`List`
+
+```sh
+List 是'有序'的集合，集合中每个元素都有对应的顺序序列。
+List 集合可使用'重复'元素，可以通过索引来访问指定位置的集合元素（顺序索引从 0 开始），
+List 集合默认按元素的添加顺序设置元素的索引，比如第一个元素的索引就是 0，好似'数组'。
+```
+
+```java
+//ListIterator：Iterator 的子接口，专门用于操作 List 集合的输出，可以完成'逆序输出'。
+
+ArrayList<Integer> list = new ArrayList<>(Arrays.asList(1, 5, 8));
+ListIterator<Integer> iterator = list.listIterator(list.size()); //必须传参，将指针置为末位
+while (iterator.hasPrevious()) { //是否还有上一个元素
+    System.out.println(iterator.previous()); //上一个元素
+}
 ```
 
 > ArrayList
@@ -390,9 +428,7 @@ public void push(E e);    //将元素推入此列表所表示的堆栈。
 public boolean isEmpty(); //如果列表不包含元素，则返回true。
 ```
 
-
-
->Set
+>###`Set`
 
 ```sh
 HashSet  -> 线程不安全    存取速度快           底层'哈希表'实现，内部是 HashMap
@@ -401,18 +437,9 @@ TreeSet  -> 线程不安全    排序存储（可排序）    底层'二叉树'�
 
 ```sh
 #Set 元素唯一性？
-Set 中的元素不能重复，使用 hashCode()和 equals()用来判断两个元素是否相同。
+(1) 首先 hashCode 是否相同，如果不同，就是不重复的
+(2) 如果 hashCode 一样，再比较equals。如果不同，就是不重复的，否则就是重复的。
 '=='是判断内存地址是否相等，用来决定引用值是否指向同一个对象。
-```
-
-
-
-```sh
-#TreeSet 排序是如何进行的呢？【二者都有，以后者为主】
-（1）元素 implements Comparable
-
-（2）元素自身不具备比较性，或具备的比较性不满足要求时。需要让 TreeSet 集合自身具备比较性：比较器 Comparator
-TreeSet<Dog> dogSet = new TreeSet<>((o1, o2) -> Integer.compare(o1.getAge(), o2.getAge()));
 ```
 
 >HashSet
@@ -424,31 +451,21 @@ TreeSet<Dog> dogSet = new TreeSet<>((o1, o2) -> Integer.compare(o1.getAge(), o2.
 #通过 hashCode()定位数组中的位置，通过 equals()判断已有元素和待插入元素是否为同一对象
 ```
 
-```sh
-在 JDK1.8 之前，哈希表底层采用'数组+链表'实现，即使用链表处理哈希冲突，同一 hashCode 值的元素都存储在一个链表里。
-但是当位于一个桶中的元素较多，即 hashCode 值相等的元素较多时，通过 key 值依次查找的效率较低。
-
-而 JDK1.8 中，哈希表存储采用'数组+链表+红黑树'实现，当链表长度超过阈值（8）时，将链表转换为红黑树，这样大大减少了查找时间。
-```
-
-![](assets/java4.png)
-
-![](assets/java5.png)
-
 > LinkedHashSet
 
 ```sh
 链表 和 哈希表组合的一个数据存储结构。可以保证元素有序，即存入和取出顺序一致
 ```
 
-
-
-```java
-
-```
+>TreeSet
 
 ```sh
+TreeSet 是 SortedSet 接口唯一的实现，底层是'二叉树'
 
+#排序是如何进行的呢？【二者都有，以后者为主】
+（1）元素 implements 'Comparable'
+（2）元素自身不具备比较性，或具备的比较性不满足要求时。需要让 TreeSet 集合自身具备比较性：比较器 'Comparator'
+TreeSet<Dog> dogSet = new TreeSet<>((o1, o2) -> Integer.compare(o1.getAge(), o2.getAge()));
 ```
 
 
@@ -456,8 +473,7 @@ TreeSet<Dog> dogSet = new TreeSet<>((o1, o2) -> Integer.compare(o1.getAge(), o2.
 >list & set
 
 ```sh
-list 的 contains() 和 remove()底层调用的都是 equals()
-Set  .................................... hashCode() 和 equals()   
+
 ```
 
 ```
@@ -524,7 +540,84 @@ ConcurrentHashMap的'读取操作没有用到锁定',所以读取操作几乎是
 而'写操作锁定的粒度又非常细', 比起之前又更加快速(桶越多,表现越明显). '只有在求size等操作时才需要锁定整个表'
 ```
 
+> 哈希冲突
 
+```sh
+#哈希算法的功能：保证通过一个对象快速找到另一个对象。其算法价值体现在速度,可以保证查询快速执行。
+当从 HashMap 访问元素时，先获取 key 的hashCode，然后到该 hashCode 对应的位置取出 value。
+在这里，'key的 hashCode 就好比是数组里的索引，但是不是索引'。
+```
+
+```sh
+#两个【不同对象】映射到散列表（数组）的【元素下标相同】，这种现象称为 哈希冲突。
+
+（1）String str=new String("a"); String str2=new String("a");
+str和str2是不同的对象，但是他们的 'hash值相同'，映射到散列表的元素下标相同，所以这两个键str和str2是相同的。
+
+（2）String str=new String("a"); String str2=new String(其他和"a"hashCode相同的字符串);
+str和str2是不同的对象，但是他们的 'hash值相同'，映射到散列表的元素下标相同，所以这两个键str和str2是相同的。
+
+（3）String str=new String("a"); String str2=new String("q");
+str和str2是不同的对象，但是他们的 'hash值不相同'，映射到散列表的元素下标相同，所以这两个键str和str2是相同的。
+```
+
+```sh
+#resize()方法：每次都将容量调整为原来的2倍，并且调整键key映射的下标。（以字符串键“a","q"为例）
+
+比如说，初始容量为16时，键'a'和'q'映射的下标都是1； 
+当初始容量调整为32时，键'a'映射的下标都是1，键'q'映射的下标都是17。
+如果resize()之后不调整键'q'映射的下标（即已存在键'q'映射在1），然而下次put("q",value)时，会映射到17。那么就出现重复键'q'。
+```
+
+> HashMap插入元素
+
+```sh
+#HashSet 元素增加
+HashSet 新增元素时，首先调用 hashCode 方法获取新值的哈希值，然后'根据哈希值得到映射到数组的下标'，再判断该数组下标位置 #是否已有元素？
+如果没有，则直接将新值插入。
+
+如果有，则通过 equals 方法判断 旧值和新值 #是否相等？
+相等，则新值覆盖原来的旧值，并返回旧值（add方法有返回值）。
+不相等，则在该哈希值位置，顺延增加一个元素，即新值。这种现象称为'哈希冲突'（hashCode相同，equals不同）。
+```
+
+```sh
+#hashCode相同 --X--> equals相同 ----> hashCode一定相同
+所以，重写 equals() 方法，一定要重写 hashCode() 方法。
+
+#HashSet 判断两个元素相等的标准是两个对象通过 equals 方法相等，并且两个对象的 hashCode 方法也相等。
+如果需要某个类的对象保存到 HashSet 集合中，覆写该类的 equals()和 和 hashCode() 方法，
+应该尽量保证两个对象通过 equals 比较返回 true 时, 他们的 hashCode 返回也相等。
+```
+
+> 555
+
+```sh
+
+```
+
+
+
+```sh
+
+```
+
+```sh
+
+```
+
+
+
+```sh
+在 JDK1.8 之前，哈希表底层采用'数组+链表'实现，即使用链表处理哈希冲突，同一 hashCode 值的元素都存储在一个链表里。
+但是当位于一个桶中的元素较多，即 hashCode 值相等的元素较多时，通过 key 值依次查找的效率较低。
+
+而 JDK1.8 中，哈希表存储采用'数组+链表+红黑树'实现，当链表长度超过阈值（8）时，将链表转换为红黑树，这样大大减少了查找时间。
+```
+
+![](assets/java4.png)
+
+![](assets/java5.png)
 
 # Collection-Plus
 
@@ -603,7 +696,7 @@ public boolean add(E e) {
 
 ```shell
 #equals相同 --> hashCode相同 --X--> equals相同
-equals相同，但hashCode不同，称为'哈希冲突'。冲突会导致操作哈希表的时间开销增大，所以尽量定义好 hashCode()方法，能加快哈希表的操作。
+hashCode相同，但equals不同，称为'哈希冲突'。冲突会导致操作哈希表的时间开销增大，所以尽量定义好 hashCode()方法，能加快哈希表的操作。
 ```
 
 ```shell
@@ -620,6 +713,8 @@ equals相同，但hashCode不同，称为'哈希冲突'。冲突会导致操作�
 ```sh
 '增强for循环'，其实是Java提供的'语法糖'，其实现底层原理还是借助'迭代器-Iterator'实现。
 ArrayList 非线程安全，因此在使用迭代器的过程中，如果有其他线程修改了list，那么将抛出并发修改异常，即'fast-fail'机制。
+
+void remove(); #迭代器-Iterator 的remove()方法删除集合上一次 next()方法返回的元素。(若集合中有多个相同的元素，都可以删掉)
 ```
 
 ```java
@@ -680,7 +775,9 @@ for (String s : deque) {
         deque.remove();
     }
 }
+```
 
+```java
 List<String> list = new ArrayList<>(Arrays.asList("a", "b", "c"));
 list = new CopyOnWriteArrayList<>(list);
 for (String s : list) {
@@ -704,7 +801,7 @@ for (String s : list) {
 （2）多线程环境：当一个线程在遍历集合，而另一个线程对集合的结构进行了修改。
 
 #注意：这里异常的抛出条件是检测到 modCount！=expectedmodCount 这个条件。
-如果集合发生变化时，修改 modCount 值，刚好又设置为了 expectedmodCount 值，则异常不会抛出。
+如果集合发生变化时，修改 modCount 值，刚好又设置为了 expectedmodCount 值，则异常不会抛出，如方法 iterator.remove();
 因此，不能依赖于这个异常是否抛出而进行并发操作的编程，这个异常只建议用于检测并发修改的bug。
 ```
 
@@ -1000,7 +1097,7 @@ static {
 > `asList() & subList()` 
 
 ```sh
-'asList()'  返回的是 Arrays 内部类，并不是真正的 ArrayList。它没有实现集合的修改方法，如 add()/remove()/clear()
+'asList()'  返回'长度固定'的 List，是 Arrays 内部类，并不是真正的 ArrayList。它没有实现集合的修改方法，如 增删和 clear()
 'subList()' 返回的是 ArrayList 内部类，是 ArrayList 的一个视图，对于 SubList 子列表的所有操作最终会反映到原列表上
 ```
 

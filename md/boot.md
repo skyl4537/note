@@ -1879,11 +1879,13 @@ http://www.123.com/index.html  --->  https://www.123.com/server.php
 在 manage.leyou.com 中需要访问接口 api.leyou.com/api/item/list，这就涉及到跨域访问。
 nginx反向代理的实现方案做法是：不直接访问 api.leyou.com，而是访问 manage.leyou.com/api/item/list，
 在 nginx 中将路径 /api/item/list 单独做一个映射，将其映射到 api.leyou.com 服务器。
+```
 
+```sql
 server{
     listen 80
     server_name manage.leyou.com
-    location /api/item/list{ #单独映射跨域路径。跨域访问多，此配置就越多
+    location /api/item/list{ --单独映射跨域路径。跨域访问多，此配置就越多
     	proxy_pass http://127.0.0.1:10010; #api.leyou.com 端口
     }
 }

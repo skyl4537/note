@@ -430,8 +430,17 @@ SELECT STR_TO_DATE('23/04/2019', '%d/%m/%Y') str2date; -- 2019-04-23，字符串
 ```
 
 ```sql
-%Y：4位的年份； %m：两位的月份； %y：2位的年份； %c：1位的月份； %d：两位的天数
+--%Y：4位的年份； %m：两位的月份； %y：2位的年份； %c：1位的月份； %d：两位的天数
 ```
+
+```sql
+-- 时间支持 BETWEEN AND 语法
+SELECT s_id FROM grade WHERE (s_brith BETWEEN '20000101' AND '20190101')；
+
+SELECT * FROM passage_open_timer WHERE CURTIME() BETWEEN timer_start AND timer_end; --同上，潮汐车道
+```
+
+
 
 ##聚合函数
 
@@ -1177,6 +1186,39 @@ public void purchase(String userId, Integer bookId) {
 
 ![](assets/sql02.png)
 
+## 事务消失
+
+> `普通方法A` 调用 `事务方法B`
+
+```java
+public void methodA(Customer customer) {
+    System.out.println("go into deleteAllAndAddOne");
+    methodB(customer);
+}
+
+
+@Transactional
+public void methodB(Customer customer) {
+    customerRepository.deleteAll();
+    if ("Yang".equals(customer.getFirstName())) {
+        throw new RuntimeException();
+    }
+    customerRepository.save(customer);
+}
+```
+
+```sh
+#Spring 的声明式事务 @Transactional，跟 Spring-AOP 一样，都是利用了'动态代理'。
+对于事务注解方法，Spring会自动生成一个代理对象proxy，代理对象的 methodB()，会先开启事务（begin-Transaction），
+然后再去执行原先对象 target.methodB()，如果抛异常，则回滚（rollBack），如果一切顺利，则提交（commit）。
+
+由于，methodA() 没有加 @Transactional 注解，所以代理对象里面，直接就是 target.methodA()，直接调用了原来对象的 methodA()。
+原来对象的 methodA()，再去调用原来对象的 methodB()，而原来对象的 methodB()是不具有事务的。
+事务只存在于代理对象的 methodB(). 所以整个方法也就'没有事务'了。
+```
+
+
+
 
 
 # 高级命令
@@ -1388,6 +1430,18 @@ END;
 
 # 概念区分
 
+## 三大范式
+
+```sql
+但是，你可能会发现，这张表中并没有设置外键约束，似乎与数据库的设计范式不符。为什么这么做？
+
+外键会严重影响数据库读写的效率
+数据删除时会比较麻烦
+在电商行业，性能是非常重要的。我们宁可在代码中通过逻辑来维护表关系，也不设置外键。
+```
+
+
+
 ## 基础概念
 
 > delete & truncate
@@ -1406,27 +1460,23 @@ TRUNCATE TABLE city; -- 清空表（2）
 > where & having
 
 ```sql
-where  语句在 GROUP BY 语句之前；sql会在分组之前计算 where 语句。 
-having 语句在 GROUP BY 语句之后；sql会在分组之后计算 having 语句。
+
 ```
 
 ```sql
--- where 和 having 都可以使用的场景
-select addtime,name from dw_users where addtime> 1500000000
-select addtime,name from dw_users having addtime> 1500000000
 
-解释：上面的 having 可以用的前提是已经筛选出了addtime字段，在这种情况下和 where 的效果是等效的。但是如果我没有 select addtime 就会报错！！
-因为 having 是'从前面筛选的字段再筛选'，而 where 是从数据表中的字段直接进行的筛选的。
 ```
 
 ```sql
---只可以用having，不可以用where情况
-select category_id,avg(price) as ag from dw_goods group by goods_category having ag > 100
-select category_id,avg(price) as ag from dw_goods where ag>100 group by goods_category 
 
-注意: where 后面要跟的是'数据表里的字段'，如果把 ag 换成 avg(price) 也是错误的！！因为表里没有该字段。
-而 having 只是根据前面查询出来的是什么就可以后面接什么。
 ```
+
+```sql
+
+```
+
+
+
 
 
 ## 优化相关
@@ -1727,35 +1777,66 @@ CREATE TABLE `grade` (
 > 学生成绩练习
 
 ```sql
---学生成绩表（grade）：id,s_id,s_name,s_brith,chinese,english,math； 
+DROP TABLE IF EXISTS `blue`;
+CREATE TABLE `blue` (
+    `id` int(11) NOT NULL AUTO_INCREMENT,
+    `name` varchar(12) DEFAULT NULL,
+    `birth` char(8) DEFAULT NULL,
+    `class` tinyint(1) unsigned DEFAULT '1',
+    `chinese` int(11) DEFAULT NULL,
+    `english` int(11) DEFAULT NULL,
+    `math` int(11) DEFAULT NULL,
+    PRIMARY KEY (`id`)
+) ENGINE=InnoDB AUTO_INCREMENT=5 DEFAULT CHARSET=utf8mb4;
 
---将id为1的学生，数学成绩加 1 分
-UPDATE grade SET math=math+1 WHERE s_id=1;
-
---将学生姓名由"马XX"改为"李XX"
-UPDATE grade SET s_name=CONCAT('李',SUBSTR(s_name,2)) WHERE s_name LIKE '马%'; --substr从 1 开始计数
-
---把数学成绩在[20, 29]之间改为20，处于[30, 39]之间的,改为30
-UPDATE grade SET math=floor(math/10)*10 WHERE math BETWEEN 20 AND 39;
-
--- 查出生日在2000年到2019年之间，以及1995年之前的学生 【DATEDIFF()函数: 前者-后者】
-SELECT s_id FROM grade WHERE (s_brith BETWEEN '20000101' AND '20190101') OR (DATEDIFF(s_brith,'19950101')<0);
-
--- 姓名相同的学生信息
-SELECT s_id,s_name FROM grade WHERE s_name IN(
-    SELECT s_name FROM grade GROUP BY s_name HAVING COUNT(s_name)>1
-);
+-- ----------------------------
+-- Records of blue
+-- ----------------------------
+INSERT INTO `blue` VALUES ('1', '赵云', '19000101', '1', '21', '31', '20');
+INSERT INTO `blue` VALUES ('2', '李超', '19970801', '2', '40', '50', '60');
+INSERT INTO `blue` VALUES ('3', '李云', '20101108', '2', '70', '80', '90');
+INSERT INTO `blue` VALUES ('4', '赵云', '20190909', '1', '50', '50', '30');
 ```
 
 ```sql
---每个学生的总成绩，总成绩在200-300之间 【where和having两种实现】
-SELECT s_id,(chinese+english+math) grade_sum FROM grade WHERE (chinese+english+math) BETWEEN 200 AND 300;
-SELECT s_id,(chinese+english+math) grade_sum FROM grade HAVING grade_sum BETWEEN 200 AND 300;
+-- 将id为 1 的学生，数学成绩加 1 分
+UPDATE blue SET math=math+1 WHERE id=1;
 
---查询语文比英语低50分以上的学生，及低的分【where和having两种实现】
-SELECT s_id,(english-chinese) grade_sub FROM grade WHERE (english-chinese)>50;
-SELECT s_id,(english-chinese) grade_sub FROM grade HAVING grade_sub>50;
---错误：SELECT s_id,(english-chinese) grade_sub FROM grade WHERE grade_sub>50; --->先执行 where，再执行 select
+-- 将学生姓名由"马XX"改为"李XX"（substr从 1 开始计数）
+UPDATE blue SET name=CONCAT('李', SUBSTR(name,2)) WHERE name LIKE '马%';
+
+-- 把数学成绩在[20, 29]之间改为20，处于[30, 39]之间的,改为30
+UPDATE blue SET math=(FLOOR(math/10)*10) WHERE math BETWEEN 20 AND 39;
+
+-- 查出生日在2000年到2019年之间，以及1995年之前的学生 【DATEDIFF()函数: 前者-后者】
+SELECT * FROM blue WHERE (birth BETWEEN '20000101' AND '20190101') OR birth<'19950101';
+SELECT * FROM blue WHERE (birth BETWEEN '20000101' AND '20190101') OR DATEDIFF(birth,'19950101')<0;
+
+-- 姓名相同的学生信息
+SELECT id,`name` FROM blue WHERE id IN(
+    SELECT id FROM blue GROUP BY `name` HAVING COUNT(`name`)>1
+);
+```
+
+> WHERE & HAVING
+
+```sql
+WHERE  语句在 GROUP BY 语句之前；sql会在'分组之前'计算 where 语句。 
+HAVING 语句在 GROUP BY 语句之后；sql会在'分组之后'计算 having 语句。
+```
+
+```sql
+-- 查询语文比英语低50分以上的学生，及低的分
+SELECT id,`name`,(english-chinese) sub FROM blue WHERE english-chinese>50;
+SELECT id,`name`,(english-chinese) sub FROM blue HAVING sub>50;
+
+注意: WHERE 后面要跟的是'数据表里的字段'，如果 WHERE 后换成 sub， 则报错，因为表里没有该字段（先执行 WHERE，再执行 SELECT）！！
+而 HAVING 只是根据前面查询出来的是什么就可以后面接什么。
+```
+
+```sql
+-- 查询语文成绩最低分大于70，最高分小于90的班级
+SELECT class FROM blue GROUP BY class HAVING MIN(chinese)>70 AND MAX(chinese)<90;
 ```
 
 > 交易流水
