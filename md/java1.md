@@ -902,362 +902,54 @@ public class Test implements IFatherInterface1, IFatherInterface2 {
 
 
 
-# IO流
-
-## IO
-
-> 文件拷贝：字节流 + 字符流
-
-```sh
-按流向        ：输入流，输出流。
-按操作数据     ：字节流 （如音频，图片等），字符流（如文本）。
-
-字节流的'抽象基类'：InputStream，OutputStream。字符流的'抽象基类'：Reader，Writer。
-```
-
-```java
-try (BufferedInputStream bis = new BufferedInputStream(new FileInputStream(src));
-     BufferedOutputStream bos = new BufferedOutputStream(new FileOutputStream(dest))) {
-    int len;
-    byte[] buf = new byte[1024 * 4]; //字节流
-    while (-1 != (len = bis.read(buf))) {
-        bos.write(buf, 0, len);
-    }
-} catch (IOException e) {
-    System.out.println("系统找不到指定的文件：" + src);
-}
-```
-
-```java
-try (BufferedReader br = new BufferedReader(new FileReader(src));
-     BufferedWriter bw = new BufferedWriter(new FileWriter(dest))) {
-    String line;
-    while (null != (line = br.readLine())) { ///如果已到达流末尾，则返回 null
-        bw.write(line);
-        bw.newLine(); //由于 readLine()方法不返回行的终止符，所以手动写入一个行分隔符
-
-        bw.flush(); //只要用到缓冲区技术，就一定要调用 flush() 方法刷新该流中的缓冲
-    }
-} catch (IOException e) {
-    System.out.println("系统找不到指定的文件：" + src);
-}
-```
-
-> 转换流：字节流 ---> 字符流
-
-```java
-BufferedReader br = new BufferedReader(new InputStreamReader(new FileInputStream(filePath)));
-```
-
-> 字符编码
-
-```sh
-GBK   ：占用两个字节，比 GB2312 编码多了很多汉字，如"镕"字。
-UTF-8 ：Unicode一种具体的编码实现。是一种变长编码方式，使用 1-4 个字节进行编码，有利于节约网络流量。
-```
-
-```sh
-#UTF-8编码规则
-① 对于单字节的符号，字节的第一位设为0，后面7位为这个符号的unicode码。因此对于英语字母，UTF-8编码和ASCII码是相同的。
-② 对于n字节的符号，第一个字节的前n位都设为1，第n+1位设为0，后面字节的前两位一律设为10。剩下的没有提及的二进制位，全部为这个符号的unicode码。
-
-假如有个字符占用3个字节，则：第一个字节以 1110 开始，第二三个字节以 10 开始。
-```
-
-```java
-byte[] bytes = "联通".getBytes("GBK");
-for (byte aByte : bytes) {
-    // 11000001 10101010 11001101 10101000 --> 两个汉字，4个字节
-    System.out.println(Integer.toBinaryString(aByte & 255));
-}
-```
-
-## File
-
-> 获取文件路径：`getCanonicalPath()`
-
-```java
-//返回定义时的路径，可能是相对路径，也可能是绝对路径，这个取决于定义时用的是相对路径还是绝对路径。
-//如果定义时用的是绝对路径，那么结果跟getAbsolutePath()一样
-file.getPath(); // ..\test1.txt
-```
-
-```java
-//返回的是定义时的路径对应的相对路径，但不会处理"."和".."的情况
-file.getAbsolutePath(); // F:\sp_project\spring\..\test1.txt
-```
-
-```java
-//返回的是规范化的绝对路径，相当于将getAbsolutePath()中的"."和".."解析成对应的正确的路径
-file.getCanonicalPath(); // F:\sp_project\test1.txt
-```
-
-> 常用方法
-
-```java
-boolean Mkdir();    //用于创建单层目录
-boolean Mkdirs();   //.......多.....
-
-boolean renameTo(); //重命名
-```
-
-##Properties
-
-> `class Properties extends Hashtable` 线程安全
-
-```java
-String filePath = "application.properties";
-Properties properties = new Properties();
-InputStream in = getClass().getClassLoader().getResourceAsStream(filePath);
-if (null == in) {
-    System.out.println("配置文件不存在：" + filePath);
-} else {
-    try {
-        properties.load(in);
-        String property = properties.getProperty("server.port", "8080"); //arg2: 默认值
-        System.out.println("读取配置：" + property);
-    } catch (IOException e) {
-        e.printStackTrace();
-    }
-}
-```
-
-## Convert
-
-> int，byte[] `大端模式：高位在前，低位在后。【常用模式】`
-
-```java
-public static byte[] int2Bytes(int value, int len) {
-    if (len > 4 || len <= 0) throw new RuntimeException("int 最大长度4个字节");
-
-    byte[] bytes = new byte[len];
-    for (int i = 0; i < len; i++) {
-        bytes[i] = (byte) ((value >> 8 * (len - 1 - i)) & 0xFF);
-    }
-    return bytes;
-}
-```
-
-```java
-public static int bytes2Int(byte[] bytes) {
-    byte[] dest = new byte[4];
-    System.arraycopy(bytes, 0, dest, 4 - bytes.length, bytes.length);
-    return (dest[0] & 0xFF) << 24
-            | ((dest[1] & 0xFF) << 16)
-            | ((dest[2] & 0xFF) << 8)
-            | (dest[3] & 0xFF << 0);
-}
-
-```
-
-> int，byte[] `小端模式：低位在前，高位在后`
-
-```java
-public static byte[] int2Bytes(int value, int len) {
-    if (len > 4 || len <= 0) throw new RuntimeException("int 最大长度4个字节");
-    
-    byte[] bytes = new byte[len];
-    for (int i = 0; i < len; i++) {
-        bytes[i] = (byte) ((value >> 8 * i) & 0xFF);
-    }
-    return bytes;
-}
-
-```
-
-```java
-//offset: 从数组的第offset位开始
-public static int bytes2Int(byte[] bytes, int offset) {
-    return (bytes[offset + 0] & 0xFF)
-            | ((bytes[offset + 1] & 0xFF) << 8)
-            | ((bytes[offset + 2] & 0xFF) << 16)
-            | ((bytes[offset + 3] & 0xFF) << 24);
-}
-
-```
-
-> int，Hex
-
-```java
-public static String int2Hex(int value) {
-    return Integer.toHexString(value);
-}
-```
-
-```java
-private static int hex2Int(String hexString) {
-    return Integer.parseInt(hexString, 16);
-}
-```
-
-> String，Hex
-
-```java
-public static String string2Hex(String value) {
-    StringBuilder hexString = new StringBuilder();
-    for (char aChar : value.toCharArray()) {
-        hexString.append(Integer.toHexString(aChar));
-    }
-    return hexString.toString();
-}
-```
-
-> String，byte[]
-
-```java
-byte[] bytes = "hello".getBytes(Charset.forName("utf-8"));
-```
-
-```java
-String s = new String(bytes, Charset.forName("utf-8"));
-```
-
-> 校验和
-
-```java
-//第13位 -> 校验和 -> 前面所有字节的异或
-data[13] = data[0];
-for (int i = 1; i < 13; i++) {
-    data[13] = (byte) (data[13] ^ data[i]);
-}
-```
-
-
-# Reflect
-
-## 创建对象
-
->（1）new创建：传统方式，必须预先知道要使用的类。引用类改变，就必须修改源码。
-
-```java
-Person person = new Person();
-```
-
-> （2）Cloneable方式：不推荐
-
-```java
-public class Person implements Cloneable{} //实现克隆接口
-
-Person clone = (Person) person.clone();
-```
-
-> （3）反射方式：动态创建，效率相对低下，耗时是传统方式的 `3` 倍
-
-```java
-//先获取 clazz 对象（4种方式，常用1和2），再创建此 clazz 对象所表示的类的一个新实例
-Class<?> clazz = Class.forName("com.example.reflect.Person"); //1
-Class<?> clazz = getClass().getClassLoader().loadClass("com.example.reflect.Person"); //2
-Class<? extends clazz> clazz = new Person().getClass(); //3
-Class<Person> clazz = Person.class; //4
-
-Object instance = clazz.newInstance(); //创建实例。当没有无参构造时，将报错
-```
-
-## 常用方法
-
-> 构造器
-
-```java
-aClass.getConstructors();        //构造器：public
-clazz.getDeclaredConstructors(); //构造器：all
-```
-
-```java
-Constructor<?> constructor = clazz.getConstructor();
-Person p = (Person) constructor.newInstance(); //等同于 new Person();
-
-Constructor<?> constructor = aClass.getConstructor(String.class, Integer.class);
-Object instance = constructor.newInstance("li", 18); //new Person("li", 18);
-```
-
-> 属性
-
-```java
-//public static String city;
-Field city = aClass.getField("city"); //static -> 不依赖对象，传参 null
-city.set(null, "Beijing");
-System.out.println(city.get(null));
-
-//public Boolean gender;
-Field gender = aClass.getField("gender"); //non static --> 依附于对象 p1
-Object p1 = aClass.newInstance();
-gender.set(p1, true);
-System.out.println(gender.get(p1));
-
-//private Boolean young;
-Field young = aClass.getDeclaredField("young"); //private --> 依附于对象，并暴力访问
-Object p2 = aClass.newInstance();
-young.setAccessible(true); //暴力膜
-young.set(p2, true);
-System.out.println(young.get(p2));
-```
-
-> 方法
-
-```java
-//public static String staticHello() {}
-Method staticHello = aClass.getMethod("staticHello");
-Object invoke = staticHello.invoke(null); //invoke为返回值; 调用 --> 不依赖对象
-
-//public String publicHello(String name, Integer age) {}
-Method privateHello1 = aClass.getMethod("publicHello", String.class, Integer.class);
-Object p3 = aClass.newInstance();
-invoke = privateHello1.invoke(p3, "li", 20); //依赖对象
-
-//private String privateHello() {}
-Method privateHello = aClass.getDeclaredMethod("privateHello");
-privateHello.setAccessible(true);
-Object p0 = aClass.newInstance();
-Object invoke = privateHello.invoke(p0); //依赖对象 + 暴力膜
-```
-
-> main方法怎样传递参数？
-
-```shell
-把一个字符串数组作为参数传递到 invoke()，jvm怎么解析？？
-
-按照jdk1.5，整个数组是一个参数； jdk1.4数组中的每一个元素是一个参数。
-jdk1.5肯定没问题，但对于jdk1.4则会将字符串数组打散成一个个字符串作为参数，就会出现参数个数异常。
-```
-
-```shell
-#正确做法
-（1）将字符串数组转换成 Object 对象
-（2）将字符串数组作为 Object 数组的一个元素
-```
-
-```java
-Class<?> clazz = this.getClass().getClassLoader().loadClass("com.example.reflect.Person");
-Method helloArray = clazz.getMethod("main", String[].class); //参数类型: String[].class
-
-helloArray.invoke(null, (Object) new String[]{"aaa", "bbb"}); //正确1
-// helloArray.invoke(null, new Object[]{new String[]{"aaa", "bbb"}}); //正确2
-
-// helloArray.invoke(null, new String[]{"aaa", "bbb"}); //错误写法
-```
 
 
 
 # 常见问题
 
+##基础概念
 
-
-
-## 概念区分
-
-> ==，equals
+> java跨平台
 
 ```sh
-#System.out.println(2 == 2.0); //true（类型转换？）
-当比较的是'基本数据类型'时，比较的是值
-当比较的是'引用数据类型'时，比较的是内存地址值。#常用于判断两个变量是否指向同一个对象
+我们编写的Java源码，编译后会生成一种 .class 文件，称为'字节码文件'。字节码不能直接运行，必须通过 JVM 翻译成机器码才能运行。
+JVM是一个软件，不同的平台有不同的版本，将相同的字节码文件编译成对应平台识别的机器码。
 ```
 
 ```sh
-#equals
-不能用于基本数据类型的比较
-当比较的是引用数据类型时，默认也是比较地址值（即'调用=='）。#常用于判断两个对象的内容是否相同
-只不过像String、Date、File、包装类等都重写了Object类中的 equals()。实际开发中，常常需要根据业务需要重写 equals()。
+那么，跨平台是怎样实现的呢？这就要谈及Java虚拟机（Java Virtual Machine，简称 JVM）。JVM也是一个软件，不同的平台有不同的版本。我们编写的Java源码，编译后会生成一种 .class 文件，称为字节码文件。Java虚拟机就是负责将字节码文件翻译成特定平台下的机器码然后运行。也就是说，只要在不同平台上安装对应的JVM，就可以运行字节码文件，运行我们编写的Java程序。而这个过程中，我们编写的Java程序没有做任何改变，仅仅是通过JVM这一”中间层“，就能在不同平台上运行，真正实现了”一次编译，到处运行“的目的。JVM是一个”桥梁“，是一个”中间件“，是实现跨平台的关键，Java代码首先被编译成字节码文件，再由JVM将字节码文件翻译成机器语言，从而达到运行Java程序的目的。注意：编译的结果不是生成机器码，而是生成字节码，字节码不能直接运行，必须通过JVM翻译成机器码才能运行。不同平台下编译生成的字节码是一样的，但是由JVM翻译成的机器码却不一样。所以，运行Java程序必须有JVM的支持，因为编译的结果不是机器码，必须要经过JVM的再次翻译才能执行。即使你将Java程序打包成可执行文件（例如 .exe），仍然需要JVM的支持。注意：跨平台的是Java程序，不是JVM。JVM是用C/C++开发的，是编译后的机器码，不能跨平台，不同平台下需要安装不同版本的JVM。
+```
+
+> 面向对象的特征
+
+```sh
+#封装、继承、多态、（抽象）
+封装性，即将对象封装成一个高度自治和相对封闭的个体，对象状态（属性）由这个对象自己的行为（方法）来读取和改变。
+张三这个人，他的姓名等属性，要有自己提供的获取或改变的方法来操作。private name; setName(); getName()
+
+
+```
+
+
+
+> 基本数据类型 `8`
+
+```java
+boolean 1； byte 1； char 2; short 2； int 4； long 8; float：4； double 8； //1 byte = 8 bit
+```
+
+> 有了基本数据类型，为什么还需要包装类型？
+
+```sh
+
+```
+
+> == & equals()
+
+```sh
+#System.out.println(2 == 2.0); //true（类型转换？）
+== 既可用于基础数据类型，也可用于引用数据类型。对于前者，比较二者值是否相等。对于后者，比较二者的内存地址是否相等，即判断二者是否为同一对象。
+equas() '只能用于引用数据类型'。默认调用 ==，即比较内存地址。可根据业重写此方法，如 String，比较两字符串的内容是否相同（两对象是否长的一样）。
 ```
 
 ```java
@@ -1265,6 +957,17 @@ public boolean equals(Object obj) { //Object 中的方法
     return (this == obj);
 }
 ```
+
+> String & StringBuffer & StringBuilder
+
+```sh
+String是 final 类，即一旦声明便不可修改，底层
+```
+
+
+
+
+## 概念区分
 
 > 抽象类 & 接口
 

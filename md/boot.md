@@ -68,15 +68,13 @@ spring:
     password: "#$%_BC13439677375" #""双引号里的内容不会转义符，''单括号则会。（层级关系使用 2个或4个 空格）
 ```
 
-> 加载顺序
+> 加载顺序 `从上到下，从里到外，后加载的优先级高`
 
 ```sh
 – classpath:/         #项目 src/main/resources
 – classpath:/config/
 – file:./             #与 jar 包同级
 – file:./config/
-
-#加载顺序：从上到下，从里到外，后加载的优先级更高，高优先级覆盖低优先级。所以，jar包外的配置优先级更高。
 ```
 
 > 不同环境加载不同配置
@@ -1194,15 +1192,14 @@ Websocket：Html5 提供的一种通过 js 与远程服务器建立连接，从�
 ## 客户端
 
 ```html
-<body>
-    <input id="text" type="text"/>
-    <button onclick="send()">Send</button>
-    <div id="message"></div>
+<head>
+    <meta charset="UTF-8">
+    <title>WebSocket-测试</title>
 
     <script>
         var websocket = null;
         if ('WebSocket' in window) {
-            websocket = new WebSocket("ws://localhost:9005/qrcode/webSocket"); //注意大小写
+            websocket = new WebSocket("ws://192.168.5.78:8080/webpark/websocket/all,127.0.0.1"); //注意大小写
         } else {
             alert("浏览器不支持WebSocket!")
         }
@@ -1250,6 +1247,11 @@ Websocket：Html5 提供的一种通过 js 与远程服务器建立连接，从�
             // websocket.send($('#text'));
         }
     </script>
+</head>
+<body>
+    <input id="text" type="text"/>
+    <button onclick="send()">Send</button>
+    <div id="message"></div>
 </body>
 ```
 
