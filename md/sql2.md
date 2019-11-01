@@ -504,10 +504,12 @@ END
 ```sql
 CREATE PROCEDURE pro_test(in a char(1))
 BEGIN
-    IF a IN('a','b') THEN
-        SELECT 1; -- 注意每个结束符号 ;
-    ELSE 
-        SELECT 2;
+    IF 条件 THEN
+        sql语句; -- 注意每个结束符号 ;
+    ELSEIF 条件 THEN
+        sql语句;
+    ELSE
+        sql语句;
     END IF;
 END;
 ```
@@ -532,30 +534,75 @@ END;
 >索引
 
 ```sql
-mysql 索引的建立对于 mysql 的高效运行是很重要的，索引可以大大提高 mysql 的检索速度。
-拿汉语字典的目录页（索引）打比方，可以按拼音、笔画、偏旁部首等排序的目录（索引）快速查找到需要的字。
+-- 索引：表的目录，在查找内容之前可以先在目录中查找索引位置，以此快速定位查询数据。
+不使用索引，MySQL必须从第一条记录开始读完整个表，直到找出相关的行，表越大，查询数据所花费的时间就越多。
+如果表中查询的列有一个索引，MySQL能够快速到达一个位置去搜索数据文件，而不必查看所有数据，那么将会节省很大一部分时间。
 
-索引是对表的一列或多列进行排序的结构。因为绝大多数的搜索方法在搜索排序结构时，效率都会大大提高，
-所以如果表中某一列经常被作为关键字搜索，则建议对此咧创建索引。
-
-索引提供指针以指向存储在表中指定列的数据值，根据指定的排序次序排列这些指针。
-数据库使用索引的方式与使用'书本目录'的方式类似：通过搜索索引找到特定的值，然后跟随指针到达包含该值的行。
-
---索引分：单列索引和组合索引。
-单列索引，即一个索引只包含单个列，一个表可以有多个单列索引，但这不是组合索引。组合索引，即一个索引包含多个列。
-
-创建索引时，需要确保该索引是应用在 SQL 查询语句的条件(一般作为 WHERE 子句的条件)。
-实际上，索引也是一张表，该表保存了主键与索引字段，并指向实体表的记录。
-
-上面都在说使用索引的好处，但过多的使用索引将会造成滥用。因此索引也会有它的缺点：虽然索引大大提高了查询速度，同时却会降低更新表的速度。
-如对表进行 INSERT UPDATE DELETE 更新时，MySQL不仅要保存数据，还要保存一下索引文件。
-另外，建立索引会占用磁盘空间的索引文件。
+例如：有一张person表，其中有2W条记录，记录着2W个人的信息。有一个Phone的字段记录每个人的电话号码，现在想要查询出电话号码为xxxx的人的信息。
+如果没有索引，那么将从表中第一条记录一条条往下遍历，直到找到该条信息为止。
+如果有了索引，那么会将该Phone字段，通过一定的方法进行存储，好让查询该字段上的信息时，能够快速找到对应的数据，而不必在遍历2W条数据了。
 ```
 
-> 普通索引 & 唯一索引
+> 优缺点
 
 ```sql
-唯一索引与普通索引类似，不同的就是：'索引列的值必须唯一，但允许有空值'。如果是组合索引，则列值的组合必须唯一。
+1、所有的MySql列类型(字段类型)都可以被索引，也就是可以给任意字段设置索引
+2、大大加快数据的查询速度
+
+1、创建索引和维护索引要耗费时间，并且随着数据量的增加所耗费的时间也会增加
+2、索引也需要占空间，我们知道数据表中的数据也会有最大上线设置的，如果我们有大量的索引，索引文件可能会比数据文件更快达到上线值
+3、当对表中的数据进行增加、删除、修改时，索引也需要动态的维护，降低了数据的维护速度。
+```
+
+> 使用原则
+
+```sql
+--通过上面说的优点和缺点，我们应该可以知道，并不是每个字段度设置索引就好，也不是索引越多越好，而是需要自己合理的使用。
+1、对经常更新的表就避免对其进行过多的索引，对经常用于查询的字段应该创建索引，
+2、数据量小的表最好不要使用索引，因为由于数据较少，可能查询全部数据花费的时间比遍历索引的时间还要短，索引就可能不会产生优化效果。
+3、在一同值少的列上（字段上）不要建立索引，比如在学生表的'性别'字段上只有男，女两个不同值。相反的，在一个字段上不同值较多可以建立索引。
+```
+
+```sql
+1、对于那些在查询中很少使用或者参考的列'不应该创建索引'。
+2、对于那些只有很少数据值的列也不应该增加索引。因为本来结果集合就是相当于全表查询了，所以没有必要。
+3、对于那些定义为 text，image，bit 数据类型的列不应该增加索引。这是因为，这些列的数据量要么相当大，要么取值很少。
+4、当修改性能远远大于检索性能时，不应该创建索引。
+5、不会出现在 where 条件中的字段不该建立索引。
+```
+
+> 索引方法
+
+```sql
+--注意：索引是在存储引擎中实现的，也就是说不同的存储引擎，会使用不同的索引
+MyISAM 和 InnoDB 存储引擎：只支持'BTREE'索引， 也就是说默认使用BTREE，不能够更换
+MEMORY/HEAP 存储引擎：支持'HASH'和'BTREE'索引
+
+HASH  是以 key-value 的形式进行索引存储
+BTREE 是以二叉树方式进行索引存储。（默认存储索引类型）
+```
+
+> 索引分类
+
+```sql
+--统属于 单列索引 ---> 一个索引只包含单个列，但一个表中可以有多个单列索引。
+'普通索引'：没有什么限制，允许在定义索引的列中插入重复值和'空值'，纯粹为了查询数据更快一点。
+'唯一索引'：索引列中的值必须是唯一的，但是允许为空值
+'主键索引'：一种特殊的唯一索引，不允许有空值。
+```
+
+```sql
+'组合索引'：在表中的多个字段组合上创建的索引。遵循'最左匹配原则'。
+
+'最左匹配原则'：只要查询的条件中用到了最左边的列，索引一般就会被使用。
+例如，这里由 id、name、age 3个字段构成的组合索引，索引行就按 id/name/age 的顺序存放。
+使用索引的组合：（id,name,age）、（id,name）、（id,age）、（id） --列顺序可以调换
+不会使用索引：（age）、（name）、（name,age）
+```
+
+```sql
+'全文索引'：只有在'MyISAM'引擎上才能使用，只能在 CHAR,VARCHAR,TEXT 类型字段上使用全文索引。
+就是在一堆文字中，通过其中的某个关键字等，就能找到该字段所属的记录行。比如有"你是个靓仔，靓女..." 通过靓仔，'可能'就可以找到该条记录。
 ```
 
 ```sql
@@ -568,21 +615,101 @@ ALTER TABLE tbl_name DROP INDEX c; --删除索引
 SHOW INDEX FROM table_name;        --显示索引
 ```
 
+> 普通索引
 
+```sql
+CREATE TABLE `person` (
+    `id` int(5) DEFAULT NULL,
+    `age` int(2) DEFAULT NULL,
+    `name` varchar(10) DEFAULT NULL,
+    `birth` varchar(10) DEFAULT NULL,
+    KEY `name` (`name`)              --普通索引
+) ENGINE=InnoDB DEFAULT CHARSET=utf8
+```
+
+```sql
+mysql> EXPLAIN SELECT * FROM person WHERE `name`='张三'; --EXPLAIN：用来查看索引是否被使用
++----+-------------+--------+------------+------+---------------+------+---------+-------+------+----------+-------+
+| id | select_type | table  | partitions | type | possible_keys | key  | key_len | ref   | rows | filtered | Extra |
++----+-------------+--------+------------+------+---------------+------+---------+-------+------+----------+-------+
+|  1 | SIMPLE      | person | NULL       | ref  | name          | name | 33      | const |    1 |   100.00 | NULL  |
++----+-------------+--------+------------+------+---------------+------+---------+-------+------+----------+-------+
+1 row in set, 1 warning (0.03 sec)
+```
+
+```sql
+--最主要的是看 possible_keys 和 key 这两个属性，上面显示了 key 为 name。说明使用了索引。
+```
+
+```sql
+id:　SELECT识别符。这是SELECT的查询序列号,也就是一条语句中，该select是第几次出现。在次语句中，select就只有一个，所以是1.
+
+select_type：所使用的SELECT查询类型，SIMPLE表示为简单的SELECT，不实用UNION或子查询，就为简单的SELECT。也就是说在该SELECT查询时会使用索引。
+其他取值，PRIMARY：最外面的SELECT。在拥有子查询时，就会出现两个以上的SELECT。
+UNION：union(两张表连接)中的第二个或后面的select语句  SUBQUERY：在子查询中，第二SELECT。
+
+table：数据表的名字。他们按被读取的先后顺序排列，这里因为只查询一张表，所以只显示book
+
+type：指定本数据表和其他数据表之间的关联关系，该表中所有符合检索值的记录都会被取出来和从上一个表中取出来的记录作联合。
+ref用于连接程序使用键的最左前缀或者是该键不是 primary key 或 unique索引（换句话说，就是连接程序无法根据键值只取得一条记录）的情况。
+当根据键值只查询到少数几条匹配的记录时，这就是一个不错的连接类型。
+(注意，个人这里不是很理解，百度了很多资料，全是大白话，等以后用到了这类信息时，在回过头来补充，这里不懂对后面的影响不大。)可能的取值有 system、const、eq_ref、index和All
+
+possible_keys：MySQL在搜索数据记录时可以选用的各个索引，该表中就只有一个索引，year_publication
+
+key：实际选用的索引
+
+key_len：显示了mysql使用索引的长度(也就是使用的索引个数)，当 key 字段的值为 null时，索引的长度就是 null。
+注意，key_len的值可以告诉你在联合索引中mysql会真正使用了哪些索引。这里就使用了1个索引，所以为1，
+
+ref:给出关联关系中另一个数据表中数据列的名字。常量（const），这里使用的是1990，就是常量。
+
+rows：MySQL在执行这个查询时预计会从这个数据表里读出的数据行的个数。
+
+extra：提供了与关联操作有关的信息，没有则什么都不写。
+```
+
+> 组合索引
+
+```sql
+CREATE TABLE `person` (
+    `id` int(5) DEFAULT NULL,
+    `age` int(2) DEFAULT NULL,
+    `name` varchar(10) DEFAULT NULL,
+    `birth` varchar(10) DEFAULT NULL,
+    KEY `multi` (`id`,`name`,`age`) USING BTREE --组合索引
+) ENGINE=InnoDB DEFAULT CHARSET=utf8
+```
+
+```sql
+mysql> EXPLAIN SELECT * FROM person WHERE id=5 and age=18;
++----+-------------+--------+------------+------+---------------+-------+---------+-------+------+----------+-----------------------+
+| id | select_type | table  | partitions | type | possible_keys | key   | key_len | ref   | rows | filtered | Extra                 |
++----+-------------+--------+------------+------+---------------+-------+---------+-------+------+----------+-----------------------+
+|  1 | SIMPLE      | person | NULL       | ref  | multi         | multi | 5       | const |    1 |   100.00 | Using index condition |
++----+-------------+--------+------------+------+---------------+-------+---------+-------+------+----------+-----------------------+
+1 row in set, 1 warning (0.00 sec)
+```
 
 ##约束相关
 
-> 约束：一种限制，用于限制表中的数据，为了保证表中数据的准确性和可靠性。
+> 约束：为了保证表中数据的`准确性和可靠性`而实现的一套机制。
 
 ```sql
-NOT NULL-- 非空约束，保证该字段的值不能为空。姓名
-DEFAULT -- 默认约束，保证该字段有默认值。性别
+约束是为了'保证表数据的完整性'，索引是为了'提高查询效率'，两者作用不一样！其次种类也不一样。
+```
 
-PRIMARY KEY -- 主键约束，保证该字段的值具有唯一性，且非空。学号
-UNIQUE      -- 唯一约束，只保证该字段的值具有唯一性，可为空。如座位号
+> 约束分类
 
-CHECK       -- 检查约束，但mysql不支持。如性别只能写男女，年龄只能写1-200等。
-FOREIGN KEY -- 外键约束，表中该字段的值必须来自主表的关联列的值。
+```sql
+NOT NULL    -- 非空约束，保证该字段的值不能为空。姓名
+UNIQUE      -- 唯一约束，只保证该字段的值具有唯一性，可为空。座位号
+PRIMARY KEY -- 主键约束（主键约束 = 非空约束 + 唯一约束），保证该字段的值具有唯一性，且非空。学号
+
+DEFAULT        -- 默认约束，保证该字段有默认值。性别
+AUTO_INCREMENT -- 自增约束
+FOREIGN KEY    -- 外键约束，表中该字段的值必须来自主表的关联列的值
+CHECK          -- 检查约束，但 mysql 不支持。如性别只能写男女，年龄只能写1-200等
 ```
 
 > 主键索引 & 唯一索引
@@ -640,17 +767,12 @@ ALTER TABLE `coupon` ADD UNIQUE key (索引名); -- 新增 唯一索引
 > 三大范式
 
 ```sql
-范式就是规范，就是关系型数据库在设计表时，要遵循的三个规范。--要想满足第（二）范式必须先满足第（一）范式，要满足第（三）范式必须先满足第（二）范式。
+范式就是规范，就是关系型数据库在设计表时，要遵循的三个规范。
+--要想满足第（二）范式必须先满足第（一）范式，要满足第（三）范式必须先满足第（二）范式。
 
-第一范式（1NF）：要求数据库表的每一列都是不可分割的原子数据项。'列数据的不可分割'
-同一列中不能有多个值，即实体中的某个属性不能有多个值或者不能有重复的属性。如，学校信息包含：学历 + 班级
-
-第二范式（2NF）：要求数据库表中的每个行必须可以被唯一地区分。为实现区分通常需要为表加上一个列，以存储各个实例的唯一标识。'主键'
-如，学生表中必须包含学生的唯一标识学号。
-
-第三范式（3NF）：实体中的属性不能是其他实体中的非主属性。因为这样会出现冗余。即：属性不依赖于其他非主属性。
-如果一个实体中出现其他实体的非主属性，可以将这两个实体用'外键'关联，而不是将另一张表的非主属性直接写在当前表中。
-如，学生表中不能包含老师详细信息，只能包含老师表的'外键'老师工号。
+第一范式：确保每列保持原子性。即每列内容'不可拆分'，如，学校信息包含：学历 + 班级，就可拆分为两列
+第二范式：确保表中的每列都和主键相关。即要有'主键'，并且其他字段都依赖于主键。如，学生表中必须包含学生的唯一标识学号。
+第三范式：确保表中每一列都和主键列直接相关,而不是间接相关。即要消除间接依赖，消除冗余，对于间接依赖要使用'外键'。
 ```
 
 ```sql
@@ -690,6 +812,13 @@ select * from students order by id limit (pageSize * (pageNumber-1)), pageSize; 
  --注: 其实两层就可以，不过，两层嵌套查询不会用到oracle的外层条件内推机制，效率慢了点
 ```
 
+> 索引 & 约束
+
+```sql
+约束是为了'保证表数据的完整性'，索引是为了'提高查询效率'，两者作用不一样！其次种类也不一样。
+```
+
+> 
 
 
 
@@ -795,7 +924,7 @@ select * from ip_table where inet_aton(ip) > inet_aton('192.168.1.3') and inet_a
 
 
 
-## 优化相关
+# 优化相关
 
 >基础优化
 
@@ -821,25 +950,70 @@ where子句中出现column字段的类型和传入的参数类型不一致的时
 
 ```
 
->操作符`<>`优化（无法使用索引）
+## 索引优化
+
+> person表，age，birth分别为单独索引，id + name为组合索引
 
 ```sql
-select id from orders where amount != 100;
-
-(select id from orders where amount > 100)
- union all
-(select id from orders where amount < 100 and amount > 0); --如果金额为100的订单极少，这种数据分布严重不均的情况下，有可能使用索引。
+CREATE TABLE `person` (
+    `id` int(5) NOT NULL,
+    `age` int(2) DEFAULT NULL,
+    `name` varchar(10) DEFAULT NULL,
+    `birth` varchar(10) DEFAULT NULL,
+    `gender` int(2) DEFAULT NULL,
+    `info` varchar(50) DEFAULT NULL,
+    PRIMARY KEY (`id`),                 -- 主键索引
+    KEY `age` (`age`),                  -- 单独索引
+    KEY `name` (`name`),                -- 单独索引
+    KEY `multiIndex` (`birth`,`info`)   -- 组合索引
+) ENGINE=InnoDB DEFAULT CHARSET=utf8
 ```
-
->`OR`优化（在Innodb引擎下or无法使用组合索引）
 
 ```sql
-select id，product_name from orders where mobile_no = '13421800407' or user_id = 100;
-
-(select id，product_name from orders where mobile_no = '13421800407')
- union
-(select id，product_name from orders where user_id = 100); --此时id和product_name字段都有索引
+分页查询很重要，如果查询数据量超过30%，MYSQL不会使用索引。
+单表索引数不超过5个、单个索引字段数不超过5个。
+字符串可使用前缀索引，前缀长度控制在5-8个字符。
+字段唯一性太低，增加索引没有意义，如：是否删除、性别。
 ```
+
+>如果列是字符型，传入的是数字，则不会使用索引
+
+```sql
+explain select * from person where birth = '2019'; -- 使用
+explain select * from person where birth = 2019;   -- 不使用
+```
+
+>LIKE 查询，% 不能放在第 1 位 `那如何查询 %name% ？ 使用全文索引`
+
+```sql
+explain select * from person where birth like '2019%'; -- 使用
+explain select * from person where birth like '%2019'; -- 不会使用
+```
+
+>OR 条件`前后都有索引`才能被使用，而且必须是 `单独索引 ？`
+
+```sql
+explain select * from person where id=1 or age=18;         -- 不使用（主键索引 + 单独索引，v5.7.13不使用，其他版本待证）
+explain select * from person where name='zhang' or age=18; -- 不使用（单独索引 + 单独索引）
+explain select * from person where name='zhang' or birth='2019';  -- 不使用（单独索引 + 组合索引）
+explain select * from person where id=1 or gender=1;              -- 不使用（主键索引 + 无索引）
+
+explain (select * from person where id=5) union (select * from person where gender=1); --使用，使用 union 优化
+```
+>`<>` 操作符无法使用索引
+
+```sql
+explain select * from person where age<>18; --不使用（!= 也一样）
+explain (select * from person where age<18) union (select * from person where age>18); --使用
+```
+
+>
+
+```sql
+
+```
+
+##语法优化
 
 > 使用`exists/join`代替 IN
 
@@ -893,23 +1067,7 @@ select id,name from emp limit 1747390, 10;         --随着表数据量的增加
 select id,name from emp WHERE id>1747390 LIMIT 10; --优化：取前一页的最大行数的id，然后以此id来限制下一页的起点
 ```
 
-> 
-
-```sql
-
-```
-
->不建议使用 `%前缀` 模糊查询
-
-```sql
-例如LIKE"%name"或者LIKE"%name%"，这种查询会导致索引失效而进行全表扫描。但是可以使用LIKE "name%"
-
-那如何查询%name%？ 使用全文索引
-ALTER TABLE `dynamic_201606` ADD FULLTEXT INDEX `idx_user_name` (`user_name`);  --创建全文索引
-select id,fnum,fdst from dynamic_201606 where match(user_name) against('zhangsan' in boolean mode); --使用全文索引
-```
-
->分批处理
+> 分批处理
 
 ```sql
 --如果大量优惠券需要更新为不可用状态，执行这条SQL可能会堵死其他SQL，分批处理伪代码
@@ -932,13 +1090,10 @@ private void updateState() {
 }
 ```
 
->索引优化
+>
 
 ```sql
-分页查询很重要，如果查询数据量超过30%，MYSQL不会使用索引。
-单表索引数不超过5个、单个索引字段数不超过5个。
-字符串可使用前缀索引，前缀长度控制在5-8个字符。
-字段唯一性太低，增加索引没有意义，如：是否删除、性别。
+
 ```
 
 

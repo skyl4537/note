@@ -693,8 +693,6 @@ System.out.println(sun.name() + "-" + sun.ordinal()); //SUN-6
 
 ```java
 @Getter //只能有 get
-@NoArgsConstructor
-@AllArgsConstructor
 public enum EnumTest {
     MON(1, "周一"), TUE, WED, THU, FRI, SAT, SUN(7, "周末");
 
@@ -714,7 +712,7 @@ for (EnumTest value : values) {
 
 ```java
 可以把 enum看成是一个普通的 class，它们都可以定义一些属性和方法。
-不同之处是：enum 不能使用 extends 关键字继承其他类，因为 enum 已经继承了 java.lang.Enum（java是单一继承）。
+不同之处是：enum 不能使用 extends 关键字继承其他类，因为 enum 已经 extends java.lang.Enum（java是单一继承）。
 ```
 
 ## 异常

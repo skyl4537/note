@@ -304,13 +304,10 @@ echo $DATE '---' $LSOF >> lsof
 echo $DATE '---' $CLOSE > close
 grep -d skip -n 'Init---args' ../_* > ztj
 ```
-> windows 定时任务
+> 
 
 ```java
-'右键'计算机 -> 管理 -> 系统工具 -> 任务计划程序 -> '右侧'创建任务 ->
-    常规 -> '填写'名称
-    触发器 -> 新建 -> 每天 -> 开始 2019-6-11 20:10:23
-    操作 -> 新建 -> 操作 -> '可选择'启动程序 -> 浏览 -> 选择'*.bat文件'
+
 ```
 
 
@@ -375,7 +372,8 @@ awk '{print $1,$3}' file                #每行按默认进行分割，输出分
 awk '{printf "%3s %-2s\n",$1,$3}' file  #格式化输出，%3s显示长度最小为3个字符，不足右侧补空格；%-2s左侧补
 
 awk -F',' '{print $1,$3}' file          #自定义按','分割，默认不起作用
-awk -F'[, ]' '{print $1}' file          #多个分隔符使用 [] 括起来；先用','分割，再用' '分割
+awk -F '[ :\t|]' '{print $1}' file      #多个分隔符使用 [] 括起来，这里代表空格、:、TAB、|同时做为分隔符。
+
 awk 'BEGIN{FS="[, ]"} {print $1}' file  #使用内建变量，效果同上
 ```
 
@@ -398,6 +396,19 @@ awk '$1>0 && $2=="B" {print $1,$3}' file
 awk '($1>0 && $2=="B")||(NR==1)' file 
 ```
 
+```sh
+#NR ：表示awk开始执行程序后所读取的数据行数。
+#FNR：与NR功用类似，不同的是awk每打开一个新文件，FNR便从0重新累计。
+#因为 linux-shell 命令行输出的前面几行一般是指导或是格式字段说明，而不是实现的数据，所以在作过滤时，一般需要排除前面的几行。
+
+#找出指定机器开放的所有端口：if(NR>2) --> 读取第2行以后的内容
+netstat -nltp|awk '{if(NR>2) {print $4}}'|cut -d ':' -f 2
+```
+
+
+
+
+
 ## curl
 
 > 命令行发送 GET POST 请求
@@ -412,8 +423,28 @@ curl localhost:9006/web/hello/post4 -X POST -d '{"name":"li"}' -H "Content-Type:
 curl -x 192.168.5.19:808 https://www.baidu.com #指定代理（proxy）服务器以及其端口
 ```
 
+## cut
 
+> 用于显示每行从开头算起 num1 到 num2 的文字
 
+```shell
+#-b: 仅显示行中指定范围的【字节】。这些字节位置将忽略多字节字符边界，除非也指定了 -n 标志。
+#-c: 仅显示行中指定范围的【字符】
+#-d: 指定字段的分隔符，默认的字段分隔符为“TAB”；
+#-f: 显示指定字段的内容
+
+cat cut.log
+#No Name Mark Percent
+#01 tom 69 91
+#02 jack 71 87
+#03 alex 68 98
+
+cut -d ' ' -f 2,3 cut.log #显示每行的第2，3列
+cut -d ' ' -f 2,3 --complement cut.log #显示每行的2，3以外的列，即1,4列
+
+cut -b 2,5 cut.log #显示每行的第2个字节到第5个字节
+cut -b 2- cut.log  #显示每行的第2个字节到结尾
+```
 
 
 # F-G-H-I-J-K
@@ -497,8 +528,46 @@ ps -ef | grep 33306 | grep -v grep | awk '{print($2)}' #mysql的pid。（-v 反�
 
 #L-M-N-O-P
 
+## lsof
 
+> 列出当前系统打开的文件（list open files）安装：yum install lsof
 
+```shell
+默认: #没有选项，列出所有活跃进程打开的所有文件
+-t:  #仅获取进程 PID
+-c string: #显示 COMMAND 列中包含指定字符的进程所有打开的文件，如 -c java
+
+fileName:  #显示指定'文件'相关的所有进程
++d /DIR/:  #........'目录'..............
++D /DIR/:  #........'目录及子目录'...... （递归显示）
+
+-p<进程号>: #列出指定进程号所打开的文件
+
+-u:  #显示所属user进程打开的文件
+-n:  #不将IP转换为hostname，缺省是不加上-n参数
+-a:  #所有参数都满足时才显示结果
+```
+```shell
+lsof -t -c java -i:8080       #java项目的pid，-c -i 默认是 或 的关系
+lsof (-a) -t -c java -i:8080  #-a 代表 且 的关系
+
+lsof blue/logs/info  #和文件 info 相关的进程信息
+lsof +d blue/logs    #和目录 logs ............
+lsof +D blue/logs    #迭代显示，当前目录及其子目录的打开文档信息
+
+lsof -p 2853  #该进程相关的文件
+```
+```shell
+#lsof -i[46] [protocol][@hostname|hostaddr][:service|port]
+
+lsof -i:8090    #端口8090相关的网络信息
+lsof -t -i:8090 #............进程pid
+
+lsof -i6:8090     #端口8090的 IPV6 进程
+lsof -i tcp       #仅显示tcp连接（udp同理）
+lsof -i@host      #显示基于指定主机的连接
+lsof -i@host:port #显示基于主机与端口的连接
+```
 ## nohup
 
 > 后台启动程序
@@ -518,8 +587,34 @@ nohup    ：在'退出帐户/关闭终端'之后继续运行相应的进程。�
 echo $!  ：获取最新启动程序的 pid
 ```
 
+## ps
 
+>用于显示当前进程 （process） 的状态
 
+```shell
+#-A   列出所有的行程
+#-e   等于“-A”
+#-a   显示现行终端机下的所有进程，包括其他用户的进程；
+#-u   以用户为主的进程状态 ；
+#-x   通常与 a 这个参数一起使用，可列出较完整信息。
+#-w   显示加宽可以显示较多的资讯
+#-au  显示较详细的资讯
+#-aux 显示所有包含其他使用者的行程
+#-f   做一个更为完整的输出
+```
+
+```shell
+ps -A | grep java   #显示所有进程信息
+ps -ef | grep java  #显示所有进程信息，连带命令行
+ps -aux | grep java #列出目前所有的正在内存当中的程序
+
+ps xH | wc -l #查看linux所有存在的线程数
+
+ps -mp <pid> | wc -l   #查看一个进程的线程数
+pstree -p <pid> | wc -l #同上
+
+cat /proc/${pid}/status  #查看一个进程的所有相关信息
+```
 >
 
 ```shell
@@ -923,47 +1018,6 @@ ls -lh s*    #列出目录下所有名称 s 开头的文件和文件夹
 
 ```
 
-## lsof
-
-> 列出当前系统打开的文件（list open files）安装：yum install lsof
-
-```shell
-默认: #没有选项，列出所有活跃进程打开的所有文件
--t:  #仅获取进程 PID
--c string: #显示 COMMAND 列中包含指定字符的进程所有打开的文件，如 -c java
-
-fileName:  #显示指定'文件'相关的所有进程
-+d /DIR/:  #........'目录'..............
-+D /DIR/:  #........'目录及子目录'...... （递归显示）
-
--p<进程号>: #列出指定进程号所打开的文件
-
--u:  #显示所属user进程打开的文件
--n:  #不将IP转换为hostname，缺省是不加上-n参数
--a:  #所有参数都满足时才显示结果
-```
-```shell
-lsof -t -c java -i:8080       #java项目的pid，-c -i 默认是 或 的关系
-lsof (-a) -t -c java -i:8080  #-a 代表 且 的关系
-
-lsof blue/logs/info  #和文件 info 相关的进程信息
-lsof +d blue/logs    #和目录 logs ............
-lsof +D blue/logs    #迭代显示，当前目录及其子目录的打开文档信息
-
-lsof -p 2853  #该进程相关的文件
-```
-```shell
-#lsof -i[46] [protocol][@hostname|hostaddr][:service|port]
-
-lsof -i:8090    #端口8090相关的网络信息
-lsof -t -i:8090 #............进程pid
-
-lsof -i6:8090     #端口8090的 IPV6 进程
-lsof -i tcp       #仅显示tcp连接（udp同理）
-lsof -i@host      #显示基于指定主机的连接
-lsof -i@host:port #显示基于主机与端口的连接
-```
-
 
 
 
@@ -1166,29 +1220,6 @@ tail -c 10 file   #最后 10 个字符
 
 
 
-## cut
-
-> 用于显示每行从开头算起 num1 到 num2 的文字
-
-```shell
-#-b: 仅显示行中指定范围的【字节】。这些字节位置将忽略多字节字符边界，除非也指定了 -n 标志。
-#-c: 仅显示行中指定范围的【字符】
-#-d: 指定字段的分隔符，默认的字段分隔符为“TAB”；
-#-f: 显示指定字段的内容
-
-cat cut.log
-#No Name Mark Percent
-#01 tom 69 91
-#02 jack 71 87
-#03 alex 68 98
-
-cut -d ' ' -f 2,3 cut.log #显示每行的第2，3列
-cut -d ' ' -f 2,3 --complement cut.log #显示每行的2，3以外的列，即1,4列
-
-cut -b 2,5 cut.log #显示每行的第2个字节到第5个字节
-cut -b 2- cut.log  #显示每行的第2个字节到结尾
-```
-
 
 
 
@@ -1310,36 +1341,6 @@ wget -r --tries=2 www.baidu.com #指定尝试2次，2次后不再尝试
 wget -r --tries=2 -q www.baidu.com #指定尝试，且不打印中间结果
 ```
 
-## ps
-
->用于显示当前进程 （process） 的状态
-
-```shell
-#-A   列出所有的行程
-#-e   等于“-A”
-#-a   显示现行终端机下的所有进程，包括其他用户的进程；
-#-u   以用户为主的进程状态 ；
-#-x   通常与 a 这个参数一起使用，可列出较完整信息。
-#-w   显示加宽可以显示较多的资讯
-#-au  显示较详细的资讯
-#-aux 显示所有包含其他使用者的行程
-#-f   做一个更为完整的输出
-```
-
-```shell
-ps -A | grep java #显示所有进程信息
-
-ps -ef | grep java #显示所有进程信息，连带命令行（grep 过滤）
-
-ps aux | grep java #列出目前所有的正在内存当中的程序
-
-ps xH | wc -l #查看linux所有存在的线程数
-
-ps -mp <pid> | wc -l   #查看一个进程的线程数
-pstree -p <pid> | wc -l #同上
-
-cat /proc/${pid}/status  #查看一个进程的所有相关信息
-```
 
 ## pstree
 

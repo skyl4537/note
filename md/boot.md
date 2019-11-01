@@ -1279,28 +1279,28 @@ public class WebSocketConfig {
 @Slf4j
 @Component
 @ServerEndpoint("/webSocket")
-public class Websocket {
+public class WebSocket {
 
     //区别: 静态变量 和 非静态变量
     //与某个客户端的连接会话，需要通过它来给客户端发送数据
     private Session session;
 
-    // 旧版：concurrent包的线程安全Set，用来存放每个客户端对应的 MyWebSocket 对象
-    private static final Set<Websocket> webSocketSet = new CopyOnWriteArraySet<>();
+    // 旧版：concurrent包的线程安全Set，用来存放每个客户端对应的 WebSocket 对象
+    private static final Set<WebSocket> WEB_SOCKET_SET = new CopyOnWriteArraySet<>();
 
     //客户端注册时调用
     @OnOpen
     public void onOpen(Session session) {
         this.session = session;
-        webSocketSet.add(this);
-        log.info("【WebSockt消息】 有连接建立，总连接数: {}", webSocketSet.size());
+        WEB_SOCKET_SET.add(this);
+        log.info("【WebSockt消息】 有连接建立，总连接数: {}", WEB_SOCKET_SET.size());
     }
 
     //客户端关闭
     @OnClose
     public void onClose(Session session, CloseReason reason) {
-        webSocketSet.remove(this);
-        log.info("【WebSockt消息】 有连接断开，总连接数: {}", webSocketSet.size());
+        WEB_SOCKET_SET.remove(this);
+        log.info("【WebSockt消息】 有连接断开，总连接数: {}", WEB_SOCKET_SET.size());
     }
 
     //客户端异常
@@ -1320,7 +1320,7 @@ public class Websocket {
 
     //群发消息 --> 可供外部调用
     public void sendMsg2All(String message) {
-        webSocketSet.forEach(websocket -> websocket.sendMsg(message));
+        WEB_SOCKET_SET.forEach(webSocket -> webSocket.sendMsg(message));
     }
 
     //点对点发送消息

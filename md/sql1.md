@@ -292,15 +292,17 @@ FROM employees
 > 数学函数 `（a%b = a-a/b*b）`
 
 ```sql
-SELECT ROUND(-1.45) n1, ROUND(-1.65) n2;         -- -1，-2 -->先绝对值，再四舍五入，最后加符号
-SELECT ROUND(-1.455, 2) n1, ROUND(-1.451, 2) n2; -- -1.46, -1.45 -->保留两位小数
-
 SELECT CEIL(-1.451) n1;        -- -1 -->向上取整，返回 >= 参数的最小整数
 SELECT FLOOR(-1.451) n1;       -- -2 -->向下取整，... <= ............
 
-SELECT TRUNCATE(-1.499, 1) n1; -- -1.4 -->截断，保留一位小数
-
 SELECT MOD(-10, -3) n1;        -- -1 -->取余%，取余操作的符号位和被除数一致。 a%b = a-a/b*b
+```
+
+```sql
+SELECT ROUND(45.678, 2);     -- 45.68 保留两位小数，四舍五入
+SELECT TRUNCATE(45.678, 2);  -- 45.67 同上，但不会四舍五入
+
+SELECT ROUND(-1.45) n1, ROUND(-1.65) n2; -- -1 -2 四舍五入，向靠近原点 0 的方向舍弃，向远离 0 的方向入
 ```
 
 > 字符串函数 `（索引从1开始计数）`
@@ -869,6 +871,25 @@ mysql> SELECT JSON_UNQUOTE(memo -> '$.datas.name') name FROM log WHERE id=470941
 | lucy |
 +------+
 ```
+
+> 生成 JsonArray
+
+```sql
+-- mysql8.0之前解决方案
+SELECT CONCAT(
+    '[', 
+    GROUP_CONCAT(JSON_OBJECT('name', name, 'phone', phone)),
+    ']'
+) 
+FROM person;
+```
+
+```sql
+-- mysql8.0新增方法
+SELECT JSON_ARRAYAGG(JSON_OBJECT('name', name, 'phone', phone)) from Person;
+```
+
+
 
 
 

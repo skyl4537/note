@@ -173,74 +173,38 @@ radio：单选框，只有加上'name'才具有互斥效果。表单提交的是
 女 <input type="radio" name="gender" value="0" />
 ```
 
-> js（事件驱动）
+> jQuery：js函数库。js：操作html标签
 
-```sh
-用户事件：用户操作；如单击，鼠标移入，鼠标移出等
-系统事件：由系统触发的事件；如文档加载完成
+```js
+$(this)	    //当前 HTML 元素
+$("p")	    //所有 <p> 元素              元素选择器：document.getElementsByTagName("p");
+$(".intro")	//所有 class="intro" 的元素  .class选择器：document.getElementsByClassName("test");
+$("#intro")	//id="intro" 的元素          #id选择器：document.getElementById("test");
+
+$("p.intro")	     //所有 class="intro" 的 <p> 元素
+$("ul li:first")	 //每个 <ul> 的第一个 <li> 元素
+$("[href$='.jpg']")	 //所有带有以 ".jpg" 结尾的属性值的 href 属性
+$("div#intro .head") //id="intro" 的 <div> 元素中的所有 class="head" 的元素
 ```
 
-```javascript
-document.getElementById("id");            <==>   $('#id')    //根据 id 查询（单个元素）
-document.getElementsByClassName("class"); <==>   $('.class') //根据 class 查询（元素数组）
-document.getElementsByTagName("tag");     <==>   $('tag')    //根据 tag 查询（元素数组）
-
-document.getElementsByName("name");       //返回带有指定 name 的对象集合
-```
-
->js在页面的位置
-
-```sh
-js 作为一种脚本语言可以放在html页面中'任何位置'。但是浏览器解释 html 时是按先后顺序的，所以前面的 js 就先被执行。
-比如，进行页面显示初始化的 js 必须放在 <head/> 里面，因为初始化都要求提前进行（如给页面body设置css等）；
-而如果是通过事件调用执行的 function() 那么对位置没什么要求的，可以放在 <body/> 标签内。
-```
-
-```sh
-#yahoo团队的最佳实践：样式在上，脚本在下
-当把样式放在 <head> 标签中时，浏览器在渲染页面时就能尽早的知道每个标签的样式，用户就会感觉这个页面加载的很快。
-但是如果将样式放在页面的结尾，浏览器在渲染页面时就无法知道每个标签的样式，直到CSS被下载执行后。
-
-另一方面，对于 js 来说，因为它在执行过程中会阻塞页面的渲染，所以我们要把它放在页面的结尾
-```
-
-> jQuery（js函数库）：通过选取html元素，并对选取的元素执行某些操作
-
-```javascript
-//jQuery 选择器
-$("#test")  --> document.getElementById("test");          //#id 选择器。  查询id为'test'的【单个元素】
-$("p")      --> document.getElementsByTagName("p");       //元素选择器。   查询标签<p>【所有元素】
-$(".test")  --> document.getElementsByClassName("test");  //.class选择器。查询class为'test'的【所有元素】
-```
-
-```javascript
-$(this).hide()       //隐藏当前元素
-$("p").hide()        //隐藏所有 <p> 元素.(tag)
-$("p.test").hide()   //隐藏所有 class="test" 的 <p> 元素
-$("p:first")         //选取第一个 <p> 元素
-$("[href]")          //选取带有 href 属性的元素 
-
-$("#test").hide()    //隐藏所有 id="test" 的元素.(#id)
-```
-
-> 动态绑定事件
+>动态绑定事件
 
 ```html
 <button id="btn0">动态绑定事件</button>
 ```
 
 ```javascript
-$(function () { //简写前: $(document).ready(function () {
+$(function () { //简写前: $(document).ready(function () { ---> 文档就绪函数：为了防止文档在完全加载（就绪）之前运行 jQuery 代码
     $("#btn0").click(function () {
         alert("点我上王者..." + $(this).attr('id'));
     });
-});
+}); //在DOM载入就绪时就对其进行操纵，并调用执行绑定的函数
 ```
 
-```sh
-#$(function(){}) 与 window.onload
-window.onload 方法是在网页中所有的元素(包括元素的所有关联文件)完全加载到浏览器后才执行的。
-$(document).ready() 方法可以在DOM载入就绪时就对其进行操纵，并调用执行绑定的函数。
+```js
+window.onload = function () {
+    //在网页中所有的元素（包括元素的所有关联文件）完全加载到浏览器后才执行
+}
 ```
 
 >静态指定方法
@@ -977,13 +941,14 @@ public String token(HttpSession session) {
 
 
 
-# 注解基础
+# 注解
+
+##基础
 
 > 基本概念
 
 ```sh
 Java代码里的特殊标记，可看作注释（这一点和普通注释没区别）。可被其他程序读取（又区别于注释）。
-
 #元注解：可以注解到注解上的注解，或者说元注解是一种基本注解，但是它能够应用到其它的注解上面。
 ```
 
@@ -1023,9 +988,7 @@ public @interface Table {
 @Retention(RetentionPolicy.RUNTIME)
 public @interface Column {
     String name();
-
     String type() default "varchar"; 
-
     int length();
 }
 ```
@@ -1062,71 +1025,54 @@ public void Test() throws Exception {
 }
 ```
 
-# Spring
+## Spring
 
-## @PropertySource
+> @PropertySource：批量读取配置文件
 
-> 批量读取配置文件
-
-```java
+```sh
 详见： boot --> 配置相关
 ```
-## @Value
-
-> 通过注解将常量、配置文件中的值、其他bean的属性值注入到变量中，作为变量的初始值
+> @Value：通过注解将常量、配置文件中的值、其他bean的属性值注入到变量中，作为变量的初始值
 
 ```java
-//配置文件属性注入 @Value("${}")
+//配置文件属性注入 ${}
 @Value("$(server.port)")
 ```
 
 ```java
-//bean属性、系统属性、表达式注入 @Value("#{}")
-@Value("#{beanInject.another}")                 // 注入其他Bean属性：注入beanInject对象的属性another
-@Value("#{systemProperties['os.name']}")        // 注入操作系统属性
-@Value("#{T(java.lang.Math).random() * 100.0}") //注入表达式结果
+//bean属性、系统属性、表达式注入 #{}
+@Value("#{device.deviceName}")
+String deviceName; // 注入其他Bean属性：lcd-10086
+
+@Value("#{systemProperties['os.name']}")
+String osName; // 注入操作系统属性：Windows 7
+
+@Value("#{T(java.lang.Math).random() * 100.0}")
+String random; //注入表达式结果：60.969226153296965
 ```
 
-
-
-
-
-
-
-## @Configuration
-
-> 定义配置类。被注解的类内部包含有一个或多个被`@Bean`注解的方法
+> @Configuration：定义配置类。被注解的类内部包含有一个或多个被`@Bean`注解的方法
 
 ```sh
-@Configuration 不可以是'final'类型
-@Configuration 不可以是匿名类
-嵌套的 @Configuration 必须是静态类
+@Configuration 不可以是'final'类型，不可以是匿名类。嵌套的 @Configuration 必须是静态类
 ```
 
-## @Bean
-
-> 只会被Spring调用一次，产生一个id为方法名的Bean对象，对象管理在IOC容器中
+> @Bean：只会被Spring调用一次，产生一个id同方法名的对象，对象管理在IOC容器中
 
 ```java
-@Bean("infoService1") //默认，bean的id和方法名相同，也可通过name属性自定义
+@Bean("infoService1") //默认，bean的id和方法名相同，也可通过 name 属性自定义
 public TnfoService infoService() {
     return new TnfoServiceImpl();
 }
 ```
 
-##@Scope
-
-> Bean作用域的注解
+> @Scope：Bean作用域的注解
 
 ```java
 @Scope("singleton") //常用取值范围：singleton, prototype
 ```
 
-
-
-## @ComponentScan
-
-> `组件扫描`  扫描加了注解的类，并管理到 IOC 容器中
+> @ComponentScan：`组件扫描`。扫描加了注解的类，并管理到 IOC 容器中
 
 ```sh
 #Boot项目: 该注解包含在 @SpringBootApplication，所以只需在启动类中配置此注解即可
@@ -1143,23 +1089,19 @@ public class SpringConfiguration { }
 <context:component-scan base-package="com.x.web"/>
 ```
 
-> 排除注解 @Repository 标注的组件
-
 ```java
+//排除注解 @Repository 标注的组件
 @ComponentScan(value = "com.x.web", useDefaultFilters = true, //true + excludeFilters
                excludeFilters = @ComponentScan.Filter(type = FilterType.ANNOTATION, classes = Repository.class))
 ```
 
-> 只扫描注解 @Repository 标注的组件
-
 ```java
+//只扫描注解 @Repository 标注的组件
 @ComponentScan(value = "com.x.web", useDefaultFilters = false, //false + includeFilters
                includeFilters = @ComponentScan.Filter(type = FilterType.ANNOTATION, classes = Repository.class))
 ```
 
-## @Component
-
-> `组件标识` 标识一个受 Spring IOC 容器管理的组件
+> @Component：`组件标识`。标识一个受 Spring-IOC 容器管理的组件
 
 ```sh
 #通用注解     持久层注解      业务逻辑层注解   控制层注解
@@ -1171,9 +1113,7 @@ public class SpringConfiguration { }
 所以 @Respository、@Service、@Controller 这几个注解，仅仅是为了让开发人员自己明确当前的组件扮演的角色。
 ```
 
-## @Autowired
-
-> `组件装配`  利用依赖注入（DI），对 IOC容器中各个组件的依赖关系进行自动装配
+> @Autowired：`组件装配`  利用依赖注入（DI），对 IOC容器中各个组件的依赖关系进行自动装配
 
 ```sh
 #实现依据
@@ -1181,9 +1121,8 @@ public class SpringConfiguration { }
 该后置处理器可以自动装配标记了 @Autowired、@Resource 或 @Inject 注解的属性。
 ```
 
-> （1）先使用 `byType`，再使用 `byName`
-
 ```sh
+#（1）.先使用 byType，再使用 byName
 首先，会使用 'byType' 的方式进行自动装配，如果能唯一匹配，则装配成功。
 如果匹配到多个兼容类型的bean，还会尝试使用 'byName' 的方式进行唯一确定，如果能唯一确定，则装配成功。
 如果都不能唯一确定，则装配失败，抛出异常。
@@ -1200,16 +1139,14 @@ public class HelloServiceImpl0 implements HelloService {}
 public class HelloServiceImpl1 implements HelloService {}
 ```
 
->（2）如若在 IOC 容器中通过 `byType byName` 都未找到相匹配的bean，也会抛出异常
-
 ```java
+//（2）.如若在 IOC 容器中通过 byType byName 都未找到相匹配的bean，也会抛出异常
 @Autowired(required = false) //设置该属性非必须装配
 HelloService helloService;
 ```
 
->（3）如果匹配到多个兼容类型的bean，也可以使用 `@Qualifier` 来进一步指定要装配的bean的 id 值
-
 ```java
+//（3）如果匹配到多个兼容类型的bean，也可以使用 @Qualifier 来进一步指定要装配的bean的 id 值
 @Autowired
 @Qualifier("helloServiceImpl1") //指定id
 HelloService helloService;
@@ -1237,11 +1174,9 @@ public class HelloServiceImpl1 implements HelloService {}
 
 
 
-# MVC
+## MVC
 
-## @RequestMapping
-
-> 指定映射 URL，可标注类或方法上
+> @RequestMapping：指定映射 URL，可标注类或方法上
 
 ```sh
 value      #映射url，默认属性
@@ -1258,9 +1193,7 @@ headers    #同上，不常用
 public String hello() { }
 ```
 
-## @RequestParam
-
-> 将 `GET POST 请求行/体` 中的 `键值对` 解析为简单类型，不能解析为自定义Bean
+> @RequestParam：将 `GET POST 请求行/体` 中的 `键值对` 解析为简单类型，不能解析为自定义Bean
 
 ```java
 @PostMapping("/hello")
@@ -1274,43 +1207,33 @@ public String hello(@RequestParam(value = "id", required = false, defaultValue =
 public String hello(Integer id, @RequestParam(required = false) String name) { }
 ```
 
-##@RequestBody
-
-> 将`POST 请求体` 中的 `JSON` 解析为 Bean 或者 Map
+> @RequestBody：将`POST 请求体` 中的 `JSON` 解析为 Bean 或者 Map
 
 ```java
 @PostMapping("/hello")
 public String hello(@RequestBody City city) { }
 ```
 
-## NULL
-
-> 什么也不写，可以将 `GET POST 请求行/体` 的 `键值对` 解析为自定义Bean
+> NULL：什么也不写，可以将 `GET POST 请求行/体` 的 `键值对` 解析为自定义Bean
 
 ```java
 @GetMapping("/hello")
 public String hello(Person person) { } //支持级联解析 Person.Address.Name
 ```
 
-## @PathVariable
-
->将 URL 中的 `占位符` 映射到方法的入参
+>@PathVariable：将 URL 中的 `占位符` 映射到方法的入参
 
 ```java
 @GetMapping("/hello/{name}")
 public String hello(@PathVariable("name") String args) { }//括号内 == 占位符
 ```
 
-## @CookieValue
-
-> `RequestHeader/CookieValue` 获取 `请求头/Cookie` 中的参数
+> @CookieValue：`RequestHeader/CookieValue` 获取 `请求头/Cookie` 中的参数
 
 ```java
 @GetMapping("/hello")
 public String hello(@RequestHeader("header") String header, @CookieValue("JSESSIONID") String jsessionId) { }
 ```
-
-##1
 
 >
 
@@ -1318,17 +1241,124 @@ public String hello(@RequestHeader("header") String header, @CookieValue("JSESSI
 
 
 
-# Boot
+## Boot
 
-## @SpringBootApplication
+> @SpringBootApplication
 
 ```sh
 #组合注解：@ComponentScan + @SpringBootConfiguration + @EnableAutoConfiguration
 ```
 
->EnableAutoConfiguration
+>@EnableAutoConfiguration
 
 ```sh
 作用是让 SpringBoot 根据项目所添加的jar包依赖，来对应用进行自动化配置
-如，spring-boot-starter-web添加了 Tomcat 和 SpringMVC，所以 AutoConfiguration 将假定你正在开发一个web应用并相应地对Spring进行设置
+如，'spring-boot-starter-web'添加了 Tomcat 和 SpringMVC，所以 AutoConfiguration 将假定你正在开发一个web应用并相应地对Spring进行设置
 ```
+
+
+
+
+
+# 基础概念
+
+## ajax
+
+> js
+
+```sh
+javaScript 用于操作html标签：改变 HTML 内容、属性、样式，显示、隐藏 HTML 元素等
+jQuery 是一个js框架，封装了js的属性和方法，并且增强了js的功能，让用户使用起来更加便利。
+```
+
+```sh
+使用原生js是要处理很多兼容性的问题(注册事件等)，由jQuery封装了底层，就不用处理兼容性问题。
+原生js的dom和事件绑定和ajax等操作非常麻烦，jQuery封装以后操作非常方便。
+```
+
+> js在页面的位置
+
+```sh
+js 作为一种脚本语言可以放在html页面中'任何位置'。但是浏览器解释 html 时是按先后顺序的，所以前面的 js 就先被执行。
+比如，进行页面显示初始化的 js 必须放在 <head/> 里面，因为初始化都要求提前进行（如给页面body设置css等）；
+而如果是通过事件调用执行的 function() 那么对位置没什么要求的，可以放在 <body/> 标签内。
+```
+
+```sh
+#yahoo团队的最佳实践：样式在上，脚本在下
+当把样式放在 <head> 标签中时，浏览器在渲染页面时就能尽早的知道每个标签的样式，用户就会感觉这个页面加载的很快。
+但是如果将样式放在页面的结尾，浏览器在渲染页面时就无法知道每个标签的样式，直到CSS被下载执行后。
+
+另一方面，对于 js 来说，因为它在执行过程中会阻塞页面的渲染，所以我们要把它放在页面的结尾
+```
+
+```sh
+通常会把 jQuery 代码放到 <head>部分的事件处理方法中。
+如果网站包含许多页面，并且希望 jQuery 函数易于维护，那么把 jQuery 函数放到独立的 .js 文件中。
+```
+
+```js
+<head>
+    <script type="text/javascript" src="jquery.js"></script>
+	<script type="text/javascript" src="my_jquery_functions.js"></script>
+</head>
+```
+> jQuery选择器
+
+```js
+$("p")	    //所有 <p> 元素              元素选择器：document.getElementsByTagName("p");
+$(".intro")	//所有 class="intro" 的元素  .class选择器：document.getElementsByClassName("test");
+$("#intro")	//id="intro" 的元素          #id选择器：document.getElementById("test");
+```
+
+>  jQuery的页面加载完毕事件？
+
+```js
+$(function () { //简写前: $(document).ready(function () { ---> 文档就绪函数：为了防止文档在完全加载（就绪）之前运行 jQuery 代码
+    //jQuery的方法。在DOM加载完成时运行的代码，如果有多个定义则依次执行
+});
+```
+
+```js
+window.onload = function () {
+    //js原生的事件。在页面所有资源加载完后执行，如果有多个定义则只执行最后一个
+}
+```
+
+```sh
+比如：当页面中只有一个 <img/> 标签，当img节点创建完后就会执行 $(function(){}) 中的代码，
+当 <img/> 的src指定的图片完全加载完后，才会触发'window.onload'事件。所以，前者的效率更高。
+```
+
+> ajax
+
+```sh
+ajax 异步的 JavaScript 和 XML
+ajax 不是新的编程语言，而是一种使用现有标准的新方法。
+ajax 是与服务器交换数据，并使网页实现布局更新，而不需要重新加载整个页面。
+```
+
+>jQuery的ajax和原生js实现ajax有什么关系？
+
+```sh
+jQuery中的ajax也是通过原生的js封装的。封装完成后让我们使用起来更加便利，不用考虑底层实现或兼容性等处理。
+```
+
+> 简单说一下html5?你对现在的那些新技术有了解?
+
+```sh
+Html5 是最新版本的html，是在原来 html4 的基础上增强了一些标签。
+
+Html增加一些像画板、声音、视频、web存储等高级功能。但是 html5 有一个不好的地方，那就是 html5 太强调语义了，导致开发中都不知道要选择那个标签。
+在做页面布局是，无论头部、主题、导航等模块都使用div来表示，但是html5的规范，需要使用不同的标签来表示。(header、footer等)
+```
+
+>BootStrap 是什么？
+
+```sh
+BootStrap 是一个移动设备优先的UI框架。可以不用写任何css、js代码就能实现比较漂亮的有交互性的页面。
+程序员对页面的编写是有硬伤的，所有要自己写页面的话就要使用类似于 BootStrap 这样的UI框架。
+
+平时用得很多的：1、模态框 2、表单，表单项 3、布局 4、删格系统
+```
+
