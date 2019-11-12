@@ -92,6 +92,26 @@ public void test() throws InterruptedException {
 }
 ```
 
+> 问题原因
+
+```sh
+# calendar 是共享变量，并且这个共享变量没有做线程安全控制。
+当多个线程同时使用相同的 static SimpleDateFormat.format() 时，多个线程会同时调用 calendar.setTime() 方法，
+可能一个线程刚设置好 time 值，另外的一个线程马上把设置的 time 值给修改了，导致返回的格式化时间可能是错误的。
+
+#在多并发情况下，使用 SimpleDateFormat 需格外注意。除了 format() 是线程不安全以外，parse() 方法也是线程不安全的。
+```
+
+```java
+protected Calendar calendar;
+
+private StringBuffer format(Date date, StringBuffer toAppendTo,
+                            FieldDelegate delegate) {
+    calendar.setTime(date); //全局变量，非线程安全
+    //... ...
+}
+```
+
 > 方案1：只在需要的时候创建实例，不用static修饰。`缺点`：加重了创建对象的负担，会频繁地创建和销毁对象，效率较低
 
 ```java
@@ -226,6 +246,7 @@ boolean leapYear = LocalDate.now().isLeapYear();
 Instant instant = Instant.now();//默认获取 UTC 时区时间戳,北京是 UTC+8
 
 //效果等同于 System.currentTimeMillis()，但 Instant 获取的是 UTC 时区时间戳
+// new Date().getTime() == System.currentTimeMillis()
 long epochMilli = instant.toEpochMilli();//毫秒值，时间戳
 long epochSecond = instant.getEpochSecond();//秒值
 ```

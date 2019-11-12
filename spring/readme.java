@@ -22,19 +22,8 @@
 07
     // MyBatis: 数据访问层框架; 底层是对JDBC的封装; 无需编写实现类,只需写sql
 08
-    // xml文件提示,导入dtd或schema
-    
-    // //sqlSession实例化; 涉及到'工厂+builder'设计模式
-    // InputStream is = Resources.getResourceAsStream("myabtis.xml");
-    // SqlSessionFactory factory = new SqlSessionFactoryBuilder().build(is);
-    // SqlSession session = factory.openSession();
-    // List<Flower> list = session.selectList("a.b.listAll"); //调用sql
-    // session.close(); //关闭连接!!
+
 11
-    // 数据库连接池?
-        // // 在高频率访问数据库时,使用数据库连接池可以降低服务器系统压力,提升程序运行效率.
-        // // 小型项目不适用数据库连接池        
-        // // 当关闭连接对象时,把连接对象归还给数据库连接池,把状态改变成 Idle
     常用属性
         driverClassName="com.mysql.jdbc.Driver"
         url="jdbc:mysql://localhost:3306/ssm"

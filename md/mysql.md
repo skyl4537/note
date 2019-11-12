@@ -53,69 +53,7 @@
 
 # 相关练习
 
-## 其他练习
-
-> 查询出2门及2门以上不及格者的平均成绩。
-
-```sql
--- 表达式score < 60返回0和1，通过sum( )函数可以计算出不及格科目大于2的学生信息
-SELECT student_id,SUM(num<60) gk,AVG(num) pj
-FROM score sc
-GROUP BY student_id
-HAVING gk>1;
-```
-
-> 查询平均工资最低的部门信息
-
-```sql
--- 子查询方式
-SELECT * -- 4.部门信息
-FROM departments
-WHERE department_id=(
-    SELECT department_id -- 3.平均工资=最低平均工资的部门id
-    FROM employees
-    GROUP BY department_id
-    HAVING AVG(salary)=(
-        SELECT MIN(ag) -- 2.最低的平均工资
-        FROM(
-            SELECT AVG(salary) ag -- 1.各部门的平均工资
-            FROM employees
-            GROUP BY department_id
-        )A
-    )
-);
-```
-
-```sql
--- 排序方式
-SELECT * -- 2.部门信息
-FROM departments
-WHERE department_id=(
-    SELECT department_id -- 1.各部门的平均工资，按平均工资正序排序，并取第一条
-    FROM employees
-    GROUP BY department_id
-    ORDER BY AVG(salary)
-    LIMIT 1
-);
-```
-
-
-
-
-
-## 数据准备
-
-```sql
-
-```
-
 ## 练习01-10
-
-> 
-
-```sql
-
-```
 
 > *7.查询学过"001"并且也学过编号"002"课程的同学的学号，姓名
 

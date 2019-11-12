@@ -85,10 +85,10 @@ public class WebServer {
 
 ## web.xml
 
-> `web.xml` 基本作用
+> 基本作用
 
 ```shell
-#用来初始化配置信息：比如 welcome页面、servlet、servlet-mapping、filter、listener、启动加载级别等。
+#用来初始化项目信息：比如 welcome页面、servlet、servlet-mapping、filter、listener、启动加载级别等。
 web项目启动时，tomcat容器首先会读取 web.xml 里的配置，当这一步骤没有出错并且完成之后，项目才能正常地被启动起来。
 ```
 
@@ -111,35 +111,15 @@ web项目启动时，tomcat容器首先会读取 web.xml 里的配置，当这�
 > 加载过程
 
 ```shell
-（1）.启动 web 项目时，tomcat 首先读取 web.xml 中的两个节点: <context-param/> 和 <listener/>
+web项目启动后，首先读取web.xml文件中的'初始化参数节点'<context-param/>和'监听器节点'<listener/>。
+将初始化参数解析成map键值对，保存在'全局上下文' ServletContext 对象中。
+然后，实例化监听器对象，在监听器对象的'初始化方法'中读取初始化参数，即初始化 Spring-IoC 容器的配置。
 
-（2）.紧接着，容器创建一个 ServletContext（application），应用范围内即整个 web 项目都能使用这个上下文
-（3）.再接着，容器会将读取到 <context-param> 转化为键值对，存入 ServletContext
-
-（4）.容器创建 <listener/> 中的类实例，即创建监听。在监听器的 contextInitialized() 方法中，通过
-'event.getServletContext().getInitParameter("contextConfigLocation")'方法来得到 <context-param/> 设定的值。
-
-（6）.得到 <context-param/> 值之后，就可以 '初始化 Spring-IoC 容器'。
-
-（7）.注意，以上都是在 web 项目还没有完全启动起来的时候就已经完成了的工作，比所有的 Servlet 都要早。
-
-（8）.总的来说，加载顺序是：'<context-param> ---> <listener> ---> <filter> ---> <servlet>'
+注意，以上都是在web项目还没有完全启动起来的时候就已经完成了的工作，比所有的 Servlet 都要早。
+总的来说，加载顺序是：'<context-param> -> <listener> -> <filter> -> <servlet>'
 其中，如果 web.xml 中出现了相同的元素，则按照在配置文件中出现的先后顺序来加载。
 ```
 
-> Spring 源码
-
-```java
-public class ContextLoaderListener extends ContextLoader implements ServletContextListener {
-
-    @Override
-    public void contextInitialized(ServletContextEvent event) {
-        servletContext sc = event.getServletContext();
-        String configLocationParam = sc.getInitParameter(CONFIG_LOCATION_PARAM); //"contextConfigLocation"
-        //... 初始化 SpringIoc 容器 ...
-    }
-}
-```
 ##其他概念
 
 > classpath & classpath*
@@ -317,192 +297,18 @@ function clickAjax(e) {
 }
 ```
 
-## Cookie
-
-> 基本概念
-
-```sh
-HTTP是无状态协议，服务器不能记录浏览器的访问状态。也就是说服务器不能区分两次请求是否由同一个客户端发出。
-
-Cookie 实际上就是服务器保存在浏览器上的一段信息，完成会话跟踪的一种机制。
-第一次访问，没有Cookie，服务器返回，浏览器保存。一旦浏览器有了 Cookie，以后每次请求都会带上，服务器收到请求后，就可以根据该信息处理请求。
-
-储存空间比较小 4KB
-数量限制，每一个域名下最多建 20个
-用户可以清除 Cookie，客户端还可以禁用 Cookie
-```
-
->持久化Cookie
-
-```sh
-#设置过期时间，浏览器就会把Cookie持久化到磁盘，再次打开浏览器，依然有效，直到过期！
-
-会话Cookie  ---> 是在会话结束时（浏览器关闭）会被删除
-持久Cookie  ---> 在到达失效日期时会被删除
-数量的上限   ---> 浏览器中的 Cookie 数量达到上限（默认20）
-```
-
->相关属性
-
-```java
-cookie.setMaxAge(30);                 //最大时效，单位秒。 0：立即删除. 负数：永不删除, 默认-1
-cookie.setPath(req.getContextPath()); //Cookie生效的路径，默认当前路径及子路径
-```
-
-##Session
-
->基本概念
-
-```sh
-当程序需要为某客户端的请求创建一个 session 时，服务器首先检查这个客户端的请求里是否已包含了一个 session 标识（SessionId）
-
-如果已包含，则说明之前已为此客户端创建过session，服务器就按照 SessionId 把这个session检索出来使用（检索不到，新建一个）;
-如果不包含，则为此客户端新建一个Session，并将与此session相关联的 SessionId 返回给客户端保存。
-
-保存 SsessionId 的方式可以采用Cookie，这样在交互过程中浏览器可以自动的按照规则把这个标识发挥给服务器。
-```
-
-> Cookie & Session
-
-```sh
-#Cookie 保存在客户端;
-用户可删除或禁用 Cookie;
-浏览器对 Cookie 的数量限制(20); 
-增加客户端与服务端之间的数据传输量; 
-
-#Session 保存在服务端.
-传递给用户端一个名为'JSESSIONID'的 Cookie，通过它可以获取到用户信息对象 Session.
-```
-
->Session创建
-
-```sh
-#Session 机制也是依赖于 Cookie 来实现的.
-当'第一次'访问jsp或Servlet，并且该资源显示指定'需要创建Session'。此时服务器才会创建一个 Session 对象。
-Session 创建之后，同时还会自动创建一个名为'JSESSIONID'的 Cookie，返回给客户端。
-客户端收到 Cookie 后，存储在浏览器内存中(可持久化到磁盘)。
-
-以后浏览器在发送就会携带这个特殊的 Cookie 对象。服务器通过'JSESSIONID'查找与之对应的Session对象，以区分不同的用户。
-```
-
-```java
-//显示指定需要创建Session对象
-request.getSession(true);  //若存在则返回,否则新建一个Session.（默认为true）
-request.getSession(false); //若存在则返回,否则返回null
-```
-
-> Session销毁
-
-```sh
-(1).服务器关闭或web应用卸载;
-(2).request.getSession().invalidate(); #服务端显示销毁
-
-(3).Session过期。浏览器关闭，或闲置一段时间(session-timeout值)没有请求服务器，session会自动销毁。
-----这个时间是根据服务器来计算的，而不是客户端。所以在调试程序时。应该修改服务器端时间来测试，而不是客户端。
-
-(4).关闭浏览器，但不意味着Session被销毁。#Session的创建和销毁是在服务器端进行的.
-----当浏览器访问服务器就会创建一个 SessionID，浏览器通过这个ID来访问服务器中所存储的Session。
-----当浏览器关闭再打开，此时浏览器已丢失之前的 SessionID，也就找不到服务器端的Session对象，所以无法自动登录。
-
-之前的Session对象会在<session-timeout>后自动销毁。
-但是，关闭再打开，访问时携带上次的 SessionID，则可以重新找到之前的Session对象。
-//http://127.0.0.1:8090/demo/session;JSESSIONID=FAAABD1D2B89791DEB647E74D49A7C3D #URL重写
-```
-
->URL重写
-
-```sh
-客户端保存'JSESSIONID'，默认采用 Cookie 实现。
-当浏览器禁用 Cookie 时，可通过URL重写实现： URL;jsessionid=xxx (将JSESSIONID拼接URL后面)
-```
-
-```java
-String encodeURL = response.encodeURL(url); //url重写
-response.sendRedirect(encodeURL);
-```
-
-> 持久化Session
-
-```java
-//持久化Session --> 持久化Cookie --> 设置Cookie过期时间
-Cookie cookie = new Cookie("JSESSIONID",session.getId());
-cookie.setMaxAge(90);       //持久化Cookie
-response.addCookie(cookie); //将Cookie发送浏览器
-
-//默认保存: C:\Users\BlueCard\AppData\Local\Temp\9121B10A811596BD85A3431BFBE71078B2880509\servlet-sessions
-```
 #Web
 
-## 重定向
-
-> 转发 & 重定向
-
-```shell
-Servlet接收到浏览器请求后，进行一定的处理，先不进行响应，而是在服务端内部'转发'给其他Servlet继续处理。
-浏览器只发出 1次请求，'浏览器url不会改变'，用户也感知不到请求被转发。
-```
-```shell
-Servlet接收到浏览器请求并处理后，响应浏览器'302状态码 和 新地址'，状态码302要求浏览器去请求新地址，整个过程浏览器发出 2次请求。
-```
-
-```shell
-1 ; 2    #发送请求次数(request个数)
-否; 是    #浏览器url地址是否改变
-是; 否    #是否共享对象 request，传递request中数据
-是; 否    #目标资源是否可以是 WEB-INF 下资源
-
-转发：只能是当前web应用的资源。
-重定向：任意资源，甚至网络资源
-
-转发  ：'/'代表当前'web应用'的根目录; //http://localhost:8090/demo/
-重定向：'/'代表当前'web站点'的根目录. //http://localhost:8090/
-```
-
-> 代码实现
-
-```java
-req.setAttribute(key, value); //转发前绑定数据,在目标资源取出数据
-req.getRequestDispatcher("转发地址").forward(req, resp);
-
-resp.sendRedirect("重定向地址"); //重定向
-```
-
 ## jsp
-
-> jsp页面本质就是一个Servlet
-
-```shell
-jsp善于处理页面显示，Servlet善于处理业务逻辑，二者结合使用。
-
-执行时，先转化为java文件，再编译成class文件。
-转化过程：java代码照搬，html + css + 表达式等通过流输出'out.write()'
-```
-
-> 9大内置对象：`pageContext < request < session < application （作用域：从小到大）`
-
-```sh
-#内置对象名         类型
-application       ServletContext
-session           HttpSession
-request	          HttpServletRequest   #同一个请求
-pageContext       PageContext          #用于页面显示信息，out.println();
-
-response          HttpServletResponse  #几乎不用（X）
-config            ServletConfig        #Servlet.ServletConfig.（X）
-exception         Throwable            #<%@ page isErrorPage="true" %>，才可以使用（X）
-page              Object(this)         #jsp对象本身，或编译后的Servlet对象; 实际上就是this.（X）
-out               JspWriter            #用于页面显示信息，out.println();
-```
 
 > jsp中的java
 
 ```jsp
 <% Date date = new Date(); out.print(date); %> <!--嵌入jsp的Java代码段-->
-
 <%= date %> <!-- 脚本表达式.(上述的简化版)->
 ```
 
-> jstl：jsp标准标签库。jsp标签集合，封装了jsp应用的通用核心功能。
+> JSTL：jsp标准标签库。jsp标签集合，封装了jsp应用的通用核心功能。
 
 ```jsp
 <%@taglib prefix="c" uri="http://java.sun.com/jsp/jstl/core"%> <!--声明-->
@@ -546,60 +352,10 @@ out               JspWriter            #用于页面显示信息，out.println()
 
 ```shell
 建立连接 --> 发送请求信息 --> 回送响应信息 --> 关闭连接
-
 每一次请求，都要重新建立一次连接，都会调用一次 service() 方法。'每次连接只能处理一个请求和响应'。
 ```
 
-> Servlet是什么
-
-```shell
-浏览器发送一个HTTP请求，HTTP请求由Servlet容器（如tomcat）分配给特定的Servlet进行处理
-Servlet的本质是'一个Java对象'，这个对象拥有一系列的方法来处理HTTP请求。常见的方法有doGet()，doPost()等。
-Web容器中包含了多个Servlet，特定的HTTP请求该由哪一个Servlet来处理是由Web容器中的 web.xml 来决定的。
-```
-
-```shell
-Servlet本质就是 javax.servlet 包下的一个接口，工作原理就是：反射+回调。目前所有的MVC框架的 Controller 基本都是这么个模式。
-
-Servlet的执行是由容器（如Tomcat）通过 web.xml 的配置反射出 Servlet 对象后回调其 service()方法。
-```
-
-> Servlet作用
-
-```shell
-将 url 映射到一个java类的处理方法上
-接收请求的数据, 并与服务器其他资源进行通信（如数据库）
-将处理结果展示到页面，以及处理页面的跳转
-
-编译存储在目录"web应用/WEB-INF/classes/*".
-```
-
->Servlet容器
-
-```shell
-负责处理客户请求。当客户请求到来时，调用某个 Servlet，并把 Servlet 的执行结果返回给客户.
-
-Servlet 本质是一个java接口类，部署运行在Servlet容器中
-Servlet 容器管理Servlet的整个生命周期，并负责调用Servlet方法响应客户端请求
-Servlet 和客户端的通信采用"请求/响应"模式，基于请求
-```
-
-> Servlet生命周期：Servlet容器管理，所有请求公用同一个Servlet对象，`非线程安全`
-
-```shell
-构造方法    #默认，只在第一次请求时调用（可配置创建时机）。创建【单实例】的Servlet对象。减小服务端内存开销，快速响应客户端
-init()     #只被调用一次。调用构造器方法后立即被调用。用于初始化当前Servlet
-service()  #每次请求都会调用。用于响应客户端请求
-destory()  #只被调用一次。应用被卸载前调用。用于释放Servlet所占用的资源（如数据库连接）
-```
-
->Servlet容器默认采用`单实例多线程`的方式处理多个请求
-
-```sh
-同一浏览器多个窗口，同时访问，多线程'顺序'执行。不同浏览器，同时访问，多线程'并行'执行。
-```
-
-> `BootのServlet`
+> `Boot の Servlet`
 
 ```java
 @ServletComponentScan //全局注解; 启动时自动扫描 @WebServlet,并将该类实例化
@@ -1260,9 +1016,9 @@ public String hello(@RequestHeader("header") String header, @CookieValue("JSESSI
 
 
 
-# 基础概念
+# 概念
 
-## ajax
+## html
 
 > js
 
@@ -1333,15 +1089,15 @@ window.onload = function () {
 > ajax
 
 ```sh
-ajax 异步的 JavaScript 和 XML
-ajax 不是新的编程语言，而是一种使用现有标准的新方法。
-ajax 是与服务器交换数据，并使网页实现布局更新，而不需要重新加载整个页面。
+ajax 异步的 JavaScript 和 XML。
+一种用来改善用户体验的技术，其实质是使用 XMLHttpRequest 对象异步地向服务器发送请求。
+服务器返回部分数据，而不是一个完整的页面，以页面无刷新的效果更改页面中的局部内容。
 ```
 
 >jQuery的ajax和原生js实现ajax有什么关系？
 
 ```sh
-jQuery中的ajax也是通过原生的js封装的。封装完成后让我们使用起来更加便利，不用考虑底层实现或兼容性等处理。
+jQuery中的ajax也是通过原生的js封装的。封装完成后使用起来更加便利，不用考虑底层实现或兼容性等处理。
 ```
 
 > 简单说一下html5?你对现在的那些新技术有了解?
@@ -1360,5 +1116,196 @@ BootStrap 是一个移动设备优先的UI框架。可以不用写任何css、js
 程序员对页面的编写是有硬伤的，所有要自己写页面的话就要使用类似于 BootStrap 这样的UI框架。
 
 平时用得很多的：1、模态框 2、表单，表单项 3、布局 4、删格系统
+```
+
+## web
+
+> Servlet是什么？
+
+```sh
+Servlet 的本质是'一个Java对象（接口）'，这个对象拥有处理 HTTP 请求的方法。常见的有 doGet()，doPost() 等。
+Web容器（如tomcat）中包含了多个 Servlet，特定的 HTTP 请求该由哪一个 Servlet 来处理是由Web容器中的 web.xml 来决定的。
+```
+
+```sh
+'工作原理'：反射 + 回调。Servlet 和客户端的通信采用"请求/响应"模式，基于请求
+'主要作用'：将url映射到一个java类的处理方法上。接收请求的数据，并与服务器其他资源进行通信（如数据库）。将处理结果展示到页面，以及处理页面的跳转。
+'Servlet容器'：负责处理客户请求。当客户请求到来时，调用某个 Servlet，并把 Servlet 的执行结果返回给客户.
+```
+
+> Servlet的生命周期：Servlet容器管理，所有请求公用同一个Servlet对象，`非线程安全`
+
+```sh
+#Servlet对象是【单实例】。减小服务端内存开销，快速响应客户端
+--> 加载Servlet的class --> 调用构造函数实例化Servlet【1次】 --> 调用Servlet的init()完成初始化【1次】
+--> 每一次http请求，都会调用一次service()响应请求【n次】
+--> Web容器关闭时，调用destory()释放资源【1次】
+
+Servlet启动时，加载servlet生命周期开始。Servlet被服务器实例化后，容器运行其init()方法，请求到达时运行其service()方法，
+service()方法自动派遣运行与请求对应的doXXX方法（doGet，doPost）等，当服务器决定将实例销毁的时候(服务器关闭)调用其destroy方法。
+```
+
+```sh
+#Servlet容器默认采用 <单实例、多线程> 的方式处理多个请求
+同一浏览器多个窗口，同时访问，多线程'顺序'执行。不同浏览器，同时访问，多线程'并行'执行。
+```
+
+> Servlet & jsp
+
+```sh
+jsp 是 Servlet 技术的扩展，所有的jsp文件都会被翻译为一个继承 HttpServlet 的类。也就是jsp最终也是一个Servlet。这个Servlet对外提供服务。
+
+#Servlet 和 JSP 最主要的不同点在于JSP侧重于视图，Servlet主要用于控制逻辑。
+Servlet如果要实现html的功能，必须使用Writer输出对应的html，比较麻烦。
+而，JSP的情况是Java和HTML可以组合成一个扩展名为 .jsp 的文件，做界面展示比较方便而嵌入逻辑比较复杂。
+```
+
+> jsp 9个内置对象
+
+```sh
+'pageContext' 网页的属性是在这里管理 
+'request'     用户端请求，此请求会包含来自GET/POST请求的参数 
+'session'     与请求有关的会话期 
+'application' Servlet正在执行的内容 
+
+'out'         用于页面显示信息，out.println(); 
+'response'    网页传回用户端的回应 
+
+config        servlet的构架部件 
+page          JSP网页本身 
+exception     针对错误网页，未捕捉的例外 
+
+#四大作用域：pageContext < request < session < application （作用域：从小到大）
+Jsp传递值：request session application cookie也能传值
+```
+
+> 
+
+```sh
+
+```
+
+```sh
+
+```
+
+```java
+
+```
+
+> 
+
+```sh
+
+```
+
+```sh
+
+```
+
+## 细节
+
+> 转发 & 重定向
+
+```sh
+`转发`：服务端收到请求，进行一定的处理后，先不进行响应，而是在'服务端内部'转发给其他 Servlet 继续处理。
+`重定向`：服务端处理完请求后，响应给浏览器一个 302 状态码和重定向地址，浏览器收到响应后，立即向重定向地址再次发送请求。
+
+(1).转发：浏览器只会发送 '1' 次请求，组件间共享数据。重定向：浏览器发送 2 次请求，不会共享数据
+(2).转发：浏览器的地址栏'不会'发送改变。重定向：浏览器的地址栏会发生改变
+(3).转发：只能转发到'当前web的资源'。重定向：可以是任意资源，甚至是网络资源
+```
+
+```sh
+转发  ：'/'代表当前'web应用'的根目录; //http://localhost:8090/demo/
+重定向：'/'代表当前'web站点'的根目录. //http://localhost:8090/
+```
+
+```java
+req.setAttribute(key, value);  //转发前绑定数据,在目标资源取出数据
+req.getRequestDispatcher("转发地址").forward(req, resp);
+
+resp.sendRedirect("重定向地址"); //重定向
+```
+
+> Cookie
+
+```sh
+HTTP 是'一种无状态协议'。WEB 服务器本身无法识别出哪些请求是同一个浏览器发出，浏览器的每一次请求都是孤立的。
+所以，WEB 服务器必须采用一种机制来唯一标识一个用户，同时记录该用户的状态。
+```
+
+```sh
+#Cookie：客户端记录信息确定用户身份
+第一次访问，没有Cookie，服务器返回，浏览器保存。一旦浏览器有了 Cookie，以后每次请求都会带上，服务器收到请求后，就可以根据该信息处理请求。
+
+#局限性：
+(1).Cookie 作为请求或响应报文发送，无形中增加了网络流量
+(2).Cookie 是明文传送的安全性差
+(3).各个浏览器对 Cookie 有限制，使用上有局限（单个 Cookie 保存的数据不能超过4K，很多浏览器都限制一个站点最多保存20个 Cookie）
+```
+
+```sh
+#持久化：设置过期时间，浏览器就会把 Cookie 持久化到磁盘，再次打开浏览器，依然有效，直到过期！
+会话Cookie  ---> 是在会话结束时（浏览器关闭）会被删除
+持久Cookie  ---> 在到达失效日期时会被删除
+数量的上限   ---> 浏览器中的 Cookie 数量达到上限（默认20）
+```
+
+```java
+Cookie cookie = new Cookie("amqp", "value");
+cookie.setMaxAge(30); //过期时间，单位秒。 0：立即删除。 负数：永不删除。 默认-1
+cookie.setPath("");   //Cookie生效的路径，默认当前路径及子路径
+response.addCookie(cookie);
+
+Cookie[] cookies = request.getCookies(); //遍历读取 Cookie
+```
+
+> Session
+
+```sh
+#Session：服务端记录信息确定用户身份。
+用户登录访问，服务端验证通过后，为该用户生成一个 Session 对象，保存在数据库 或 Redis。
+并将 'SessionId' 以 'Cookie' 的形式返回给客户端，客户端保存到本地。用户再次发起请求时，自动携带 Cookie。
+服务端收到请求后，通过 SessionId 查找与之对应的 Session 对象，用以区分不同的用户
+```
+
+```sh
+#Session 销毁
+(1).服务器端调用方法 HttpSession.invalidate();
+(2).Session 过期。两次请求的时间间隔超过 Session 的最大过期时间（默认 30 分钟），则服务端自动删除 Session 对象。
+
+(0).关闭浏览器，并不意味着 Session 销毁。
+当浏览器关闭再打开，浏览器可能丢失之前 Cookie 中的 SessionId，也就找不到服务器端的 Session 对象，所以无法自动登录
+```
+
+```sh
+`Cookie & Session`
+(1).Cookie 数据存放在客户的浏览器上，Session 数据放在服务器上
+(2).Cookie 不是很安全，别人可以分析存放在本地的 Cookie 并进行 Cookie 欺骗
+(3).单个 Cookie 保存的数据不能超过4K，很多浏览器都限制一个站点最多保存 20 个 Cookie
+(4).Session 会在一定时间内保存在服务器上。当访问增多，会比较占用服务器的性能
+(5).所以：将重要信息（如登陆）存放为 Session。其他信息如果需要保留，可以放在 Cookie 中，比如购物车
+```
+
+```java
+request.getSession(true);  //根据 SessionId 查找，有则返回，无则创建。同 request.getSession();
+request.getSession(false); //..........................，无则为 null
+```
+
+```java
+//持久化Session --> 持久化Cookie --> 设置Cookie过期时间
+Cookie cookie = new Cookie("JSESSIONID", session.getId()); //将 SessionId 以 Cookie 形式返回
+cookie.setMaxAge(90);       //持久化Cookie
+response.addCookie(cookie); //将Cookie发送浏览器
+
+//默认保存: C:\Users\BlueCard\AppData\Local\Temp\9121B10A811596BD85A3431BFBE71078B2880509\servlet-sessions
+```
+
+```java
+//Session 机制也是依赖于 Cookie 来实现的。当浏览器禁用 Cookie，怎么办？
+//可以通过 'URL重写' 机制解决这一问题：URL;jsessionid=xxx （将 SessionID 拼接URL后面）
+String encodeURL = response.encodeURL(url);
+response.sendRedirect(encodeURL);
 ```
 

@@ -470,6 +470,49 @@ SELECT t.*,COUNT(t.id),COUNT(s.id) FROM teacher t LEFT JOIN student s ON s.tid=t
 5	李杰老师	1	0
 ```
 
+## 存在更新
+
+> 前提
+
+```sql
+-- 要求：数据表有主键，或者有唯一索引。
+| device | CREATE TABLE `device` (
+    `id` int(11) NOT NULL AUTO_INCREMENT,
+    `device_id` varchar(30) DEFAULT NULL,
+    `device_name` varchar(50) DEFAULT NULL,
+    PRIMARY KEY (`id`),
+    UNIQUE KEY `device_id` (`device_id`) USING BTREE, --唯一索引，设备号唯一
+)
+```
+
+> 各个方法对比
+
+```sql
+-- INSERT：存在则报错，id 不自增。
+-- 当前最大id为10，新增重复数据，id为11，重复即报错，但id=11已用，所以下一条不重复数据id为 12。
+INSERT INTO device(device_id,device_name) VALUES('1002','lcd-2'); 
+```
+
+```sql
+-- INSERT IGNORE：存在则忽略，id 不自增。
+-- 当前最大id为10，新增重复数据，id为11，重复则删除新的数据(id=11)，最大id依旧为10，但下一条不重复数据id为 12。
+INSERT IGNORE INTO device(device_id,device_name) VALUES('1002','lcd-2');
+```
+
+```sql
+-- REPLACE：存在则替换，id 会自增。
+-- 当前最大id为10，新增重复数据，id为11，重复则删除旧的数据(id=10)，最大id变为11。
+REPLACE： REPLACE INTO device(device_id,device_name) VALUES('1002','lcd-02');
+```
+
+```sql
+-- DUPLICATE KEY：存在则执行 update 语句
+-- 当前最大id为10，新增重复数据，id为11，重复则删除新的数据(id=11)，不重复则删除新的数据(id=11)并修改旧的数据(id=10)，最大id依旧为10。
+INSERT INTO device(device_id,device_name) VALUES('1002','lcd-2') ON DUPLICATE KEY UPDATE device_name='lcd-02'; 
+```
+
+
+
 
 
 # 查询相关
@@ -1008,8 +1051,11 @@ LEFT JOIN team t2 ON t2.t_id=m.guest_id
 WHERE match_time BETWEEN '2006-6-1' AND '2006-7-1';
 ```
 
-```sql
+> 存在则更新，不存在则新增
 
+```sql
+--（1）insert ignore
+INSERT IGNORE INTO device(device_id,device_name) VALUES('1002','lcd-2');
 ```
 
 ```sql
@@ -1175,7 +1221,31 @@ SELECT id,`name` FROM student WHERE id NOT IN(
 >查询两门及两门以上不及格同学的平均分
 
 ```sql
-SELECT student_id,AVG(num),SUM(num<60) bjg FROM score GROUP BY student_id HAVING bjg>1;
+SELECT student_id,AVG(num) num_avg,SUM(num<60) bjg FROM score GROUP BY student_id HAVING bjg>1;
+```
+
+```sql
+SELECT AVG(num) FROM score WHERE student_id IN( -- 不推荐写法
+    SELECT student_id FROM score WHERE num<60 GROUP BY student_id HAVING COUNT(student_id)>1
+);
+```
+
+>查询平均分最低的学生信息
+
+```sql
+SELECT * FROM student WHERE sid=(
+    SELECT student_id FROM(
+        SELECT student_id,MIN(num_avg) FROM (
+            SELECT student_id,AVG(num) num_avg FROM score GROUP BY student_id
+        ) avg
+    ) min
+);
+```
+
+```sql
+SELECT * FROM student WHERE sid=( --排序法
+    SELECT student_id FROM score GROUP BY student_id ORDER BY AVG(num) LIMIT 1
+);
 ```
 
 

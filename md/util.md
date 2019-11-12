@@ -1005,9 +1005,9 @@ $..book[2:]             获取json中book数组的第3个到最后一个的区�
 
 
 
+#其他工具
 
-
-# 雪花算法
+## 雪花算法
 
 >分布式ID生成器
 
@@ -1028,7 +1028,45 @@ $..book[2:]             获取json中book数组的第3个到最后一个的区�
 
 ![](assets/util0.png)
 
+## frp
 
+> 内网穿透
+
+```sh
+'场景描述'：公司电脑在局域网内。现在想要在家里远程访问公司电脑。
+'准备工作'：frp工具，一台用作frp-Server的阿里云服务器（47.103.68.238）
+```
+
+```sh
+实现步骤：
+(1).根据服务器类型下载对应的frp安装工具: frp_0.29.1_linux_arm64.tar.gz
+(2).压缩包上传至阿里云服务器，解压，编辑 frps.ini
+    [common]
+    bind_port = 7000
+    dashboard_port = 7500   #frps监控的端口
+    dashboard_user = admin  #frps监控的账号和密码
+    dashboard_pwd = admin
+    token = helloworld      #frp验证token
+(3).执行命令，后台启动frp-Server: nohup ./frps -c ./frps.ini &
+
+(4).如果公司电脑可以上网，直接将 frpc和frpc.ini 放在公司电脑。
+(5).如果公司电脑不能上网，则需要在局域网内找一台可以上外网的PC，将以上两个文件放在可以上外网的PC上
+(6).编辑 frpc.ini
+    [common]
+    server_addr = 47.103.68.238  #服务端地址
+    server_port = 7000
+    token = helloworld
+
+    [6000]
+    type = tcp
+    local_ip = 192.168.8.7  #公司电脑的局域网IP
+    local_port = 3389       #windows远程桌面的默认端口
+    remote_port = 6000      #frp-server的映射端口
+(7).客户端电脑使用命令，后台启动: nohup ./frpc -c ./frpc.ini
+
+(8).通过 'http://49.103.68.238:7500/' 查看frp监控
+(9).最终，就可以在家通过 '47.103.68.238:6000' 访问公司电脑
+```
 
 
 
