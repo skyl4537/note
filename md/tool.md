@@ -49,10 +49,6 @@ Settings -> Plugins -> install from disk -> 选择下载的*.zip，即可安装�
 
 
 
-
-
-
-
 > `cmder`（cmd升级版）http://cmder.net/
 
 ```java
@@ -78,10 +74,6 @@ mini与full版：差别在于有没有内建 msysgit 工具
 ```
 将已打开的 chrome 网页，保存成类书签形式，以便后续阅读，减少内存
 ```
-
-
-
-
 
 
 
@@ -219,16 +211,58 @@ F3浏览目录结构：File -> Settings -> Keymap -> 搜索 Show In Explorer -> 
 
 
 
-> 配置tomcat
-
-导入非 maven 项目的流程：
-
-https://www.cnblogs.com/Miracle-Maker/articles/6476687.html
-
-https://blog.csdn.net/small_mouse0/article/details/77506060
-
 ## 其他配置
 
+> 快捷键
+
+```sh
+psvm           #main方法
+sout           #输出到控制台
+fori           #for循环
+iter           #增强for循环
+```
+
+```shell
+Ctrl+Alt+Space #代码补全
+Ctrl+Alt+L     #格式化
+Ctrl+Alt+O     #优化导包
+Ctrl+Shift+F   #全局查找
+
+Shift+Alt+↑      #上下移动单行语句（整个方法：Shift+Ctrl+↑）
+Ctrl+/           #单行注释（多行注释：Ctrl+Shift+/）
+F3（Shift+F3）    #跳到下（上）一个选择项（配合Ctrl+F使用）
+Alt+F7（Ctrl+F7） #在全局（当前类）查找方法调用，可配合F3使用
+
+Ctrl+Shift+BackSpace  #跳转到上次编辑的地方
+Ctrl+Shift+Alt+N      #当前工作空间查找java类
+Shift+Ctrl+减号（加号） #折叠（展开）代码块
+```
+
+```sh
+Ctrl+Alt+T     #try-catch
+Alt+Insert     #GET/SET，Test方法
+Ctrl+Shift+T   #创建对应的测试类
+F8 / F7        #调试：跳到下一步（进入代码）
+```
+
+```sh
+Ctrl+Alt+V     #抽取局部变量
+Ctrl+Alt+F     #抽取成员变量
+Ctrl+Alt+C     #抽取静态常量 public static final
+Ctrl+Alt+M     #抽取方法
+
+Shift+F6       #批量重命名
+Ctrl+Shift+U   #大小写转化
+```
+
+```sh
+Ctrl+D         #整行复制
+Ctrl+X         #整行删除
+Ctrl+P         #参数提示
+Ctrl+G         #定位行
+Ctrl+H         #查看类的继承关系
+Alt+7          #查看类结构
+```
 > class类的doc模板
 
 ```java
@@ -264,78 +298,6 @@ https://blog.csdn.net/small_mouse0/article/details/77506060
 
 
 
-> 快捷键
-
-```sh
-psvm           #main方法
-sout           #输出到控制台
-fori           #for循环
-iter           #增强for循环
-```
-
-```shell
-Ctrl+Alt+Space #代码补全
-Ctrl+Alt+L     #格式化
-Ctrl+Alt+O     #优化导包
-Ctrl+Shift+F   #全局查找
-```
-
-```sh
-Ctrl+Alt+T     #try-catch
-Alt+Insert     #GET/SET，Test方法
-
-```
-
-```sh
-Ctrl+Alt+V     #抽取局部变量
-Ctrl+Alt+F     #抽取成员变量
-Ctrl+Alt+C     #抽取静态常量 public static final
-
-Ctrl+Alt+M     #抽取方法
-```
-
-```sh
-Ctrl+Shift+T   #创建对应的测试类
-F8 / F7        #调试：跳到下一步（进入代码）
-```
-
-
-
-|                    描述                    |            idea             |       eclipse        |
-| :----------------------------------------: | :-------------------------: | :------------------: |
-|                                            |                             |                      |
-|                                            |                             |                      |
-|                                            |                             |                      |
-|                                            |                             |                      |
-|                                            |                             |                      |
-|                                            |                             |                      |
-|                                            |                             |                      |
-|                                            |                             |                      |
-|                                            |                             |                      |
-|                                            |                             |                      |
-|                                            |                             |                      |
-|                                            |                             |                      |
-|                                            |                             |                      |
-|                                            |                             |                      |
-|                                            |                             |                      |
-|        上下移动单行语句（整个方法）        | Shift+Alt+↑（Shift+Ctrl+↑） |      Alt+↑（）       |
-|                 批量重命名                 |          Shift+F6           |     Shift+Alt+R      |
-|            注释单行（选中部分）            |   Ctrl+/（Ctrl+Shift+/）    |        Ctrl+/        |
-|                  参数提示                  |           Ctrl+P            |                      |
-|              查看类的继承关系              |           Ctrl+H            |        Ctrl+T        |
-|                   定位行                   |           Ctrl+G            |        Ctrl+L        |
-|            整行复制（整行删除）            |      Ctrl+D（Ctrl+X）       | Ctrl+Alt+↓（Ctrl+D） |
-|                                            |                             |                      |
-|                 大小写转化                 |        Ctrl+Shift+U         |                      |
-|            跳转到上次编辑的地方            |    Ctrl+Shift+BackSpace     |                      |
-|           当前工作空间查找java类           |      Ctrl+Shift+Alt+N       |                      |
-|                 查看类结构                 |            Alt+7            |                      |
-|  跳到下（上）一个选择项（配合Ctrl+F使用）  |       F3（Shift+F3）        |                      |
-| 在全局（当前类）查找方法调用，可配合F3使用 |      Alt+F7（Ctrl+F7）      |      Ctrl+Alt+H      |
-|             折叠（展开）代码块             |   Shift+Ctrl+减号（加号）   | Shift+Ctrl+/（*号）  |
-|                                            |                             |                      |
-|                                            |                             |                      |
-|                                            |                             |                      |
 
 > 基本设置
 

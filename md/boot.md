@@ -400,6 +400,13 @@ public class WebMvcConfig implements WebMvcConfigurer {
 
 ```html
 <head>
+    <!-- 注意：h5页面位于 /static/html/img.html，使用【相对路径】进行引用。开发推荐【绝对路径】 -->
+    <script src="../webjars/jquery/jquery.min.js"></script>
+</head>
+```
+
+```html
+<head>
     <!--webjars-locator: 页面引用时，可省略版本号.(如 3.3.1)-->
     <!--省略前: <script th:src="@{/webjars/jquery/3.3.1/jquery.min.js}"/>-->
     <script th:src="@{/webjars/jquery/jquery.min.js}"></script>

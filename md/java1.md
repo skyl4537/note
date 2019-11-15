@@ -139,7 +139,7 @@ public void test() {
 'final-方法'：不能被重写。#其中 private 和 static 方法默认就是 final
 
 'final-变量'：即常量。值类型，不能修改其值；引用类型，不能修改其对应的堆内存地址，即不能重新再赋值。
-             #但是，该内存地址所指向的那个对象还是可以变的。就像你记住了人家的门牌号，但你不能管人家家里人员数量。
+#但是，该内存地址所指向的那个对象还是可以变的。就像你记住了人家的门牌号，但你不能管人家家里人员数量。
 ```
 
 ```java
@@ -566,20 +566,19 @@ final 类不一定线程安全，如: StringBuilder。
 
 ```sh
 #Java为了避免产生大量的String对象，设计了一个字符串常量池。
-工作原理是这样的，创建一个字符串时，JVM首先为检查字符串常量池中是否有'值相等'的字符串，如果有，则不再创建，直接返回该字符串的引用地址；
+工作原理：创建一个字符串时，JVM首先会检查字符串常量池中是否有'值相等'的字符串，如果有，则不再创建，直接返回该字符串的引用地址；
 如果没有，则创建，然后放到字符串常量池中，并返回新创建的字符串的引用地址。
 
-当遇到 'new String("Hollis");' 时，还会在内存（不是字符串常量池中，而是在堆里面）上创建一个新的String对象，
-存储"hollis"，并将内存上的引用地址返回。
+当遇到 'new String("Hollis");' 时，还会在堆内存（不是字符串常量池中，而是在堆里面）上创建一个新的String对象，存储'hollis'，
+并将内存上的引用地址返回。
 ```
 
 ```sh
 字符串常量池中的对象是'在编译期确定'，在类被加载时创建。如果类加载时，该字符串常量在常量池中已存在，那就跳过，不会重新创建一个。
-
 与之相反，堆中的对象是'在运行期才确定'，在代码执行到 new 的时候创建的。
 ```
 
-> `intern()`：①.将字符串字面量放入常量池（如果池中没有的话）②.返回这个常量的引用
+> `intern()`
 
 ```java
 String s1 = "Hollis"; 
@@ -601,7 +600,7 @@ System.out.println(s1 == s3); //true
 
 ```sh
 #String s = new String("hollis"); 定义了几个对象？
-先在字符串常量池中查找是否含有'值相同'的字符串常量，然后再在内存中（堆）创建一个String对象
+首先，在字符串常量池中查找是否含有'值相同'的字符串常量，然后再在内存中（堆）创建一个 String 对象
 ```
 
 ![](assets/string1.jpg)
@@ -620,16 +619,14 @@ System.out.println(s1 == s4); //false
 ```
 
 ```sh
-对于'字符串常量相加'的表达式，不是等到'运行期'才去进行加法运算处理，而是在'编译期'直接将其编译成一个这些常量相连的结果。
-因此，String s2 = "ab" + "c"; 可转化为 String s2 = "abc"; 但是， s4 并不是字符串常量相加，不能转化。
-s4 底层是使用 new StringBuilder().append(s3).append("c").toString(); 所以，s1 != s4
+对于'字符串常量相加'表达式，是在'编译期'直接处理成常量相连的结果，因此 s1==s2
+但是，对于 s4 是在'运行期'使用 new StringBuilder().append(s3).append("c").toString(); 进行拼接，生成新的对象，所以 s1!=s4 
 ```
 
 > StringBuilder
 
 ```java
 //内部拥有一个数组用来存放字符串内容。当进行字符串拼接时，直接在数组中加入新内容，并自动维护数组的扩容，不会产生中间字符串。
-
 String res = str0 + str1;
 String res = new StringBuilder(str0).append(str1).toString(); // + 的底层原理
 ```
@@ -654,6 +651,66 @@ StringBuilder   #线程不安全   单线程进行大量字符串操作时，推
 replace();      #参数是 char 和 CharSequence，即支持字符和字符串的替换
 replaceAll();   #参数是 regex，即基于正则表达式的替换
 replaceFirst(); #参数也是 regex，但不同的是只替换第一个，即基于正则替换第一个满足条件的
+```
+
+
+
+<https://www.toutiao.com/a6758732626153964045/?timestamp=1573690282&app=news_article_lite&group_id=6758732626153964045&req_id=201911140811220100260790143BAA346D>
+
+<https://www.cnblogs.com/pokid/p/10437716.html>
+
+<https://blog.csdn.net/u011635492/article/details/81048150>
+
+<https://blog.csdn.net/u013366617/article/details/83618361>
+
+
+
+<https://blog.csdn.net/wojiao228925661/article/details/100280041>
+
+```java
+/**
+ * s.intern()：保证堆中不再生成与 s 相等的其他对象或字面量。
+ * 已有字面量则让新的对象指向字面量，已有对象则让新对象指向对象。
+ */
+@Test //1
+public void test03() {
+    String s1 = new String("a") + new String("b"); //堆中只有对象 obj1(值为"ab")。s1->obj1
+    String i1 = s1.intern(); //不再生成与"ab"相等的对象或字面量。i1->obj1
+    String s2 = "ab"; //s2->obj1
+
+    System.out.println(s1 == s2); //1
+    System.out.println(i1 == s1); //1
+    System.out.println(i1 == s2); //1
+
+    String s3 = new String("1"); //堆中有字面量 "1" 和对象 obj2(值为"1")，s3->obj2
+    String i2 = s3.intern(); //不再生成。i2->"1"
+    String s4 = "1"; //s4->"1"
+
+    System.out.println(s3 == s4); //0
+    System.out.println(i2 == s3); //0
+    System.out.println(i2 == s4); //1
+}
+```
+
+```java
+@Test //2
+public void test02() {
+    String s1 = new String("a") + new String("b"); //堆中只有对象 obj1(值为"ab")。s1->obj1
+    String s2 = "ab"; //此时堆中有 obj1 和字面量"ab"。s2->"ab"
+    String i1 = s1.intern(); //不再生成。i1->"ab"
+
+    System.out.println(s1 == s2); //0
+    System.out.println(i1 == s1); //0
+    System.out.println(i1 == s2); //1
+
+    String s3 = new String("1"); //堆中有字面量 "1" 和 obj2 (值为"1")。s3->obj2
+    String s4 = "1"; //s4->"1"
+    String i2 = s3.intern(); //i2->"1"
+
+    System.out.println(s3 == s4); //0
+    System.out.println(i2 == s3); //0
+    System.out.println(i2 == s4); //1
+}
 ```
 
 
@@ -730,41 +787,39 @@ Exception：程序可以处理的异常，应该捕获并进行相应的处理�
 ```sh
 #CheckedException：编译期异常。编译时期就会检查，不处理则编译不通过
 #不是具体的java类，是指 RuntimeException 以外的异常，类型上属于Exception类及其子类
-IOException；SQLException；InterruptedException；ParseException（日期格式化异常），ClassNotFoundException（反射）
+IOException；SQLException；InterruptedException；ParseException（日期解析异常），ClassNotFoundException（反射-类不存在时异常）
 ```
 
 ```sh
 #运行时异常（RuntimeException）：在运行时期，检查异常。在编译时期，不处理也不会报错。
-空指针；类型强制转换（ClassCastException）；除数为0；数组越界；数字格式（String转数字）；非法参数异常
+空指针; 除数为0; 数组越界; 字符串解析成数字; 类转换异常（ClassCastException）; 非法参数异常（IllegalArgumentException）
 
-#java.lang.IllegalArgumentException: Non-positive period.
-Timer timer = new Timer();
-timer.schedule(timerTask, new Date(), 0);
+new Timer().schedule(timerTask, new Date(), 0); #非法参数异常，定时任务频率不能为 0
+Arrays.asList("a", "b").add("c");               #java.lang.UnsupportedOperationException
 
-Arrays.asList("a", "b").add("c"); #java.lang.UnsupportedOperationException
-list.forEach(x -> {if("b".equals(x)){ list.add("c"); }}); #ConcurrentModificationException
+list.forEach(x -> {if("b".equals(x)){ list.add("c"); }}); #并发修改异常（ConcurrentModificationException）
 ```
 
 >异常处理：`try-catch 比 if 更耗性能`
 
-```java
-throw ：用在'方法体内'，用来抛出一个异常对象，将这个异常对象传递到调用者处，并'结束'当前方法的执行
-throws：用在'方法声明'，用于表示当前方法不处理异常，而是提醒该方法的调用者来处理异常（抛出异常）
+```sh
+#使用关键字 throws 引发异常。异常处理的两种方式
+throw    ：异常不处理，直接抛出
+try-catch：捕获异常，对异常进行针对性的处理。try和catch不能单独使用，必须连用
 
-try-catch ：捕获异常，对异常进行针对性的处理。 try 和 catch 不能单独使用，必须连用
-finally   ：finally代码块中存放的代码无论异常是否发生，都会执行。如释放IO资源，数据库连接，网络连接等
+throw  ：用在'方法体内'，用来明确地抛出一个异常
+throws ：用在'方法声明'，用来标明一个方法可能抛出的各种异常
+finally：存放的代码无论是否发生异常，都会执行，常用于释放资源。如释放IO资源，数据库连接，网络连接等
 ```
 
 >注意事项
 
 ```sh
-如果父类抛出了多个异常 ,子类覆盖父类方法时,只能抛出相同的异常或者是他的子集
-父类方法没有抛出异常，子类覆盖父类该方法时也不可抛出异常。此时子类产生该异常，只能捕获处理，不能声明抛出（如，run方法）
+#多异常处理时，先捕获小异常，最后捕获大异常 Exception。
+#finally 代码块，无论如何都会执行。如果有 return 语句，肯定返回此结果。
 
-当多异常处理时，捕获处理，前边的类不能是后边类的父类
-在 try/catch 后可以追加 finally 代码块，其中的代码一定会被执行，通常用于资源回收
-
-#finally 代码块中，如果有 return 语句，永远返回 finally 中的结果，避免该情况
+父类方法抛出异常，子类方法只能抛出相同异常或子异常。
+父类方法没有抛出异常，子类方法也不能抛出异常，只能自己处理（如 run()）。
 ```
 
 ```java

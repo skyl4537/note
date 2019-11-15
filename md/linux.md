@@ -807,6 +807,37 @@ if [ -d $file ] //是否为目录
 if [ -s $file ] //不为空
 if [ -f $file ] //是否为普通文件(既不是目录,也不是设备文件)
 ```
+## tar
+
+> 打包压缩, 用于备份文件！（相比zip更优）
+
+```sh
+#-z: 通过gzip指令处理备份文件（gzip）
+#-v: 显示指令执行过程（verbose）
+#-f: 指定备份文件（file）
+#-t: 列出备份文件的内容（list）
+#-r: 新增文件到已备份文件的尾部（append）
+#-g: 增量备份
+
+#-c: （压缩）建立新的备份文件（create）
+#-x: （解压）从备份文件中还原文件（extrac）
+```
+
+```shell
+tar -zcvf test.tar.gz test     #压缩文件test
+
+tar -zxvf test.tar.gz          #解压到【当前】目录
+tar -zxvf test.tar.gz -C test/ #.....【指定】....
+
+tar -ztvf test.tar.gz          #列出归档文件的内容
+
+echo -n "123" > test           #-n表示不换行，即结尾没有换行符
+tar -g snapshot -zcvf test0.tar.gz test    #第1次归档(123)
+
+echo "456" >> test        #追加test末尾
+tar -g snapshot -zcvf test1.tar.gz test    #第2次归档(123456)
+tar -g snapshot -zcvf test2.tar.gz test    #第3次归档(空的，因为没有修改)
+```
 ## top
 
 > 能够实时显示系统中各个进程的资源占用状况，类似于Windows的任务管理器
@@ -1266,36 +1297,6 @@ free -hts 3 #3s刷新一次，内存的使用情况
 
 
 
-
-## tar
-
-> 打包压缩, 用于备份文件！（相比zip更优）
-
-```shell
-#-z: 通过gzip指令处理备份文件（gzip）
-#-v: 显示指令执行过程（verbose）
-#-f: 指定备份文件（file）
-#-t: 列出备份文件的内容（list）
-#-r: 新增文件到已备份文件的尾部（append）
-#-g: 增量备份
-
-#-c: （压缩）建立新的备份文件（create）
-#-x: （解压）从备份文件中还原文件（extrac）
-
-tar -zcvf test.tar.gz test     #压缩文件test
-
-tar -zxvf test.tar.gz          #解压到【当前】目录
-tar -zxvf test.tar.gz -C test/ #.....【指定】....
-
-tar -ztvf test.tar.gz          #列出归档文件的内容
-
-echo -n "123" > test           #-n表示不换行，即结尾没有换行符
-tar -g snapshot -zcvf test0.tar.gz test    #第1次归档(123)
-
-echo "456" >> test        #追加test末尾
-tar -g snapshot -zcvf test1.tar.gz test    #第2次归档(123456)
-tar -g snapshot -zcvf test2.tar.gz test    #第3次归档(空的，因为没有修改)
-```
 
 ##ln
 

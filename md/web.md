@@ -203,75 +203,41 @@ function clickBtn1(e) {
 
 > JSON 方法
 
-```javascript
+```js
 var jsonStr = JSON.stringify(jsonObj); //json -> String
 var jsonObj = JSON.parse(jsonStr);     //String -> json
 ```
 
-> `$.get(url[,data][,callback][,type])` 通过GET请求从服务器请求数据
-
-```html
-<button id="btnGetJSON" th:attr="url=@{/mvc/getJSON}">getJSON</button> <!--后台返回json-->
-```
-
-```javascript
+```js
 $(function () { //简写前: $(document).ready(function () {
-    $('#btnGetJSON').click(function () {
-        $.getJSON($(this).attr('url'),
-                  {username: $('#username').val(), password: $('#password').val()},
-                  function (data) {
-            			alert(data.uName + " - " + data.uPwd);
-        });
-    });
-});
-```
-
-```html
-<button id="getStr" onclick="getStrFun(this)" th:attr="url=@{/mvc/getMsg}">getStr</button> <!--后台返回String-->
-```
-
-```javascript
-function getStrFun(e) {
-    $.get($(e).attr('url'),
-          function (data) {
-        		alert(data);
-    });
-}
-```
-
->`POST` 
-
-```html
-<button id="postJSON" onclick="postJSONFun(this)" th:attr="url=@{/mvc/postJSON}">postJSON</button>
-```
-
-```javascript
-function postJSONFun(e) {
-    $.post($(e).attr('url'),
-           {username: $('#username').val(), password: $('#password').val()},
-           function (data) {
-        		alert(data.uName + " - " + data.uPwd);
-    }, 'json');
-}
-```
-
-> `DELETE`
-
-```html
-<button id="deleteBtn" th:href="@{/mvc/deleteMsg/5}">deleteMsg</button>
-```
-
-```javascript
-$('#deleteBtn').click(function () {
+    var data = {
+        "uid": 1,
+        "ipAddress": "地址"
+    };
     $.ajax({
-        type: 'DELETE', //仅部分浏览器支持
-        url: $(this).attr('href'),
-        dataType: 'text',
-        success: function (data) {
-            $('#showMsg').val(data);
+        type: "POST", //GET POST DELETE PUT
+        url: "/webpark/fanChang",
+        contentType: 'application/json', //不可省
+        dataType: "json",
+        data: JSON.stringify(data),      //转为 jsonString
+        success: function (result) {
+            console.log(result.errcode); //结果返回json，可直接解析
+        },
+        error: function (result) {
+            console.log(result.errcode);
         }
     });
 });
+```
+
+> 
+
+```html
+
+```
+
+```javascript
+
 ```
 
 > `ajax` 底层原理。如果需要在出错时执行函数，请使用此方法
@@ -629,72 +595,6 @@ context.setAttribute("user", "123"); //属性相关的三个方法（设置，�
 String user = (String) context.getAttribute("user");
 context.removeAttribute("user");
 ```
-## 表单重复提交
-
-> 表单重复提交的3种场景
-
-```shell
-（1）网络延迟，用户多次点击'submit'按钮
-（2）表单提交后，转发到目标页面，用户点击'刷新'按钮
-（3）提交表单后，点击浏览器的'后退'按钮，回退到表单页面，再次进行'提交'
-
-点击'返回'，'刷新'原表单页面，再'提交' #不属于表单重复提交
-```
-
->场景（1）--> 用js控制表单只能提交一次（两种方案，推荐1）
-
-```html
-<form method="post" onsubmit="doSubmit()" th:action="@{/user/login}"></form>
-```
-
-```javascript
-//方式1：只能提交一次
-var isCommitted = false;
-function doSubmit() {
-    if (false === isCommitted) {
-        isCommitted = true;
-        return true; //返回true，让表单正常提交
-    } else {
-        return false; //返回false，则表单将不提交
-    }
-}
-```
-
-```javascript
-//方式2：提交后按钮置为不可用
-function doSubmit() {
-    var btnSubmit = document.getElementById("submit");
-    btnSubmit.disabled = true;
-    return true;
-}
-```
-
-> 场景（2） --> 表单提交后直接重定向到目标页面
-
-```java
-resp.sendRedirect("重定向地址"); //转发到目标页面，点击[刷新]会一直请求之前的表单
-```
-
-> 场景（123） --> 利用Session的token机制
-
-```java
-//（1）生成token，存Session，并转发前台页面
-@GetMapping("/token")
-public String token(HttpSession session) {
-    session.setAttribute("token", UUID.randomUUID().toString()); //token 存 Session 中
-    return "/mvc/token";
-}
-```
-
-```html
-<!--（2）前台页面使用hidden存储token，表单提交时携带-->
-<form id="form-login" method="post" th:action="@{/mvc/login}">
-    <input type="hidden" name="token" th:value="${session.token}"/>
-    ...
-    <button class="btn btn-primary" type="submit">登录</button>
-</form>
-```
-
 
 
 # 注解
@@ -1137,7 +1037,8 @@ Web容器（如tomcat）中包含了多个 Servlet，特定的 HTTP 请求该由
 
 ```sh
 #Servlet对象是【单实例】。减小服务端内存开销，快速响应客户端
---> 加载Servlet的class --> 调用构造函数实例化Servlet【1次】 --> 调用Servlet的init()完成初始化【1次】
+--> 加载Servlet的class --> 调用构造函数实例化Servlet【1次】
+--> 调用Servlet的init()完成初始化【1次】
 --> 每一次http请求，都会调用一次service()响应请求【n次】
 --> Web容器关闭时，调用destory()释放资源【1次】
 
@@ -1203,9 +1104,9 @@ Jsp传递值：request session application cookie也能传值
 
 ```
 
-## 细节
+## 概念
 
-> 转发 & 重定向
+> ###转发 & 重定向
 
 ```sh
 `转发`：服务端收到请求，进行一定的处理后，先不进行响应，而是在'服务端内部'转发给其他 Servlet 继续处理。
@@ -1213,7 +1114,7 @@ Jsp传递值：request session application cookie也能传值
 
 (1).转发：浏览器只会发送 '1' 次请求，组件间共享数据。重定向：浏览器发送 2 次请求，不会共享数据
 (2).转发：浏览器的地址栏'不会'发送改变。重定向：浏览器的地址栏会发生改变
-(3).转发：只能转发到'当前web的资源'。重定向：可以是任意资源，甚至是网络资源
+(3).转发：只能转发到'当前web项目的内部资源'。重定向：可以是任意资源，甚至是网络资源
 ```
 
 ```sh
@@ -1228,7 +1129,7 @@ req.getRequestDispatcher("转发地址").forward(req, resp);
 resp.sendRedirect("重定向地址"); //重定向
 ```
 
-> Cookie
+> ###Cookie
 
 ```sh
 HTTP 是'一种无状态协议'。WEB 服务器本身无法识别出哪些请求是同一个浏览器发出，浏览器的每一次请求都是孤立的。
@@ -1236,7 +1137,7 @@ HTTP 是'一种无状态协议'。WEB 服务器本身无法识别出哪些请求
 ```
 
 ```sh
-#Cookie：客户端记录信息确定用户身份
+#Cookie：在【客户端】保持 HTTP 状态信息的方案
 第一次访问，没有Cookie，服务器返回，浏览器保存。一旦浏览器有了 Cookie，以后每次请求都会带上，服务器收到请求后，就可以根据该信息处理请求。
 
 #局限性：
@@ -1261,16 +1162,20 @@ response.addCookie(cookie);
 Cookie[] cookies = request.getCookies(); //遍历读取 Cookie
 ```
 
-> Session
+> ###Session
 
 ```sh
-#Session：服务端记录信息确定用户身份。
-用户登录访问，服务端验证通过后，为该用户生成一个 Session 对象，保存在数据库 或 Redis。
-并将 'SessionId' 以 'Cookie' 的形式返回给客户端，客户端保存到本地。用户再次发起请求时，自动携带 Cookie。
-服务端收到请求后，通过 SessionId 查找与之对应的 Session 对象，用以区分不同的用户
+#Session：在【服务器端】保持 HTTP 状态信息的方案
+当服务端要为某个客户端的请求创建 Session 时，首先检查请求中是否包含 Session 标识 SessionId。
+如果包含，则说明服务端之前已为该浏览器创建过 Session 对象，根据 SessionId 查找 Session 对象（查找不到，服务端已删除，则新建一个）。
+如果未包含，则新建一个 Session 对象，并将 'SessionId' 以 'Cookie' 形式返回给浏览器。
+浏览器将 Cookie 保存在本地，再次发送请求时，自动携带该 Cookie
 ```
 
 ```sh
+#Session 创建
+服务端调用方法 HttpSession session = request.getSession(); 时创建。
+
 #Session 销毁
 (1).服务器端调用方法 HttpSession.invalidate();
 (2).Session 过期。两次请求的时间间隔超过 Session 的最大过期时间（默认 30 分钟），则服务端自动删除 Session 对象。
@@ -1294,12 +1199,11 @@ request.getSession(false); //..........................，无则为 null
 ```
 
 ```java
-//持久化Session --> 持久化Cookie --> 设置Cookie过期时间
-Cookie cookie = new Cookie("JSESSIONID", session.getId()); //将 SessionId 以 Cookie 形式返回
-cookie.setMaxAge(90);       //持久化Cookie
-response.addCookie(cookie); //将Cookie发送浏览器
-
-//默认保存: C:\Users\BlueCard\AppData\Local\Temp\9121B10A811596BD85A3431BFBE71078B2880509\servlet-sessions
+//持久化 Session --> 持久化 Cookie --> 设置Cookie过期时间
+//默认，SessionId 保存在浏览器的内存中，并不持久化到硬盘。所以，再次打开浏览器，SessionId 丢失
+Cookie cookie = new Cookie("JSESSIONID", session.getId());
+cookie.setMaxAge(90);
+response.addCookie(cookie); //持久化 Cookie，并发送到浏览器
 ```
 
 ```java
@@ -1307,5 +1211,88 @@ response.addCookie(cookie); //将Cookie发送浏览器
 //可以通过 'URL重写' 机制解决这一问题：URL;jsessionid=xxx （将 SessionID 拼接URL后面）
 String encodeURL = response.encodeURL(url);
 response.sendRedirect(encodeURL);
+```
+
+> ###表单重复提交
+
+```sh
+(1).网络延迟，用户多次点击'submit'按钮
+(2).表单提交后，'转发'到目标页面，用户点击'刷新'按钮
+(3).提交表单后，点击浏览器的'后退'按钮，回退到表单页面，再次进行'提交'
+
+(0).点击'后退'，'刷新'原表单页面，再'提交' #不属于表单重复提交
+```
+
+```js
+//场景(1)：用js控制表单只能提交一次（两种方案，推荐-1）
+<form method="post" onsubmit="doSubmit()" th:action="@{/user/login}"></form>
+
+//方式-1：只能提交一次
+var isCommitted = false;
+function doSubmit() {
+    if (false === isCommitted) {
+        isCommitted = true;
+        return true; //返回true，让表单正常提交
+    } else {
+        return false; //返回false，则表单将不提交
+    }
+}
+
+//方式2：提交后按钮置为不可用
+function doSubmit() {
+    var btnSubmit = document.getElementById("submit");
+    btnSubmit.disabled = true;
+    return true;
+}
+```
+
+```java
+//场景(2)：转发到目标页面，点击【刷新】会一直请求之前的表单。使用重定向解决
+resp.sendRedirect("重定向地址");
+```
+
+```java
+//场景(123)：利用 Session + token 解决
+@GetMapping("/token")
+public String token(HttpSession session) {
+    session.setAttribute("token", UUID.randomUUID().toString()); //(1).生成token，存Session，并转发前台页面
+    return "/mvc/token";
+}
+```
+
+```html
+<!--（2）前台页面使用 hidden 存储 token，表单提交时携带-->
+<form id="form-login" method="post" th:action="@{/mvc/login}">
+    <input type="hidden" name="token" th:value="${session.token}"/>
+    ...
+    <button class="btn btn-primary" type="submit">登录</button>
+</form>
+```
+
+> ### 路径前缀 /
+
+```sh
+'由服务器解析'：web应用的根目录 --> http:localhost:8090/demo/
+'由浏览器解析'：web站点的根目录 --> http:localhost:8090/
+```
+
+```java
+//由服务器解析：(1).控制器 (2).服务器重定向
+@GetMapping("/hello")
+req.getRequestDispatcher("/hello").forward(req, res);
+```
+
+```html
+<!--由浏览器解析：(1).超链接 (2).form表单提交 (3).服务器转发 -->
+<a th:href="@{/hello}">测试</a>
+<form method="post" th:action="@{/hello}"/>
+req.sendRedirect("/demo/hello");
+```
+> ###xml解析
+
+```sh
+`DOM`：解析时先'将整个文档加载到内存'。占用内存大，解析大型文件时性能有所下降。适合对xml进行'随机访问'
+`SAX`：顺序读取xml文件，'不需要一次性加载整个文件'。属于事件驱动型解析，当遇到文档开头/结束，标签开头/结束时，都会触发一个事件，
+用户只需要在事件对应的回调函数中写入响应的处理逻辑即可。适合对xml进行'顺序访问'
 ```
 

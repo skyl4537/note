@@ -442,95 +442,7 @@ https://blog.csdn.net/w1196726224/article/details/54428493
 
 //}
 
-//{--------<<<Convert>>>---------------------------
-#int <-> byte[]
-    1.大端模式 //高位在前,低位在后
-        public static byte[] int2Bytes(int value, int len) {
-            if (len > 4) throw new RuntimeException("int 最大长度4个字节");
-            
-            byte[] bytes = new byte[len];
-            for (int i = 0; i < len; i++) {
-                bytes[i] = (byte) ((value >> 8 * (len - 1 - i)) & 0xFF);
-            }
-            return bytes;
-        }
-    
-        //offset: 从数组的第offset位开始
-        public static int bytes2Int(byte[] bytes) {
-            byte[] dest = new byte[4];
-            System.arraycopy(bytes, 0, dest, 4 - bytes.length, bytes.length);
-            return (dest[0] & 0xFF) << 24
-                    | ((dest[1] & 0xFF) << 16)
-                    | ((dest[2] & 0xFF) << 8)
-                    | (dest[3] & 0xFF << 0);
-        }
-    
-    2.小端模式 //低位在前,高位在后    
-        public static byte[] int2Bytes(int value, int len) {
-            if (len > 4) throw new RuntimeException("int 最大长度4个字节");
-            
-            byte[] bytes = new byte[len];
-            for (int i = 0; i < len; i++) {
-                bytes[i] = (byte) ((value >> 8 * i) & 0xFF);
-            }
-            return bytes;
-        }
-        
-        public static int bytes2Int(byte[] bytes, int offset) {
-            return (bytes[offset + 0] & 0xFF)
-                    | ((bytes[offset + 1] & 0xFF) << 8)
-                    | ((bytes[offset + 2] & 0xFF) << 16)
-                    | ((bytes[offset + 3] & 0xFF) << 24);
-        }
-    
-#int <-> Hex
-        public static String int2Hex(int value) {
-            return Integer.toHexString(value);
-        }
-        
-        private static int hex2Int(String hexString) {
-            return Integer.parseInt(hexString, 16);
-        }
-        
-#String <-> Hex
-        public static String string2Hex(String value) {
-            StringBuilder hexString = new StringBuilder();
-            for (char aChar : value.toCharArray()) {
-                hexString.append(Integer.toHexString(aChar));
-            }
-            return hexString.toString();
-        }
-        
-#String <-> byte[]
-        byte[] bytes = "hello".getBytes(Charset.forName("utf-8"));
-        
-        String s = new String(bytes, Charset.forName("utf-8"));
 
-#校验和    
-        /**
-         * 第13位 -> 校验和 -> 前面所有字节的异或
-         */
-        data[13] = data[0];//校验和->13
-        for (int i = 1; i < 13; i++) {
-            data[13] = (byte) (data[13] ^ data[i]);
-        }
-    
-#数组拷贝
-
-        /**
-         * 拷贝数组
-         *
-         * @param src     源数组
-         * @param srcPos  源数组要复制的起始位置
-         * @param dest    目的数组
-         * @param destPos 目的数组放置的起始位置
-         * @param length  复制的长度
-         */
-        public static void copyArray(Object src, int srcPos, Object dest, int destPos, int length) {
-            System.arraycopy(src, srcPos, dest, destPos, length);
-        }
-
-//}
 
 
 
@@ -1411,7 +1323,7 @@ https://blog.csdn.net/w1196726224/article/details/54428493
     
 //}
 
-//{--------<<<Exception>>>-------------------------
+//{--------<<<Exception>>>-------------------------X
 // #异常分类
     // 1.可查异常(checked exceptions)
         // 除了 RuntimeException 及其子类以外,其他的 Exception 及其子类都属于可查异常
@@ -1784,7 +1696,7 @@ JAVA8 实现
 
 //}
 
-//{--------<<<web>>>-------------------------------
+//{--------<<<web>>>-------------------------------X
 #GET & POST
 
 #servlet-生命周期
