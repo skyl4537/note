@@ -1,8 +1,4 @@
-
-
-
-
-
+[TOC]
 
 # --mybatis--
 
@@ -13,23 +9,20 @@
 >必要配置
 
 ```xml
-<!-- mybatis 启动器 -->
 <dependency>
     <groupId>org.mybatis.spring.boot</groupId>
     <artifactId>mybatis-spring-boot-starter</artifactId>
     <version>1.3.2</version>
 </dependency>
-<!-- druid 数据库连接池 -->
-<dependency>
-    <groupId>com.alibaba</groupId>
-    <artifactId>druid-spring-boot-starter</artifactId>
-    <version>1.1.10</version>
-</dependency>
-<!-- mysql 数据库驱动 -->
 <dependency>
     <groupId>mysql</groupId>
     <artifactId>mysql-connector-java</artifactId>
     <scope>runtime</scope>
+</dependency>
+<dependency>
+    <groupId>com.alibaba</groupId>
+    <artifactId>druid-spring-boot-starter</artifactId>
+    <version>1.1.10</version>
 </dependency>
 ```
 
@@ -40,19 +33,13 @@ spring.datasource.url=jdbc:mysql://192.168.8.7:33306/test0329?useSSL=false&serve
 spring.datasource.username=bluecardsoft
 spring.datasource.password=#$%_BC13439677375
 
-#xml路径
-mybatis.mapper-locations=classpath:com/example/mybatis/mapper/sqlxml/*.xml
-#相关xml配置 <-> 与上不能同时使用
-#mybatis.config-location=mybatis.xml
-#驼峰命名
+mybatis.mapper-locations=classpath:com/example/mapper/sqlxml/*.xml
 mybatis.configuration.map-underscore-to-camel-case=true
-#mybatis的sql打印，可看到sql结果
 logging.level.com.example.demo.mapper=trace
 ```
 
 ```java
-//全局注解。可省去每个Mapper文件上的 @Mapper
-@MapperScan(value = "com.example.mybatis.mapper")
+@MapperScan(value = "com.example.mapper") //全局注解。可省去每个Mapper文件上的 @Mapper
 ```
 
 > 非必要配置
@@ -66,12 +53,11 @@ mybatis.configuration.lazy-loading-enabled=true
 mybatis.configuration.aggressive-lazy-loading=true
 ```
 
-> 【推荐】xml版本：代码与sql解耦分离
+> xml版本
 
 ```xml
 <?xml version="1.0" encoding="UTF-8"?>
 <!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
-
 <mapper namespace="com.example.base.mapper.LabelMapper">
     <select id="listLabelsByPage" resultType="com.example.base.pojo.Label">
         SELECT `id`, `labelname`, `state`, `count`, `recommend`, `fans` FROM tb_label
@@ -79,7 +65,7 @@ mybatis.configuration.aggressive-lazy-loading=true
 </mapper>
 ```
 
-> 【不推荐】注解版：直接在java文件写sql，省去对应的xml
+> 注解版
 
 ```java
 @Select("SELECT sname FROM student WHERE sid=#{id}")
@@ -88,14 +74,9 @@ String getNameById(int id);
 
 > 资源拷贝插件
 
-```sh
-mvn默认只把 'src/main/resources' 里的非java文件编译到classes中
-如果希望 'src/main/java' 下的文件（如，mapper.xml）也编译到 classes 中，在 pom.xml 中配置
-```
-
 ```xml
 <build>
-    <finalName>demo-user</finalName> <!--打包名称-->
+    <finalName>demo-user</finalName>
     <resources> <!--资源拷贝插件-->
         <resource>
             <directory>src/main/java</directory>
@@ -115,22 +96,21 @@ mvn默认只把 'src/main/resources' 里的非java文件编译到classes中
 > 参数相关
 
 ```sh
-多个入参：'推荐'在接口中使用注解定义别名 @Param("id")，也可以将多个入参封装 pojo 或Map。然后，xml也不需要指定 paramType
+多个入参：使用注解 @Param("id")，或者封装 Map/pojo
 
-一行回参：返回多列，'推荐'封装 pojo 接收，不推荐直接使用Map
+一行回参：返回多列，'推荐'封装 pojo 接收，不推荐直接使用 Map
 多行回参：接口返回值定义'List<Pojo>'，但xml中的'resultType=pojo'，因为mybatis是对jdbc的封装，一行一行读取数据
 ```
 
 > 回参Map：`有坑`
 
 ```shell
-#其中，key为某一列name，value为每一行封装成的 pojo 或 Map。
 {"喇叭花":{"flowerName":"喇叭花","flowerId":1},"牵牛花":{"flowerName":"牵牛花","flowerId":2}...}
 ```
 
 ```java
 @MapKey("flowerName") //‘flowerName’表示java属性名，而非数据库字段名。所以，xml中的 flower_name 必须改别名。切记！
-Map<String, Flower> listByName(String flowerName);
+Map<String, Flower> listByName(@Param("flowerName") String flowerName);
 ```
 
 ```xml
@@ -142,9 +122,7 @@ Map<String, Flower> listByName(String flowerName);
 > 抽取引用：`<sql/> + <include/>`
 
 ```xml
-<sql id="ref">
-    id,name,age,address,companyId
-</sql>
+<sql id="ref"> id,name,age,address,companyId </sql>
 ```
 
 ```xml
@@ -173,7 +151,6 @@ select order_id id, order_price price, order_no orderNo from orders where order_
 <resultMap type="com.x.order" id="orderMap">
     <id property="id" column="order_id"/> <!-- id-主键，result-非主键 -->
     <result property="price" column="order_price"/>
-    <result property="orderNo" column="order_no"/>
 </reslutMap>
 ```
 
@@ -229,9 +206,9 @@ SELECT * FROM user WHERE name LIKE concat('%', #{username}, '%') -- 张
 ```
 
 ```properties
-###pageHelper分页插件
-pagehelper.helper-dialect=MYSQL
+#分页合理化参数，默认false。设为 true 时，pageNum <= 0 时会查询第一页，pageNum > pages（超过总数时），会查询最后一页
 pagehelper.reasonable=true
+pagehelper.helper-dialect=MYSQL
 pagehelper.support-methods-arguments=true
 pagehelper.params=count=countSql
 ```
@@ -241,9 +218,7 @@ pagehelper.params=count=countSql
 public PageInfo<Person> listByPage(@PathVariable int pageNum, @PathVariable int pageSize) {
     PageHelper.startPage(pageNum, pageSize); //查询之前设置：页码数，页容量
     List<Person> list = service.listAll();
-
-    //PageInfo包含了非常全面的分页属性【详见附表】 arg2为连续显示的页码个数
-    PageInfo<Person> pageInfo = new PageInfo<>(res, 5);
+    PageInfo<Person> pageInfo = new PageInfo<>(res, 5); //arg2为连续显示的页码个数
     return pageInfo;
 }
 ```
@@ -789,7 +764,7 @@ mybatis-plus.global-config.db-config.table-prefix=tb_
 #也支持'mybatis'的配置，配置名换成'mybatis-plus'
 #驼峰命名（默认开启），xml路径
 mybatis-plus.configuration.map-underscore-to-camel-case=true
-mybatis-plus.mapper-locations=
+mybatis-plus.mapper-locations=classpath:com/example/mapper/sqlxml/*.xml
 ```
 
 ```java
@@ -1379,214 +1354,6 @@ public void findMany2Many() {
 
 # 常见问题
 
-## 开发手册
-
-```sh
-#【参考】各层命名规约：
-get，list，count（统计值），insert/save（推荐），delete/remove（推荐），update
-
-#【强制】 在表查询中，一律不要使用 * 作为查询的字段列表，需要哪些字段必须明确写明。
--- 说明：(1).增加查询分析器解析成本。(2).增减字段容易与 resultMap 配置不一致。
-
-#【强制】 xml 配置中参数注意使用：#{}，#param# 不要使用${}，此种方式容易出现 SQL 注入。
-
-#【推荐】 不要写一个大而全的数据更新接口，传入为 POJO 类，不管是不是自己的目标更新字段，
----都进行 update table set c1=value1, c2=value2, c3=value3; 这是不对的。
--- 执行 SQL时，尽量不要更新无改动的字段，一是易出错； 二是效率低； 三是 binlog 增加存储。
-```
-## 基础概念
-
-> 数据库连接池 & 线程池
-
-```sh
-1、限定数据库连接的个数，不会造成由于数据库连接过多而导致系统运行缓慢或崩溃。
-2、数据库连接不需要每次都去创建或销毁，节约了资源。数据库连接用完之后，归还给连接池，并将其状态变成'Idle'，并不是销毁连接。
-3、数据库连接不需要每次都去创建，响应时间更快。
-
-1、限定线程的个数，不会造成由于线程过多导致系统运行缓慢或崩溃。
-2、线程池不需要每次都去创建或销毁，节约了资源。
-3、线程池不需要每次都去创建，响应时间更快。
-```
-
-> 什么是ORM？ `忘记 mybatis，想着 jpa。`
-
-```sh
-ORM（Object-Relational-Mapping）：对象-关系 映射。Object 是指java语言中的对象，Relational 是指关系型数据库。
-#ORM 就是把数据库中的数据表映射成对象，使用对象实例的语法，来完成关系型数据库操作的一种技术。
-
-数据库的表（table） --> 类（class）
-记录（record）     --> 对象（object）
-字段（field）      --> 对象的属性（attribute）
-```
-
-```java
-//举例说明，使用原生 jdbc 查询，需要编写sql： SELECT name,age FROM person WHERE id=10;
-res = db.excSql(sql);
-device_id = res[0]["name"];
-
-//使用 ORM 思想操作，则代码编写为：
-person = PersonDao.getById(10);
-name = person.getName();
-
-//二者相比较，ORM使用对象，封装了数据库操作的底层细节，可以不用编写sql。只使用面向对象编程，与数据对象直接交互，不用关心底层数据库。
-```
-
-```sh
-'优点'：(1).面向对象编程，易于理解，不必编写sql。(2).可能很好的做到数据库无关性。(3).只适用于业务逻辑简单的场景。
-'缺点'：(1).自动生成sql，无法调节其性能。(2).对于复杂场景，ORM无法处理。
-```
-
-> JDBC
-
-```sh
-- 数据库'连接'的创建、释放频繁造成系统资源浪费，从而影响系统性能。如果使用数据库链接池，还需要额外配置
-- '耦合'。sql语句写在代码中造成代码不易维护，实际应用sql变化的可能较大，sql变动需要改变java代码
-- 向sql语句'传参'数麻烦，因为sql语句的where条件不一定，可能多也可能少，占位符需要和参数一一对应（mybatis将参数封装为对象）
-- 对'结果集解析'麻烦，sql变化导致解析代码变化，系统不易维护（mybatis将结果封装为对象）
-```
-
-```java
-//建立conn、组装sql及参数（Statement对象）、执行sql、读取结果集、执行特定逻辑、再次组装sql及参数... ... 关闭conn
-public static void main(String[] args) throws Exception {
-    String url = "jdbc:mysql://localhost:3306/jdbcStudy";
-    String username = "root";
-    String password = "123";
-
-    Class.forName("com.mysql.jdbc.Driver");
-    Connection conn = DriverManager.getConnection(url, username, password);
-    Statement st = conn.createStatement(); //获取用于向数据库发送sql语句的statement
-    ResultSet rs = st.executeQuery("select id,name,password,email,birthday from users");
-    while(rs.next()){
-        System.out.println("id=" + rs.getObject("id"));
-        System.out.println("name=" + rs.getObject("name"));
-    }
-    rs.close();
-    st.close();
-    conn.close();
-}
-```
-> mybatis
-
-```sh
-mybatis 是一个'半自动的ORM框架'，底层是对JDBC的封装，开发者只需要关注SQL本身，而不需要去处理Jdbc繁杂的过程代码。
-（如：注册驱动，创建conn，创建statement，手动设置参数，结果集检索等）。
-#通过xml或注解的方式将 mapper接口和参数 映射生成 最终执行的sql语句，由mybatis框架调用执行，并将结果映射成 javabean 对象返回。
-```
-
-```sh
-#优点
-- sql 写在 xml 里，解除 sql 与程序代码的耦合，便于统一管理
-- 与 jdbc 相比，消除了 jdbc 大量冗余的代码，不需要手动开关连接
-- 能够与 Spring 很好的集成
-- 提供映射标签，支持对象与数据库的字段关系映射；提供对象关系映射标签，支持对象关系组件维护。
-```
-
-```sh
-#缺点
-- sql 语句的编写工作量较大，尤其当字段多、关联表多时，对开发人员编写SQL语句的功底有一定要求。
-- sql 语句依赖于数据库，导致数据库移植性差，不能随意更换数据库（数据库无关性差）。
-```
-
-> hibernate
-
-```sh
-- mybatis 和 hibernate 不同，它是一个半自动 ORM 框架，需要程序员自己编写 sql 语句。
-- mybatis 直接编写原生态sql，可以严格控制sql执行性能，灵活度高。
-- Hibernate 对象/关系映射能力强，能够做到数据库无关性。mybatis 如果要实现数据无关性，则需要编写多套sql映射文件，工作量大。
-
-#全自动，自动生成sql，不能控制sql性能，但能做到数据库无关性。
-#半自动，手写sql，可以优化sql性能，不能做到数据库无关性（数据库切换就得重新写sql）
-```
-
-> 总结
-
-```sh
-- JDBC     ：sql包含在代码中，硬编码高耦合。实际开发中sql频繁修改，维护不易。
-- mybatis  ：半自动化ORM框架。sql和java编码分开，一个专注数据，一个专注业务，低耦合。
-- Hibernate：全自动ORM。自动产生sql，但不灵活。
-```
-
-
-
-> 运行原理
-
-```sh
-mybatis 开始运行时，先通过 'Resources' 读取配置文件，使用 'XMLConfigBuilder' 进行解析，并把解析结果存放在 'Configuration' 中，
-最后通过 'SqlSessionFactoryBuilder' 对象的 build() 方法，以 Configuration 作为参数构建一个 'SqlSessionFactory' 对象。
-
-#Configuration：保存 mybatis 的全部xml配置信息，包括mapper.xml。
-#<parameterMap>标签会被解析为 ParameterMap 对象，其每个子元素会被解析为 ParameterMapping 对象。
-#<resultMap>标签会被解析为 ResultMap 对象，其每个子元素会被解析为 ResultMapping 对象。
-#每一个<select>、<insert>、<update>、<delete>标签均会被解析为 MappedStatement 对象，标签内的sql会被解析为 BoundSql 对象。
-```
-```sh
-通过 SqlSessionFactory 的 openSession() 方法获取到 'SqlSession' 对象。
-执行过程中会读取 Configuration 中的数据源信息，创建一个执行器对象 'Executor'。
-
-#SqlSession：mybatis运行的最核心的java接口，通过这个接口可以执行sql命令、获取Mapper类、管理事务。
-#Executor  ：真正地实现了与数据库的交互。
-```
-
-```sh
-使用'jdk动态代理技术'创建 'mapper' 接口对象，根据 mapper 接口的'全限定名'（全类名）从 Configuration 中查找对应的 sql 语句，
-最后，使用 Executor 对象从数据库中查找数据，并封装范围结果到 javabean。
-```
-
-```java
-@Test
-public void mybatisTest() throws IOException {
-    InputStream is = Resources.getResourceAsStream("mybatis.xml");
-    SqlSessionFactory factory = new SqlSessionFactoryBuilder().build(is);
-    SqlSession session = factory.openSession();
-
-    //根据 JDK动态代理设计模式，动态生成一个接口 EmpMapper 的实现类
-    EmpMapper empMapper = session.getMapper(EmpMapper.class);
-
-    //根据多态原则，调用接口的 selectList()，其实际调用的是：实现类的 selectList()
-    List<Emp> emps = empMapper.selectList(null);
-    session.commit(); //可省
-    session.close();
-}
-```
-
-> 常用API和方法
-
-```sh
-#（1）SqlSessionFactoryBuilder：读取mybatis的配置文件，构建 SqlSessionFactory 对象
-```
-
-```sh
-#（2）SqlSessionFactory ---> 负责创建 SqlSession 对象
-'SqlSessionFactory特点'
-一旦创建就会存在应用程序的整个运行生命周期（需要做单例）。作用域：一个应用的生命周期
-
-'sqlSessionFactory.openSession();执行结果'
-1、将会启用一个事务作用域（即不会主动提交，需要手动提交）
-2、一个连接对象将从正在生效的运行环境所配置的数据中获取
-3、事务隔离级别是由驱动或数据源使用的默认级别
-4、PreparedStatements 不会被重用，也不会进行批量更新
-```
-
-```sh
-#（3）SqlSession ---> 包含了所有的执行数据库sql语句，事务操作，获取mapper方法
-'SqlSession特点'
-每个线程都有一个SqlSession实例，sqlSession不是共享的，也不是线程安全的
-作用域：是Request 或 method
-在一次会话结束时需要将sqlSession关闭
-
-'SqlSession主要功能'
-执行SQL语句、提交或回滚事务、sqlSession关闭、mapper接口映射、缓存操作
-
-'执行sql语句'
-传入待执行的sql及参数，获取结果，并将结果映射为javabean对象
-<T> T selectOne(String statement, Object parameter);
-
-'mapper接口映射'
-通过使用mapper接口执行mapper文件中的映射语句
-mapper中方法名称，参数名称，参数数量与配置文件xml中方法名称，参数名称，参数数量相互对应
-mapper中也可以使用 RowsBounds 来限制查询结果，逻辑分页，不推荐
-```
-
 ##高级概念
 
 
@@ -1684,31 +1451,6 @@ mybatis使用JDK的动态代理，为需要拦截的接口生成代理对象以�
 - 迭代器模式，例如迭代器模式PropertyTokenizer；
 ```
 
-> 特殊符号 `${} #{}`
-
-```sh
-${} 是属性文件中的变量占位符，可用于标签属性值和sql内部，属于'静态文本替换'，比如 ${driver} 会被静态替换为 com.mysql.jdbc.Driver。
-
-#{} 是sql的参数占位符，mybatis会将sql中的#{}替换为 ? 号。在sql执行前会使用 PreparedStatement 的参数设置方法，
-按序给sql的 ? 号占位符设置参数值，比如 ps.setInt(0, parameterValue)
-#{item.name}的取值方式为使用反射从参数对象中获取item对象的name属性值，相当于 param.getItem().getName()。
-```
-
-```sh
-#{} 是预编译处理（可有效防止sql注入，提高安全性），${} 是字符串替换
-mybatis在处理 `#{}` 时，会将sql中的 `#{}` 替换为?号，调用 PreparedStatement 的set方法来赋值
-mybatis在处理 ${} 时，就是把 ${} 替换成变量的值
-```
-
-```xml
-<!-- 一般建议使用#{}；特殊情况必须要用${}。如：动态传入字段，表名 -->
-<!-- 用 #{} order by 'id,name'，变为根据字符串排序，与需求不符 -->
-<!-- 用 ${} order by id,name，符合需求 -->
-<select id="get_res_by_field" resultType="map" statementType="STATEMENT">
-    SELECT * FROM person ORDER BY ${field} DESC LIMIT 10
-</select>
-```
-
 > Mybatis能执行一对一、一对多的关联查询吗？都有哪些实现方式，以及它们之间的区别
 
 ```sh
@@ -1747,13 +1489,53 @@ mybatis仅支持 association 关联对象和 collection 关联集合对象的延
 此时再解析A标签时，B标签已经存在，A标签也就可以正常解析完成了。
 ```
 
+## 概念区分
 
 
-
-> 
+> 特殊符号
 
 ```sh
+'${}' 表示拼接sql串。                    #参数拼接 --> 编译成sql指令 --> 运行
+'#{}' sql参数的占位符，可有效防止 sql 注入。#编译成sql指令 --> 动态传参 --> 运行
+mybatis会将sql中的 '#{}' 替换为 ? 号，在sql执行前使用 PreparedStatement 的方法设置参数。
 
+#特殊情况必须要用 ${}。如：动态传入字段，表名
+SELECT * FROM person ORDER BY ${field} DESC LIMIT 10
+```
+
+```sh
+#为什么能防止sql注入？
+使用 PreparedStatemen 执行参数化查询时，数据库系统'不会将参数的内容视为 sql 指令的一部分'来处理，
+而是在数据库完成 sql 指令的编译后，才套用参数运行。因此，就算参数中含有破坏性的指令，也不会被数据库所运行。
+即，sql 语句在程序运行前已经进行了'预编译'，当运行时，动态地把参数传给 PreprareStatement。
+即使参数里有敏感字符如 or '1=1'、数据库也会作为一个参数一个字段的属性值来处理，而不会作为一个 sql 指令。
+
+userName = passWord = "1' OR '1'='1";
+strSQL = "SELECT * FROM users WHERE name = '1' OR '1'='1' and pw = '1' OR '1'='1';"
+```
+
+```sh
+#PreparedStatement 比 Statement 更快
+Java提供了 3 种方式来执行查询语句：
+Statement 用于通用查询，PreparedStatement 用于执行参数化查询，而 CallableStatement 则是用于存储过程。
+
+使用 PreparedStatement 最重要的一点好处是它拥有更佳的性能优势：'SQL语句会预编译在数据库系统中'。
+执行计划同样会被缓存起来，它允许数据库做参数化查询。使用预处理语句比普通的查询更快，
+因为它做的工作更少（数据库对SQL语句的分析，编译，优化已经在第一次查询前完成了）。
+为了减少数据库的负载，生产环境中的 jdbc 代码你应该总是使用 PreparedStatement 。
+
+值得注意的一点是：为了获得性能上的优势，应该使用参数化sql查询，而不是字符串追加的方式。
+下面两个 SELECT 查询，第一个 SELECT查询就没有任何性能优势。
+```
+
+```java
+//（1）字符串追加 --> 不会预编译 --> 每次查询都要重新编译，就像每次查询都要重新写一遍相同的逻辑
+String loanType = getLoanType();
+PreparedStatement prestmt = conn.prepareStatement("select banks from loan where loan_type=" + loanType);
+
+//（2）参数化查询 --> 数据库会预编译(定义一个方法) --> 每次查询都像是调用已写好的方法
+PreparedStatement prestmt = conn.prepareStatement("select banks from loan where loan_type=?");
+prestmt.setString(1, loanType);
 ```
 
 

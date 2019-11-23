@@ -69,9 +69,11 @@ TCL：Transaction-Control-Language，事务控制语言。--如，commit，rollb
 ```sql
 CREATE TABLE `city` (
     `id` int(11) NOT NULL AUTO_INCREMENT COMMENT 'id',
-    `name` varchar(10) DEFAULT NULL COMMENT '用户名', --VARCHAR 记得指定长度
+    `name` varchar(10) DEFAULT NULL COMMENT '城市名', -- VARCHAR 记得指定长度
+    `create_time` TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP COMMENT '创建时间',
+    `update_time` TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP COMMENT '更新时间',
     PRIMARY KEY (`id`)
-) COMMENT '用户';
+) COMMENT '城市';
 
 SHOW CREATE TABLE city; --查看创建过程
 DESC city;              --DESC 查看表的详细信息
@@ -79,7 +81,6 @@ DESC city;              --DESC 查看表的详细信息
 
 ```sql
 CREATE TABLE city0 LIKE city; --仅复制表的整体结构
-
 CREATE TABLE city1 SELECT id,name FROM city WHERE id=2; --复制表的部分结构 + 数据（id，name两列）
 ```
 

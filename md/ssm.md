@@ -48,7 +48,7 @@
 
 ```xml
 <filter>
-    <filter-name>CharacterEncodingFilter</filter-name>
+    <filter-name>characterEncodingFilter</filter-name>
     <filter-class>org.springframework.web.filter.CharacterEncodingFilter</filter-class>
     <init-param>
         <param-name>encoding</param-name>
@@ -56,7 +56,7 @@
     </init-param>
 </filter>
 <filter-mapping>
-    <filter-name>CharacterEncodingFilter</filter-name>
+    <filter-name>characterEncodingFilter</filter-name>
     <url-pattern>/*</url-pattern>
 </filter-mapping>
 ```
@@ -65,11 +65,11 @@
 
 ```xml
 <filter>
-    <filter-name>HiddenHttpMethodFilter</filter-name>
+    <filter-name>hiddenHttpMethodFilter</filter-name>
     <filter-class>org.springframework.web.filter.HiddenHttpMethodFilter</filter-class>
 </filter>
 <filter-mapping>
-    <filter-name>HiddenHttpMethodFilter</filter-name>
+    <filter-name>hiddenHttpMethodFilter</filter-name>
     <url-pattern>/*</url-pattern>
 </filter-mapping>
 ```
@@ -208,36 +208,6 @@
 
 
 # Spring
-
-## 概述
-
-> 轻量级框架
-
-```shell
-#框架是软件的半成品。
-为解决问题制定的一套整体解决方案，在提供功能基础上进行扩充。框架中不能被封装的代码（变量），需要使用配置文件（xml）。
-
-#类库 & 框架
-类库：`提供的类没有封装一定逻辑`。举例：类库就是名言警句，写作文时引入名言警句
-框架：`区别与类库，里面有一些约束`。举例：框架是填空题
-```
-
-> 基础概念
-
-```shell
-
-```
-
-> 设计模式
-
-```sh
-代理模式：AOP
-单例模式：默认 Bean 为单例
-工厂模式：BeanFactory
-IOC：依赖倒置 or 依赖注入
-MVC：spring web
-模版方法模式：JdbcTemplate
-```
 
 ## IOC
 
@@ -587,99 +557,105 @@ public class AopConfig {
 
 > 常见校验
 
-```java
-/** 
- * @Null                   必须为 null
- * @NotNull                必须不为 null
- * @AssertTrue             必须为 true
- * @AssertFalse            必须为 false
- *
- * @Min(value)             必须是数字，其值必须 >= 指定的最小值
- * @Max(value)             必须是数字，其值必须 <= 指定的最大值
- * @DecimalMin(value)      必须是数字，其值必须 >= 指定的最小值
- * @DecimalMax(value)      必须是数字，其值必须 <= 指定的最大值
- * @Size(max=, min=)       大小必须在指定的范围内
- *
- * @Digits(integer, fraction) 必须是数字,其值必须在可接受的范围内。
- *                                (integer->指定整数部分的数字位数; fraction->指定小数部分的数字位数)
- *
- * @Past                     必须是一个过去的日期
- * @Future                   必须是一个将来的日期
- *
- * @Pattern(regex=,flag=)    必须符合指定的正则表达式
- *                             regex->正则表达式；flag->指定 Pattern.Flag 的数组，表示正则表达式的相关选项
- */
+```sh
+#以下注解都有一个参数 message: 表示校验失败的提示信息
+@Null @NotNull             必须为(不为) null
+@AssertTrue @AssertFalse   必须为 true(false)
+
+@Min(value)                必须是数字，其值必须 >= 指定的最小值
+@DecimalMin(value)         必须是数字，其值必须 >= 指定的最小值
+@Range(min=,max=,message=) 数值必须在合适的范围内
+@Digits(integer, fraction) 必须是数字，其值必须在可接受的范围内。(integer: 整数部分; fraction: 小数部分)
+
+@Past @Future              必须是一个过去(未来)的日期
+@Pattern(regex=)           必须符合指定的正则表达式
 ```
 
-```java
-/**
- * @NotBlank(message=)           字符串非null,非空. (去掉首尾空格)
- * @NotEmpty                     字符串必须非空. (不会去掉...)
- * @Length(min=,max=)            字符串长度必须在指定的范围内
- * @Range(min=,max=,message=)    数值必须在合适的范围内 
- *
- * @Email                        必须是电子邮箱地址
- * @URL(protocol=,host=,port=,regexp=,flags=)    合法的url
- */
+```sh
+@NotBlank            字符串非null，非空(去掉首尾空格)
+@NotEmpty            字符串必须非空(不会去掉...)
+@Length(min=,max=)   字符串长度必须在指定的范围内
+@Size(max=, min=)    数组，map，集合的大小必须在指定的范围内
 
+@Email               必须是电子邮箱地址
+@URL(protocol=,host=,port=,regexp=,flags=)    合法的url
 ```
 
 > 在实体类中添加校验规则
 
 ```java
-public class Car {
-    @NotBlank(message = "车标不能为空")
-    @Length(min = 3, max = 10, message = "车标长度必须在3-10之间")
-    @Pattern(regexp = "^[a-zA-Z_]\\w{2,9}$", message = "车标必须以字母下划线开头")
-    public String brand;
+@Data
+@NoArgsConstructor
+@TableName("tbl_emp")
+public class Emp {
+    @TableId(value = "emp_id", type = IdType.AUTO)
+    private Integer empId;
 
-    @Range(max = 1000000, min = 0, message = "价格必须在0-10000之间")
-    @NumberFormat(pattern = "####.##")
-    public Double price;
+    @Pattern(regexp = "(^[a-zA-Z0-9_-]{6,16}$)|(^[\\u2E80-\\u9FFF]{2,5})", message = "用户名格式不合法")
+    @TableField("emp_name")
+    private String empName;
 
-    @Past(message = "日期不能晚于当前时间")
-    @DateTimeFormat(pattern = "yyyy-MM-dd HH:mm:ss")
-    public Date birth;
+    // @AssertFalse(message = "性别必须为女")
+    private Boolean gender;
+
+    @Email(message = "邮箱格式不合法") //系统自带的email校验规则
+    private String email;
+
+    // @Range(min = 1, max = 3, message = "部门编号必须在 {min} 到 {max} 之间")
+    @Range(min = 1, max = 3, message = "{emp.empName.pattern}") //引用配置文件
+    @TableField("dept_id")
+    private Integer deptId;
 }
 ```
 
->也可将校验信息抽取到配置文件
+>将校验信息抽取到配置文件
 
 ```properties
 #在'resources'目录下新建配置文件 ValidationMessages.properties
-car.brand.length=车标长度必须在{min}-{max}之间
-```
-
-```java
-@Length(min = 3, max = 10, message = "{car.brand.length}") //对应属性的注解设置
-public String brand;
+emp.empName.pattern=部门编号必须在 {min} 到 {max} 之间
 ```
 
 >控制器中开启校验
 
 ```java
-//注意: @Valid 和 BindingResult 两个入参必须紧挨着，中间不能插入其他入参
-@PostMapping("/car")
-public String car(@Valid @RequestParam Car car, BindingResult result) {
-    if (result.hasErrors()) { //校验有错
-        result.getAllErrors().forEach(x -> log.info(x.getDefaultMessage()));//错误信息
-        return "car";
+@PostMapping("") //POST /crud/emp
+public Result addEmp(@Valid Emp emp, BindingResult result) {
+    System.out.println("addEmp: " + emp);
+    if (result.hasErrors()) { //失败有错
+        Map<String, String> map = new HashMap<>();
+        result.getFieldErrors().forEach(error -> {
+            map.put(error.getField(), error.getDefaultMessage()); //校验失败字段 - 校验失败原因
+        });
+        return Result.fail(map);
     }
-    return "success";
+
+    int insert = empMapper.insert(emp);
+    return Result.success(); //新增成功
 }
 ```
 
-> 前台页面回显校验错误
-
-```html
-<!--使用 thymeleaf 的内置标签 th:errors-->
-<!--第一次跳转该页面时，没有局部变量 car，所以应该判断: th:if="${null!=car}"-->
-<form th:action="@{/save}" method="post">
-    车标：<input type="text" name="brand"/> 
-    <font color="red" th:if="${null!=car}" th:errors="${car.name}"></font><br/>
-    <input type="submit" value="添加"/>
-</form>
+```js
+{"code":400,"msg":"fail","datas":{"deptId":"部门编号必须在 1 到 3 之间"}} //返回结果
 ```
+
+> 测试接口
+
+```java
+@Test
+public void addEmpTest() throws Exception {
+    MvcResult result = mockMvc.perform(
+        MockMvcRequestBuilders.post("/emp")
+        .param("empName", "lin1998")
+        .param("gender", "false")
+        .param("email", "lin1998@qq.com")
+        .param("deptId", "12")) //此处校验有误
+        .andExpect(MockMvcResultMatchers.jsonPath("$.code").value(400))
+        .andReturn();
+    System.out.println("新增员工: " + result.getResponse().getContentAsString());
+}
+```
+
+
 
 
 
@@ -773,12 +749,30 @@ public LocaleResolver localeResolver() { //注册自定义国际化配置
 
 ## Spring
 
-> ###Spring
+> ### 轻量级框架
 
 ```sh
 Spring 是一个开源的轻量级 IoC(控制反转)和AOP(面向切面) 的容器框架。
 主要是对 javaBean 的生命周期进行管理，可以单独使用，也可以和SpringMVC，mybatis等组合使用。
 #轻量级：非侵入式，不需要实现所使用框架的任何接口。这样，就算以后切换框架也不需要修改源码
+```
+
+```sh
+#框架：软件的半成品，为解决问题制定的一套整体解决方案。
+框架封装了很多细节，使开发者可以使用几件的方式实现功能，大大提高效率。如 mybatis，不用写 jdbc 繁琐过程
+
+#类库 & 框架
+类库：`提供的类没有封装一定逻辑`。举例：类库就是名言警句，写作文时引入名言警句
+框架：`区别与类库，里面有一些约束`。举例：框架是填空题
+```
+
+```sh
+代理模式：AOP
+单例模式：默认 Bean 为单例
+工厂模式：BeanFactory
+IOC：依赖倒置 or 依赖注入
+MVC：spring web
+模版方法模式：JdbcTemplate
 ```
 
 > ###IOC

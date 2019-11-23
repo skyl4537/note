@@ -138,131 +138,6 @@ mybatis 需要加载的 xml 文件分别在：'com/example/web/student/sqlxml/*.
 
 
 
-# html
-
-## js
-
-> html标签
-
-```sh
-radio：单选框，只有加上'name'才具有互斥效果。表单提交的是'value'值
-```
-
-```html
-男 <input type="radio" name="gender" value="1" />
-女 <input type="radio" name="gender" value="0" />
-```
-
-> jQuery：js函数库。js：操作html标签
-
-```js
-$(this)	    //当前 HTML 元素
-$("p")	    //所有 <p> 元素              元素选择器：document.getElementsByTagName("p");
-$(".intro")	//所有 class="intro" 的元素  .class选择器：document.getElementsByClassName("test");
-$("#intro")	//id="intro" 的元素          #id选择器：document.getElementById("test");
-
-$("p.intro")	     //所有 class="intro" 的 <p> 元素
-$("ul li:first")	 //每个 <ul> 的第一个 <li> 元素
-$("[href$='.jpg']")	 //所有带有以 ".jpg" 结尾的属性值的 href 属性
-$("div#intro .head") //id="intro" 的 <div> 元素中的所有 class="head" 的元素
-```
-
->动态绑定事件
-
-```html
-<button id="btn0">动态绑定事件</button>
-```
-
-```javascript
-$(function () { //简写前: $(document).ready(function () { ---> 文档就绪函数：为了防止文档在完全加载（就绪）之前运行 jQuery 代码
-    $("#btn0").click(function () {
-        alert("点我上王者..." + $(this).attr('id'));
-    });
-}); //在DOM载入就绪时就对其进行操纵，并调用执行绑定的函数
-```
-
-```js
-window.onload = function () {
-    //在网页中所有的元素（包括元素的所有关联文件）完全加载到浏览器后才执行
-}
-```
-
->静态指定方法
-
-```html
-<button id="btn1" onclick="clickBtn1(this)">静态指定方法</button>
-```
-
-```javascript
-function clickBtn1(e) {
-    alert("点我上王者..." + $(e).attr('id')); //两种获取对象属性的方法 --> $(e).attr('id')
-}
-```
-
-## ajax
-
-> JSON 方法
-
-```js
-var jsonStr = JSON.stringify(jsonObj); //json -> String
-var jsonObj = JSON.parse(jsonStr);     //String -> json
-```
-
-```js
-$(function () { //简写前: $(document).ready(function () {
-    var data = {
-        "uid": 1,
-        "ipAddress": "地址"
-    };
-    $.ajax({
-        type: "POST", //GET POST DELETE PUT
-        url: "/webpark/fanChang",
-        contentType: 'application/json', //不可省
-        dataType: "json",
-        data: JSON.stringify(data),      //转为 jsonString
-        success: function (result) {
-            console.log(result.errcode); //结果返回json，可直接解析
-        },
-        error: function (result) {
-            console.log(result.errcode);
-        }
-    });
-});
-```
-
-> 
-
-```html
-
-```
-
-```javascript
-
-```
-
-> `ajax` 底层原理。如果需要在出错时执行函数，请使用此方法
-
-```html
-<button id="ajaxBtn" onclick="clickAjax(this)" th:attr="url=@{/mvc/getJSON}">ajax</button>
-```
-
-```javascript
-function clickAjax(e) {
-    $.ajax({
-        url: $(e).attr('url'), //url
-        type: 'GET', //GET/POST/DELETE/PUT
-        data: {username: $('#username').val(), password: $('#password').val()}, //args; 后台接收 @RequestParam
-        dataType: 'json', //返回json
-        success: function (data, status) { //成功时,回调
-            alert(JSON.stringify(data) + " - " + status);
-        },
-        error: function (data, status) { 
-            alert(JSON.stringify(data) + " - " + status);
-        }
-    });
-}
-```
-
 #Web
 
 ## jsp
@@ -832,15 +707,12 @@ public class HelloServiceImpl1 implements HelloService {}
 
 ## MVC
 
-> @RequestMapping：指定映射 URL，可标注类或方法上
+> `@RequestMapping`：指定映射 URL，可标注类或方法上
 
 ```sh
 value      #映射url，默认属性
 method     #请求方式。RequestMethod.GET/POST/PUT/DELETE
-
-name       #给这个mapping分配一个名称，类似于注释
 params     #请求参数必须满足条件，才能进行处理
-headers    #同上，不常用
 ```
 
 ```java
@@ -849,39 +721,108 @@ headers    #同上，不常用
 public String hello() { }
 ```
 
-> @RequestParam：将 `GET POST 请求行/体` 中的 `键值对` 解析为简单类型，不能解析为自定义Bean
+> `@RequestParam`：将 `GET POST 请求行/体` 中的 `键值对` 解析为简单类型，不能解析为自定义Bean
 
-```java
-@PostMapping("/hello")
-public String hello(@RequestParam(value = "id", required = false, defaultValue = "1") Integer id,
-                     @RequestParam String name) { }
+```js
+function to_page(pageNum) {
+    $.ajax({
+        url: "/crud/emp",
+        type: "GET",
+        data: "pageNum=" + pageNum, //不传 pageSize，使用默认
+        success: function (result) {
+            if (200 === result.code) {
+                let datas = result.datas;
+                build_emps_table(datas); //1、解析并显示员工数据
+                build_page_info(datas);  //2、解析并显示分页信息
+                build_page_nav(datas);   //3、解析显示分页条数据
+            }
+        }
+    });
+}
 ```
 
 ```java
-//使用 @RequestParam 接收参数时，请求参数必须携带，不然报错。可使用 required = false 或者 直接不写（不推荐），来避免这种错误。
-@PostMapping("/hello")
-public String hello(Integer id, @RequestParam(required = false) String name) { }
+@GetMapping("") //获取列表 GET /crud/emp
+public Result listEmpByPage(
+    @RequestParam(name = "pageNum", defaultValue = "1", required = false) Integer pageNum, //required 默认 true
+    @RequestParam(name = "pageSize", defaultValue = "5", required = false) Integer pageSize) {
+    PageHelper.startPage(pageNum, pageSize);
+    List<Emp> empList = empMapper.listAll();
+    PageInfo<Emp> pageInfo = new PageInfo<>(empList, 5); //5：连续显示的页码个数
+    return Result.success(pageInfo); //员工分页
+}
 ```
 
-> @RequestBody：将`POST 请求体` 中的 `JSON` 解析为 Bean 或者 Map
+> `NULL`：什么也不写，可以将 `GET POST 请求行/体` 的 `键值对` 解析为自定义Bean
 
-```java
-@PostMapping("/hello")
-public String hello(@RequestBody City city) { }
+```js
+$.ajax({
+    url: "/crud/emp",
+    method: "POST",    
+    data: $("#modal_emp_add form").serialize(), //form表单数据转键值对: empName=li&gender=false
+    success: function (result) {
+        if (200 === result.code) {
+            console.log(result);
+        }
+    }
+});
 ```
 
-> NULL：什么也不写，可以将 `GET POST 请求行/体` 的 `键值对` 解析为自定义Bean
-
 ```java
-@GetMapping("/hello")
-public String hello(Person person) { } //支持级联解析 Person.Address.Name
+@PostMapping("") //新增 POST /crud/emp
+public Result addEmp(Emp emp) {
+    int insert = empMapper.insert(emp);
+    return Result.success();
+}
 ```
 
->@PathVariable：将 URL 中的 `占位符` 映射到方法的入参
+> `@RequestBody`：将`POST 请求体` 中的 `JSON` 解析为 Bean 或者 Map
+
+```js
+$("#emp_update_btn").click(function () {
+    //1、验证邮箱是否合法
+    //2、发送ajax请求保存更新的员工数据
+    $.ajax({
+        url: "/crud/emp/" + $(this).attr("edit-id"),
+        method: "PUT",
+        contentType: "application/json",
+        data: form2json("#modal_emp_update form"),
+        success: function (result) {
+            if (200 === result.code) {
+                $("#modal_emp_update").modal("hide"); //1、关闭对话框
+                to_page(currentPage);                 //2、回到本页面
+            }
+        }
+    });
+});
+
+//form表单数据转成json
+function form2json(form) {
+    let data = {};
+    let formData = $(form).serializeArray();
+    for (let i in formData) {
+        if(!formData.hasOwnProperty(i)) continue;
+
+        //下标为的i的name做为json对象的key，下标为的i的value做为json对象的value
+        data[formData[i].name] = formData[i]['value'];
+    }
+    return JSON.stringify(data);
+}
+```
 
 ```java
-@GetMapping("/hello/{name}")
-public String hello(@PathVariable("name") String args) { }//括号内 == 占位符
+@PutMapping("/{empId}")
+public Result updateEmp(@RequestBody Emp emp, @PathVariable("empId") Integer empId) {
+    emp.setEmpId(empId);
+    int update = empMapper.updateById(emp);
+    return Result.success();
+}
+```
+
+>`@PathVariable`：将 URL 中的 `占位符` 映射到方法的入参
+
+```sh
+#同上
 ```
 
 > @CookieValue：`RequestHeader/CookieValue` 获取 `请求头/Cookie` 中的参数
@@ -920,16 +861,21 @@ public String hello(@RequestHeader("header") String header, @CookieValue("JSESSI
 
 ## html
 
-> js
+> ###html标签
 
-```sh
-javaScript 用于操作html标签：改变 HTML 内容、属性、样式，显示、隐藏 HTML 元素等
-jQuery 是一个js框架，封装了js的属性和方法，并且增强了js的功能，让用户使用起来更加便利。
+```html
+<!-- radio：单选框，只有加上'name'才具有互斥效果。表单提交的是'value'值 -->
+<div class="col-sm-10">
+    <input type="radio" name="gender" id="gender1_update_input" value="true" checked="checked">男
+    <input type="radio" name="gender" id="gender2_update_input" value="false"> 女
+</div>
 ```
 
+> ### javaScript
+
 ```sh
-使用原生js是要处理很多兼容性的问题(注册事件等)，由jQuery封装了底层，就不用处理兼容性问题。
-原生js的dom和事件绑定和ajax等操作非常麻烦，jQuery封装以后操作非常方便。
+javaScript 用于操作html标签：改变标签内容、属性、样式
+jQuery 是一个js框架，封装了js的属性和方法，并且增强了js的功能，让用户使用起来更加便利，勿需考虑浏览器兼容问题。
 ```
 
 > js在页面的位置
@@ -944,33 +890,66 @@ js 作为一种脚本语言可以放在html页面中'任何位置'。但是浏�
 #yahoo团队的最佳实践：样式在上，脚本在下
 当把样式放在 <head> 标签中时，浏览器在渲染页面时就能尽早的知道每个标签的样式，用户就会感觉这个页面加载的很快。
 但是如果将样式放在页面的结尾，浏览器在渲染页面时就无法知道每个标签的样式，直到CSS被下载执行后。
-
 另一方面，对于 js 来说，因为它在执行过程中会阻塞页面的渲染，所以我们要把它放在页面的结尾
 ```
 
-```sh
-通常会把 jQuery 代码放到 <head>部分的事件处理方法中。
-如果网站包含许多页面，并且希望 jQuery 函数易于维护，那么把 jQuery 函数放到独立的 .js 文件中。
+```html
+<!DOCTYPE html>
+<html lang="zh-CN">
+    <head>
+        <meta charset="utf-8">
+        <meta http-equiv="X-UA-Compatible" content="IE=edge">
+        <meta name="viewport" content="width=device-width, initial-scale=1">
+        <!-- 上述3个meta标签*必须*放在最前面，任何其他内容都*必须*跟随其后！ -->
+        <link rel="icon" href="../../favicon.ico">
+        <title>Cover Template for Bootstrap</title>
+        <!-- Bootstrap core CSS -->
+        <link href="https://cdn.bootcss.com/bootstrap/3.3.7/css/bootstrap.min.css" rel="stylesheet">
+    </head>
+    <body>
+        <div> 正文（略），CSS（上），js（下） </div>
+
+        <!-- Bootstrap core JavaScript -->
+        <!-- Placed at the end of the document so the pages load faster -->
+        <script src="https://cdn.bootcss.com/jquery/1.12.4/jquery.min.js"></script>
+    </body>
+</html>
+
 ```
+> ###jQuery
+
+> ID选择器 `document.getElementById("test");`
 
 ```js
-<head>
-    <script type="text/javascript" src="jquery.js"></script>
-	<script type="text/javascript" src="my_jquery_functions.js"></script>
-</head>
+$("#check_all").prop("checked", true); //id为 check_all 元素，它的 checked 属性设置为 true
+$("#table_emps tbody").empty();        //id为 table_emps 元素的 tbody 标签，清空
 ```
-> jQuery选择器
+
+> 元素选择器 `document.getElementsByTagName("p");`
 
 ```js
-$("p")	    //所有 <p> 元素              元素选择器：document.getElementsByTagName("p");
-$(".intro")	//所有 class="intro" 的元素  .class选择器：document.getElementsByClassName("test");
-$("#intro")	//id="intro" 的元素          #id选择器：document.getElementById("test");
+$("p")	             //所有 <p> 元素
+$("p.intro")	     //所有 class="intro" 的 <p> 元素
+$("ul li:first")     //每个 <ul> 的第一个 <li> 元素
+$("div#intro .head") //id="intro" 的 <div> 元素中的所有 class="head" 的元素
+$("[href$='.jpg']")	 //所有带有以 ".jpg" 结尾的属性值的 href 属性
+
+//class="delete_btn" 元素的父元素"tr"中查找第 2 个 "td" 
+let empName = $(.delete_btn).parents("tr").find("td:eq(2)").text();
+```
+
+> class选择器 `document.getElementsByClassName("test");`
+
+```js
+let items = $(".check_item").length;                 //class="check_item" 元素的总个数
+let checked_items = $(".check_item:checked").length; //class="check_item" 已选中元素的个数
 ```
 
 >  jQuery的页面加载完毕事件？
 
 ```js
-$(function () { //简写前: $(document).ready(function () { ---> 文档就绪函数：为了防止文档在完全加载（就绪）之前运行 jQuery 代码
+$(function () { //简写前: $(document).ready(function () {
+    //文档就绪函数：为了防止文档在完全加载（就绪）之前运行 jQuery 代码
     //jQuery的方法。在DOM加载完成时运行的代码，如果有多个定义则依次执行
 });
 ```
@@ -982,25 +961,73 @@ window.onload = function () {
 ```
 
 ```sh
-比如：当页面中只有一个 <img/> 标签，当img节点创建完后就会执行 $(function(){}) 中的代码，
+比如：当页面中只有一个 <img/> 标签，当 img 节点创建完后就会执行 $(function(){}) 中的代码，
 当 <img/> 的src指定的图片完全加载完后，才会触发'window.onload'事件。所以，前者的效率更高。
 ```
 
-> ajax
+> 动态绑定事件
+
+```html
+<button id="dynamic_btn">动态绑定事件</button>
+```
+
+```js
+$(function () { //文档就绪函数
+    $("#dynamic_btn").click(function () {
+        alert("点我上王者..." + $(this).attr('id')); //获取 id 属性
+    });
+});
+```
+
+> 静态绑定事件
+
+```html
+<button id="static_btn" onclick="staticBtn(this)">静态指定方法</button>
+```
+
+```js
+function staticBtn(e) {
+    alert("点我上王者..." + $(e).attr('id'));
+}
+```
+
+> ### ajax
 
 ```sh
 ajax 异步的 JavaScript 和 XML。
-一种用来改善用户体验的技术，其实质是使用 XMLHttpRequest 对象异步地向服务器发送请求。
-服务器返回部分数据，而不是一个完整的页面，以页面无刷新的效果更改页面中的局部内容。
+实质是使用 XMLHttpRequest 对象异步地向服务器发送请求，服务器返回部分数据，而不是一个完整的页面，以页面无刷新的效果更改页面中的局部内容。
 ```
 
+```js
+var jsonStr = JSON.stringify(jsonObj); //json -> String
+var jsonObj = JSON.parse(jsonStr);     //String -> json
+```
+
+```js
+$(function () { //简写前: $(document).ready(function () {
+    var data = {
+        "uid": 1,
+        "ipAddress": "地址"
+    };
+    $.ajax({
+        type: "POST",
+        url: "/webpark/fanChang",
+        contentType: 'application/json', //请求参数的格式
+        data: JSON.stringify(data),      //入参 jsonString
+        dataType: "json",                //返回参数的格式 json，可直接解析
+        success: function (result) {
+            console.log(result.errcode);
+        }
+    });
+});
+```
 >jQuery的ajax和原生js实现ajax有什么关系？
 
 ```sh
-jQuery中的ajax也是通过原生的js封装的。封装完成后使用起来更加便利，不用考虑底层实现或兼容性等处理。
+jQuery 中的 ajax 也是通过原生的 js 封装的。封装完成后使用起来更加便利，不用考虑底层实现或兼容性等处理。
 ```
 
-> 简单说一下html5?你对现在的那些新技术有了解?
+> 简单说一下html5? 你对现在的那些新技术有了解?
 
 ```sh
 Html5 是最新版本的html，是在原来 html4 的基础上增强了一些标签。

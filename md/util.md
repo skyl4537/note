@@ -590,11 +590,13 @@ String response = HttpClients.createDefault().execute(httpGet, new BasicResponse
 > 请求体 JSON
 
 ```java
+HttpPost httpPost = new HttpPost("http://localhost:9006/web/post");
 httpPost.setHeader("Content-Type", "application/json");
 StringEntity entity = new StringEntity(JSON.toJSONString(new User()));
-
-HttpPost httpPost = new HttpPost("http://localhost:9006/web/post");
 httpPost.setEntity(entity);
+RequestConfig config = RequestConfig.custom().setConnectTimeout(2000)
+    .setConnectionRequestTimeout(2000).setSocketTimeout(2000).build();
+httpPost.setConfig(config); //设置超时时间
 
 String response = HttpClients.createDefault().execute(httpPost, new BasicResponseHandler()); //res
 ```

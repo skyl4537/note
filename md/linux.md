@@ -446,6 +446,44 @@ cut -b 2,5 cut.log #显示每行的第2个字节到第5个字节
 cut -b 2- cut.log  #显示每行的第2个字节到结尾
 ```
 
+##df
+
+>显示系统的磁盘使用情况
+
+```shell
+#-l: 列出文件结构
+#-h: 以人类可读的格式显示大小
+
+df -lh          #当前linux系统所有目录的磁盘使用情况
+df -lh --total  #增加统计信息
+
+df -lh /var/lib/webpark/logs/sm  #查看指定目录所属挂载点，及挂载点的磁盘使用情况
+```
+
+##du
+
+>显示指定的目录或文件所占用的磁盘空间
+
+```shell
+#--max-depth=<目录层数>: 超过指定层数的目录后,予以忽略
+
+df -lh
+du -h --max-depth=1 /var/lib/webpark/logs | sort -nr  #相结合使用,查看磁盘情况
+```
+
+##free
+
+> 用于显示内存状态
+
+```shell
+#-m： 以MB为单位显示内存使用情况
+#-h： 以合适的单位显示内存使用情况，最大为三位数，自动计算对应的单位值
+#-s<间隔秒数>： 持续观察内存使用状况
+#-t： 显示内存总和列
+
+free -hts 3 #3s刷新一次，内存的使用情况
+```
+
 
 # F-G-H-I-J-K
 
@@ -494,33 +532,30 @@ find /tmp ! -user panda                 #在/tmp目录中查找所有不属于pa
 ```
 ## grep
 
-> 根据【文件内容】进行查找
+> 查找文件中的内容
 
 ```shell
-#-n: 显示匹配行及行号
-#-w: 只匹配整个单词，而不是字符串的一部分（如匹配'magic'，而不匹配'magical'）
+#-n: 显示匹配行的行号
 #-r: 迭代查找，包含子目录
+#-w: 只匹配整个单词，而不是字符串的一部分（如匹配'magic'，而不匹配'magical'）
 #-i: 不区分大小写
 #-v: 显示不包含匹配文本的所有行，即排除某个结果，反向过滤
 #-A <行数n>: 除显示符合范式那一列之外，并显示该行之[后]的n行内容
 #-B <行数n>: ................................[前]........
+#-C <行数n>: ................................[前+后].....
 
 #-d: 对象为目录时，使用此命令 grep -d skip
-#-h: 查询多文件时不显示文件名
-#-l: 查询多文件时只输出包含匹配字符的文件名
+#-h: 查询多文件时，不显示文件名
+#-l: 查询多文件时，只输出包含匹配字符的文件名
 #-a: 不要忽略二进制数据
 #-o: 只输出符合 正则表达式 的字符串
 ```
 ```shell
-grep -n 'magic' /logs/sm/* > magic  #查找并将结果重定向到文件。结果附加行号，查找时默认跳过目录
-grep -win 'magic' * > magic         #匹配单词'magic'，不区分大小写，结果附加行号
+grep '京002024' sm              #文件查找
+grep '京002024' sm len          #多文件查找
+grep -n -C 3 '京002024' sm len  #显示结果的 ±3 行
 
-grep 'magic' d* --color=auto        #从以d开头的文件中查找，并将结果标记颜色
-grep -w 'magic' aa bb cc            #从指定的三个文件中查找，匹配magic单词，而非包含magic的
-
-grep -d skip -n 'magic' *           #忽略子目录查找
-grep -r 'magic' *                   #迭代........
-
+grep -d skip -n 'magic' sm* --color=auto #忽略子目录，从 sm* 文件中查找，查找结果标红
 ps -ef | grep 33306 | grep -v grep | awk '{print($2)}' #mysql的pid。（-v 反向过滤）
 ```
 
@@ -645,6 +680,41 @@ cat /proc/${pid}/status  #查看一个进程的所有相关信息
 
 rm -rf /var/log   #递归 + 强制删除，也会删除 /log 目录
 ```
+## scp
+
+> 用于 Linux 之间复制文件和目录
+
+```sh
+Windows 本身不支持ssh协议。所以，必须安装 ssh for Windows 的客户端软件。比如: winsshd。
+#百度云: https://pan.baidu.com/s/1d8izC-qJb2H22rgsUuXbfg 提取码: 7jwl
+
+打开软件，(勾选)同意条款，点击 Install。(选中)personnel-edition，点击安装等待安装结束。
+安装结束后开始配置。选中TAB页: Server，点击 Open-easy-settings。
+1.Server-settings:  Open-Windows-firewall -> (选中)Open-port-to-any-computer
+3.Virtual-accounts: add -> 自定义用户名和密码 -> (勾选)所有
+```
+
+```sh
+#-r： 递归复制整个目录
+#-q： 不显示传输进度条
+#-P port：注意是大写的 P, port是指定数据传输用到的端口号
+```
+
+```sh
+#上传文件 windows -> linux（不需要重命名，就不要加 web.war）
+scp 1024@192.168.8.7:/F:/webpark/target/webpark.war /var/lib/webpark/update/web.war
+
+#下载文件 linux -> windows（重命名同上）
+scp /var/lib/webpark/logs/task 1024@192.168.8.7:/F:/222.log
+```
+
+```sh
+#linux 之间传输
+scp -r -P 33022 /var/lib/logs/task/ parkmanager@192.168.5.78:/var/lib/logs/task/
+```
+
+
+
 ## shell
 
 >文件第一行必须是 `#!/bin/sh`，注释符号为`#`。
@@ -806,6 +876,27 @@ if [ -x $file ] //可执行
 if [ -d $file ] //是否为目录
 if [ -s $file ] //不为空
 if [ -f $file ] //是否为普通文件(既不是目录,也不是设备文件)
+```
+##tail
+
+> 读取文件的末尾
+
+```sh
+#-f: 循环读取文件的最新内容。默认
+#-n: 显示文件的尾部 n 行内容
+#-s: 监视文件变化的间隔秒数。与 -f 配合使用
+
+#-c: 显示的字节数
+#--pid=PID: 当指定的进程号的进程终止后，自动退出tail命令。与 -f 配合使用
+```
+
+```shell
+tail -f sm.log    #循环读取文件的末尾。默认最后 10 行，可通过 -n 自定义
+
+tail -n 5 sm.log  #只读取最后 5 行
+tail -n +5 sm.log #第 5 行至末尾
+
+tail -c 10 file   #最后 10 个字符
 ```
 ## tar
 
@@ -1225,26 +1316,6 @@ mkdir a b c      #一次性创建多个目录
 mkdir -p /a/c/v  #创建多层目录
 ```
 
-##tail
-
-> 默认显示末尾10行，如给定多个文件，则在显示时，每个文件前加一个文件名标题。如未指定文件或文件名为'-'，则读取标准输入
-
-```shell
-#-n<N>或——line=<N>: 文件尾部的 N 行内容
-#-f: 动态显示文件最新的追加内容 (适合查看日志)
-#-s<秒数>或——sleep-interal=<秒数>: 与'-f'选项连用,指定监视文件变化的间隔秒数
-
-#-c<N>或——bytes=<N>: 文件尾部的N个字节内容
-#--pid=<进程号>:与'-f'选项连用，当指定的进程号的进程终止后，自动退出tail命令
-
-tail -n 5 file    #最后5行内容
-tail -n +5 file   #第5行至末尾（包含第5行）
-
-tail -f -n 3 file #循环查看文件的最后 3 行内容
-
-tail -c 10 file   #最后 10 个字符
-```
-
 ## cat
 
 
@@ -1257,43 +1328,6 @@ tail -c 10 file   #最后 10 个字符
 
 #其他命令
 
-##df
-
->显示系统的磁盘使用情况
-
-```shell
-#-l: 列出文件结构
-#-h: 以人类可读的格式显示大小
-
-df -lh          #当前linux系统所有目录的磁盘使用情况
-df -lh --total  #增加统计信息
-
-df -lh /var/lib/webpark/logs/sm  #查看指定目录所属挂载点，及挂载点的磁盘使用情况
-```
-
-##du
-
->显示指定的目录或文件所占用的磁盘空间
-
-```shell
-#--max-depth=<目录层数>: 超过指定层数的目录后,予以忽略
-
-df -lh
-du -h --max-depth=1 /var/lib/webpark/logs | sort -nr  #相结合使用,查看磁盘情况
-```
-
-##free
-
-> 用于显示内存状态
-
-```shell
-#-m： 以MB为单位显示内存使用情况
-#-h： 以合适的单位显示内存使用情况，最大为三位数，自动计算对应的单位值
-#-s<间隔秒数>： 持续观察内存使用状况
-#-t： 显示内存总和列
-
-free -hts 3 #3s刷新一次，内存的使用情况
-```
 
 
 
@@ -1551,11 +1585,6 @@ ps aux | fgrep pid #根据 pid 查找进程名
 ```
 
 ![](assets/error1.png)
-
-
-
-
-
 
 
 

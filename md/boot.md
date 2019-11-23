@@ -96,6 +96,31 @@ spring.profiles.active=dev
 logging.config=file:./config/logback-spring.xml
 ```
 
+## 常用配置
+
+```properties
+#值为 null 则不参加序列化
+spring.jackson.default-property-inclusion=non_null
+
+#分页合理化参数（pageNum<=0，返回第1页数据。pageNum>total，返回最后一页数据）
+pagehelper.reasonable=true
+```
+
+```java
+public class ResultVO {
+    private Integer code;
+
+    //如果此字段是必须返回字段，则可以赋初始值 ""。不然，就会被下面的配置影响，无此字段返回
+    private String msg;
+
+    //全局配置：spring.jackson.default-property-inclusion=non_null
+    // @JsonInclude(JsonInclude.Include.NON_NULL) //局部配置：值为 null 则不参加序列化
+    private Object data;
+}
+```
+
+
+
 ## 读取配置
 
 > 配置文件
@@ -471,8 +496,29 @@ public void sendA() throws Exception {
 
 ```java
 @RunWith(SpringRunner.class)
-@SpringBootTest//(classes = {SpringMain.class}) //加载项目启动类，当测试类的路径同启动类时，可省。
-public class HelloServiceTest { }
+@SpringBootTest//(classes = {Application.class}) //加载项目启动类，当测试类的路径同启动类时，可省。
+public class EmpControllerTest {
+
+    @Autowired
+    private WebApplicationContext context;
+    private MockMvc mockMvc;
+
+    @Before
+    public void setUp() throws Exception {
+        mockMvc = MockMvcBuilders.webAppContextSetup(context).build();
+    }
+
+    @Test
+    @Rollback() //单元测试-自动回滚。默认true，可省
+    @Transactional
+    public void deleteByIds() throws Exception {
+        MvcResult result = mockMvc.perform(MockMvcRequestBuilders.delete("/emp/211,,212,"))
+            .andExpect(MockMvcResultMatchers.status().isOk())
+            .andExpect(MockMvcResultMatchers.jsonPath("$.code").value(200))
+            .andReturn();
+        System.out.println(result.getResponse().getContentAsString());
+    }
+}
 ```
 
 ## 热部署
@@ -487,8 +533,8 @@ public class HelloServiceTest { }
 ```
 
 ```sh
-原理：使用两个'ClassLoader'，一个加载那些不会改变的类（第三方Jar包），另一个加载会更改的类，称为 restart-ClassLoader。
-这样在有代码更改的时候，原来的 restart-C.. 被丢弃，重新创建一个，由于需要加载的类相比较少，所以实现了较快的重启时间（5秒以内）。
+原理：使用两个'ClassLoader'，一个加载那些不会改变的类（第三方Jar包），另一个加载会更改的类，自己写的代码。
+这样在有代码更改的时候，原来的类加载器被丢弃，重新创建一个，由于需要加载的类相比较少，所以实现了较快的重启时间（5秒以内）。
 ```
 
 ## 常用接口
@@ -1430,12 +1476,12 @@ spring.servlet.multipart.max-request-size=20MB
 > 代码实现
 
 ```java
-@GetMapping("/{name}")
-public void download(@PathVariable String name, HttpServletResponse resp) {
-    try (InputStream in = new FileInputStream(new File(getUploadDir(), name));
+@GetMapping("/{fileName}")
+public void download(@PathVariable String fileName, HttpServletResponse resp) {
+    try (InputStream in = new FileInputStream(new File(getUploadDir(), fileName));
          OutputStream out = resp.getOutputStream()) {
         resp.setContentType("application/x-download");
-        resp.addHeader("Content-Disposition", "attachment;filename=" + name); //注意中文乱码
+        resp.addHeader("Content-Disposition", "attachment;filename=" + fileName); //注意中文乱码
         IOUtils.copy(in, out);
     } catch (Exception e) {
         e.printStackTrace();
@@ -1526,313 +1572,6 @@ public class ExceptionConfig {
  * @return  ModelAndView; Model; Map; View; String; @ResponseBody; HttpEntity<?>或ResponseEntity<?>; 以及void
  */
 ```
-# CRUD
-
-## 基础概念
-
-> restful
-
-```sh
-#http请求的安全和幂等，是指多次调用同一个请求对资源状态的影响
-'安全' ---> 请求不会影响资源的状态。只读的请求：GET，HEAD，OPTIONS
-'幂等' ---> 多次相同的请求，效果一致
-```
-
-```sh
-GET    /crud/list  查询员工列表  -> 只是请求，不改变资源状态                   #安全，幂等
-POST   /crud/emp   新增一个员工  -> 多次请求会新增多条相同的数据                #不安全，不幂等
-PUT    /crud/emp   更新员工信息  -> 多次请求都是将id为 5 的员工姓名修改成'wang'  #不安全，幂等
-DELETE /crud/{id}  删除员工信息  -> 多次请求目的都是删除id为 5 的员工           #不安全，幂等
-#第一次成功删除，第二次及以后虽资源已不存在，但也得返回 200 OK，不能返回 404
-```
-
-```sh
-#restful特点
-用 URL 描述资源
-使用http方法描述行为，使用http状态码来表示不同的结果
-使用json交互数据
-restful只是一种风格，并不是强制的标准
-```
-
-```sh
-GET    /crud/emp  跳转新增页面
-GET    /crud/{id} 跳转更新页面
-```
-
-> GET，POST
-
-```sh
-get ：默认方式，用于获取资源，请求参数在url上可见，不安全。
-post：用于请求资源，
-```
-
-> `POST 转化为 PUT DELETE`
-
-```xml
-<!--（1）配置 HiddenHttpMethodFilter，SpringBoot 默认已配置-->
-<filter>
-    <filter-name>HiddenHttpMethodFilter</filter-name>  
-    <filter-class>org.springframework.web.filter.HiddenHttpMethodFilter</filter-class>  
-</filter>
-```
-
-```html
-<!--（2）页面创建（POST表单 + 隐藏标签）-->
-<form method="post" th:action="@{/emp/}+${emp.id}">
-    <input type="hidden" name="_method" value="delete"> <!--隐藏标签 name + value-->
-    <a href="#" onclick="delEmp(this)" th:attr="url=@{/emp/}+${emp.id}">删除</a>
-</form>
-```
-## 后台逻辑
-
-> 列表：超链接跳转
-
-```java
-//员工列表页面
-@GetMapping("/list")
-public String list(Model model) {
-    List<Emp> emps = empMapper.selectList(null); //使用 mybatis-plus
-    List<EmpVO> empVOs = emps.stream().map(emp -> {
-        Long cityId = emp.getCityId();
-        City city = cityMapper.selectById(cityId);
-
-        EmpVO empVO = new EmpVO();
-        BeanUtils.copyProperties(emp, empVO);
-        empVO.setCity(city);
-        return empVO;
-    }).collect(Collectors.toList());
-    log.info("empVOs: {}", JSON.toJSONString(empVOs, true));
-
-    model.addAttribute("emps", empVOs);
-    return "/emps/list";
-}
-```
-
-> 新增：超链接跳转
-
-```java
-//跳转新增页面
-@GetMapping("/emp")
-public String toAdd(Model model) {
-    List<City> cities = cityMapper.selectList(null);
-    log.info("city: {}", JSON.toJSONString(cities, true));
-
-    model.addAttribute("citys", cities); //初始化新增页面：城市列表
-    return "/emps/emp";
-}
-```
-
-```java
-//新增员工，跳转列表页面
-@PostMapping("/emp")
-public String addOne(/*@RequestBody*/ EmpVO empVO, Model model) { //表单提交不能用 @RequestBody
-    Emp emp = new Emp();
-    BeanUtils.copyProperties(empVO, emp);
-    emp.setCityId(empVO.getCity().getId());
-    int insert = empMapper.insert(emp);
-    log.info("insert: {}", JSON.toJSONString(emp, true));
-
-    return "redirect:/crud/list"; //重定向，/代表站点根目录
-}
-```
-
-> 更新：超链接跳转
-
-```java
-//跳转修改页面
-@GetMapping("/{id}")
-public String toUpdate(@PathVariable Long id, Model model) {
-    Emp emp = empMapper.selectById(id);
-    City city = cityMapper.selectById(emp.getCityId());
-    EmpVO empVO = new EmpVO();
-    BeanUtils.copyProperties(emp, empVO);
-    empVO.setCity(city);
-    log.info("empVO: {}", JSON.toJSONString(empVO, true));
-
-    List<City> citys = cityMapper.selectList(null);
-
-    model.addAttribute("emp", empVO);   //用于修改回显 
-    model.addAttribute("citys", citys); //初始化修改页面：城市列表
-    return "/emps/emp";
-}
-```
-
-```java
-//修改员工，跳转列表页面
-@PutMapping("/emp")
-public String update(EmpVO empVO) {
-    Emp emp = new Emp();
-    BeanUtils.copyProperties(empVO, emp);
-    emp.setCityId(empVO.getCity().getId());
-    int update = empMapper.updateById(emp);
-    log.info("update: {}", JSON.toJSONString(emp, true));
-
-    return "redirect:/crud/list";
-}
-```
-
->删除（1）：表单提交删除 `POST 转 DELETE`
-
-```html
-<a href="#" onclick="deleteByForm(this)" th:attr="url=@{/crud/}+${emp.id}">表单删除</a>
-```
-
-```html
-<form id="deleteForm" method="post" action="#">
-    <input type="hidden" name="_method" value="DELETE">
-</form>
-```
-
-```javascript
-function deleteByForm(e) {
-    //$(e).attr('url')      --> 获取url属性
-    //$(e).attr('url', xxx) --> 为url属性赋值
-    $('#deleteForm').attr('action', $(e).attr('url')).submit();
-
-    return false; //取消<a>的默认行为
-}
-```
-
-```java
-//删除员工，跳转列表页面
-@DeleteMapping("/{id}")
-public String delete(@PathVariable Long id) {
-    int delete = empMapper.deleteById(id);
-
-    return "redirect:/crud/list";
-}
-```
-
-> 删除（2）：ajax异步删除
-
-```html
-<a href="#" onclick="deleteByAjax(this)" th:attr="url=@{/crud/}+${emp.id}">ajax删除</a>
-```
-
-```javascript
-function deleteByAjax(e) {
-    $.ajax({
-        type: 'delete',
-        url: $(e).attr('url'),
-        dataType: 'text',
-        success: function (data) {
-            //e表示<a>, parent表示<td>, 再parent表示<tr>
-            $(e).parent().parent().remove();
-            alert(data);
-        }
-    });
-    return false;
-}
-```
-
-```java
-//ajax异步删除员工
-@ResponseBody
-@DeleteMapping("/{id}")
-public String delete(@PathVariable Long id) {
-    int delete = empMapper.deleteById(id);
-
-    return "SUCCESS";
-}
-```
-
-## 前台页面
-
-> 存放于 `\templates\emps\` 的 `list.html + emp.html`
-
-```html
-<!DOCTYPE html>
-<html lang="en" xmlns:th="http://www.thymeleaf.org">
-<head>
-    <meta charset="UTF-8">
-    <title>列表页面</title>
-
-    <script th:src="@{/webjars/jquery/jquery.min.js}"></script>
-    <script th:src="@{/webjars/bootstrap/js/bootstrap.min.js}"></script>
-    <link th:href="@{/webjars/bootstrap/css/bootstrap.min.css}"/>
-
-    <script>/*单独叙述*/</script>
-</head>
-<body>
-<table>
-    <tr>
-        <th>姓名</th>
-        <th>年龄</th>
-        <th>城市</th>
-        <th>操作</th>
-    </tr>
-    <tr th:if="${null==emps || 0==emps.size()}">
-        <td colspan="4" th:text="员工列表为空"></td>
-    </tr>
-    <tr th:each="emp:${emps}" th:object="${emp}"> <!--th:object 和 *{...} 配合使用-->
-        <td th:text="${emp.name}"></td>
-        <td th:text="*{gender}?'男':'女'"></td>
-        <td th:text="*{city.name}"></td>
-        <td>
-            <a th:href="@{/crud/}+*{id}">修改</a> <!--路径拼接-->
-            <a href="#" onclick="deleteByForm(this)" th:attr="url=@{/crud/}+${emp.id}">删除</a>
-            <a href="#" onclick="deleteByAjax(this)" th:attr="url=@{/crud/}+${emp.id}">删除</a>
-        </td>
-    </tr>
-</table>
-<a th:href="@{/crud/emp}">新增员工</a>
-
-<form id="deleteForm" method="post" action="#">
-    <input type="hidden" name="_method" value="DELETE">
-</form>
-</body>
-</html>
-```
-
-```html
-<!DOCTYPE html>
-<html lang="en" xmlns:th="http://www.thymeleaf.org">
-<head>
-    <meta charset="UTF-8">
-    <title>员工信息页</title>
-</head>
-<body>
-<form method="post" th:action="@{/crud/emp}">
-    <!--新增和修改使用同一页面，区分方式：回显 emp 是否为空 ${null!=person}-->
-    <input type="hidden" name="_method" value="put" th:if="${null!=emp}">
-    <!--修改：PUT请求 + emp.id-->
-    <input type="hidden" name="id" th:value="${emp.id}" th:if="${null!=emp}">
-
-    <table>
-        <tr>
-            <td>姓名：</td>
-            <td><input type="text" name="name" th:value="${null!=emp}?${emp.name}"></td>
-        </tr>
-        <tr>
-            <td>性别：</td>
-            <td>
-                <!--th:checked radio标签是否选中-->
-                <input type="radio" name="gender" value="1" th:checked="${null!=emp}?${1==emp.gender}">男
-                <input type="radio" name="gender" value="0" th:checked="${null!=emp}?${1!=emp.gender}">女
-            </td>
-        </tr>
-        <tr>
-            <td>住址：</td>
-            <td>
-                <select name="city.id">
-                    <!--th:selected 回显emp.city.id == 遍历city.id，则选中-->
-                    <option th:each="city:${citys}" th:object="${city}" th:value="*{id}" th:text="*{name}"
-                            th:selected="${null!=emp}?${emp.city.id}==*{id}"></option>
-                </select>
-            </td>
-        </tr>
-        <tr>
-            <td colspan="2">
-                <!--回显 emp 为空，则显示'新增'；否则显示'修改'-->
-                <input type="submit" th:value="${null==emp}?'新增':'修改'">
-            </td>
-        </tr>
-    </table>
-</form>
-</body>
-</html>
-```
-
 # 跨域问题
 
 ##基础概念

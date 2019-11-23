@@ -377,8 +377,8 @@ Build,Exe... - Build Tools - Gradle - Offline work
 > 日志级别：`OFF < TRACE < DEBUG < INFO < WARN < ERROR`
 
 ```shell
-日志门面，日志的接口 #如：slf4j（√），jcl，jboss-logging
-日志实现，具体实现类 #如：logback（√），log4j，log4j2（apache），jul
+日志门面，日志的接口 #如：slf4j，jcl，jboss-logging
+日志实现，具体实现类 #如：logback，log4j，log4j2（apache），jul
 ```
 
 ```shell
@@ -428,7 +428,6 @@ POST - 请求体: {"configuredLevel": "WARN"} - Content-Type: application/json
 ```java
 log.info("变量os的取值为: " + macOS);  //方式-1（×）
 log.info("变量os的取值为: {}", macOS); //方式-2（√）
-
 //方式-1 对于日志输出设为 WARN 情况，也会先进行'字符串拼接'影响性能。但是，方式-2 则不存在这种问题，先判断输出级别，再进行字符串拼接。
 ```
 
@@ -530,7 +529,7 @@ log4j.appender.info.layout.ConversionPattern=%d{HH:mm:ss.SSS} - %m%n
 > 异步输出：日志先缓存，缓存达到一定量级，再一次性的输出。
 
 ```xml
-<!--异步appender 必须跟在同步后面，否则不起作用-->
+<!--异步 appender 必须跟在同步后面，否则不起作用-->
 <appender name="ASYNC_INFO_APPENDER" class="ch.qos.logback.classic.AsyncAppender">
 
     <!--当 BlockingQueue 还有 20% 容量，将丢弃 TRACE、DEBUG 和 INFO 级别的日志-->
