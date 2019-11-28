@@ -206,43 +206,23 @@
 </configuration>
 ```
 
-
 # Spring
 
-## IOC
+## 手动装配
 
-> 常见概念
-
-```sh
-'BeanFactory'：IOC 容器的基本实现，是 Spring 内部的基础设施，是面向Spring 本身的，不是提供给开发人员使用的
-'ApplicationContext'：BeanFactory 的子接口，提供了更多高级特性。面向 Spring 的使用者，几乎所有场合都使用
-```
-
-```sh
-#ApplicationContext 的主要实现类
-'ClassPathXmlApplicationContext'：对应类路径下的 XML 格式的配置文件
-'FileSystemXmlApplicationContext'：对应文件系统中的 XML 格式的配置文件
-```
-
-```sh
-#ConfigurableApplicationContext
-ApplicationContext 的子接口，包含一些扩展方法
-refresh() 和 close() 让 ApplicationContext 具有启动、关闭和刷新上下文的能力
-```
-
-```sh
-#WebApplicationContext
-专门为 WEB 应用而准备的，它允许从相对于 WEB 根目录的路径中完成初始化工作
-```
-
-> `IOC容器创建`：详见 SSM-web
-
-> `依赖注入`の通过Bean的属性赋值
+>基于`属性`的依赖注入
 
 ```xml
-<bean id="people" class="com.x.pojo.People">
-    <property name="id" value="123"/>
-    <property name="car" ref="car"/> <!--ref: 引用其他bean-->
+<context:property-placeholder location="classpath:db.properties"/> <!--引用外部属性文件-->
+<bean id="dataSource" class="com.alibaba.druid.pool.DruidDataSource">
+    <property name="driverClass" value="${jdbc.driver}"/>
+    <property name="jdbcUrl" value="${jdbc.url}"/>
+    <property name="user" value="${jdbc.username}"/>
+    <property name="password" value="${jdbc.password}"/>
+</bean>
+
+<bean id="factory" class="org.mybatis.spring.SqlSessionFactoryBean">
+    <property name="dataSource" ref="dataSouce"></property> <!-- 属性注入 -->
 </bean>
 ```
 
@@ -250,7 +230,7 @@ refresh() 和 close() 让 ApplicationContext 具有启动、关闭和刷新上�
 <bean id="people" class="com.x.pojo.People" p:id="123" p:car-ref="car"/> <!--引入 p 命名空间-->
 ```
 
->`依赖注入`の通过Bean的构造器赋值
+> 基于`构造函数`的依赖注入
 
 ```xml
 <bean id="person" class="com.x.pojo.Person"/> <!--无参构造-->
@@ -267,28 +247,21 @@ refresh() 和 close() 让 ApplicationContext 具有启动、关闭和刷新上�
 <bean id="people" class="com.x.pojo.People" c:id="123" c:car-ref="car"/> <!--引入 c 命名空间-->
 ```
 
-> `bean的高级配置`の继承
-
-```sh
-#Spring 允许继承 bean 的配置，被继承的 bean 称为父 bean。继承的 Bean 称为子 Bean。
-(0).子 Bean 可以 '继承并覆盖' 父 Bean 中的配置（属性 autowire，abstract 除外）
-(1).若父 Bean 只作为模板，可以设置 abstract=true，这样 Spring 将不会实例化这个 Bean
-(2).父 Bean 可不配置 class 属性（必须 abstract=true），让子 Bean 自己指定类，只继承父 Bean 其他的属性
-```
+>Bean的高级配置の`继承`
 
 ```xml
+<!-- Spring允许 继承 bean的配置。
+    (0).子Bean 可以'继承并覆盖' 父Bean 中的配置（属性 autowire，abstract 除外）
+    (1).若 父Bean 只作为模板，可以设置 abstract=true，这样，Spring将不会实例化这个 Bean
+    (2).父Bean 可不配置class属性（必须 abstract=true），让 子Bean 自己指定类，只继承 父Bean 其他的属性 -->
 <bean id="people" p:id="123" p:name="wang" abstract="true"/>
 <bean id="chinese" class="com.x.pojo.Chinese" parent="people"/> <!--p:id="123" p:name="wang"-->
 ```
 
->`bean的高级配置`の依赖
-
-```sh
-#依赖关系不等于引用关系。
-people 依赖 car，即必须先创建 car 才能创建 people，但 people 不一定要引用 car
-```
+> Bean的高级配置の`依赖`
 
 ```xml
+<!-- 依赖关系 != 引用关系。people 依赖 car，即必须先创建car，才能创建people。但，people不一定要引用car -->
 <bean id="car" class="com.x.pojo.Car" p:brand="Audi" p:price="720000"/>
 <bean id="people" class="com.x.pojo.people" p:id="123" p:name="wang" depends-on="car"/> <!--前置依赖-->
 ```
@@ -314,35 +287,179 @@ public interface FactoryBean<T> {
     }
 }
 ```
+## 自动装配-XML
 
-> 引用外部属性文件
+> 自动装配 & 手动装配
+
+```sh
+手动装配： '需要'明确指定属性值，但常常发生字母缺漏和大小写等错误，而无法对其进行检查，使得开发效率降低。
+自动装配： 根据指定的装配规则，'不需要'明确指定，Spring'自动'将匹配的属性值'注入' bean 中。
+
+#autowire 的取值范围
+default    ：默认值，根据全局 default-autowire=""值（全局默认 no，不自动注入）
+no         ：不自动注入
+byName     ：根据 name 去匹配所有bean的id
+byType     ：... type ................，当出现两个相同Type时，报错!!!
+constructor： 根据构造方法的参数名去匹配所有bean的id，底层使用 byName!!!
+
+#局部和全局
+在<bean>中通过 autowire="" 配置，只对这个<bean>生效
+在<beans>中通过 default-autowire="" 配置，对当前文件中所有<bean>生效
+```
+>byType：`@Autowired 按类型自动转配`
 
 ```xml
-<context:property-placeholder location="classpath:db.properties"/>
+<!-- People 有一个 Car 类型的属性。
+     byType：从Spring容器中，查找类型为 Car 的bean去装配 People。若容器中存在两个及以上的 Car 类型，则自动装配失败 -->
+<bean id="people" class="com.x.pojo.People" p:name="wang" autowire="byType" /> <!-- 不用写：p:car-ref="car" -->
 ```
 
-> bean的作用域
+> byName
+
+```xml
+<!-- byName：从Spring容器中，查找 id="car" 的bean去装配 People -->
+<bean id="people" class="com.x.pojo.People" p:name="wang" autowire="byName" />
+```
+
+## 自动装配-注解
+
+> @Autowired
+
+```sh
+#先使用 byType，再使用 byName
+首先，会使用 'byType' 的方式进行自动装配，如果能唯一匹配，则装配成功。
+如果匹配到多个兼容类型的bean，还会尝试使用 'byName' 的方式进行唯一确定，如果能唯一确定，则装配成功。
+如果都不能唯一确定，则装配失败，抛出异常。
+```
+
+```java
+@Autowired
+HelloService helloService; //匹配到多个兼容类型，则可通过指定 name 的形式装配
+
+@Service
+public class HelloServiceImpl0 implements HelloService {}
+
+@Service("helloService") //指定 name
+public class HelloServiceImpl1 implements HelloService {}
+```
+
+```java
+//如若在 IOC 容器中通过 byType byName 都未找到相匹配的bean，也会抛出异常。通过 required = false 设置该属性非必须装配
+@Autowired(required = false)
+HelloService helloService;
+```
+
+>@Qualifier
+
+```java
+//如果匹配到多个兼容类型的bean，可以使用 @Qualifier 来进一步指定要装配的bean的 id 值
+@Autowired
+@Qualifier("helloServiceImpl1") //指定 id
+HelloService helloService;
+
+@Service
+public class HelloServiceImpl0 implements HelloService {}
+
+@Service/*("helloService")*/
+public class HelloServiceImpl1 implements HelloService {}
+```
+
+> @Resource
+
+```java
+@Resource(name = "helloServiceImpl1") //先 'byName'，再 'byType'
+HelloService helloService;
+```
+
+> 区分 `@Autowired @Resource @Inject`
+
+```sh
+@Resource：先 'byName'，再 'byType'
+@Inject  ：只 'byType'，需要导入 javax.inject 的包
+
+#@Autowired       ：Spring 定义的，使用 Spring 框架，推荐使用
+#@Resource,@Inject：java 规范，通用性强
+```
+
+## 其他注解
+
+> @Configuration  @Bean  @Scope
+
+```java
+@Configuration //SpringIoC 配置类。不可以是 final 类型，嵌套的 @Configuration 必须是静态类
+public class AppConfig {
+
+    @Bean("restTemplate") //默认方法名为bean的 id，也可以手动指定
+    @Scope("prototype")   //Bean作用域的注解。默认 singleton
+    public RestTemplate restTemplate() {
+        return new RestTemplate();
+    }
+}
+```
 
 ```sh
 'singleton': 默认值，唯一实例。只在IoC容器初始化时创建一次，以后每次获取都是从容器中直接拿
 'prototype': 原型的，多实例的。IoC容器初始化时并不会创建，而是在每次调用时重新创建一个新的对象
 ```
 
+> @Component
+
+```sh
+#通用注解     持久层注解      业务逻辑层注解   控制层注解
+@Component   @Respository  @Service       @Controller
+
+事实上，Spring 并没有能力识别一个组件到底是不是它所标记的类型，即使将 @Respository 注解用在一个表述层控制器组件上，也不会产生任何错误。
+所以 @Respository、@Service、@Controller 这几个注解，仅仅是为了让开发人员自己明确当前的组件扮演的角色。
+```
+
+> @ComponentScan
+
 ```java
-@Scope("prototype") //使用注解，定义作用域
+@Configuration
+@ComponentScan(basePackages = "com.x.web") //组件扫描，将组件加入 IoC 容器进行管理
+public class SpringConfiguration { }
 ```
 
-```xml
-<bean id="car" class="com.x.pojo.Car" scope="prototype" p:brand="Audi" p:price="720000"/>
+```java
+//排除注解 @Repository 标注的组件：true + excludeFilters
+@ComponentScan(value = "com.x.web", useDefaultFilters = true,
+               excludeFilters = @ComponentScan.Filter(type = FilterType.ANNOTATION, classes = Repository.class))
 ```
 
->bean的生命周期
+```java
+//只扫描注解 @Repository 标注的组件：false + includeFilters
+@ComponentScan(value = "com.x.web", useDefaultFilters = false,
+               includeFilters = @ComponentScan.Filter(type = FilterType.ANNOTATION, classes = Repository.class))
+```
+
+> @PropertySource  @Value
+
+```java
+//@PropertySource：批量读取配置文件。@Value：读取单个配置 ${}
+@Value("$(server.port)")
+```
+
+```java
+//bean属性、系统属性、表达式注入 #{}
+@Value("#{device.deviceName}")
+String deviceName; // 注入其他Bean属性：lcd-10086
+
+@Value("#{systemProperties['os.name']}")
+String osName; // 注入操作系统属性：Windows 7
+
+@Value("#{T(java.lang.Math).random() * 100.0}")
+String random; //注入表达式结果：60.969226153296965
+```
+
+
+
+## 生命周期-Bean
+
+> 生命周期
 
 ```sh
-#Spring IOC 容器可以管理 bean 的生命周期，Spring 允许在 bean 生命周期内特定的时间点执行指定的任务。
-```
+#SpringIOC 容器管理 bean 的生命周期，Spring允许在 bean 生命周期内特定的时间点执行指定的任务。
 
-```sh
 通过构造器或工厂方法'创建 Bean 实例'      #constuctor...
 为 Bean 的'属性赋值'和对其他 Bean 的引用  #setter...
 将 Bean 实例传递给 Bean 后置处理器的 postProcessBeforeInitialization() 方法
@@ -367,71 +484,34 @@ Bean 此时可以使用了                    #Car [brand=Audi, price=720000.0]
 <bean class="com.x.config.myBeanPostProcessor" /> //配置bean后置处理器  
 ```
 
-> `自动装配` & 手动装配
+
+## 111
+
+> 常见概念
 
 ```sh
-手动装配： 以 value 或 ref 的方式，'明确指定属性值'都是手动装配。
-自动装配： 根据指定的装配规则，'不需要明确指定'，Spring '自动'将匹配的属性值'注入' bean 中。
-```
-
-> `自动装配`の两种模式
-
-```sh
-#ByType： 将类型匹配的 bean 作为属性注入到另一个 bean 中。
-若 IOC 容器中有多个与目标 bean 类型一致的 bean，Spring 将无法判定哪个 bean 最合适该属性，所以不能执行自动装配
-```
-
-```xml
-<bean id="car0" class="com.x.pojo.Car" p:brand="Audi"/>
-<bean id="car1" class="com.x.pojo.Car" p:brand="Bens"/> <!-- 多个相匹配的 类型，自动装配失败-->
-
-<bean id="people" class="com.x.pojo.People" p:name="wang" autowire="byType" /> <!-- p:car-ref="car" -->
+'BeanFactory'：IOC 容器的基本实现，是 Spring 内部的基础设施，是面向Spring 本身的，不是提供给开发人员使用的
+'ApplicationContext'：BeanFactory 的子接口，提供了更多高级特性。面向 Spring 的使用者，几乎所有场合都使用
 ```
 
 ```sh
-#ByName： 必须将目标 bean 的名称（Car的id）和属性名（People的属性名）设置的完全相同
+#ApplicationContext 的主要实现类
+'ClassPathXmlApplicationContext'：对应类路径下的 XML 格式的配置文件
+'FileSystemXmlApplicationContext'：对应文件系统中的 XML 格式的配置文件
 ```
-
-```xml
-<bean id="car" class="com.x.pojo.Car" p:brand="Audi"/> <!--若 id 换成 'car1' 则不能自动装配-->
-<bean id="people" class="com.x.pojo.People" p:name="wang" autowire="byName" />
-```
-
-> `自动装配`の使用建议
 
 ```sh
-#相对于使用注解的方式实现的自动装配，在 XML 文档中进行的自动装配略显笨拙，在项目中更多的使用注解的方式实现。
-
-(1).属性 autowire 作用于 Bean 的所有属性。所以，希望只自动装配个别属性时，不能实现
-(2).属性 autowire 要么 byType，要么 byName, 不能两者兼得
-(3).所以，实际项目中很少使用自动装配功能，明确清晰的配置文档更有说服力
+#ConfigurableApplicationContext
+ApplicationContext 的子接口，包含一些扩展方法
+refresh() 和 close() 让 ApplicationContext 具有启动、关闭和刷新上下文的能力
 ```
 
+```sh
+#WebApplicationContext
+专门为 WEB 应用而准备的，它允许从相对于 WEB 根目录的路径中完成初始化工作
+```
 
 ## AOP
-
-> AOP（Aspect-Oriented-Programing）面向切面编程
-
-```shell
-通过'动态代理'实现程序功能的统一维护
-通过对既有程序定义一个切入点，然后在切入点前后切入不同的执行内容。如：打开/关闭数据库连接，打开/关闭事务，记录日志等
-
-#基于AOP不会破坏原来程序逻辑。
-因此，它可以很好的对业务逻辑的各个部分进行隔离，从而使得业务逻辑各部分之间的耦合度降低，提高程序的可重用性，同时提高了开发的效率
-```
-
-```sh
-#Spring创建代理的规则为：
-默认，使用'Java动态代理'来创建AOP代理，这样就可以为任何接口实例创建代理了
-当需要代理的类不是代理接口的时候，Spring会切换为使用'CGLIB动态代理'，也可强制使用CGLIB
-```
-
-```xml
-<dependency>
-    <groupId>org.springframework.boot</groupId>
-    <artifactId>spring-boot-starter-aop</artifactId>
-</dependency>
-```
 
 > 优先级
 
@@ -473,80 +553,79 @@ execution (* *.add(int,..)) || execution(* *.sub(int,..))
 #匹配任意类中 第一个参数为 int 类型的 add 方法 以外的方法
 !execution (* *.add(int,..))
 ```
-
-> DEMO：记录一次请求所需时间 + ThreadLocal
+> DEMO
 
 ```java
 @Slf4j
 @Aspect     // 标明该类是一个切面类
 @Order(5)   // 切面的优先级 -> 值越小，优先级越高
-@Component  // Spring管理
+@Component  // Spring组件
 public class AopConfig {
 
-    // 定义切入点（重用机制）: 切入点表达式 + 切入点签名
-    @Pointcut("execution(* com.example.mybatis.controller..*(..))")
+    // 定义切入点: 切入点表达式 + 切入点签名
+    @Pointcut("execution(* com.example.controller..*(..))")
     private void ctrl() {}
 
-    @Pointcut("execution(* com.example.mybatis.service..*(..))")
-    private void service() {}
+    @Pointcut("execution(* com.example.mapper..*(..))")
+    private void mapper() {}
 
-    // 可以将一些公用的 切入点 放到一个类中，以供整个应用程序使用。使用时，指定完整的类名加切入点签名
-    // 如: @Before("com.x.config.AopConfig.Pointcuts.ctrl()")
-    class Pointcuts {
-        @Pointcut("execution(* com.example.mybatis.controller..*(..))")
-        private void ctrl() {
-        }
-    }
+    // 【目标】 -> 记录一次请求所需时间
+    // 定义一个成员变量来给 @doBefore 和 @doAfterReturning 一起访问，是否会有同步问题???
+    // 会有同步问题。正确做法是引入 ThreadLocal 对象
+    private static final ThreadLocal<Long> REQUEST_TIME = new ThreadLocal<>(); //private static final
 
-    // {目标} -> 记录一次请求所需时间
-    // 定义一个成员变量来给 @doBefore 和 @doAfterReturning 一起访问??? 是否会有同步问题???
-    // 答案是肯定的。正确做法是引入 ThreadLocal 对象
-    private ThreadLocal<Long> startTime = new ThreadLocal<>();
-
-    // (0).前置通知 - 在方法执行之前执行
-    @Before("ctrl() || service()")
+    // （1）.前置通知：在方法执行之前执行
+    @Before("ctrl() || mapper()")
     public void doBefore(JoinPoint joinPoint) {
-        startTime.set(System.currentTimeMillis()); // 请求开始时间
+        REQUEST_TIME.set(System.currentTimeMillis());
 
         List<Object> args = Arrays.asList(joinPoint.getArgs());
-        // log.info(System.getProperty("line.separator"));// 系统级别的换行符
         log.info("【前置通知】 {} BEGIN WITH: {}", getMethodAllName(joinPoint), args);
     }
 
-    // (1).后置通知 - 在方法返回结果或抛出异常，都会执行
+    // （2）.后置通知：在方法返回结果或抛出异常，都会执行
     @After("ctrl()")
     public void doAfter(JoinPoint joinPoint) {
-        long spendTime = System.currentTimeMillis() - startTime.get();// 请求总消耗时间
+        long spendTime = System.currentTimeMillis() - REQUEST_TIME.get();
+        REQUEST_TIME.remove(); //必须调用，防止内存泄露
 
-        log.info("【后置通知】 {] END. SPEND TIME: {} ", getMethodAllName(joinPoint), spendTime);
+        log.info("【后置通知】 {} END. SPEND TIME: {} ", getMethodAllName(joinPoint), spendTime);
     }
 
-    // (2).返回通知 - 正常返回才会执行，抛异常则不会
+    // （3）.只有在方法成功完成时，才能执行通知，抛异常则不会
     @AfterReturning(value = "ctrl()", returning = "result")
-    public void doAfterReturning(JoinPoint joinPoint, Object result) {// 第二个参数名必须和 returning 属性值相同
+    public void doAfterReturning(JoinPoint joinPoint, Object result) {//第二个参数名必须和 returning 属性值相同
         log.info("【返回通知】 {} END WITH: {} ", getMethodAllName(joinPoint), result);
     }
 
-    // (3).异常通知 - 只在连接点抛出异常时才执行
+    // （4）.异常通知：只有在方法退出抛出异常时，才能执行通知。
     @AfterThrowing(value = "ctrl()", throwing = "t")
-    public void doAfterThrowing(JoinPoint joinPoint, Throwable t) {// Throwable是所有错误和异常类的超类，推荐
-        log.error("【异常通知】 {} throws {} ", getMethodAllName(joinPoint), t);
+    public void doAfterThrowing(JoinPoint joinPoint, Throwable t) {
+        log.error("【异常通知】 {} throws {} ", getMethodAllName(joinPoint), t.getMessage());
     }
 
-    // (4).环绕通知
+    // （5）.环绕通知：在方法调用之前和之后，执行通知。
     // @Around(value = "")
     public void doAround(JoinPoint joinPoint) {
         // TODO
     }
 
-    // 获取完整方法名 - 类全名.方法名()
+    //获取完整方法名：类全名.方法名()
     private String getMethodAllName(JoinPoint joinPoint) {
         Signature signature = joinPoint.getSignature();
-        String className = signature.getDeclaringTypeName();// 类全名
-        String methodName = signature.getName(); // 方法名
+        String className = signature.getDeclaringTypeName(); // 类全名
+        String methodName = signature.getName();             // 方法名
         return className.concat(".").concat(methodName).concat("()");
     }
 }
+```
+
+
+
+> 
+
+```java
+
 ```
 
 
@@ -747,140 +826,6 @@ public LocaleResolver localeResolver() { //注册自定义国际化配置
 
 # 常见问题
 
-## Spring
-
-> ### 轻量级框架
-
-```sh
-Spring 是一个开源的轻量级 IoC(控制反转)和AOP(面向切面) 的容器框架。
-主要是对 javaBean 的生命周期进行管理，可以单独使用，也可以和SpringMVC，mybatis等组合使用。
-#轻量级：非侵入式，不需要实现所使用框架的任何接口。这样，就算以后切换框架也不需要修改源码
-```
-
-```sh
-#框架：软件的半成品，为解决问题制定的一套整体解决方案。
-框架封装了很多细节，使开发者可以使用几件的方式实现功能，大大提高效率。如 mybatis，不用写 jdbc 繁琐过程
-
-#类库 & 框架
-类库：`提供的类没有封装一定逻辑`。举例：类库就是名言警句，写作文时引入名言警句
-框架：`区别与类库，里面有一些约束`。举例：框架是填空题
-```
-
-```sh
-代理模式：AOP
-单例模式：默认 Bean 为单例
-工厂模式：BeanFactory
-IOC：依赖倒置 or 依赖注入
-MVC：spring web
-模版方法模式：JdbcTemplate
-```
-
-> ###IOC
-
-```sh
-#IoC 控制反转：反转了资源的获取方向。
-以前，Service层调用DAO层，需要在Service中通过 new 主动创建 DAO 实例。
-现在，所有的 javaBean 对象都由Spring容器进行统一创建和管理。Service只需要告诉Spring容器它依赖DAO对象，
-Spring就会主动将DAO注入到Service中。即，'反转了资源的获取方向：由以前的主动创建 变为 现在的容器自动注入'。
-
-以前，开发人员往往需要知道在具体容器中特定资源的获取方式，增加了学习成本，同时降低了开发效率。
-现在，开发人员不需要知道容器是如何创建资源对象的，只需要提供接收资源的方式即可，极大的降低了学习成本，提高了开发的效率
-```
-
-```sh
-# DI 依赖注入
-组件之间依赖关系由容器在运行期决定，形象的说，由容器动态的将某个依赖关系注入到组件之中。
-依赖注入的目的并非为软件系统带来更多功能，而是为了提升组件重用的频率，并为系统搭建一个灵活、可扩展的平台。
-通过依赖注入机制，我们只需要通过简单的配置，而无需任何代码就可指定目标需要的资源，完成自身的业务逻辑，而不需要关心具体的资源来自何处，由谁实现。
-
-#IOC 描述的是一种思想，而 DI 是对 IOC 思想的具体实现
-相对 IoC 而言，依赖注入明确描述了'被注入对象 依赖 IoC容器配置 依赖对象'
-```
-
-> ###AOP
-
-```sh
-#AOP：面向切面编程
-'核心原理'：使用动态代理的设计模式，在执行方法前后或出现异常处加入相关逻辑。使用场景：
-声明式事务 --> 执行方法前开启事务，执行完成后关闭事务，出现异常后回滚事务
-权限判断   --> 在执行方法前，判断是否具有权限
-日志      --> 在执行前进行日志处理
-```
-
-> Spring 的 bean 有哪些作用域
-
-```sh
-'singleton': 默认值，唯一实例。只在IoC容器初始化时创建一次，以后每次获取都是从容器中直接获取
-'prototype': 原型的，多实例的。IoC容器初始化时并不会创建，而是在每次调用时重新创建一个新的对象
-
-'request'：每次http请求都会产生一个新的实例
-'session'：每次会话创建一个实例
-'global'：全局的 httpSession中，容器会返回该bean的同一个实例
-```
-
-> 拦截器的作用？ 事务拦截器的实现原理？
-
-```sh
-拦截器适合封装一些共通处理，便于重复利用。例如日志的记录，权限检查，事务处理等。拦截器是通过配置方式调用，隐藏使用方法比较灵活，便于维护和扩展。
-
-Spring 中的事务管理是通过 AOP 代理来实现的，对被代理对象的每个方法进行拦截，在方法执行前启动事务，方法执行后根据'是否有异常'和'异常的种类'进行提交或回滚。
-```
-
-> 事务的传播行为
-
-```sh
-#事务传播行为，是指事务方法A 调用 事务方法B，n那么，A的事务该如何传播？
-Required      如果存在一个事务，则支持当前事务。如果没有事务则开启。`需要`
-Required_New  总是开启一个新的事务。如果已有一个事务，则将这个存在的事务挂起。`需要新的`
-
-Supports      如果存在一个事务，支持当前事务。如果没有事务，则非事务的执行。`支持，有则有，无则无，佛系`
-Not_Supports  总是非事务地执行，并挂起任何存在的事务。`不支持`
-
-Mandatory     如果已经存在一个事务，支持当前事务。如果没有一个活动的事务，则抛出异常。`强制，必须有，没有则异常`
-Never         总是非事务地执行，如果存在一个活动事务，则抛出异常。`不能有，有则抛异常`
-
-Nested：      如果有就嵌套、没有就开启事务。`嵌套`
-```
-
-> 事务的隔离级别
-
-```sh
-#并发事务可能导致的问题
-脏读     ：T1改未提   T2读     T1回滚   #写的过程，被人插队
-不可重复读：T1读      T2改并提  T1再读   #读的过程，被人插队
-幻读     ：T1修改全部 T2新增    T1再读，发现还有未修改
-
-`脏读`     ：一个事务读取到另一个事务未提交的更新数据
-`不可重复读`：在同一事务中，多次读取同一数据返回的结果有所不同
-`幻读`     ：一个事务读取到另一个事务已提交的 insert 数据
-```
-
-```sh
-#mysql默认是【可重复读】，Spring默认是【读已提交】
-`读未提交`：这是事务最低的隔离级别，它允许另外一个事务可以读取本事务尚未提交的数据。'不能解决'：脏读，不可重复读和幻读
-`读已提交`：保证一个事务修改的数据提交后才能被另外一个事务读取。另外一个事务不能读取该事务未提交的数据。'不能解决'：不可重复读和幻读
-`可重复读`：读取数据的事务在读取过程中锁定数据，禁止其他事务修改，但可以读取。'不能解决'：幻读
-`串行化`：读取数据的事务在读取过程中锁定数据，进制其他事务新增。要求事务只能一个接着一个地执行，不能并发执行。'能解决所有，但效率低'
-```
-
-```sh
-##mysql默认是【可重复读】，Spring默认是【读已提交】
-为什么要有事务的隔离级别？这是因为并发事务容易产生一些问题，事务的隔离级别就是解决这些问题产生的。
-首先，最基础的事务级别是：'读未提交'，也就是说事务 T2 可以读取事务 T1 已修改但未提交的数据，这将导致如果 T1 回滚则 T2 读取到的就是无效数据，
-即所谓的'脏读'。为了解决这一问题，而提出了'读已提交'，要求：一个事务只能读取其他事务已提交的数据。
-
-但是，在事务 T2 读取数据的过程中，数据被事务 T1 更改了，将导致事务 T2 两次读取数据不一致现象，即'不可重复读'。
-为了解决这一问题，提出了更严格的隔离级别'可重复读'，要求：事务读取数据过程中，锁定数据，禁止其他事务修改，只能读取。
-
-但这也不是最完美的，比如事务 T1 要把数据表中所有行的某一列改为 3，在 T1 执行过程中，事务 T2 向数据表中又新加了 1 行数据，
-事务 T1 执行完发现，并没有把所有行都改为 3，这就是所谓的'幻读'。为此，提出了最为严格的'串行化'。
-串行化要求：事务执行过程中，锁定数据，不允许其他事务增删改。事务只能一个一个串行化执行，不能并发执行，大大降低效率。
-```
-
-
-
-
-
 ## 概念区分
 
 > 过滤器 & 拦截器 & AOP
@@ -1012,31 +957,4 @@ DispatcherServlet响应用户。
 
 
 ## SSM
-
-> 什么是面向接口编程？
-
-```sh
-在一个大型系统中，系统的每一个功能都是由多个对象共同完成的。
-所以，在这种情况下，我们不关心各个对象内部是如何实现的，而是'将重点放在各个对象之间是如何进行相互协作的'。
-比如，各个类之间的通信，模块之间的交互，在系统设计之初就需要着重考虑，面向接口编程就是指按照这种思想来编程
-```
-
-> SSM三大框架中高内聚、低耦合是哪个框架实现的？
-
-```sh
-#低耦合是通过Spring框架的 IOC和AOP 实现的。
-将基于实现类的耦合变成基于接口的耦合，可以避免硬编码所造成的过度程序耦合。而接下来需要解决的问题就是，如何确定该接口的实现类。
-IOC 控制反转，就是将某一接口的具体实现类的控制从调用类中移除，转交给第三方，即spring容器。
-
-在业务系统里除了要实现业务功能之外，还要实现如权限拦截、性能监控、事务管理等非业务功能。
-通常的作法是非业务的代码穿插在业务代码中，从而导致了业务组件与非业务组件的耦合。
-AOP 面向切面编程，就是将这些分散在各个业务逻辑代码中的非业务代码，通过横向切割的方式抽取到一个独立的模块中，从而实现业务组件与非业务组件的解耦。
-```
-
-> Spring和web应用整合
-
-```sh
-在web应用程序中，通过配置监听器 ContextLoadListener 来实现 Spring-IOC 容器的初始化。
-在 web.xml 中通过应用上下文初始化参数(context-param)来指定 Spring 配置文件的路径。
-```
 

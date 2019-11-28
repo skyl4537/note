@@ -469,13 +469,94 @@ public void sendA() throws Exception {
 
 
 
+## 异常捕获
 
+> 错误页面
 
+```sh
+在项目的 /static 目录下新建页面：'/error/4xx.html'和'/error/5xx.html'
+```
 
+> 异常处理优先级
 
+```sh
+#查找-优先级
+当执行过程中出现异常，首先在本类中查找 @ExceptionHandler 标识的方法。
+找不到，再去查找 @ControllerAdvice 标识类中的 @ExceptionHandler 标识方法来处理异常。
 
+#继承-优先级
+例如发生异常 NullPointerException; 但是声明的异常有 RuntimeException 和 Exception
+此时，根据异常的最近继承关系，找到继承深度最浅的那个，即 RuntimeException 的声明方法
+```
+> （1）在Controller、Service、DAO层直接抛出异常
 
+```java
+@GetMapping("/{id}")
+public Result getEmpById(@PathVariable("id") Integer id) {
+    Emp emp = empMapper.selectById(id);
+    if (null == emp)
+        throw new CrudException(ExceptionEnum.EMP_NOT_EXISTS);
+    return Result.success(emp);
+}
+```
 
+> （2）定义异常枚举类
+
+```java
+@Getter
+public enum ExceptionEnum {
+    EMP_NOT_EXISTS(401, "员工不存在");
+
+    private Integer code;
+    private String msg;
+
+    ExceptionEnum(Integer code, String msg) {
+        this.code = code;
+        this.msg = msg;
+    }
+}
+```
+
+> （3）定义全局异常类
+
+```java
+@Data
+@EqualsAndHashCode(callSuper = true)
+public class CrudException extends RuntimeException {
+    private Integer code;
+
+    private CrudException(int code, String msg) {
+        super(msg);
+        this.code = code;
+    }
+
+    public CrudException(ExceptionEnum exceptionEnum) {
+        this(exceptionEnum.getCode(), exceptionEnum.getMsg());
+    }
+}
+```
+
+> （4）定义全局异常捕获类
+
+```java
+@Slf4j
+@RestControllerAdvice // @ControllerAdvice <-> @Controller
+public class ExceptionConfig {
+
+    @ExceptionHandler(CrudException.class)
+    public Result crudException(CrudException e) {
+        log.error("【异常处理类】CrudException: ", e);
+        return new Result(e.getCode(), e.getMessage());
+    }
+
+    @ResponseStatus(HttpStatus.BAD_REQUEST) //自定义响应状态码：400。默认抛出异常也是 200
+    @ExceptionHandler(Exception.class)
+    public Result exception(Exception e) {
+        log.error("【异常处理类】Exception: ", e);
+        return new Result(404, "未知异常");
+    }
+}
+```
 
 
 
@@ -1489,89 +1570,8 @@ public void download(@PathVariable String fileName, HttpServletResponse resp) {
 }
 ```
 
-# 错误处理
 
-## 错误页面
 
-> 4xx，5xx 错误页面
-
-```sh
-在项目的 /static 目录下新建页面：'/error/4xx.html'和'/error/5xx.html'
-```
-
-## 异常捕获
-
-> 问题需求
-
-```sh
-#当前问题
-当程序出现错误，如获取值为空或出现异常时，并不希望用户看到异常的具体信息，而是希望对对应的错误和异常做相应提示
-在MVC框架中很多时候会出现执行异常，那我们就需要加 try/catch 进行捕获，如果 service 层和 controller 层都加上，那就会造成代码冗余
-
-#解决方法
-编程时，先进行参数校验，有问题则'直接抛出异常'；没问题则继续执行具体的业务操作，最后返回成功信息。
-在'异常处理类'中捕获异常，统一处理，向用户返回规范的响应信息（如 json），无需在代码中 try/catch。
-
-#处理流程
-自定义异常类型，错误码，以及错误信息。
-对于可预知的异常由程序员在代码中（controller、service、dao）主动抛出；框架异常则由框架自行抛出
-在'异常处理类'中，统一处理异常：对于程序员抛出的异常，捕捉自定义异常处理。对于框架异常，则捕捉 Exception 处理。
-```
-> 异常处理类
-
-```java
-@Slf4j
-@ControllerAdvice
-// @RestControllerAdvice
-public class ExceptionConfig {
-
-    @ResponseBody //返回 json 数据，默认返回错误页面
-    @ResponseStatus(HttpStatus.BAD_REQUEST) //自定义响应状态码：400，默认 200
-    @ExceptionHandler(UserException.class)
-    public ResultVO userException(UserException e) {
-        log.error("【异常处理类】处理异常: UserException");
-        return ResultVOUtil.fail(e.getResultEnum());
-    }
-
-    @ResponseBody
-    @ExceptionHandler(CustomException.class)
-    public ResultVO customException(CustomException e) {
-        log.error("【异常处理类】处理异常: CustomException");
-        return ResultVOUtil.fail(e.getResultEnum());
-    }
-
-    @ExceptionHandler(Exception.class) //捕获未知错误，返回 404 页面
-    public String exception(Exception e) {
-        log.error("【异常处理类】处理异常: Exception");
-        return "/error/404";
-    }
-}
-```
-
-> 异常处理の优先级
-
-```sh
-#查找-优先级
-当执行过程中出现异常，首先在本类中查找 @ExceptionHandler 标识的方法。
-找不到，再去查找 @ControllerAdvice 标识类中的 @ExceptionHandler 标识方法来处理异常。
-
-#继承-优先级
-例如发生异常 NullPointerException; 但是声明的异常有 RuntimeException 和 Exception
-此时，根据异常的最近继承关系，找到继承深度最浅的那个，即 RuntimeException 的声明方法
-```
-
-> 异常处理の方法的常用参数
-
-```java
-/**
- * @param e 异常参数(包括自定义异常);
- *          请求或响应对象(HttpServletRequest; ServletRequest; PortleRequest/ActionRequest/RenderRequest)
- *          Session对象(HttpSession; PortletSession)
- *          WebRequest; NativeWebRequest; Locale;
- *          InputStream/Reader; OutputStream/Writer; Model
- * @return  ModelAndView; Model; Map; View; String; @ResponseBody; HttpEntity<?>或ResponseEntity<?>; 以及void
- */
-```
 # 跨域问题
 
 ##基础概念

@@ -655,53 +655,60 @@ String url = "http://localhost:9006/web/test/get0";
 ResponseEntity<User> entity = restTemplate.getForEntity(url, User.class); //arg2：返回值类型
 ```
 
-> 有参请求（2种方式）
+> 有参请求（1）
 
 ```java
 String url = "http://localhost:9006/web/test/get1?username={1}&password={2}";
 ResponseEntity<User> entity = restTemplate.getForEntity(url, User.class, "li", "123"); //arg3...：参数列表
 ```
 
+> 有参请求（2）
+
 ```java
-String url = "http://localhost:9006/web/test/get1?username={username}&password={password}";
+String url = "http://localhost:9006/web/test/get?username={username}&password={password}";
 Map<String, Object> map = new HashMap<>();
 map.put("username", "li");
 map.put("password", "123");
 ResponseEntity<User> entity = restTemplate.getForEntity(url, User.class, map);
 ```
 
-> `推荐方案`
-
-```sh
-getForObject() 是对 getForEntity() 进一步封装，'只返回消息体的内容'，不返回协议的信息。
-```
+> 有参请求（3） `推荐`
 
 ```java
-String url = "http://localhost:9006/web/test/get1?username={1}&password={2}";
-User user = restTemplate.getForObject(url, User.class, "li", "pwd");
+//getForObject() 是对 getForEntity() 进一步封装，只返回消息体的内容，不返回协议的信息。
+String url = "http://localhost:9006/web/test/get?username={1}&password={2}";
+User user = restTemplate.getForObject(url, User.class, "li", "123");
 ```
 
 ##POST
 
-> 请求体传参
+> 请求体传参：key-value
 
 ```java
-String url = "http://localhost:9006/web/test/post0";
+String url = "http://localhost:9006/web/test/post";
 User user = restTemplate.postForObject(url, new User(), User.class);
+```
+
+> 请求体传参：JSON
+
+```java
+//后台使用 @RequestBody 转换成 javabean 接收参数，前台传参就得使用 json 对象，而非字符串
+String uri = "http://localhost:9006/webpark/new/2/24";
+Integer result = restTemplate.postForObject(uri, JSON.parseObject(record), Integer.class); //arg2: json对象
 ```
 
 > postForLocation
 
 ```sh
-postForLocation() 也是提交新资源，提交成功之后，返回新资源的URI。
-此方法的参数和前面两种的参数基本一致，只不过该方法的返回值为Uri，这个只需要服务提供者返回一个Uri即可，该Uri表示新资源的位置
+postForLocation() 也是提交新资源，提交成功之后，返回新资源的 Uri。
+此方法的参数和前面两种的参数基本一致，只不过该方法的返回值为 Uri，这个只需要服务提供者返回一个Uri即可，该Uri表示新资源的位置。
 ```
 
 > 也支持 PUT，DELETE
 
 ```java
-restTemplate.put(url,new User());
-restTemplate.delete(url,"123"); //都没有返回值
+restTemplate.put(url, new User());
+restTemplate.delete(url, "123"); //都没有返回值
 ```
 
 

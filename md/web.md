@@ -556,151 +556,6 @@ public void Test() throws Exception {
 }
 ```
 
-## Spring
-
-> @PropertySource：批量读取配置文件
-
-```sh
-详见： boot --> 配置相关
-```
-> @Value：通过注解将常量、配置文件中的值、其他bean的属性值注入到变量中，作为变量的初始值
-
-```java
-//配置文件属性注入 ${}
-@Value("$(server.port)")
-```
-
-```java
-//bean属性、系统属性、表达式注入 #{}
-@Value("#{device.deviceName}")
-String deviceName; // 注入其他Bean属性：lcd-10086
-
-@Value("#{systemProperties['os.name']}")
-String osName; // 注入操作系统属性：Windows 7
-
-@Value("#{T(java.lang.Math).random() * 100.0}")
-String random; //注入表达式结果：60.969226153296965
-```
-
-> @Configuration：定义配置类。被注解的类内部包含有一个或多个被`@Bean`注解的方法
-
-```sh
-@Configuration 不可以是'final'类型，不可以是匿名类。嵌套的 @Configuration 必须是静态类
-```
-
-> @Bean：只会被Spring调用一次，产生一个id同方法名的对象，对象管理在IOC容器中
-
-```java
-@Bean("infoService1") //默认，bean的id和方法名相同，也可通过 name 属性自定义
-public TnfoService infoService() {
-    return new TnfoServiceImpl();
-}
-```
-
-> @Scope：Bean作用域的注解
-
-```java
-@Scope("singleton") //常用取值范围：singleton, prototype
-```
-
-> @ComponentScan：`组件扫描`。扫描加了注解的类，并管理到 IOC 容器中
-
-```sh
-#Boot项目: 该注解包含在 @SpringBootApplication，所以只需在启动类中配置此注解即可
-#其他项目： 可使用 '注解' 和 'xml' 两种方式配置
-```
-
-```java
-@Configuration
-@ComponentScan(basePackages = "com.x.web") //注解版
-public class SpringConfiguration { }
-```
-
-```xml
-<context:component-scan base-package="com.x.web"/>
-```
-
-```java
-//排除注解 @Repository 标注的组件
-@ComponentScan(value = "com.x.web", useDefaultFilters = true, //true + excludeFilters
-               excludeFilters = @ComponentScan.Filter(type = FilterType.ANNOTATION, classes = Repository.class))
-```
-
-```java
-//只扫描注解 @Repository 标注的组件
-@ComponentScan(value = "com.x.web", useDefaultFilters = false, //false + includeFilters
-               includeFilters = @ComponentScan.Filter(type = FilterType.ANNOTATION, classes = Repository.class))
-```
-
-> @Component：`组件标识`。标识一个受 Spring-IOC 容器管理的组件
-
-```sh
-#通用注解     持久层注解      业务逻辑层注解   控制层注解
-@Component   @Respository  @Service       @Controller
-```
-
-```sh
-事实上，Spring 并没有能力识别一个组件到底是不是它所标记的类型，即使将 @Respository 注解用在一个表述层控制器组件上，也不会产生任何错误。
-所以 @Respository、@Service、@Controller 这几个注解，仅仅是为了让开发人员自己明确当前的组件扮演的角色。
-```
-
-> @Autowired：`组件装配`  利用依赖注入（DI），对 IOC容器中各个组件的依赖关系进行自动装配
-
-```sh
-#实现依据
-在指定要扫描的包时，<context:component-scan> 元素会自动注册一个 bean 的后置处理器：AutowiredAnnotationBeanPostProcessor 的实例。
-该后置处理器可以自动装配标记了 @Autowired、@Resource 或 @Inject 注解的属性。
-```
-
-```sh
-#（1）.先使用 byType，再使用 byName
-首先，会使用 'byType' 的方式进行自动装配，如果能唯一匹配，则装配成功。
-如果匹配到多个兼容类型的bean，还会尝试使用 'byName' 的方式进行唯一确定，如果能唯一确定，则装配成功。
-如果都不能唯一确定，则装配失败，抛出异常。
-```
-
-```java
-@Autowired
-HelloService helloService; //Controller ---> 匹配到多个兼容类型，则可通过指定 name 的形式装配
-
-@Service
-public class HelloServiceImpl0 implements HelloService {}
-
-@Service("helloService") //指定 name
-public class HelloServiceImpl1 implements HelloService {}
-```
-
-```java
-//（2）.如若在 IOC 容器中通过 byType byName 都未找到相匹配的bean，也会抛出异常
-@Autowired(required = false) //设置该属性非必须装配
-HelloService helloService;
-```
-
-```java
-//（3）如果匹配到多个兼容类型的bean，也可以使用 @Qualifier 来进一步指定要装配的bean的 id 值
-@Autowired
-@Qualifier("helloServiceImpl1") //指定id
-HelloService helloService;
-
-@Service
-public class HelloServiceImpl0 implements HelloService {}
-
-@Service/*("helloService")*/
-public class HelloServiceImpl1 implements HelloService {}
-```
-
-> 区分 `@Autowired @Resource @Inject`
-
-```sh
-@Resource：先 'byName'，再 'byType'
-@Inject  ：只 'byType'，需要导入 javax.inject 的包
-```
-
-```sh
-@Autowired       ：Spring 定义的，使用 Spring 框架，推荐使用
-@Resource,@Inject：java 规范，通用性强
-```
-
 
 
 
@@ -1279,7 +1134,10 @@ resp.sendRedirect("重定向地址");
 ```
 
 ```java
-//场景(123)：利用 Session + token 解决
+//场景(1-2-3)：利用 Session + token 解决
+//<1>.token 由服务器来创建，并交给浏览器，浏览器在向服务器发送请求时需要带着这个 token。
+//<2>.服务器处理请求前检查token是否正确，如果正确，则正常处理，处理完移除服务端 token；否则返回一个错误页面
+//<3>.服务器所创建的 token 只能使用一次
 @GetMapping("/token")
 public String token(HttpSession session) {
     session.setAttribute("token", UUID.randomUUID().toString()); //(1).生成token，存Session，并转发前台页面

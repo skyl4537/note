@@ -27,14 +27,9 @@ cmd < file ： #读取file作为输入
 > 系统相关信息
 
 ```shell
-hostname          #查看主机名
-
-uname -a          #显示电脑以及操作系统的相关信息
-cat /proc/version #查看正在运行的内核版本
-
-lsb_release -a    #ubuntu-系统
-
-cat /proc/version #内核版本
+cat /etc/issue     #linux的发行版本：CentOS ubuntu
+hostname           #主机名
+cat /proc/version  #内核版本
 ```
 
 > 关机重启（reboot）
@@ -55,11 +50,8 @@ shutdown -h 11:33  #定时关机，今天的11::33
 total 4.9G #总计大小
 drwxr-xr-x 8 parkmanager root 4.0K  9月 16  2014 nginx-1.6.2
 -rw-r--r-- 1 parkmanager root 786K  8月 13  2018 nginx-1.6.2.tar.gz
+#档案属性  连接 拥有者       分组  大小  修改日期      文件名
 ```
-
-| drwxr-xr-x |  8   | parkmanager | root | 4.0K | 9月 16  2014 | nginx-1.6.2 |
-| :--------: | :--: | :---------: | :--: | :--: | :----------: | :---------: |
-|  档案属性  | 连接 |   拥有者    | 分组 | 大小 |   修改日期   |   文件名    |
 
 > 用户&分组
 
@@ -310,6 +302,21 @@ grep -d skip -n 'Init---args' ../_* > ztj
 
 ```
 
+## 防火墙
+
+> ubuntu
+
+```sh
+ sudo apt-get install ufw        #安装
+ sudo ufw status/disable/enable
+ 
+ sudo ufw allow 80/tcp
+ sudo ufw delete allow 80/tcp    #允许和禁用 80 端口
+ sudo ufw allow from 192.168.8.7 #允许此IP访问所有的本机端口
+```
+
+
+
 
 
 ##相似命令
@@ -407,6 +414,28 @@ netstat -nltp|awk '{if(NR>2) {print $4}}'|cut -d ':' -f 2
 
 
 
+## cat
+
+## cp
+
+>复制文件或目录
+
+```shell
+#-f：覆盖已经存在的目标文件而不给出提示。
+#-i：与-f选项相反，在覆盖目标文件之前给出提示，要求用户确认是否覆盖，回答"y"时目标文件将被覆盖。
+#-r：若给出的源文件是一个目录文件，此时将复制该目录下所有的子目录和文件。
+
+#-a：此选项通常在复制目录时使用，它保留链接、文件属性，并复制目录下的所有内容。其作用等于dpR参数组合。
+#-d：复制时保留链接。这里所说的链接相当于Windows系统中的快捷方式。
+#-p：除复制文件的内容外，还把修改时间和访问权限也复制到新文件中。
+#-l：不复制文件，只是生成链接文件。
+
+cp test.log ./tmp   #单个复制
+cp –rf ./test ./tmp #批量复制
+```
+
+
+
 
 
 ## curl
@@ -471,17 +500,41 @@ df -lh
 du -h --max-depth=1 /var/lib/webpark/logs | sort -nr  #相结合使用,查看磁盘情况
 ```
 
-##free
+##echo
 
-> 用于显示内存状态
+> 显示普通字符串，或转义字符。`""会将内容转义，''不会转义，原样输出`
 
 ```shell
-#-m： 以MB为单位显示内存使用情况
-#-h： 以合适的单位显示内存使用情况，最大为三位数，自动计算对应的单位值
-#-s<间隔秒数>： 持续观察内存使用状况
-#-t： 显示内存总和列
+echo "$(date)"   #输出当前时间
+echo '$(date)'   #输出 $(date)
 
-free -hts 3 #3s刷新一次，内存的使用情况
+echo $(date '+%Y-%m-%d %H:%M:%S') #输出时间格式化
+
+echo a b c | awk '{print $1,$3}'  #查看一行的 第一列 和 第三列
+```
+>显示变量，或执行结果。shell中引用执行结果，有两种表达方式：'date' 和 $(date)，后者适用于嵌套情况
+
+```shell
+#查看文件句柄数（1）
+echo $(lsof -p $(lsof -t +D /var/lib/webpark/logs/device) |wc -l) #执行结果
+
+#查看文件句柄数（1）
+echo $(date) '---' $(lsof -p $(lsof -t -i:8080|sed -n '1p') |wc -l) >> /file
+
+#查看close_wait
+#!/bin/bash
+DATE=$(date '+%Y-%m-%d %H:%M:%S')
+CLOSE=$(netstat -anp |grep java |grep CLOSE |wc -l)
+
+echo $DATE '---' $CLOSE >> close #变量
+```
+
+> 是否显示换行。
+
+```shell
+#!/bin/sh
+echo -n "OK!" #-n表示不换行，即只输出一行
+echo "It is a test"
 ```
 
 
@@ -530,6 +583,20 @@ find /tmp -size +10000c -and -mtime +2  #在/tmp目录下查找大于10000字节
 find / -user fred -or -user george      #在/目录下查找用户是fred或者george的文件文件
 find /tmp ! -user panda                 #在/tmp目录中查找所有不属于panda用户的文件
 ```
+
+##free
+
+> 用于显示内存状态
+
+```shell
+#-m： 以MB为单位显示内存使用情况
+#-h： 以合适的单位显示内存使用情况，最大为三位数，自动计算对应的单位值
+#-s<间隔秒数>： 持续观察内存使用状况
+#-t： 显示内存总和列
+
+free -hts 3 #3s刷新一次，内存的使用情况
+```
+
 ## grep
 
 > 查找文件中的内容
@@ -602,6 +669,31 @@ lsof -i6:8090     #端口8090的 IPV6 进程
 lsof -i tcp       #仅显示tcp连接（udp同理）
 lsof -i@host      #显示基于指定主机的连接
 lsof -i@host:port #显示基于主机与端口的连接
+```
+## mkdir
+
+> 创建目录及子目录
+
+```shell
+#-p：如果上级目录没有创建，即创建输入路径上的所有目录
+
+mkdir a b c      #一次性创建多个目录
+mkdir -p /a/c/v  #创建多层目录
+```
+## mv
+
+> 对文件或目录，进行移动或重命名
+
+```shell
+#-i: 提示，若指定目录已有同名文件，则先询问是否覆盖旧文件;
+#-f: 不提示，在mv操作要覆盖某已有的目标文件时不给任何指示;
+
+mv /a.txt /b.txt       #前后两目录一致，指定新文件名 --> 重命名
+mv /a.txt /test/c.txt  #.......不...，指定新文件名 --> 移动 + 重命名
+
+mv /a.txt /test/       #.......不...，【没有】指定新文件名 --> 移动
+
+mv /student/* .       #批量移动到当前目录
 ```
 ## nohup
 
@@ -929,6 +1021,21 @@ echo "456" >> test        #追加test末尾
 tar -g snapshot -zcvf test1.tar.gz test    #第2次归档(123456)
 tar -g snapshot -zcvf test2.tar.gz test    #第3次归档(空的，因为没有修改)
 ```
+##touch
+
+> 新建空文件，或修改文件的时间属性（ls -l 查看文件的时间属性）
+
+```shell
+touch file   #新建空文件file
+```
+
+>清空文件的③种方式
+
+```shell
+ > file            #使用重定向方法
+true > file        #使用true命令重定向清空文件
+echo -n "" > file  #必须加上"-n"参数，默认情况下会有"\n"，即有个空行
+```
 ## top
 
 > 能够实时显示系统中各个进程的资源占用状况，类似于Windows的任务管理器
@@ -1218,106 +1325,6 @@ date '+%Y-%m-%d %H:%M:%S' #格式化输出当前时间
 
 
 
-# 文件相关
-
-##touch
-
-> 新建空文件，或修改文件的时间属性（ls -l 查看文件的时间属性）
-
-```shell
-touch file   #新建空文件file
-```
-
->清空文件的③种方式
-
-```shell
- > file            #使用重定向方法
-true > file        #使用true命令重定向清空文件
-echo -n "" > file  #必须加上"-n"参数，默认情况下会有"\n"，即有个空行
-```
-##echo
-
-> 显示普通字符串，或转义字符。`""会将内容转义，''不会转义，原样输出`
-
-```shell
-echo "$(date)"   #输出当前时间
-echo '$(date)'   #输出 $(date)
-
-echo $(date '+%Y-%m-%d %H:%M:%S') #输出时间格式化
-
-echo a b c | awk '{print $1,$3}'  #查看一行的 第一列 和 第三列
-```
->显示变量，或执行结果。shell中引用执行结果，有两种表达方式：'date' 和 $(date)，后者适用于嵌套情况
-
-```shell
-#查看文件句柄数（1）
-echo $(lsof -p $(lsof -t +D /var/lib/webpark/logs/device) |wc -l) #执行结果
-
-#查看文件句柄数（1）
-echo $(date) '---' $(lsof -p $(lsof -t -i:8080|sed -n '1p') |wc -l) >> /file
-
-#查看close_wait
-#!/bin/bash
-DATE=$(date '+%Y-%m-%d %H:%M:%S')
-CLOSE=$(netstat -anp |grep java |grep CLOSE |wc -l)
-
-echo $DATE '---' $CLOSE >> close #变量
-```
-
-> 是否显示换行。
-
-```shell
-#!/bin/sh
-echo -n "OK!" #-n表示不换行，即只输出一行
-echo "It is a test"
-```
-
-## cp
-
->复制文件或目录
-
-```shell
-#-f：覆盖已经存在的目标文件而不给出提示。
-#-i：与-f选项相反，在覆盖目标文件之前给出提示，要求用户确认是否覆盖，回答"y"时目标文件将被覆盖。
-#-r：若给出的源文件是一个目录文件，此时将复制该目录下所有的子目录和文件。
-
-#-a：此选项通常在复制目录时使用，它保留链接、文件属性，并复制目录下的所有内容。其作用等于dpR参数组合。
-#-d：复制时保留链接。这里所说的链接相当于Windows系统中的快捷方式。
-#-p：除复制文件的内容外，还把修改时间和访问权限也复制到新文件中。
-#-l：不复制文件，只是生成链接文件。
-
-cp test.log ./tmp   #单个复制
-cp –rf ./test ./tmp #批量复制
-```
-
-##mv
-
-> 对文件或目录，进行移动或重命名
-
-```shell
-#-i: 提示，若指定目录已有同名文件，则先询问是否覆盖旧文件;
-#-f: 不提示，在mv操作要覆盖某已有的目标文件时不给任何指示;
-
-mv /a.txt /b.txt       #前后两目录一致，指定新文件名 --> 重命名
-mv /a.txt /test/c.txt  #.......不...，指定新文件名 --> 移动 + 重命名
-
-mv /a.txt /test/       #.......不...，【没有】指定新文件名 --> 移动
-
-mv /student/* .       #批量移动到当前目录
-```
-##mkdir
-
-> 创建目录及子目录
-
-```shell
-#-p：如果上级目录没有创建，即创建输入路径上的所有目录
-
-mkdir a b c      #一次性创建多个目录
-mkdir -p /a/c/v  #创建多层目录
-```
-
-## cat
-
 
 
 
@@ -1585,10 +1592,6 @@ ps aux | fgrep pid #根据 pid 查找进程名
 ```
 
 ![](assets/error1.png)
-
-
-
-
 
 
 

@@ -1,54 +1,17 @@
 05
-    // 防止表单重复提交
-    
-        // 0.防止表单重复提交 - https://www.cnblogs.com/lwj-0923/p/7367517.html
-            // 转发: 
-                // req.getRequestDispatcher("show").forward(req, res);
-                // req.getRequestDispatcher("add.jsp").forward(req, res);
-            // 重定向: 
-                // req.sendRedirect("show");
-                // req.sendRedirect("add.jsp");
-    
     页面非空验证jquery
 07
-    // 什么是框架?
-        // //软件的半成品.为解决问题制定的一套约束,在提供功能基础上进行扩充.
-        // //框架中一些不能被封装的代码(变量),需要使用框架者新建一个xml文件,在文件中添加变量内容
-        // // 2.1 需要建立特定位置和特定名称的配置文件.
-        // // 2.2 需要使用 xml 解析技术和反射技术
-    // 类库vs框架?
-        // // 3.1 类库:提供的类没有封装一定逻辑. 举例:类库就是名言警句,写作文时引入名言警句
-        // // 3.2 框架:区别与类库,里面有一些约束. 举例:框架是填空题
+
 07
     // MyBatis: 数据访问层框架; 底层是对JDBC的封装; 无需编写实现类,只需写sql
 08
 
 11
-    常用属性
-        driverClassName="com.mysql.jdbc.Driver"
-        url="jdbc:mysql://localhost:3306/ssm"
-        username="root"
-        password="smallming"
-        maxActive="50"
-        maxIdle="20"
-        name="test"
-        auth="Container"
-        maxWait="10000"
-        type="javax.sql.DataSource"
+
 12
-    // 三种查询: selectList; selectOne; selectMap;
-    //其中,selectMap的结果集Map<Object,Object>中key为列值,value为当前行封装的pojo
     
 2-1
     在'数据访问层'和'控制器层'处理异常,service中只抛出异常
-    
-    注解赋值格式为(属性名=属性值)
-    大部分注解都有默认值,如果只给默认值赋值,可简写为(属性值)
-    属性值为数组类型,格式为(属性名={值1,值2}),如果只有一个值,可省去大括号
-    如果类不是基本数据类型或String,格式为(属性名=@类型),@表示引用注解声明
-    
-    路径以/开头都是全路径; 从项目根目录出发找到其他资源的过程.
-    不以/开头都是相对路径; 从当前资源出发找到其他资源的过程.
     
 2-7
     功能:从应用程序角度出发,软件具有哪些功能.
@@ -72,112 +35,14 @@
     内容较多
     
     /*************************Spring********************************************/
-/*
+
 1-2S
-    Spring核心功能: IoC/DI(控制反转/依赖注入); AOP(面向切面编程); 声明式事务
 
 1-5S
-    Spring创建对象的三种方式
-    1.构造方法
-        //默认调用无参构造方法; 或 明确配置调用有参构造方法.
-        (1).在类中提供有参构造方法
-        (2).在 applicationContext.xml 中配置调用哪个有参构造
-            
-            // 如果设定的条件匹配多个构造方法,执行最后一个
-            <bean id="people" class="com.x.pojo.People">
-                // index: 参数的索引,从 0 开始
-                // name: 参数名
-                // type: 类型.(区分 int 和 Integer)
-                // value: 基本数据类型或String
-                // ref: 引用另一个 bean
-                <constructor-arg index="0" name="id" type="int" value="123" />
-                <constructor-arg index="1" name="name" type="java.lang.String" value=" 张三" />
-                <constructor-arg index="2" name="desk" ref="desk" />
-            </bean>
-            
-            <bean id="desk" class="com.x.pojo.Desk"></bean>
-    
-    2.实例工厂 - //需要先创建工厂,才能生产对象
-        (1).编写一个实例工厂
-            public class PeopleFactory {
-                public People newInstance(){
-                    return new People(1,"测试");
-                }
-            }
-        (2).在 applicationContext.xml 中配置工厂对象和需要创建的对象
-            //factory-bean: 工厂类; factory-method: 调用工厂类的哪个方法
-            <bean id="factory" class="com.x.pojo.PeopleFactory"></bean>
-            <bean id="peo1" factory-bean="factory" factory-method="newInstance"></bean>
-    
-    3.静态工厂 - //不需要创建工厂,快速创建对象.
-        (1).编写一个静态工厂(static 方法)
-            public class PeopleFactory {
-                public static People newInstance(){
-                    return new People(1,"测试");
-                }
-            }
-        (2).配置 applicationContext.xml
-            <bean id="peo2" class="com.x.pojo.PeopleFactory" factory-method="newInstance"></bean>
-    
+
 1-6S
-    如何给Bean的属性赋值(注入)???
-    1.通过有参构造方法.
-    
-    2.设置注入(调用set方法)
-        <bean id="people" class="com.x.pojo.People">
-            <property name="id" value="222"></property>
-            <property name="name" value="张三"></property>
-        </bean>
-        
-        //等价于
-            <bean id="people" class="com.x.pojo.People">
-                <property name="id">
-                    <value>456</value>
-                </property>
-                <property name="name">
-                    <value>zhangsan</value>
-                </property>
-            </bean>
-            
-        //如果属性是基本数据类型或String,直接使用标签 <value/>
-        //但对于集合 Set<?>; List<?>; Arrays; 需要添加一层<set/> <list/> <array/>
-            <property name="list" >
-                <list>
-                    <value>1</value>
-                    <value>2</value>
-                </list>
-            </property>
-        //如果属性是 Map<?,?>
-            <property name="map">
-                <map>
-                    <entry key="a" value="b" ></entry>
-                    <entry key="c" value="d" ></entry>
-                </map>
-            </property>
-    
-        //如果属性是 Properties 类型
-            <property name="demo">
-                <props>
-                    <prop key="key">value0</prop>
-                    <prop key="key1">value1</prop>
-                </props>
-            </property>
-        
-        //对于 Set|List|Array|Map|Properties 等,
-        //如果只有一个值,可以将 <list/>和<value/> 标签省略,直接写为:
-            <property name="list" value="1,2,3"></property>
-    
+
 1-7S
-    DI: Dependency Injection,依赖注入;
-        //当类(A)需要依赖类(B)对象时,把 B 赋值给 A 的过程就叫做依赖注入
-        <bean id="people" class="com.x.pojo.People">
-            <property name="desk" ref="desk"></property>
-        </bean>
-        
-        <bean id="desk" class="com.x.pojo.Desk">
-            <property name="id" value="1"></property>
-            <property name="price" value="12"></property>
-        </bean>
     
 1-8S
     实例化DEMO
@@ -231,7 +96,7 @@
         
         //spring和web整合后,所有配置信息保存在 WebApplicationContext. (ApplicationContext的子类)
         ApplicationContext context = WebApplicationContextUtils.getRequiredWebApplicationContext(servletContext);
-*/
+
     4.2.如果要给类的某个属性赋值—这个属性所在类必须要被Spring所管理(***)
         //<!-- 由 spring 管理 service 实现类 -->
         <bean id="flowerService" class="com.x.service.impl.FlowerServiceImpl">
@@ -240,7 +105,7 @@
         </bean>
         
         FlowerService flowerService = context.getBean("flowerService", FlowerServiceImpl.class);
-*/
+
 #2-1S
     1.刷新验证码功能
         //刷新验证码的功能放在 servlet 中完成
@@ -251,56 +116,8 @@
         String path = servletContext.getRealPath("images");
         
     2.生成验证码
-        //创建一张图片(单位:像素)
-        BufferedImage image = new BufferedImage(200, 100, BufferedImage.TYPE_INT_RGB);
-        
-        //向图片上画内容之前必须先设置画笔.
-        Graphics2D gra = image.createGraphics();
-        
-        gra.setColor(Color.WHITE); //画笔颜色
-        gra.fillRect(0, 0, 200, 100); //填充矩形区域(起始x,y,矩形x,y)
-        
-        List<Integer> randList = new ArrayList<Integer>();//生成随机数4个
-        Random random =new Random();
-        for (int i = 0 ;i<4;i++) {
-            randList.add(random.nextInt(10));
-        }
-        
-        //设置字体(类型,格式,大小)
-        gra.setFont(new Font("宋体",Font.ITALIC|Font.BOLD,40));
-        Color[] colors = new Color[]{Color.RED,Color.YELLOW,Color.BLUE,Color.GREEN,Color.PINK,Color.GRAY};
-        for (int i = 0; i < randList.size(); i++) {
-            gra.setColor(colors[random.nextInt(colors.length)]); //随机颜色
-            //将随机数画到图片.(随机数,坐标x,上下浮动的坐标y)
-            gra.drawString(randList.get(i)+"", i*40, 70+(random.nextInt(21)-10)); 
-        }
-        
-        for (int i = 0; i < 2; i++) {
-            gra.setColor(colors[random.nextInt(colors.length)]);
-            //画出干扰线(起点x,y,终点x,y)
-            gra.drawLine(0, random.nextInt(101), 200, random.nextInt(101));
-        }
-        
-        //将图片写出到指定输出流
-        ImageIO.write(image, "jpg", resp.getOutputStream());
-        
-        //把验证码放入到session中.
-        //在登陆按钮点击时,需要验证用户填写的验证码和session中是否相同.
-        HttpSession session = req.getSession();
-        session.setAttribute("code", ""+randList.get(0)+randList.get(1)+randList.get(2)+randList.get(3));
     
     3.浏览器请求验证码
-        <script type="text/javascript">
-        $(function(){
-            $("a").click(function(){
-                //浏览器带有缓存功能,不会多次请求相同url的数据.(所以添加 ?date='')
-                $("img").attr("src","validcode?date="+new Date());
-                return false;
-            })
-        })
-        </script>
-        
-        <img src="validcode" width="80" height="40"/><a href="">看不清</a>
     
 #2-2S
     *ServiceImpl 中 *Mapper 对象必须设置 get/set 方法.
@@ -309,23 +126,13 @@
     //后者是直接给全局属性 *Service 赋值,所以可以不设置get/set.
     
     
-/*    
+ 
 #2-3S
     AOP(Aspect Oriented Programming): 面向切面编程
     
     AOP是将既有程序定义为一个切入点,然后在其前后切入不同的执行内容,
     比如常见的有: 打开数据库连接/关闭数据库连接; 打开事务/关闭事务; 记录日志等。
-    
-    //在不改变原有逻辑的前提下,提供额外功能,提高系统的扩展性.
-    
-    常用概念
-        切入点: 原有方法, pointcut
-        前置通知: 在切点之前执行的功能. before advice
-        后置通知: 在切点之后执行的功能. after advice
-        异常通知: 如果切点执行过程中出现异常,会触发异常通知. throws advice
-        切面: 所有功能总称叫做切面.
-        织入: 把切面嵌入到原有功能的过程叫做织入
-    
+   
 #2-4S
     切入点表达式
         execution (* com.x.service.impl..*.*(..))
@@ -334,175 +141,22 @@
         //3. 包名: 需要拦截的包名, 后面两个点表示当前包及其子孙包
         //4. 第二个*号: 类名
         //5. *(..): 最后*表示方法名, ()里面表示方法的参数,两个点表示任何参数
-
-    DEMO
-        https://www.cnblogs.com/duenboa/p/6665474.html
-        https://blog.csdn.net/xubo_ob/article/details/78182014
     
-        //第一个*代表返回类型; 第二个*代表方法名; 而..代表任意入参的方法
-        execution(public * *(..)) //匹配所有类的public方法
-    
-        execution(* *To(..)) //匹配所有以To为后缀的方法
-    
-        execution(* com.x.service.*.*(..)) //匹配 com.x.service 包下所有类的所有方法
-        
-        execution(* com.x.service..*(..)) //匹配 com.x.service 包,及其子孙包下所有类的所有方法
-        
-        //匹配包名前缀为com, 包下类名后缀为Dao, 类中方法名前缀为find 的所有方法
-        execution(* com..*.*Dao.find*(..))
-        
-        //??? ???
-        execution(* com.x.Waiter.*(..)) //匹配Waiter接口的所有方法
-
-        //??? ???
-        execution(* com.x.Waiter+.*(..)) //匹配Waiter接口及其所有实现类的方法
-    
-        //匹配 joke() 方法, 且joke()方法的第一个入参是String; 第二个入参是int
-        execution(* joke(String,int)))
-    
-        //同上, 第二个入参可以是任意类型
-        execution(* joke(String,*)))
-    
-        //同上, 第二个参数及以后可以有任意个入参且入参类型不限
-        execution(* joke(String,..)))
-    
-        //匹配 joke() 方法, 方法拥有一个入参,且入参是Object类型或该类的子类
-        execution(* joke(Object+)))
-    
-    前置和后置通知
-        前置-可获取: 切点方法对象; 切点方法参数; 切点方法所在类的对象
-        后置-可获取: 切点方法的返回值; 切点方法对象; 切点方法参数; 切点方法所在类的对象 
-    
-#2-5S    
-    异常通知(AspectJ)
-    //只有当切点报异常才能触发异常通知
-    (1).定义任意类,任意方法,其中方法参数名必须和 <aop:after-throwing> 的 throwing 相同
-        public class MyThrowsAdvice{
-            public void myexception(Exception e) {
-                System.out.println("执行异常通知");
-            }
-        }
-    
-    (2).配置 ApplicationContext.xml
-        // <aop:aspect>的 ref 属性表示: 异常通知方法在哪个类中.
-        // <aop:xxx/>: xxx表示什么通知, after-throwing 表示异常通知
-        // method: 当触发异常通知时,调用哪个方法
-        // throwing: 异常对象名, 必须和通知方法中参数名相同.(可以不在通知中声明异常对象)
-        <bean id="mythrow" class="com.x.advice.MyThrowsAdvice"></bean>
-        <aop:config>
-            <aop:aspect ref="mythrow">
-                <aop:pointcut expression="execution(* com.x.test.Demo.demo1())" id="mypoint"/>
-                <aop:after-throwing method="myexception" pointcut-ref="mypoint" throwing="e"/>
-            </aop:aspect>
-        </aop:config>
+#2-5S
     
 #2-6S
-    异常通知(Schema-based)
-    (1).自定义类 MyThrowsAdvice,并实现 ThrowsAdvice 接口
-    (2).自定义方法,方法名必须是 afterThrowing; 方法参数必须是 1 或 4 个
-    (3).方法参数中的异常类型,必须要与切点报的异常类型一致
-    
-        public class MyThrowsAdvice implements ThrowsAdvice{
-            public void afterThrowing(Method m, Object[] args, Object target, Exception ex) {
-                System.out.println("执行异常通知");
-            }
-            
-            // public void afterThrowing(Exception ex) throws Throwable {
-                // System.out.println("执行异常通过-schema-base 方式");
-            // }
-        }
-    
-    (4).配置 ApplicationContext.xml 
-        <bean id="mythrow" class="com.x.advice.MyThrowsAdvice"></bean>
-        <aop:config>
-            <aop:pointcut expression="execution(*com.x.test.Demo.demo1())" id="mypoint"/>
-            <aop:advisor advice-ref="mythrow" pointcut-ref="mypoint" />
-        </aop:config>
         
 #2-7S
-    环绕通知(Schema-based)
-    //把前置通知和后置通知都写到一个通知中,组成了环绕通知
-    (0).自定义类实现 MethodInterceptor
-        public class MyArround implements MethodInterceptor {
-            @Override
-            public Object invoke(MethodInvocation arg0) throws Throwable {
-                System.out.println("环绕-前置");
-                Object result = arg0.proceed();//放行,调用切点方式
-                System.out.println("环绕-后置");
-                return result;
-            }
-        }
-    (1).配置 applicationContext.xml
-        <bean id="myarround" class="com.x.advice.MyArround"></bean>
-        <aop:config>
-            <aop:pointcut expression="execution(*com.x.test.Demo.demo1())" id="mypoint"/>
-            <aop:advisor advice-ref="myarround" pointcut-ref="mypoint" />
-        </aop:config>
     
 #2-8S
     AspectJ-所有通知
-    (0).定义任意类,任意方法.
-        class MyAdvice {
-            public void mybefore(String name1, int age1) {
-                System.out.println("前置" + name1);
-            }
-
-            public void mybefore1(String name1) {
-                System.out.println("前置:" + name1);
-            }
-
-            public void myaftering() {
-                System.out.println("后置 2");
-            }
-
-            public void myafter() {
-                System.out.println("后置 1");
-            }
-
-            public void mythrow() {
-                System.out.println("异常");
-            }
-
-            public Object myarround(ProceedingJoinPoint p) throws Throwable {
-                System.out.println("执行环绕");
-                System.out.println("环绕-前置");
-                Object result = p.proceed();
-                System.out.println("环绕后置");
-                return result;
-            }
-        }
-    
-    (1).配置 applicationContext.xml
-        // <aop:after/> 后置通知,是否出现异常都执行
-        // <aop:after-returing/> 后置通知,只有当切点正确执行时执行
-        // <aop:after/> 和 <aop:after-returing/> 和 <aop:after-throwing/> 执行顺序和配置顺序有关
-        // execution() 括号不能扩上 args, 中间使用 and, 不能使用&&, 由 spring 把 and 解析成&&
-        // args(名称) 名称自定义的. 顺序和 demo1(参数0,参数1)对应
-        // <aop:before/> arg-names="名称", 名称来源于expression="" 中 args(),名称必须一样
-        // args() 有几个参数,arg-names 里面必须有几个参数
-        // arg-names="" 里面名称必须和通知方法参数名对应
-        <bean id="myadvice" class="com.x.advice.MyAdvice"></bean>
-        <aop:config>
-            <aop:aspect ref="myadvice">
-                <aop:pointcut expression="execution(*com.x.test.Demo.demo1(String,int)) and    args(name1,age1)" id="mypoint"/>
-                <aop:pointcut expression="execution(*com.x.test.Demo.demo1(String)) and args(name1)" id="mypoint1"/>
-                <aop:before method="mybefore" pointcut-ref="mypoint" arg-names="name1,age1"/>
-                <aop:before method="mybefore1" pointcut-ref="mypoint1" arg-names="name1"/>
-                <!-- <aop:after method="myafter" pointcut-ref="mypoint"/>
-                <aop:after-returning method="myaftering" pointcut-ref="mypoint"/>
-                <aop:after-throwing method="mythrow" pointcut-ref="mypoint"/>
-                <aop:around method="myarround" pointcut-ref="mypoint"/>-->
-            </aop:aspect>
-        </aop:config>
     
 #2-9S
-    AspectJ-所有通知-获取参数
-    (1).如上
+
     
 #2-10S
     使用注解(基于 AspectJ)
      Spring不会自动去寻找注解,必须告诉 spring 哪些包下的类中可能有注解
-*/    
     
 #2-11S
     设计模式: 前人总结的一套解决特定问题的代码
@@ -613,48 +267,13 @@
     
 #3-1S
     
-    ******
-    
 #3-2S
     自动注入
-    //当Person类cat属性的 ref 值与Cat类的 id 值相同时,则可以不用配置 <property/>
-    <bean id="cat" class="com.x.pojo.Cat"></bean>
-    <bean id="person" class="com.x.pojo.Person">
-        <property name="cat" ref="cat"></property>
-    </bean>
-    
-    //简化为
-    <bean id="cat" class="com.x.pojo.Cat"></bean>
-    <bean id="person" class="com.x.pojo.Person" autowire="byName"></bean>
-    
-    autowire取值范围
-        default: 默认值,根据全局 default-autowire=""值.(全局默认no,不自动注入)
-        no: 不自动注入.
-        byName: 名称. 根据 name 去匹配所有bean的id
-        byType: 类型. .... ref .................,当出现两个相同Type时,报错!!!
-        constructor: 构造方法. 根据构造方法的参数名去匹配所有bean的id, 底层使用byName!
-    
-    局部和全局
-        在<bean>中通过 autowire="" 配置,只对这个<bean>生效
-        在<beans>中通过 default-autowire=""配置,对当前文件中所有<bean>生效
     
 #3-3S
     加载properties文件
-        //不明白
-        
-    // Spring将配置文件内容记载到自身容器中,所有被Spring管理的对象都可以获取到配置文件中的内容
-    // Controller不被Spring管理,所以不能获取容器内容??? ???
-    
-    注解@Value("${key}")
-        (1).添加注解扫描
-            <context:component-scanbase-package="com.bjsxt.service.impl"></context:component-scan>
-        
-        (2).变量名和key可以不相同; 类型任意,只要保证 key 对应的 value 能转换成这个类型就可以.
-            @Value("${my.info}")
-            private String info;
     
 #3-4S
-    *** ***
     
 #3-5S
     单例设计模式
@@ -708,52 +327,10 @@
         饿汉式: 解决了懒汉式中多线程访问可能出现同一个对象和效率低问题
     
 #3-7S
-    编程式事务: 由程序员编写事务控制代码; OpenSessionInView 编程式事务
-    声明式事务: 
-        事务控制代码已经由 spring 写好. 
-        程序员只需要声明在哪些方法需要进行事务控制和如何进行事务控制.
-    
-    声明式事务都是针对于 ServiceImpl 类下方法的
-    //Service中是业务,一个业务对应一个事务. (三者区分: 功能,业务,事务)
-    
-    事务管理器基于通知(advice)的. 类似AOP
-    
     
 #3-10S
-    rollback-for="异常类型全限定路径" //建议:给定该属性值.
-        当出现什么异常时需要进行回滚, 手动抛异常一定要给该属性值.
-    
-    #阻止程序正常流程的几种方案: return; throw Exception; ... ...
-    
-    no-rollback-for=""
-        当出现什么异常时不滚回事务.
-    
-    
+   
 #3-11S
-    // 常用注解
-        // @Component: 创建类对象,相当于配置<bean/>        
-        // @Controller: 写在控制器类上. (功能同 @Component)
-        // @Service: 写在 ServiceImpl 类上. (...)
-        // @Repository: 写在数据访问层类上. (...,mybatis不用,hibernate用)
-        
-        // @Resource: java注解
-            // (1).不需要写对象的 get/set
-            // (2).默认按照 byName 注入; 如果没有名称对象,按照 byType 注入
-            // //建议把 对象名称 和 spring容器中对象名(类型名)相同
-        
-        // @Autowired: spring注解
-            // (1).不需要写对象的 get/set
-            // (2).默认按照 byType 注入.
-        
-        // @Value(): 获取 properties 文件中内容
-        
-        // @Aspect() 定义切面类
-        // @Pointcut() 定义切点
-        // @Before() 前置通知
-        // @After 后置通知
-        // @AfterReturning 后置通知,必须切点正确执行
-        // @AfterThrowing 异常通知
-        // @Arround 环绕通知
     
 #3-12S
     Ajax
