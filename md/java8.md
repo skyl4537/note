@@ -646,78 +646,85 @@ Double reduce2 = list.stream()
 ```
 
 ```java
-// toList(); toSet(); toCollection(); 
-List<String> collect = list.stream()
-        .map(Person::getName)
-        .collect(Collectors.toList());//转化list
+// toList(); toSet(); toCollection();
+List<String> nameList = PERSON_LIST.stream()
+    .map(person -> person.getName()).collect(Collectors.toList());
+```
 
-Long collect2 = list.stream()
-        .filter(person -> person.age > 18)
-        // .count()
-        .collect(Collectors.counting());//计算流中元素的个数
+```java
+Long count = PERSON_LIST.stream() //.count() 等效
+    .filter(person -> person.getAge() > 18).collect(Collectors.counting());
+```
 
-//summingInt(); averagingInt(); summingDouble(); averagingDouble(); ...
-int collect3 = list.stream()
-        // .mapToInt(Person::getAge).sum();
-        .collect(Collectors.summingInt(Person::getAge));//对流中元素的int属性求和
+```java
+//joining(): 连接流中每个字符串。参数列表：delimiter-连接符; prefix-结果的前缀; suffix-结果的后缀.
+String nameList = PERSON_LIST.stream()
+    .map(person -> person.getName()).collect(Collectors.joining(",", "{", "}"));
+```
 
+```java
+//maxBy(); minBy();
+Optional<Person> collect6 = PERSON_LIST.stream()
+    // .max(Comparator.comparingDouble(Person::getHeight));
+    .collect(Collectors.maxBy((x, y) -> Double.compare(x.getHeight(), y.getHeight())));
+```
+
+```java
+//reducing() --> 参数列表 arg0: 初始值; arg1: 哪个属性; arg2: 求和操作
+Optional<Double> collect7 = PERSON_LIST.stream()
+    .map(Person::getHeight).collect(Collectors.reducing(Double::sum));
+
+Double collect8 = PERSON_LIST.stream()
+    .collect(Collectors.reducing(0.0, Person::getHeight, Double::sum));
+```
+
+```java
+//collectingAndThen(); 包裹另一个收集器,对其结果转换函数
+Integer collect9 = PERSON_LIST.stream()
+    .collect(Collectors.collectingAndThen(Collectors.toList(), List::size));
+```
+
+```java
+Integer ageSum = PERSON_LIST.stream()
+    // .mapToInt(person -> person.getAge()).sum() 等效
+    .collect(Collectors.summingInt(person -> person.getAge()));
+```
+
+```java
 //summarizingInt(); summarizingDouble();
-DoubleSummaryStatistics collect4 = list.stream()
-        .collect(Collectors.summarizingDouble(Person::getHeight));
-//收集流中Double属性的统计值.如: 元素个数, 总和, 最小值, 平均值, 最大值.
-//DoubleSummaryStatistics包含属性: {count=5, sum=887.500000, min=157.500000, average=177.500000, max=197.500000}
+DoubleSummaryStatistics collect4 = PERSON_LIST.stream()
+    .collect(Collectors.summarizingDouble(Person::getHeight));
 System.out.println(collect4.getAverage());
 
-//joining(): 连接流中每个字符串
-//参数列表 -> delimiter: 连接符; prefix: 结果的前缀; suffix: 结果的后缀.
-String collect5 = list.stream()
-        .map(Person::getName)
-        .collect(Collectors.joining("-", "(", ")"));//(zhao-qian-sui)
+//收集流中Double属性的统计值.如: 元素个数, 总和, 最小值, 平均值, 最大值.
+//DoubleSummaryStatistics包含属性: {count=5, sum=887.500000, min=157.500000, average=177.500000, max=197.500000}
+```
 
-//maxBy(); minBy();
-Optional<Person> collect6 = list.stream()
-        // .max(Comparator.comparingDouble(Person::getHeight));
-        .collect(Collectors.maxBy((x, y) -> Double.compare(x.getHeight(), y.getHeight())));
+```java
+//groupingBy(); 分组函数
+Map<Boolean, List<Person>> genderMap = PERSON_LIST.stream()
+    .collect(Collectors.groupingBy(Person::getGender)); //分组: 性别
 
-//reducing();
-Optional<Double> collect7 = list.stream()
-        .map(Person::getHeight)
-        .collect(Collectors.reducing(Double::sum));
+Map<Boolean, Map<String, List<Person>>> groupMap = PERSON_LIST.stream() //多级分组: 先性别，再姓名
+    .collect(Collectors.groupingBy(Person::getGender, Collectors.groupingBy(Person::getName)));
 
-//参数列表 -> arg0: 初始值; arg1: 哪个属性; arg2: 求和操作.
-Double collect8 = list.stream()
-        .collect(Collectors.reducing(0.0, Person::getHeight, Double::sum));
+Map<Boolean, Map<String, List<Person>>> groupMap = PERSON_LIST.stream() //多级分组: 先性别，再年龄
+    .collect(Collectors.groupingBy(Person::getGender, Collectors.groupingBy(person -> {
+        if (person.getAge() < 18) {
+            return "少年";
+        } else if (person.getAge() < 30) {
+            return "青年";
+        } else {
+            return "中年";
+        }
+    })));
+```
 
-//collectingAndThen(); 包裹另一个收集器,对其结果转换函数
-Integer collect9 = list.stream()
-        .collect(Collectors.collectingAndThen(Collectors.toList(), List::size));
-
-//groupingBy();
-Map<Gender, List<Person>> collect10 = list.stream()
-        .collect(Collectors.groupingBy(Person::getGender));//分组: 性别
-
-Map<Gender, Map<Integer, List<Person>>> collect12 = list.stream() //多级分组: 先性别,再年龄
-        .collect(Collectors.groupingBy(Person::getGender, Collectors.groupingBy(Person::getAge)));
-
-Map<Gender, Map<String, List<Person>>> collect13 = list.stream() //多级分组: 先性别,再年龄
-        .collect(Collectors.groupingBy(Person::getGender, Collectors.groupingBy((x) -> {
-            if (((Person) x).age < 18) {
-                return "少年";
-            } else if (((Person) x).age < 30) {
-                return "青年";
-            } else {
-                return "中年";
-            }
-        })));
-collect13.forEach((x, y) -> {
-    System.out.println(x); //x -> MAN | WOMAN
-    y.forEach((m, n) -> System.out.println(m + " - " + n)); // m -> 少年,青年，中年
-});
-
-//partitioningBy(); 根据条件进行分区
-//false:[{"age":17...},{"age":18...}],true:[{"age":21...}]}
+```java
+//partitioningBy(); 分区函数
+//二者区别：分区函数只能将数据分为两组，即ture和false两组数据。分组函数会将数据分组成多个key的形式。
 Map<Boolean, List<Person>> collect14 = list.stream()
-        .collect(Collectors.partitioningBy(x -> x.age > 20));
+    .collect(Collectors.partitioningBy(x -> x.age > 20));
 ```
 
 ##并行流

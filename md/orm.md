@@ -107,7 +107,9 @@ String getNameById(int id);
 ```
 
 ```java
-@MapKey("flowerName") //‘flowerName’表示java属性名，而非数据库字段名。所以，xml中的 flower_name 必须改别名。切记！
+//‘flowerName’表示java属性名，而非数据库字段名。所以，xml中的 flower_name 必须改别名。切记！
+//key 不能重复，重复就覆盖。也就是说，对于多个 key 的flower，只能返回最后一条
+@MapKey("flowerName")
 Map<String, Flower> listByName(@Param("flowerName") String flowerName);
 ```
 

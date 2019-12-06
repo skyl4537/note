@@ -138,7 +138,236 @@ mybatis 需要加载的 xml 文件分别在：'com/example/web/student/sqlxml/*.
 
 
 
-#Web
+# HTML
+
+## 基础概念
+
+> 常见http状态码
+
+```sh
+200 OK 请求成功. 请求所希望的响应头或数据体将随此响应返回
+302 Found 重定向. 请求的资源原本确实存在，但已经被临时改变了位置
+404 NOT-Found 请求失败. 请求的资源不存在
+500 Internal-Server-Error 服务器内部错误
+400 Bad-Request 请求有误. 可能是参数错误
+
+#400+ 客户端错误. 请求包含语法错误或无法完成请求
+#500+ 服务器错误. 服务器在处理请求的过程中发生了错误
+```
+
+> 标签区别 span & div
+
+```sh
+多个<span/>的内容显示在同一行。
+一个<div/>显示一行，多个<div/>显示在不同的行。
+```
+
+
+
+> 
+>
+>  
+
+## 常见方法
+
+>  <https://blog.csdn.net/h13783313210/article/details/79832318>
+>
+> <https://www.jianshu.com/p/7fa6175f1db2>
+
+>自执行函数（两种）
+
+```js
+//表示文档结构已经加载完成（不包含图片等非文字媒体文件），window.onload=function(){} 则指示页面包含图片等文件在内的所有元素都加载完成。
+$(function () {
+    //TODO
+});
+$(document).ready(function () {
+    //TODO
+});
+```
+
+>text()    html()    val()
+
+```js
+text() 设置或返回被选元素的文本内容
+html() 设置或返回被选元素的内容（innerHTML）。返回只返回第一个匹配元素的内容
+val()  设置或返回被选元素的 value 属性。设置所有匹配元素的 value 属性的值，返回只返回第一个匹配元素的 value 属性的值
+```
+
+```js
+$(selector).val();
+$(selector).val(value);
+$(selector).val(function(index,currentvalue)); //index - 返回集合中元素的 index 位置。currentvalue - 返回被选元素的当前 value。
+```
+
+> **(14)** add()    remove()    append()    appendTo()
+
+```js
+add()    把元素添加到已存在的元素组合中
+remove() 移除被选元素，包括所有的文本和子节点。该方法也会移除被选元素的数据和事件
+//提示：如需移除元素，但保留数据和事件，请使用 detach() 方法代替
+//提示：如只需从被选元素移除内容，请使用 empty() 方法
+
+append() 方法在被选元素的结尾插入指定内容
+//提示：如需在被选元素的开头插入内容，请使用 prepend() 方法
+
+appendTo() 方法在被选元素的结尾插入 HTML 元素
+//提示：如需在被选元素的开头插入 HTML 元素，请使用 prependTo() 方法
+```
+
+
+
+
+
+## 其他方法
+
+> js 对象和 jQuery 对象的相互转换
+
+```js
+// js ---> jQuery
+let v = document.getElementById("v"); //js对象 
+let $v = $(v); //jQuery对象 
+```
+
+```js
+// jQuery ---> js 两种方式
+//（1）.jQuery对象是一个数据对象，可以通过[index]的方法，来得到相应的js对象
+let $v = $("#v"); //jQuery对象
+let v = $v[0];    //js对象
+
+//（2）.jQuery本身提供，通过.get(index)方法，得到相应的js对象
+let $v = $("#v");  //jQuery对象
+let v = $v.get(0); //js对象
+```
+
+> 获取选中的值：checkbox   radio    select 
+
+```html
+<div>
+    <h5>单选框</h5> <!-- radio：单选框，只有加上'name'才具有互斥效果。表单提交的是'value'值 -->
+    <input type="radio" name="sex" value="true" checked="checked"><span>boy</span>
+    <input type="radio" name="sex" value='false'><span>girl</span>
+</div>
+<div>
+    <h5>下拉列表</h5>
+    <select id="weekday">
+        <option>---</option>
+        <option value="6" selected="selected">星期六</option>
+        <option value="7">星期天</option>
+    </select>
+</div>
+<div>
+    <h5>多选框</h5>
+    <input type="checkbox" name="hobby" value="rap" checked><span>RAP</span>
+    <input type="checkbox" name="hobby" value="篮球"><span>篮球</span>
+</div>
+```
+
+```js
+function get_check_value() {
+    // 获取 radio 的 Value
+    // let radio = $("input[type='radio']:checked").val();
+    // let radio = $("input[name='sex']:checked").val();
+    let radio = $("input:radio:checked").val();
+    console.log("radio: " + radio);
+
+    // 获取 selector 选中项的 Value
+    // let selectorValue = $('select#weekday').find('option:selected').val();
+    // let selectorValue = $('select#weekday option:selected').val();
+    let selectorValue = $("#weekday").val();
+    console.log("selectorValue: " + selectorValue);
+
+    // 获取 selector 选中项的 Text
+    // let selectorText = $('select#weekday').find('option:selected').text();
+    let selectorText = $('select#weekday option:selected').text();
+    // let selectorText = $("#weekday").text(); //不行
+    console.log("selectorText: " + selectorText);
+
+    // 获取 checkbox
+    let checkbox = $("input[name='hobby']:checked");
+    for (let i = 0; i < checkbox.length; i++) {
+        console.log("checkbox: " + $(checkbox[i]).val());
+    }
+}
+```
+
+> ajax请求
+
+```js
+var jsonStr = JSON.stringify(jsonObj); //json -> String
+var jsonObj = JSON.parse(jsonStr);     //String -> json
+```
+
+```js
+$(function () { //简写前: $(document).ready(function () {
+    var data = {
+        "uid": 1,
+        "ipAddress": "地址"
+    };
+    $.ajax({
+        url: "/webpark/fanChang",
+        type: "POST",
+        data: JSON.stringify(data),      //入参 jsonString
+        contentType: 'application/json', //请求参数的格式        
+        dataType: "json",                //返回参数的格式 json，可直接解析
+        success: function (result) {
+            console.log(result.errcode);
+        }
+    });
+});
+```
+
+```js
+$.get(url,data,success,dataType)); //简化$.ajax()
+$.post(url,data,success,dataType);
+
+$.getJSON(url,data,success);   //简化$.get(). 相当于设置 $.get() 中 dataType=”json”
+$.getScript(url,data,success); //相当于设置 $.get 中 dataType=”script”
+```
+
+```js
+$.getJSON('http://192.168.8.7:9091/crud/emp/100', function (data, status) {
+    console.log("data: " + JSON.stringify(data) + " status: " + status);
+    $("#show_msg").append(data.datas.empName);
+})
+```
+> 绑定事件
+
+```html
+<button id="btn_test" onclick="btn_fun(this)">静态指定方法</button> 
+```
+
+```js
+$("#btn_test").click(function () { //动态绑定事件
+    alert("点我上王者..." + $(this).attr('id'));
+});
+```
+
+```js
+function btn_fun(e) { //静态绑定事件
+    alert("点我上王者..." + $(e).attr('id'));
+}
+```
+> 表单提交
+
+```js
+
+```
+
+```js
+
+```
+
+```js
+
+```
+
+
+
+
+
+
+# Web
 
 ## jsp
 
@@ -576,7 +805,7 @@ params     #请求参数必须满足条件，才能进行处理
 public String hello() { }
 ```
 
-> `@RequestParam`：将 `GET POST 请求行/体` 中的 `键值对` 解析为简单类型，不能解析为自定义Bean
+> `@RequestParam`：将 `GET/POST 请求行/体` 中的 `键值对` 解析为简单类型，不能解析为自定义Bean
 
 ```js
 function to_page(pageNum) {
@@ -608,25 +837,27 @@ public Result listEmpByPage(
 }
 ```
 
-> `NULL`：什么也不写，可以将 `GET POST 请求行/体` 的 `键值对` 解析为自定义Bean
+> `NULL`：什么也不写，可以将 `GET/POST 请求行/体` 的 `键值对` 解析为自定义Bean
 
 ```js
-$.ajax({
-    url: "/crud/emp",
-    method: "POST",    
-    data: $("#modal_emp_add form").serialize(), //form表单数据转键值对: empName=li&gender=false
-    success: function (result) {
-        if (200 === result.code) {
-            console.log(result);
-        }
-    }
+$("#btn_form").click(function () {
+    let data = form2kv("#form_test");
+    $.post('http://192.168.8.7:9091/crud/dept/kv', data, function (data, status) {
+        if ('fail' === status) return false;
+        console.log("data: " + data)
+    })
 });
+
+//form表单 --> key-value
+function form2kv(e) {
+    return $(e).serialize();
+}
 ```
 
 ```java
-@PostMapping("") //新增 POST /crud/emp
-public Result addEmp(Emp emp) {
-    int insert = empMapper.insert(emp);
+@PostMapping("/kv")
+public Result addDept1(Dept dept) {
+    int insert = deptMapper.insert(dept);
     return Result.success();
 }
 ```
@@ -634,42 +865,30 @@ public Result addEmp(Emp emp) {
 > `@RequestBody`：将`POST 请求体` 中的 `JSON` 解析为 Bean 或者 Map
 
 ```js
-$("#emp_update_btn").click(function () {
-    //1、验证邮箱是否合法
-    //2、发送ajax请求保存更新的员工数据
-    $.ajax({
-        url: "/crud/emp/" + $(this).attr("edit-id"),
-        method: "PUT",
-        contentType: "application/json",
-        data: form2json("#modal_emp_update form"),
-        success: function (result) {
-            if (200 === result.code) {
-                $("#modal_emp_update").modal("hide"); //1、关闭对话框
-                to_page(currentPage);                 //2、回到本页面
-            }
-        }
-    });
+$("#btn_form").click(function () {
+    let data = form2json("#form_test");
+    $.post('http://192.168.8.7:9091/crud/dept', data, function (data, status) {
+        if ('fail' === status) return false;
+        console.log("data: " + data)
+    })
 });
 
-//form表单数据转成json
-function form2json(form) {
+//form表单 --> json
+function form2json(e) {
     let data = {};
-    let formData = $(form).serializeArray();
+    let formData = $(e).serializeArray();
     for (let i in formData) {
-        if(!formData.hasOwnProperty(i)) continue;
-
-        //下标为的i的name做为json对象的key，下标为的i的value做为json对象的value
-        data[formData[i].name] = formData[i]['value'];
+        if (!formData.hasOwnProperty(i)) continue;
+        data[$(formData[i]).attr('name')] = $(formData[i]).val();
     }
     return JSON.stringify(data);
 }
 ```
 
 ```java
-@PutMapping("/{empId}")
-public Result updateEmp(@RequestBody Emp emp, @PathVariable("empId") Integer empId) {
-    emp.setEmpId(empId);
-    int update = empMapper.updateById(emp);
+@PostMapping("")
+public Result addDept(@RequestBody Dept dept) {
+    int insert = deptMapper.insert(dept);
     return Result.success();
 }
 ```
@@ -714,17 +933,7 @@ public String hello(@RequestHeader("header") String header, @CookieValue("JSESSI
 
 # 概念
 
-## html
-
-> ###html标签
-
-```html
-<!-- radio：单选框，只有加上'name'才具有互斥效果。表单提交的是'value'值 -->
-<div class="col-sm-10">
-    <input type="radio" name="gender" id="gender1_update_input" value="true" checked="checked">男
-    <input type="radio" name="gender" id="gender2_update_input" value="false"> 女
-</div>
-```
+## HTML
 
 > ### javaScript
 
@@ -755,7 +964,7 @@ js 作为一种脚本语言可以放在html页面中'任何位置'。但是浏�
         <meta charset="utf-8">
         <meta http-equiv="X-UA-Compatible" content="IE=edge">
         <meta name="viewport" content="width=device-width, initial-scale=1">
-        <!-- 上述3个meta标签*必须*放在最前面，任何其他内容都*必须*跟随其后！ -->
+        <!-- 上述3个meta标签【必须】放在最前面，任何其他内容都【必须】跟随其后！ -->
         <link rel="icon" href="../../favicon.ico">
         <title>Cover Template for Bootstrap</title>
         <!-- Bootstrap core CSS -->
@@ -769,7 +978,6 @@ js 作为一种脚本语言可以放在html页面中'任何位置'。但是浏�
         <script src="https://cdn.bootcss.com/jquery/1.12.4/jquery.min.js"></script>
     </body>
 </html>
-
 ```
 > ###jQuery
 
@@ -820,62 +1028,25 @@ window.onload = function () {
 当 <img/> 的src指定的图片完全加载完后，才会触发'window.onload'事件。所以，前者的效率更高。
 ```
 
-> 动态绑定事件
-
-```html
-<button id="dynamic_btn">动态绑定事件</button>
-```
-
-```js
-$(function () { //文档就绪函数
-    $("#dynamic_btn").click(function () {
-        alert("点我上王者..." + $(this).attr('id')); //获取 id 属性
-    });
-});
-```
-
-> 静态绑定事件
-
-```html
-<button id="static_btn" onclick="staticBtn(this)">静态指定方法</button>
-```
-
-```js
-function staticBtn(e) {
-    alert("点我上王者..." + $(e).attr('id'));
-}
-```
-
 > ### ajax
 
 ```sh
 ajax 异步的 JavaScript 和 XML。
-实质是使用 XMLHttpRequest 对象异步地向服务器发送请求，服务器返回部分数据，而不是一个完整的页面，以页面无刷新的效果更改页面中的局部内容。
+实质是使用 XMLHttpRequest 对象异步地向服务器发送请求，服务器返回部分数据，而不是一个完整的页面，以实现页面的局部刷新。
 ```
 
-```js
-var jsonStr = JSON.stringify(jsonObj); //json -> String
-var jsonObj = JSON.parse(jsonStr);     //String -> json
+```sh
+#同步模式 & 异步模式
+同步: 提交请求 -> 等待服务器处理 -> 处理完毕返回. 这个期间客户端不能做任何事
+异步: 请求通过事件触发 -> 服务器处理(此时浏览器仍可以做其他事情) -> 处理完毕
+
+同步请求时，js会等待请求返回，获取status。不需要 onreadystatechange 事件处理函数。
+而异步则需要 onreadystatechange 事件处理，且值为 4 再处理下面的内容。如果想获得返回值必须用同步，因为异步无法得到返回值。
+
+ajax 主要功能就是提供与服务器的异步交互，比如需要输入一个用户名，在输入完毕之后，没有确认提交，ajax可以通过异步提交来检测同户名是否重复可用。
+而同步提交就像注册完毕，将信息存储到数据库后提示注册成功。
 ```
 
-```js
-$(function () { //简写前: $(document).ready(function () {
-    var data = {
-        "uid": 1,
-        "ipAddress": "地址"
-    };
-    $.ajax({
-        type: "POST",
-        url: "/webpark/fanChang",
-        contentType: 'application/json', //请求参数的格式
-        data: JSON.stringify(data),      //入参 jsonString
-        dataType: "json",                //返回参数的格式 json，可直接解析
-        success: function (result) {
-            console.log(result.errcode);
-        }
-    });
-});
-```
 >jQuery的ajax和原生js实现ajax有什么关系？
 
 ```sh
@@ -900,9 +1071,11 @@ BootStrap 是一个移动设备优先的UI框架。可以不用写任何css、js
 平时用得很多的：1、模态框 2、表单，表单项 3、布局 4、删格系统
 ```
 
-## web
 
-> Servlet是什么？
+
+## Web
+
+> ### Servlet
 
 ```sh
 Servlet 的本质是'一个Java对象（接口）'，这个对象拥有处理 HTTP 请求的方法。常见的有 doGet()，doPost() 等。
@@ -936,86 +1109,44 @@ service()方法自动派遣运行与请求对应的doXXX方法（doGet，doPost�
 > Servlet & jsp
 
 ```sh
-jsp 是 Servlet 技术的扩展，所有的jsp文件都会被翻译为一个继承 HttpServlet 的类。也就是jsp最终也是一个Servlet。这个Servlet对外提供服务。
+jsp 是 Servlet 技术的扩展，所有的jsp文件都会被翻译为一个继承 HttpServlet 的类。也就是jsp最终也是一个Servlet。
 
 #Servlet 和 JSP 最主要的不同点在于JSP侧重于视图，Servlet主要用于控制逻辑。
 Servlet如果要实现html的功能，必须使用Writer输出对应的html，比较麻烦。
 而，JSP的情况是Java和HTML可以组合成一个扩展名为 .jsp 的文件，做界面展示比较方便而嵌入逻辑比较复杂。
 ```
 
-> jsp 9个内置对象
+> ### jsp
 
 ```sh
-'pageContext' 网页的属性是在这里管理 
-'request'     用户端请求，此请求会包含来自GET/POST请求的参数 
-'session'     与请求有关的会话期 
-'application' Servlet正在执行的内容 
+#jsp-9个内置对象
+'pageContext' PageContext.        页面上下文，即页面环境。代表与一个页面相关的对象和属性
+'request'     HttpServletRequest. 可以获取客户端请求相关的数据，如请求头，请求url，请求方式
+'session'     HttpSession.        保存用户的会话信息和会话状态 
+'application' ServletContext.     代表这个web应用程序相关的对象和属性。用于用户间的数据共享，可以存放全局变量
 
 'out'         用于页面显示信息，out.println(); 
 'response'    网页传回用户端的回应 
 
 config        servlet的构架部件 
-page          JSP网页本身 
-exception     针对错误网页，未捕捉的例外 
+page          jsp网页本身 
+exception     针对错误网页，未捕捉的例外
 
-#四大作用域：pageContext < request < session < application （作用域：从小到大）
-Jsp传递值：request session application cookie也能传值
+#jsp-四大作用域：pageContext < request < session < application （作用域：从小到大）
 ```
 
-> 
+>  jsp是怎样转化为html？
 
 ```sh
-
-```
-
-```sh
-
-```
-
-```java
-
-```
-
-> 
-
-```sh
-
-```
-
-```sh
-
-```
-
-## 概念
-
-> ###转发 & 重定向
-
-```sh
-`转发`：服务端收到请求，进行一定的处理后，先不进行响应，而是在'服务端内部'转发给其他 Servlet 继续处理。
-`重定向`：服务端处理完请求后，响应给浏览器一个 302 状态码和重定向地址，浏览器收到响应后，立即向重定向地址再次发送请求。
-
-(1).转发：浏览器只会发送 '1' 次请求，组件间共享数据。重定向：浏览器发送 2 次请求，不会共享数据
-(2).转发：浏览器的地址栏'不会'发送改变。重定向：浏览器的地址栏会发生改变
-(3).转发：只能转发到'当前web项目的内部资源'。重定向：可以是任意资源，甚至是网络资源
-```
-
-```sh
-转发  ：'/'代表当前'web应用'的根目录; //http://localhost:8090/demo/
-重定向：'/'代表当前'web站点'的根目录. //http://localhost:8090/
-```
-
-```java
-req.setAttribute(key, value);  //转发前绑定数据,在目标资源取出数据
-req.getRequestDispatcher("转发地址").forward(req, resp);
-
-resp.sendRedirect("重定向地址"); //重定向
+jsp页面先被转译成java文件(即Servlet类)，再编译成.class文件。
+客户端请求时，服务端将jsp页面的动态数据解析成以 html 标记的内容，然后将整个页面以字节流的方式输出到客户端。
 ```
 
 > ###Cookie
 
 ```sh
-HTTP 是'一种无状态协议'。WEB 服务器本身无法识别出哪些请求是同一个浏览器发出，浏览器的每一次请求都是孤立的。
-所以，WEB 服务器必须采用一种机制来唯一标识一个用户，同时记录该用户的状态。
+HTTP 是'一种无状态协议'。Web服务器本身无法识别出哪些请求是同一个浏览器发出，浏览器的每一次请求都是孤立的。
+所以，Web服务器必须采用一种机制来唯一标识一个用户，同时记录该用户的状态。
 ```
 
 ```sh
@@ -1025,8 +1156,10 @@ HTTP 是'一种无状态协议'。WEB 服务器本身无法识别出哪些请求
 #局限性：
 (1).Cookie 作为请求或响应报文发送，无形中增加了网络流量
 (2).Cookie 是明文传送的安全性差
-(3).各个浏览器对 Cookie 有限制，使用上有局限（单个 Cookie 保存的数据不能超过4K，很多浏览器都限制一个站点最多保存20个 Cookie）
+(3).各个浏览器对 Cookie 有限制，使用上有局限（单个Cookie保存的数据不能超过 4 K，很多浏览器都限制一个站点最多保存 20 个Cookie）
 ```
+
+> Cookie 持久化
 
 ```sh
 #持久化：设置过期时间，浏览器就会把 Cookie 持久化到磁盘，再次打开浏览器，依然有效，直到过期！
@@ -1066,8 +1199,9 @@ Cookie[] cookies = request.getCookies(); //遍历读取 Cookie
 当浏览器关闭再打开，浏览器可能丢失之前 Cookie 中的 SessionId，也就找不到服务器端的 Session 对象，所以无法自动登录
 ```
 
+>Cookie & Session
+
 ```sh
-`Cookie & Session`
 (1).Cookie 数据存放在客户的浏览器上，Session 数据放在服务器上
 (2).Cookie 不是很安全，别人可以分析存放在本地的 Cookie 并进行 Cookie 欺骗
 (3).单个 Cookie 保存的数据不能超过4K，很多浏览器都限制一个站点最多保存 20 个 Cookie
@@ -1080,11 +1214,17 @@ request.getSession(true);  //根据 SessionId 查找，有则返回，无则创�
 request.getSession(false); //..........................，无则为 null
 ```
 
+> Session 持久化
+
+```sh
+Session超时：web服务器会将空闲时间(默认 30 分钟)过长的Session对象删除掉，以节省服务器内存空间资源。
+#持久化 Session <--> 持久化 Cookie --> 设置Cookie过期时间
+默认情况，SessionId 保存在浏览器的内存中，并不持久化到硬盘。所以，再次打开浏览器，SessionId 丢失
+```
+
 ```java
-//持久化 Session --> 持久化 Cookie --> 设置Cookie过期时间
-//默认，SessionId 保存在浏览器的内存中，并不持久化到硬盘。所以，再次打开浏览器，SessionId 丢失
 Cookie cookie = new Cookie("JSESSIONID", session.getId());
-cookie.setMaxAge(90);
+cookie.setMaxAge(30);
 response.addCookie(cookie); //持久化 Cookie，并发送到浏览器
 ```
 
@@ -1093,6 +1233,40 @@ response.addCookie(cookie); //持久化 Cookie，并发送到浏览器
 //可以通过 'URL重写' 机制解决这一问题：URL;jsessionid=xxx （将 SessionID 拼接URL后面）
 String encodeURL = response.encodeURL(url);
 response.sendRedirect(encodeURL);
+```
+> 
+
+```sh
+
+```
+
+```sh
+
+```
+
+## 概念
+
+> ###转发 & 重定向
+
+```sh
+`转发`：服务端收到请求，进行一定的处理后，先不进行响应，而是在'服务端内部'转发给其他 Servlet 继续处理。
+`重定向`：服务端处理完请求后，响应给浏览器一个 302 状态码和重定向地址，浏览器收到响应后，立即向重定向地址再次发送请求。
+
+(1).转发：浏览器只会发送 '1' 次请求，组件间共享数据。重定向：浏览器发送 2 次请求，不会共享数据
+(2).转发：浏览器的地址栏'不会'发送改变。重定向：浏览器的地址栏会发生改变
+(3).转发：只能转发到'当前web项目的内部资源'。重定向：可以是任意资源，甚至是网络资源
+```
+
+```sh
+转发  ：'/'代表当前'web应用'的根目录; //http://localhost:8090/demo/
+重定向：'/'代表当前'web站点'的根目录. //http://localhost:8090/
+```
+
+```java
+req.setAttribute(key, value);  //转发前绑定数据,在目标资源取出数据
+req.getRequestDispatcher("转发地址").forward(req, resp);
+
+resp.sendRedirect("重定向地址"); //重定向
 ```
 
 > ###表单重复提交

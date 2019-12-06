@@ -1876,7 +1876,7 @@ executor.shutdown();
 11:11:01.364 - poolSize: 1; queueSize: 0; completedTask: 3 #所有任务完毕后，poolSize = core
 ```
 
-> 线程池原理
+> ### 自定义线程池
 
 ```java
 public class MyThreadPool {

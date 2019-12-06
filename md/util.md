@@ -10,7 +10,6 @@
 
 ```java
 //【强制】包名统一使用小写，点分隔符之间有且仅有一个自然语义的英语单词。包名统一使用单数形式，但是类名如果有复数含义，类名可以使用复数形式。
-
 正例：应用工具类包名为 com.alibaba.ai.util、类名为 MessageUtils（此规则参考 spring 的框架结构）
 ```
 
@@ -66,35 +65,7 @@ String.format("域名%s被访问了%3.2f次", "\"www.qq.com\"", 123.456);
 String.format("%04d",Integer.parseInt(String.format("%x", 16))); //0010
 ```
 
-> 定时任务：不建议使用Timer
-
-```java
-//【强制】线程池不允许使用 Executors 去创建，而是通过 ThreadPoolExecutor 的方式。
-//       这样的处理方式让写的同学更加明确线程池的运行规则，规避资源耗尽的风险。
-private static ScheduledExecutorService scheduledExecutor = null;
-
-public static ScheduledExecutorService getScheduleExecutor() {
-    if (scheduledExecutor == null) {
-        synchronized (Test02.class) {
-            if (scheduledExecutor == null) {                
-                scheduledExecutor = new ScheduledThreadPoolExecutor(10,
-                        //源自：org.apache.commons.lang3.concurrent.BasicThreadFactory
-                        new BasicThreadFactory.Builder().namingPattern("schedule-pool-%d").daemon(true).build());
-            }
-        }
-    }
-    return scheduledExecutor;
-}
-```
-
-```java
-public ScheduledFuture<?> scheduleWithFixedDelay(Runnable command,
-                                                 long initialDelay,
-                                                 long delay,
-                                                 TimeUnit unit);
-```
-
->通过类名获取类的对象
+> 通过类名获取类的对象
 
 ```java
 @Component // 获取bean的工具类
@@ -638,10 +609,39 @@ String response = HttpClients.createDefault().execute(httpPost, new BasicRespons
 
 ```java
 @Configuration
-public class AppConfig {
+public class RestTemplateConfig {
+
+    //默认不超时 -1
+    @Value("${application.http.resttemplate.timeoutSeconds:30}")
+    private Integer defaultTimeOutSeconds;
+
+    /**
+     * 调用 RestTemplate 的默认构造函数，RestTemplate 对象在底层通过使用 java.net 包下的实现创建 HTTP 请求.
+     * 这种情况相对简单, 一个请求一个连接, 也没有限制.
+     * <p>
+     * 但，想要设置超时，就会导致 RestTemplate 引入 Apache HttpClient 去设置超时时间.
+     * HttpClient 底层使用线程池，线程池默认单个 host 的最大 connection 数量是 5. 所有 connection 数量不能超过 10.
+     * 那么，对于需要访问多个不同网站的情况下, 连接总数一共10个就有点坑了. 在长时间得不到Connection的情况下,
+     * 会抛出异常: org.springframework.web.client.ResourceAccessException Timeout waiting for connection from pool
+     */
+    @Value("${application.http.resttemplate.maxConnPerRoute:50}")
+    private Integer defaultMaxPerRoute;
+
+    @Value("${application.http.resttemplate.maxConnTotal:200}")
+    private Integer maxTotal;
+
     @Bean
-    public RestTemplate restTemplate() {
-        return new RestTemplate();
+    public RestTemplate customRestTemplate() {
+        int timeoutMills = defaultTimeOutSeconds * 1000;
+        RequestConfig requestConfig = RequestConfig.custom().setConnectTimeout(timeoutMills)
+            .setConnectionRequestTimeout(timeoutMills).setSocketTimeout(timeoutMills).build();
+        HttpClient httpClient = HttpClientBuilder.create().setMaxConnTotal(maxTotal)
+            .setMaxConnPerRoute(defaultMaxPerRoute).setDefaultRequestConfig(requestConfig).build();
+        HttpComponentsClientHttpRequestFactory httpRequestFactory =
+            new HttpComponentsClientHttpRequestFactory(httpClient);
+        RestTemplate restTemplate = new RestTemplate(httpRequestFactory);
+        restTemplate.getMessageConverters().set(1, new StringHttpMessageConverter(StandardCharsets.UTF_8)); //UTF-8
+        return restTemplate;
     }
 }
 ```

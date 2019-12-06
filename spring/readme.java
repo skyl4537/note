@@ -334,57 +334,16 @@
     
 #3-12S
     Ajax
-    标准请求响应时浏览器的动作(同步操作)
-    //浏览器请求什么资源,跟随显示什么资源
-    
-    ajax:异步请求. 
-    局部刷新,通过异步请求,请求到服务器资源数据后,通过脚本修改页面中部分内容.
-    
-    ajax 由 javascript 推出的.
-    由 jquery 对 js 中 ajax 代码进行的封装,达到使用方便的效果.
-    
-    jquery 中 ajax 分类
-    (1). $.ajax({属性名:值,属性名:值}) //功能最全.代码相对最麻烦
-        /** url: 请求服务器地址
-            data: 请求参数
-            type: 请求方式
-            dataType: 服务器返回数据类型
-            error: 请求出错执行的功能
-            success: 请求成功执行的功能,function(data) data 服务器返回的数据.
-        */
-        $("a").click(function(){
-            $.ajax({
-                url:'demo',
-                data:{"name":"张三"},
-                type:'POST',
-                dataType:'html',
-                error:function(){
-                    alert("请求出错.")
-                },
-                success:function(data){
-                    alert("请求成功"+data)
-                }
-            });
-            return false;
-        })
-    
-    (2).简化$.ajax()
-        $.get(url,data,success,dataType))
-        $.post(url,data,success,dataType)
-        
-    (3).简化$.get()
-        $.getJSON(url,data,success) //相当于设置 $.get() 中 dataType=”json”
-        $.getScript(url,data,success) //相当于设置 $.get 中 dataType=”script”
-    
-    #如果服务器返回数据是从表中取出.为了方便客户端操作返回的数据,服务器端返回的数据设置成 json
-    #客户端把 json 当作对象或数组操作.
-    
-    ajax小练习 *** ***
     
 #1-1C
     
     
-    
+#10.1寸的是 101.206
+#4.3寸的是 101.207
+
+http://192.168.101.207/cgi-bin/setting2.cgi
+{"softTrigger":1}
+
     
     
     

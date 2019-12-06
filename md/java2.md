@@ -828,40 +828,6 @@ private static void selectionSort() {
 
 
 
-##其他算法
-
-> 单词计数 & map值排序
-
-```java
-private static void wordCount() {
-    char[] arr = "我是中华人民共和国公民".toCharArray();
-    Map<Character, Integer> map = new HashMap<>();
-    for (char c : arr) {
-        Integer count = map.get(c);
-        if (null == count) {
-            map.put(c, 1);
-        } else {
-            map.put(c, count + 1);
-        }
-        //map.merge(c, 1, (a, b) -> a + b); //简化版
-    }
-    System.out.println(map);
-}
-```
-
-```java
-private static void sortMapByValue(Map<Character, Integer> map) {
-    Set<Map.Entry<Character, Integer>> entries = map.entrySet();
-    List<Map.Entry<Character, Integer>> list = new ArrayList<>(entries);
-    Collections.sort(list, (o1, o2) -> o1.getValue().compareTo(o2.getValue())); //值排序
-    System.out.println(list);
-}
-```
-
-```java
-
-```
-
 
 # 开发手册
 

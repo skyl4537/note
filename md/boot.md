@@ -138,7 +138,7 @@ info.security.roles=USER,ADMIN
 > 读取单个配置
 
 ```java
-@Value("${info.enabled}") //(1).@Value
+@Value("${info.enabled:false}") //(1).@Value ---> 默认值 false
 public String infoEnabled;
 ```
 

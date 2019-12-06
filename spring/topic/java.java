@@ -1383,20 +1383,7 @@ JAVA8 实现
     
     ....
     
-#jsp内置对象(9)
-    request        -> HttpServletRequest,  包含了当前请求的所有信息
-    response    -> HttpServletResponse, ...........应答.........
-    
-    application -> ServletContext, 当前应用上下文
-    session        -> HttpSession, 存贮用户的状态信息
-    out            -> JspWriter, 用于页面显示信息
-    pageContext    -> PageContext, 
-    
-    config        -> ServletConfig, 用于存取 servlet 实例的初始化参数
-    page        -> jsp对象本身,或编译后的Servlet对象    
-    exception    -> 针对错误页面,未捕捉的
-    
-    //pageContext < request < session < application (作用域:从小到大)
+
     
 #页面间对象传递的方法
     request, session, application, cookie等

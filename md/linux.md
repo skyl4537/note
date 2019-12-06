@@ -58,14 +58,12 @@ drwxr-xr-x 8 parkmanager root 4.0K  9月 16  2014 nginx-1.6.2
 ```shell
 more /etc/passwd      #所有用户名信息
 more /etc/group       #用户组信息
+groups                #查看当前用户所属用户组
 
 useradd -g group user #新增用户，分组
 useradd user          #不指定分组，则分组名和用户名相同
-
 groupadd police       #新增分组 police
-
 userdel -r user       #若不加参数 -r，则仅删除用户帐号，而不删除相关文件
-
 passwd user           #修改账户密码
 
 chgrp [-R] user dir       #更改'档案'所属分组
@@ -99,34 +97,14 @@ w: #当目录有写入（w）权限时，将具有移动该目录结构清单的
    (4). 搬移该目录内的档案，目录位置
 ```
 
-> 防火墙
+> 
 
 ```shell
-firewall-cmd --state                 #CentOS -> 防火墙状态
 
-service firewalld start/restart/stop #开启
-
-firewall-cmd --list-all              #查看防火墙规则
-
-firewall-cmd --query-port=8080/tcp                #查询端口是否开放
-firewall-cmd --permanent --add-port=80/tcp        #开放80端口
-firewall-cmd --permanent --add-port=8080-8085/tcp #开发8080到8085之间的端口
-firewall-cmd --permanent --remove-port=8080/tcp   #移除端口
-
-firewall-cmd --permanent --list-ports             #查看防火墙的开放的端口
-firewall-cmd --reload                             #重启防火墙（修改配置后要重启防火墙）
 ```
 
 ```shell
-sudo apt-get install ufw        #ubuntu -> 安装ufw
 
-sudo ufw status/enable/disable  #查看/开启/关闭（active/inactive）
-sudo ufw default deny           #开启防火墙，并随系统启动同时关闭所有外部对本机的访问。(本机访问外部正常)
-
-sudo ufw allow 80               #允许外部访问80端口
-sudo ufw delete allow 80        #禁止外部访问80 端口
-
-sudo ufw allow from 192.168.1.1 #允许此IP访问所有的本机端口
 ```
 
 > 软件相关
@@ -304,18 +282,47 @@ grep -d skip -n 'Init---args' ../_* > ztj
 
 ## 防火墙
 
-> ubuntu
+> iptables   firewall   ufw
 
 ```sh
- sudo apt-get install ufw        #安装
- sudo ufw status/disable/enable
- 
- sudo ufw allow 80/tcp
- sudo ufw delete allow 80/tcp    #允许和禁用 80 端口
- sudo ufw allow from 192.168.8.7 #允许此IP访问所有的本机端口
+iptables：是 Linux 下功能强大的应用层防火墙工具
+firewall：是 Centos-7 里面新的防火墙管理命令，底层还是调用 iptables。firewall 可以在运行时更改设置，而不丢失现有连接
+ufw     ：是 Ubuntu 下的一个简易的防火墙配置工具，底层也是调用 iptables
 ```
 
+> Ubuntu
 
+```sh
+sudo apt-get install ufw        #安装
+sudo ufw status|disable|enable
+
+sudo ufw allow 80               #允许外部访问80端口
+sudo ufw delete allow 80        #禁止外部访问80 端口
+sudo ufw allow from 192.168.1.1 #允许此IP访问所有的本机端口
+```
+
+> CentOS
+
+```sh
+iptables -V #查看是否已经安装了iptables，以及版本号
+service iptables status|stop|start|restart
+
+iptables --list #查看iptables规则
+```
+
+```sh
+firewall-cmd --state                        #CentOS -> 防火墙状态
+service firewalld status|start|restart|stop #开启
+
+firewall-cmd --list-all              #查看防火墙规则
+firewall-cmd --query-port=8080/tcp                #查询端口是否开放
+firewall-cmd --permanent --add-port=80/tcp        #开放80端口
+firewall-cmd --permanent --add-port=8080-8085/tcp #开发8080到8085之间的端口
+firewall-cmd --permanent --remove-port=8080/tcp   #移除端口
+
+firewall-cmd --permanent --list-ports             #查看防火墙的开放的端口
+firewall-cmd --reload                             #重启防火墙（修改配置后要重启防火墙）
+```
 
 
 
@@ -1121,8 +1128,19 @@ COMMAND — 进程名称（命令名/命令行）
 #-p： 指定特定的pid进程号进行观察
 ```
 
+## uniq
 
+> 用于检查及删除文本文件中重复出现的行列，一般与 sort 命令结合使用
 
+```shell
+#-c: 在行首显示该行重复出现的次数
+#-d: 仅显示重复出现的行列
+#-w<字符位置>: 指定要比较的字符
+#-u: 仅显示出一次的行列
+
+sort file | uniq -c           #统计重复行，在行首显示重复次数
+sort file | uniq -c | sort -r #以倒序方式排列重复次数
+```
 
 
 #V-W-X-Y-Z
@@ -1294,26 +1312,6 @@ sort -t $'\t' -k 2.7 file #以 TAB 分割为列，对第2列的第7个字符进�
 sort -t ' ' -k 2 -r file #以空格分割为列，对第2列进行倒序排列
 ```
 
-## uniq
-
-> 用于检查及删除文本文件中重复出现的行列，一般与 sort 命令结合使用
-
-```shell
-#-c: 在行首显示该行重复出现的次数
-#-d: 仅显示重复出现的行列
-#-w<字符位置>: 指定要比较的字符
-#-u: 仅显示出一次的行列
-
-sort file | uniq -c #统计重复行，在行首显示重复次数
-#2 apple a
-#1 orange o
-#2 pear p
-
-sort file | uniq -c | sort -r #以倒序方式排列重复次数
-#2 pear p
-#2 apple a
-#1 orange o
-```
 ## date
 
 ```shell
@@ -1524,13 +1522,9 @@ ps aux | fgrep pid #根据 pid 查找进程名
 
 ```shell
 'top'：找到 CPU 占用比较高的进程 PID（使用大写'M'切换到内存降序，'P'再次切换到CPU降序）。
-
 'jps -l'：查看占用 CPU 最高的进程对应哪个java服务
-
 'top -Hp pid'：找到这个进程中占用 CPU 最高的线程
-
 'printf %x tid'：将线程 tid 转换成16进制，前面再加上 0x
-
 'jstack pid | grep -A 20 -B 20 0xtid'：线程的相关信息，如名称，tid，操作系统对应的线程id(nid)
 ```
 

@@ -8,9 +8,7 @@
 
 ```
 能够把应用程序自动部署到容器的开源引擎，轻量级容器技术！
-
 简化程序：将软件做好配置依赖 --> 编译成镜像 --> 镜像发布 --> 其他使用者就可以直接使用这个镜像。
-
 简化部署：传统做法先安装（包管理工具或者源码包编译），再配置和运行。Docker模式为复制镜像，然后运行。
 ```
 
@@ -106,7 +104,7 @@ docker update --restart=always mysql #'restart'退出容器时，总是重启
 docker exec -it CONTAINER_NAME /bin/bash    #进入容器.(exit: 退出)
 
 docker cp CONTAINER_NAME:SRC_PATH DEST_PATH #拷出来
-docker cp DEST_PATH CONTAINER_NAME:SRC_PATH #拷进去
+docker cp SRC_PATH CONTAINER_NAME:DEST_PATH #拷进去
 ```
 
 ##配置容器

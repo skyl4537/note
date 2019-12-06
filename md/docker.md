@@ -27,11 +27,12 @@ spring.rabbitmq.username=guest
 spring.rabbitmq.password=guest
 
 # listener
-spring.rabbitmq.listener.simple.auto-startup: 是否启动时自动启动容器
-spring.rabbitmq.listener.simple.acknowledge-mode: 表示消息确认方式，其有三种配置方式，分别是 none、manual和auto；默认 auto
+spring.rabbitmq.listener.simple.prefetch:0 消费者每次从队列获取消息的数量（默认0，无限制）。设置过大，且消息处理耗时，则等待消息就处理不及时
 spring.rabbitmq.listener.simple.concurrency: 最小的消费者数量
 spring.rabbitmq.listener.simple.max-concurrency: 最大的消费者数量
-spring.rabbitmq.listener.simple.prefetch: 指定一个请求能处理多少个消息，如果有事务的话，必须大于等于transaction数量.
+spring.rabbitmq.listener.simple.acknowledge-mode: 表示消息确认方式，其有三种配置方式，分别是 none、manual和auto；默认 auto
+
+spring.rabbitmq.listener.simple.auto-startup: 是否启动时自动启动容器
 spring.rabbitmq.listener.simple.transaction-size: 指定一个事务处理的消息数量，最好是小于等于prefetch的数量.
 spring.rabbitmq.listener.simple.default-requeue-rejected: 决定被拒绝的消息是否重新入队；默认是true（与参数acknowledge-mode有关系）
 spring.rabbitmq.listener.simple.idle-event-interval: 多少长时间发布空闲容器时间，单位毫秒
@@ -54,9 +55,17 @@ spring.rabbitmq.template.retry.multiplier: 应用于上一重试间隔的乘数
 spring.rabbitmq.template.retry.max-interval: 最大重试时间间隔
 ```
 
+>RabbitMQ 启用 HTTP 后台认证
+
+```sh
+https://blog.csdn.net/isea533/article/details/85096253
+```
+
+
+
 ## 基本使用
 
-> 序列化**：默认以java序列化，现配置json序列化
+> **序列化**：默认以java序列化，现配置json序列化
 
 ```java
 @EnableRabbit //rabbitmq-全局注解
@@ -73,13 +82,12 @@ public class AppConfig {
 
 ```java
 /**
- * @param name       队列名称
- * @param durable    是否持久化。即 rabbitmq 服务重启，队列是否还存在？ 默认 true
- * @param exclusive  是否排外及私有。默认 false
+ * @param name        队列名称
+ * @param durable     Rabbitmq服务重启，队列是否还存在？ 默认 true
+ * @param autoDelete  当所有消费客户端连接断开后，是否自动删除队列？ 默认 false
+ * @param exclusive   是否排外及私有。默认 false
  *        true： 私有队列，其他通道channel不能访问，强制访问抛异常。并且该channel的conn断开后，队列将自动删除包括里面的msg
- *        false：非排外及私有，可以使用两个消费者同时访问同一个队列，没有任何问题
- * @param autoDelete 当所有消费客户端连接断开后，是否自动删除队列？ 默认 false
- * @param arguments  额外参数。
+ * @param arguments   额外参数。
  */
 Queue queue = new Queue("queue.expires", true, false, false, args);
 
@@ -105,7 +113,7 @@ Queue queue = new Queue("queue.expires", true, false, false, args);
 ```java
 /**
  * @param name       交换器名称
- * @param durable    是否持久化，即 rabbitmq 重启是否还存在？ 默认 true
+ * @param durable    Rabbitmq重启是否还存在？ 默认 true
  * @param autoDelete 当所有绑定队列都不在使用时，是否自动删除交换器。默认 false
  */
 FanoutExchange exchange = new FanoutExchange("exchange.fanout", true, false);
@@ -140,10 +148,10 @@ amqpTemplate.send("exchange", "routing-key", new Message("".getBytes(), null));
 amqpTemplate.convertAndSend("exchange", "routing-key", new Object());
 ```
 
-> 三种模式
+## 三种模式
 
 ```sh
-`Fanout`：任何发送到'Exchange'的消息，都会路由到与其绑定的'所有Queue'中。`Queue与Exchange 直接相连，不需要 RoutingKey`
+`Fanout`：任何发送到Exchange的消息，都会路由到与其绑定的'所有Queue'中。`Queue与Exchange 直接相连，不需要 RoutingKey`
 Queue与Exchange 的绑定是：多对多的关系。一个E上可以绑定多个Q，一个Q可以同多个E进行绑定
 ```
 
@@ -166,179 +174,174 @@ RK='quick.brown.fox'，'orange'，'quick.orange.male.rabbit'的消息将会被�
 
 ![](assets/rabbitmq-01.png)
 
-## Fanout
-
-> 发送端：直接发送 Msg 到 Exchange，不指定 RoutingKey
+> ### Fanout：广播
 
 ```java
-for (int i = 0; i < 10; i++) {
+@Test
+public void fanoutProviderTest() {
     String exchange = "exchange.fanout";
-    String routingKey = ""; //路由键：不指定，E与Q直接绑定，多对多
-    String msg = "fanout-" + i;
-    amqpTemplate.convertAndSend(exchange, routingKey, msg);
+    String routingKey = "";
+    for (int i = 0; i < 10; i++) {
+        String msg = "msg-fanout-" + i;
+        amqpTemplate.convertAndSend(exchange, routingKey, msg);
+    }
 }
 ```
 
-> 接收端：两个消费者，都能收到消息
-
 ```java
-//@QueueBinding --> value: 绑定队列的名称；exchange: 配置交换器；key: 路由键(fanout模式不需要指定)
-@RabbitListener(bindings = {
-    @QueueBinding(
-        // value = @Queue(value = "${queue.fanout.info}"), //可以使用 ${} 直接从配置文件读取
+@Slf4j
+@Component
+public class FanoutConsumer {
+
+    // value = @Queue(value = "${queue.fanout.info}"), //可以使用 ${} 直接从配置文件读取
+    @RabbitListener(bindings = {@QueueBinding(
         value = @Queue(value = "queue.fanout.info"),
         exchange = @Exchange(value = "exchange.fanout", type = ExchangeTypes.FANOUT),
-        key = ""
-    )
-    /*, @QueueBinding()*/ //也可以实现：一个Queue绑定多个Exchange
-})
-@Slf4j
-@Component
-public class InfoConsumer {
-
-    @RabbitHandler //接收消息的方法。采用消息队列监听机制
-    public void recv(String msg) {
-        log.info("【接收消息】FANOUT-INFO: " + msg);
-    }
-}
-```
-
-```java
-@RabbitListener(bindings = @QueueBinding(
-    value = @Queue(value = "queue.fanout.error"),
-    exchange = @Exchange(value = "exchange.fanout", type = ExchangeTypes.FANOUT),
-    key = ""
-))
-@Slf4j
-@Component
-public class ErrorConsumer {
-
+        key = "" //广播模式，路由键不需要指定。每个Queue都能收到 10 条消息
+    )})
     @RabbitHandler
-    public void recv(String msg) {
-        log.info("【接收消息】FANOUT-ERROR: " + msg);
+    public void fanoutInfoRecv(String msg) {
+        log.info("FANOUT-INFO  recv: {}", msg);
+    }
+
+    @RabbitListener(bindings = {@QueueBinding(
+        value = @Queue(value = "queue.fanout.error"),
+        exchange = @Exchange(value = "exchange.fanout", type = ExchangeTypes.FANOUT),
+        key = ""
+    )})
+    @RabbitHandler
+    public void fanoutErrorRecv(String msg) {
+        log.info("FANOUT-ERROR recv: {}", msg);
     }
 }
 ```
 
-## Direct
-
-> 发送端：发送`3`种消息
+> ### Direct：发布与订阅
 
 ```java
-String exchange = "exchange.direct";
+@Test
+public void directProviderTest() {
+    String exchange = "exchange.direct";
 
-String routingKey = "rk.debug";
-String msg = "direct-rk-debug";
-amqpTemplate.convertAndSend(exchange, routingKey, msg); //msg-01
+    for (int i = 0; i < 10; i++) {
+        String routingKey = "rk.debug";
+        String msg = "msg-rk-debug-" + i;
+        amqpTemplate.convertAndSend(exchange, routingKey, msg); //msg-01
 
-routingKey = "rk.info";
-msg = "direct-rk-info";
-amqpTemplate.convertAndSend(exchange, routingKey, msg); //msg-02
-
-routingKey = "rk.info.log";
-msg = "direct-rk-info-log";
-amqpTemplate.convertAndSend(exchange, routingKey, msg); //msg-03
+        routingKey = "rk.info";
+        msg = "msg-rk-info-" + i;
+        amqpTemplate.convertAndSend(exchange, routingKey, msg); //msg-02
+    }
+}
 ```
 
-> 接收端：只能收到第`2`种消息。如果两个接收端，则会交替接收到消息
-
 ```java
-@RabbitListener(bindings = @QueueBinding(
-    value = @Queue(value = "queue.direct.info"),
-    exchange = @Exchange(value = "exchange.direct", type = ExchangeTypes.DIRECT),
-    key = "rk.info"
-))
 @Slf4j
 @Component
 public class DirectConsumer {
 
-    @RabbitHandler //接收消息的方法。采用消息队列监听机制
-    public void recv(String msg) {
-        log.info("【接收消息】DIRECT: " + msg);
+    @RabbitListener(bindings = @QueueBinding(
+        value = @Queue(value = "queue.direct.info"),
+        exchange = @Exchange(value = "exchange.direct", type = ExchangeTypes.DIRECT),
+        key = "rk.info" //只能接收 rk 完全匹配的 msg-02。并且两个接收端【交替】接收到 msg-02
+    ))
+    @RabbitHandler
+    public void directInfoRecv(String msg) {
+        log.info("DIRECT-INFO recv-1: {}", msg);
+    }
+
+    @RabbitListener(bindings = @QueueBinding(
+        value = @Queue(value = "queue.direct.info"),
+        exchange = @Exchange(value = "exchange.direct", type = ExchangeTypes.DIRECT),
+        key = "rk.info"
+    ))
+    @RabbitHandler
+    public void directInfoRecv0(String msg) {
+        log.info("DIRECT-INFO recv-2: {}", msg);
     }
 }
 ```
 
-## Topic
-
-> 发送端
+> ### Topic：主题
 
 ```java
-String exchange = "exchange.topic";
+@Test
+public void topicProviderTest() {
+    String exchange = "exchange.topic";
 
-String routingKey = "rk.info";
-String msg = "topic-rk-info";
-amqpTemplate.convertAndSend(exchange, routingKey, msg);
+    for (int i = 0; i < 10; i++) {
+        String routingKey = "rk.debug";
+        String msg = "msg-rk-debug-" + i;
+        amqpTemplate.convertAndSend(exchange, routingKey, msg); //msg-01
 
-routingKey = "rk.info.log";
-msg = "topic-rk-info-log";
-amqpTemplate.convertAndSend(exchange, routingKey, msg);
+        routingKey = "rk.info";
+        msg = "msg-rk-info-" + i;
+        amqpTemplate.convertAndSend(exchange, routingKey, msg); //msg-02
+
+        routingKey = "rk.info.log";
+        msg = "msg-rk-info-log-" + i;
+        amqpTemplate.convertAndSend(exchange, routingKey, msg); //msg-03
+    }
+}
 ```
 
-> 接收端
-
 ```java
-@RabbitListener(bindings = @QueueBinding(
-    value = @Queue(value = "queue.topic.info"),
-    exchange = @Exchange(value = "exchange.topic", type = ExchangeTypes.TOPIC),
-    key = "rk.#"
-))
 @Slf4j
 @Component
 public class TopicConsumer {
 
-    @RabbitHandler //接收消息的方法。采用消息队列监听机制
+    @RabbitListener(bindings = @QueueBinding(
+        value = @Queue(value = "queue.topic.info"),
+        exchange = @Exchange(value = "exchange.topic", type = ExchangeTypes.TOPIC),
+        key = "rk.*" //*：匹配 1 个关键字。所以，只能接收 msg-01、msg-02。若有多个接收端，也是【交替】接收消息
+    ))
+    @RabbitHandler
     public void recv(String msg) {
-        log.info("【接收消息】TOPIC: " + msg);
+        log.info("TOPIC-INFO  recv: {}", msg);
     }
 }
 ```
 
-## 页面版
+## Stomp接收
 
->启用 Web STOMP 插件
+>启用 Web-STOMP 插件
+
+```sh
+rabbitmq-plugins enable rabbitmq_management  #开启插件 web-ui
+http://localhost:15672/                      #登陆UI，默认用户名-密码都是: guest
+```
 
 ```sh
 docker exec -it rabbitmq /bin/bash           #进入容器
 rabbitmq-plugins list                        #查看已启动的插件
 rabbitmq-plugins enable rabbitmq_web_stomp   #开启插件 web-stomp
 docker restart rabbitmq                      #重启容器
-
-rabbitmq-plugins enable rabbitmq_management  #开启插件 web-ui
-http://localhost:15672/                      #登陆UI，默认用户名-密码都是: guest
 ```
 
 > guest 用户配置远程登录
 
 ```sh
-#（1）对于低版本，修改docker里的 /etc/rabbitmq/rabbitmq.config
-[
-    { rabbit, [
-            { loopback_users, ["guest"] },
-            { tcp_listeners, [ 5672 ] },
-            { ssl_listeners, [ ] },
-            { hipe_compile, false }
-    ] },
-    { rabbitmq_management, [
-        { listener, [
-            { port, 15672 },
-            { ssl, false }
-        ] }
-    ] }
-].
-```
-
-```sh
-#（2）对于高版本，修改 /etc/rabbitmq/rabbitmq.conf
+#修改 /etc/rabbitmq/rabbitmq.conf
 loopback_users.guest = false #false：远程访问；true：本地访问
 ```
 
 > WebSocket 连接 RabbitMQ
 
 ```sh
-'subscribe() 消息头'可以指定的参数：
+#subscribe() 消息头可以指定的参数：
 x-queue-name：指定队列名，默认随机生成，如 stomp-subscription-*****。   durable：持久化。   auto-delete：自动删除。   exclusive：独占。
 其他还有：x-expires、x-message-ttl 等等，详见'基本使用的队列参数'
+
+#云坐席要求：打开云坐席界面，能看到 5 分钟以内、未办理的异常消息。
+#队列属性：
+(1).'auto-delete': false. 当所有消费客户端连接断开后，是否自动删除队列?
+删除队列，就不能接受交换器的消息。要保存 5 分钟以内的消息，就不能删除队列。
+(2).'x-queue-name': 'queue.topic.info.web'. 每次连接系统都会默认生成一个新的队列名。
+消费者断开以后，消息保存在旧的队列中，再次连接，系统生成新的队列名，在新的队列中肯定收不到旧的消息。所以，必须手动指定队列名
+(3).'x-message-ttl': 5 * 60 * 1000. 队列中消息被丢弃前，能够存活的时间。
+队列中保存 5 五分钟以内的消息
+#未办理的消息，ACK？
+Stomp默认是自动 ACK，消息发送成功，就会从队列中移除消息。改成手动 ACK 就可以。
 ```
 
 ```html
@@ -352,28 +355,175 @@ x-queue-name：指定队列名，默认随机生成，如 stomp-subscription-***
         let client = Stomp.over(ws);
 
         let on_connect = function () {
-            console.log('connect success!');
-
-            //参数依次为：目的地(/exchange/交换机名/路由键)，回调方法，消息头
+            // 参数依次为：目的地(/exchange/交换机名/路由键)，回调方法，消息头
             client.subscribe('/exchange/exchange.cloudseat/*.*.*.*.*', function (data) {
-                let json = JSON.parse(data.body);
-                let msg = json.parkName + ": " + json.datas.eventMsg;
-                let $showMsg = $("#show_msg");
-                let innerHTML = $showMsg.prop("innerHTML");
-                innerHTML += "<br/>" + msg;
-                $showMsg.empty();
-                $showMsg.prop("innerHTML", innerHTML);
-            }, {'auto-delete': true, ack: 'client'});
+                console.log('msg: ' + data.body);
+                $("#show_msg").prop("innerHTML", msg);
+            }, {'x-queue-name': 'queue.topic.info.web', 'auto-delete': false, 'x-message-ttl': 10 * 60 * 1000});
         };
 
         let on_error = function () {
             console.log('error');
         };
-        //参数依次为：用户名，密码，连接成功，连接出错，虚拟主机名
+
+        // 参数依次为：用户名，密码，连接成功，连接出错，虚拟主机名
         client.connect('guest', 'guest', on_connect, on_error, '/');
+
+        // 关闭控制台信息。stomp.js会去检测debug是否是函数，不是函数就不会调用输出
+        // client.debug = null;
     </script>
 </body>
 ```
+
+## 消息确认
+
+<https://www.jianshu.com/p/2c5eebfd0e95>
+
+> 消息发送确认
+
+```properties
+# 开启发送确认回调 & 路由失败回调
+spring.rabbitmq.publisher-confirms=true
+spring.rabbitmq.publisher-returns=true
+# 对 rabbitmqTemplate 进行监听,当消息由于server的原因无法到达queue时，就会被监听到，以便执行 ReturnCallback() 方法
+# 默认 false，Server端会自动删除不可达消息
+spring.rabbitmq.template.mandatory=true
+```
+
+```java
+@Test
+public void rabbitSendTest() {
+    String msg = "你好，现在是 " + LocalTime.now();
+
+    // 确认消息是否成功发送到 Exchange 中
+    // 消息唯一标识, 是否发送成功, 失败原因
+    rabbitTemplate.setConfirmCallback((correlationData, ack, cause) -> {
+        System.out.println("是否发送成功: " + (ack ? "成功" : "失败"));
+    });
+
+    // 消息没有从 Exchange 路由到 Queue 回调此方法（需配置文件开启）. 路由到则不会调用
+    // 消息主体, 返回代码, 返回描述, 消息交换器, 消息路由键
+    rabbitTemplate.setReturnCallback((message, replyCode, replyText, exchange, routingKey) -> {
+        System.out.println("返回描述: " + replyText);
+    });
+
+    // 回调方法的定义，必须在发送消息之前
+    rabbitTemplate.convertAndSend("exchange.topic", "rk1.info1", msg);
+}
+```
+
+> 消息接收确认
+
+```properties
+# 开启接收ACK
+spring.rabbitmq.listener.simple.acknowledge-mode=MANUAL
+```
+
+```sh
+#消息确认有三种模式：NONE(自动确认). AUTO(根据情况确认). MANUAL(手动确认)
+#NONE  ：自动确认。只要确认消息发送成功，无须等待应答就会丢弃消息。两个弊端：
+(1).容易丢失消息.
+(2).只要队列不空，RabbitMQ会源源不断的把消息推送给客户端，而不管客户端能否消费的完
+
+#MANUAL：手动确认。一定要对消息做出应答，否则rabbit认为当前队列没有消费完成，将不再继续向该队列发送新的消息。
+https://blog.csdn.net/youbl/article/details/80425959
+
+#AUTO  ：根据情况确认。
+(1). 如果消息成功被消费（成功的意思是在消费的过程中没有抛出异常），则自动确认
+(2). 当抛出 AmqpRejectAndDontRequeueException 异常的时候，则消息会被拒绝，且 requeue = false（不重新入队列）
+(3). 当抛出 ImmediateAcknowledgeAmqpException 异常，则消费者会被确认
+(4). 其他的异常，则消息会被拒绝，且 requeue = true，此时会发生死循环，可以通过 setDefaultRequeueRejected（默认是true）去设置抛弃消息
+```
+
+```java
+@Slf4j
+@Component
+public class TopicInfoConsumer {
+
+    @RabbitHandler
+    @RabbitListener(queues = "queue.topic.info")
+    public void recv(@Payload String msg, Channel channel, @Header(AmqpHeaders.DELIVERY_TAG) long deliveryTag) {
+        log.info("【接收消息】TOPIC: " + msg);
+
+        try {
+            if (msg.startsWith("3")) {
+                System.out.println("处理消息: " + msg);
+                channel.basicNack(deliveryTag, false, false); //否定消息
+                // channel.basicReject(deliveryTag, false); //拒绝消息
+                // channel.basicRecover(false); //重新投递
+                return;
+            }
+            channel.basicAck(deliveryTag, false); // 确认消息
+        } catch (IOException e) {
+            e.printStackTrace();
+        }
+    }
+}
+```
+
+> 方法参数
+
+```sh
+# channel.basicAck(deliveryTag, false); // 确认消息
+'deliveryTag（唯一标识 ID）'：当一个消费者向 RabbitMQ 注册后，会建立起一个 Channel，RabbitMQ会用 basic.deliver() 方法向消费者推送消息，
+这个方法携带了一个 deliveryTag，它代表了 RabbitMQ 向该 Channel 投递的这条消息的唯一标识 ID，是一个单调递增的正整数，deliveryTag 的范围仅限于 Channel.
+
+'multiple'：为了减少网络流量，手动确认可以被批处理，当该参数为 true 时，则可以一次性确认 deliveryTag 小于等于传入值的所有消息。
+设置 false 只确认当前这一条消息。
+```
+
+```sh
+# channel.basicNack(deliveryTag, false, false); //否定消息
+前两个参数同上，'第三个参数'表示：是否重新放回队列? true 重新入队, false 直接删除
+当消息回滚到消息队列时，这条消息不会回到队列尾部，而是仍是在队列头部，这时消费者会又接收到这条消息，容易陷入死循环。
+如果想让消息进入队尾，须确认消息后，再次发送消息。
+```
+
+```sh
+# channel.basicReject(deliveryTag, false); //拒绝消息
+第二个参数表示是否重新放回队列。拒绝消息后，如果配置了死信队列，则进入死信队列。
+```
+
+```sh
+# channel.basicRecover(false); //重新投递
+重新投递并没有 basicReject() 中的 deliveryTag 参数，所以，重新投递是将消费者还没有处理的所有的消息都重新放入到队列中，而不是将某一条消息放入到队列中。
+与 basicReject() 不同的是，重新投递可以指定投递的消息是否允许当前消费者消费。
+true：表示会被其他消费者消费. false：表示重新递送的消息还会被当前消费者消费
+```
+
+```sh
+#channel.basicPublish(EXCHANGE_NAME, ROUTING_KEY, BasicProperties , message.getBytes()); //再次发送消息
+
+```
+
+
+
+> 相关问题
+
+```sh
+#(1).自动ack机制会导致消息丢失的问题
+MQ只要确认消息发送成功，无须等待应答就会丢弃消息，这会导致客户端还未处理完时，出异常或断电了，导致消息丢失的后果。
+
+#(2).启用ack机制后，没有及时ack导致的队列异常
+先处理消息，处理完成后，再做 ACK 响应，失败就不做ack响应，这样消息会储存在MQ的 Unacked 消息里，不会丢失。
+但是，如果 ACK 代码触发BUG，将会导致所有消息都抛出异常，然后队列的 Unacked 消息数暴涨，导致MQ响应越来越慢，甚至崩溃的问题。
+原因是如果MQ没得到ack响应，这些消息会堆积在Unacked消息里，不会抛弃，直至客户端断开重连时，才变回ready。
+
+#(3).启用nack机制后，导致的死循环
+针对(2)存在的问题，改为：正常就ack，不正常就nack，并等下一次重新消费。
+此时，如果 ACK 代码触发BUG，就会把消息塞回队列头部，下一步又消费这条会出异常的消息，又出错，塞回队列...进入死循环，当然也不会消费新的消息，导致堆积...
+解决方案：所有消息都ack，记录日志，异常消息后续单独处理。
+```
+
+```sh
+#启用ack机制和prefetch后，没有及时ack导致的队列堵塞开启了QoS，当RabbitMQ的队列达到5条Unacked消息时，不会再推送消息给Consumer，
+开启 prefetch，当MQ的队列达到 5 条Unacked消息时，不会再推送消息给Consumer。
+此时，如果 ACK 代码触发BUG，将导致无法继续处理后续的消息。
+```
+
+
+
+
 
 
 
