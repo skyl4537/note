@@ -552,3 +552,482 @@ helloArray.invoke(null, (Object) new String[]{"aaa", "bbb"}); //正确1
 // helloArray.invoke(null, new String[]{"aaa", "bbb"}); //错误写法
 ```
 
+
+
+
+
+# JAVA8
+
+## Optional
+
+>只用于返回类型，而不是参数，也不是字段
+
+```sh
+#一个容器类，代表一个值存在或不存在。
+原来用 null 表示一个值不存在，现在 Optional 可以更好的表达这个概念，并且可以避免空指针异常
+```
+
+> 优雅判 NULL
+
+```java
+public String getDogName(Person person) throws IllegalArgumentException {
+    if (null != person) {
+        Person.Dog dog = person.getDog();
+        if (null != dog) {
+            return dog.getName();
+        }
+    }
+    throw new IllegalArgumentException("param isn't available.");
+}
+```
+
+```java
+public String getDogName(Person person) throws IllegalArgumentException {
+    return Optional.ofNullable(person)
+        .map(person -> person.getDog())
+        .map(dog -> dog.getName())
+        // .orElse("Unknown") //以上都为 null，则设置输出默认值 或 直接抛出异常
+        .orElseThrow(() -> new IllegalArgumentException("param isn't available."));
+}
+```
+## 时间API
+
+> 问题：Date，Calendar，SimpleDateFormat 都是`线程不安全`
+
+```java
+// 把 SimpleDateFormat 实例定义为静态变量，在多线程情况下会被多个线程共享，容易出现问题
+private static final SimpleDateFormat sdf = new SimpleDateFormat("yyyy-MM-dd HH:mm:ss");
+
+public void parse() throws InterruptedException {
+    ExecutorService pool = Executors.newFixedThreadPool(25);
+    for (int i = 0; i < 20; i++) {
+        //在多并发情况下，format() 和 parse() 都是线程不安全的
+        pool.execute(() -> System.out.println(sdf.parse("2019-04-15 09:45:59")));
+    }
+}
+```
+
+> 问题原因
+
+```sh
+# calendar 是共享变量，并且这个共享变量没有做线程安全控制
+当多个线程同时使用相同的 static SimpleDateFormat.format()时，多个线程会同时调用 calendar.setTime()方法，
+可能一个线程刚设置好 time 值，另外的一个线程马上把设置的 time 值给修改了，导致返回的格式化时间可能是错误的。
+```
+```java
+protected Calendar calendar;
+
+private StringBuffer format(Date date, StringBuffer toAppendTo, FieldDelegate delegate) {
+    calendar.setTime(date); // 这里使用的 calendar 是类成员，多线程调用 setTime()会有线程安全问题
+    //... ...
+}
+```
+> 解决方案
+
+```java
+//(1).只在需要的时候创建实例，不用static修饰。【缺点】加重了创建对象的负担，会频繁地创建和销毁对象，效率较低
+public static String format(Date date) throws ParseException {
+    SimpleDateFormat sdf = new SimpleDateFormat("yyyy-MM-dd HH:mm:ss");
+    return sdf.format(date);
+}
+
+//(2).synchronized 大法好。【缺点】并发量大的时候，会对性能有影响，线程阻塞
+public static String format(Date date) throws ParseException {
+    synchronized (sdf) {
+        return sdf.format(date);
+    }
+}
+
+//(3).ThreadLocal。确保每个线程单独一个SimpleDateFormat对象
+private static ThreadLocal<DateFormat> threadLocal = 
+    ThreadLocal.withInitial(() -> new SimpleDateFormat("yyyy-MM-dd HH:mm:ss"));
+
+public static String format(Date date) {
+    return threadLocal.get().format(date);
+}
+```
+
+> ### 推荐方案
+
+```java
+//(4).使用 JDK8 的 DateTimeFormatter
+private static final DateTimeFormatter formatter = DateTimeFormatter.ofPattern("yyyy-MM-dd HH:mm:ss");
+
+public static String format(LocalDateTime date) {
+    return formatter.format(date);
+}
+
+public static LocalDateTime parse(String dateStr) {
+    return LocalDateTime.parse(dateStr, formatter);
+}
+```
+
+> 时间间隔
+
+```java
+@Test
+public void periodTest() {
+    LocalDate start = LocalDate.now(); //2019-12-10
+    LocalDate end = LocalDate.of(2020, 12, 20);
+
+    // ChronoUnit：两个时间点间隔的 具体天数、月数、甚至秒数
+    long between = ChronoUnit.DAYS.between(start, end); //相隔 376 天
+
+    // Period：两个时间点相隔的 X年X月X日
+    Period period = Period.between(start, end); //P1Y10D
+
+    // Duration：两个时间点相隔的 X时X分X秒（只适用 LocalDateTime 类型）
+    Duration duration = Duration.between(start, end); //PT14735H53M57.538S
+}
+```
+
+> 新旧接口转换
+
+```java
+Date date = Date.from(Instant.now()); // 旧的 = 旧的.from(新的)
+Instant instant = date.toInstant();   // 新的 = 旧的.to()
+```
+
+> 其他用法
+
+```java
+@Test
+public void localDateTest() {
+    LocalDate now = LocalDate.now();
+    int year = now.getYear();                      //当前年份: 2019
+    int dayOfYear = now.getDayOfYear();            //今天是今年的第 344 天
+    int weekValue = now.getDayOfWeek().getValue(); //今天星期 2.(星期从1开始)
+
+    LocalDate localDate0 = now.plusDays(5);        //5天以后日期: 2019-12-15
+    LocalDate localDate1 = now.withYear(1990);     //1990年的今天: 1990-12-10
+    LocalDate localDate2 = now.withDayOfYear(2);   //今年的第2天是: 2019-01-02
+
+    long until = now.until(localDate0, ChronoUnit.DAYS); //两日期相差天数: localDate0-now=5
+    boolean after = localDate0.isAfter(now);             //localDate0 是否在 now 之后？ true
+    boolean leapYear = now.isLeapYear();                 //2019是否为闰年？ false
+}
+```
+
+## lambda
+
+> 匿名内部类的`语法糖`？
+
+```sh
+'语法糖'：指使用更加方便，但是原理不变的代码语法。如，增强foreach，底层的实现仍然是迭代器
+从应用层面来讲，java 中的 lambda 可以被当做是匿名内部类的 "语法糖"。但是，`二者在原理上是不同的`
+```
+
+```sh
+'函数式接口'：有且仅有一个抽象方法的接口
+可以在任意接口上使用注解 @FunctionalInterface，来检查是否是函数式接口（同 @overwrite）
+```
+
+## Stream
+
+>集合讲的是`存储`，Stream 讲的是`操作`
+
+```sh
+#Stream 是数据管道，用于操作数据源（集合，数组等），产生新的元素集合
+Stream 其实是一个集合元素的函数模型，它并不是集合，也不是数据结构，其本身并不存储任何元素（或其地址值）。
+Stream 不会改变源对象。相反，它会返回一个持有结果集的新 Stream。
+Stream 操作是延迟执行的。意味着它会等到需要结果时才执行。#详见Demo
+```
+
+```sh
+#可以把 Stream 当成一个高级版本的 Iterator
+原始版本的 Iterator，用户只能一个一个的遍历元素并对其执行某些操作；
+高级版本的 Stream，用户只要给出需要对其包含的元素执行什么操作，比如 "过滤掉长度大于10的字符串"、"获取每个字符串的首字母"等，
+Stream 会隐式地在内部进行遍历，做出相应的数据转换。
+```
+
+> `创建流`（转化数据源）   -->   中间操作（定义中间操作链，但不会立即执行） -->   终止操作（执行中间操作链，并产生结果）
+
+```java
+private static List<Person> PERSON_LIST;
+
+static {
+    Person p1 = new Person(1, "zhao", 17, 197.5, true); //id,name,age,height,gender
+    Person p2 = new Person(2, "qian", 18, 187.5, true);
+    Person p3 = new Person(3, "sui", 19, 177.5, true);
+    Person p4 = new Person(4, "li", 20, 167.5, false);
+    Person p5 = new Person(5, "wang", 21, 157.5, false);
+    PERSON_LIST = new ArrayList<>(Arrays.asList(p1, p2, p3, p4, p5));
+}
+```
+
+```java
+Stream<Person> stream = list.stream();         //list
+Stream<Person> stream = Arrays.stream(array);  //array
+Stream<Person> stream = Stream.of(p1, p2, p3); //可变参数，也可传数组
+
+Stream<Person> parallelStream = list.parallelStream(); //并行流
+
+//创建无限流（迭代 + 生成）
+Stream<Integer> stream0 = Stream.iterate(1, x -> x + 3).limit(10); //迭代（必须限制大小）
+Stream<Double> stream1 = Stream.generate(Math::random).limit(10);  //生成
+```
+
+> 操作流程
+
+```sh
+'惰性求值': 中间操作不会立即执行，只有执行了终止操作（如forEach()），中间操作才会执行
+'内部迭代': 迭代操作 forEach 是由 Stream-API 自动完成
+'短路操作': 以下 age=21 不打印，体现了短路操作。
+```
+
+```java
+PERSON_LIST.stream()
+    .filter(x -> x.getAge() > 17) //过滤条件
+    .limit(3)   //结果集大小
+    .skip(1)    //跳过结果集中的前n个元素; 当n大于元素总数,返回空流.
+    .distinct() //通过 hashCode() 和 equals() 去重
+    .sorted(Comparator.comparing(Person::getAge)) //根据年龄排序
+    .forEach(System.out::println);//终止操作 -> 最终结果集为 3-1 个
+
+// 比较: 17 -> 不满足
+// 比较: 18 -> 满足，但挑过
+// 比较: 19 -> 满足，输出
+// 比较: 20 -> 满足，输出
+// ***: 21 -> 虽然满足，但是 limit(3) 已满足，则不再比较。这就体现了【短路操作】
+```
+
+```java
+//map()参数为 ：函数型接口，有入有出
+//peek()参数为：消费型接口，只有入参，没有出参。更多情况用于 debug 逻辑是否正确
+PERSON_LIST.stream()
+    .map(person -> {
+        person.setAge(person.getAge() + 5);
+        return person;
+    })
+    .forEach(System.out::println);
+
+PERSON_LIST.stream()
+    .peek(person -> person.setAge(person.getAge() + 5)) //逻辑等同，可以互相替换
+    .forEach(System.out::println);
+```
+
+```java
+//map() 和 flatmap() 类比于： list.add() 和 addAll()
+List<String> list0 = new ArrayList<>(Arrays.asList("a", "b"));
+List list1 = new ArrayList<>(Arrays.asList("11"));
+
+list1.add(list0);    // list0 作为 list1 中的一个元素：[11, [a, b]]
+list1.addAll(list0); // list0 中的元素融入 list1 中：  [11, a, b]
+```
+
+> 终止流
+
+```java
+String str = "my name is 007";
+
+//forEach：并行流中，输出的顺序不一定（效率更高）
+str.chars().parallel().forEach(x -> System.out.print((char) x)); //is 070 anemy m
+//forEachOrdered：并行流中，输出的顺序与元素的顺序严格一致
+str.chars().parallel().forEachOrdered(x -> System.out.print((char) x)); //my name is 007
+
+//非并行流: forEach() == forEachOrdered() == parallel.forEachOrdered()
+str.chars().forEach(x -> System.out.print((char) x)); //my name is 007
+```
+
+>Collect
+
+```sh
+(1).Collector 接口定义了如何对流执行收集操作（如收集到List，Set，Map等）
+(2).Collectors 实用类提供了系统实现的收集器实例
+(3).类似：Executor，Executors； Collection<E>，Collections
+```
+
+```java
+// toList(); toSet(); toCollection();
+List<String> nameList = PERSON_LIST.stream()
+    .map(person -> person.getName()).collect(Collectors.toList());
+```
+
+```java
+Long count = PERSON_LIST.stream() //.count() 等效
+    .filter(person -> person.getAge() > 18).collect(Collectors.counting());
+```
+
+```java
+//joining(): 连接流中每个字符串。参数列表：delimiter-连接符; prefix-结果的前缀; suffix-结果的后缀.
+String nameList = PERSON_LIST.stream()
+    .map(person -> person.getName()).collect(Collectors.joining(",", "{", "}"));
+```
+
+```java
+//maxBy(); minBy();
+Optional<Person> collect6 = PERSON_LIST.stream()
+    // .max(Comparator.comparingDouble(Person::getHeight));
+    .collect(Collectors.maxBy((x, y) -> Double.compare(x.getHeight(), y.getHeight())));
+```
+
+```java
+//reducing() --> 参数列表 arg0: 初始值; arg1: 哪个属性; arg2: 求和操作
+Optional<Double> collect7 = PERSON_LIST.stream()
+    .map(Person::getHeight).collect(Collectors.reducing(Double::sum));
+
+Double collect8 = PERSON_LIST.stream()
+    .collect(Collectors.reducing(0.0, Person::getHeight, Double::sum));
+```
+
+```java
+//collectingAndThen(); 包裹另一个收集器,对其结果转换函数
+Integer collect9 = PERSON_LIST.stream()
+    .collect(Collectors.collectingAndThen(Collectors.toList(), List::size));
+```
+
+```java
+Integer ageSum = PERSON_LIST.stream()
+    // .mapToInt(person -> person.getAge()).sum() 等效
+    .collect(Collectors.summingInt(person -> person.getAge()));
+```
+
+```java
+//summarizingInt(); summarizingDouble();
+DoubleSummaryStatistics collect4 = PERSON_LIST.stream()
+    .collect(Collectors.summarizingDouble(Person::getHeight));
+System.out.println(collect4.getAverage());
+
+//收集流中Double属性的统计值.如: 元素个数, 总和, 最小值, 平均值, 最大值.
+//DoubleSummaryStatistics包含属性: {count=5, sum=887.500000, min=157.500000, average=177.500000, max=197.500000}
+```
+
+```java
+//groupingBy(); 分组函数
+Map<Boolean, List<Person>> genderMap = PERSON_LIST.stream()
+    .collect(Collectors.groupingBy(Person::getGender)); //分组: 性别
+
+Map<Boolean, Map<String, List<Person>>> groupMap = PERSON_LIST.stream() //多级分组: 先性别，再姓名
+    .collect(Collectors.groupingBy(Person::getGender, Collectors.groupingBy(Person::getName)));
+
+Map<Boolean, Map<String, List<Person>>> groupMap = PERSON_LIST.stream() //多级分组: 先性别，再年龄
+    .collect(Collectors.groupingBy(Person::getGender, Collectors.groupingBy(person -> {
+        if (person.getAge() < 18) {
+            return "少年";
+        } else if (person.getAge() < 30) {
+            return "青年";
+        } else {
+            return "中年";
+        }
+    })));
+```
+
+```java
+//partitioningBy(); 分区函数
+//二者区别：分区函数只能将数据分为两组，即ture和false两组数据。分组函数会将数据分组成多个key的形式。
+Map<Boolean, List<Person>> collect14 = list.stream()
+    .collect(Collectors.partitioningBy(x -> x.age > 20));
+```
+>查找和匹配
+
+```java
+// allMatch / anyMatch / noneMatch(): 是否都满足 / 有一个满足 / 都不满足.
+boolean allMatch = list.stream().allMatch((x) -> x.age > 30);
+
+// findFirst(): 返回第一个元素. (Optional表示结果可能为空)
+// findAny(): 返回任意一个. (多用于并行流)
+Optional<Person> findFirst = list.stream().findFirst();
+
+// count(): 返回流中元素总个数
+long count = list.stream().filter(person -> person.age > 18).count();
+System.out.println("count: " + count);
+
+// max(): 返回流中最大值. min(): 最小值
+// Optional<Person> max = list.stream() //获取最高身高者的所有属性
+//         .max((x, y) -> Double.compare(x.height, y.height));
+
+Optional<Person> max = list.stream() //获取最高身高者的所有属性 -> 简化版
+        .max(Comparator.comparingDouble(x -> x.height));
+
+Optional<Double> min = list.stream() //只获取最低身高的值
+        .map(x -> x.height)
+        .min(Double::compare);
+```
+
+>归约
+
+```java
+//reduce(): 将流中元素反复结合,最终生成一个值        
+Optional<Double> reduce = list.stream()
+    .map(x -> x.height)
+    .reduce((x, y) -> x + y);
+
+//有初始值,所以肯定不为空,即不用Optional<T>
+//参数列表 -> arg0: 初始值; arg1: 求和操作
+Double reduce2 = list.stream()
+    .map(Person::getHeight)
+    .reduce(1.0, Double::sum);
+```
+> 并行流
+
+```sh
+'并行流'：就是把一个数据集分成多个数据块，并用不同的线程分别处理每个数据块的流
+
+#Fork/Join框架：在必要的情况下，先将一个大任务拆分(fork)成若干小任务，然后再将小任务运算结果进行 join 汇总。
+#Fork/Join框架 & 传统线程池 的区别
+(1)."工作窃取"模式 (work-stealing)
+当执行新任务时，它可以将其拆分成更小的任务执行，并将小任务加到线程队列中。
+当某个线程的任务队列全都完成时，它会从一个随机线程的队列中偷一个放到自己的队列中。
+
+(2).相对于一般的线程池实现，fork/join框架的优势体现在对其中包含任务的处理方式上。
+在一般的线程池中，如果一个线程正在执行的任务由于某些原因无法继续运行，那么该线程会处于等待状态。
+而在fork/join框架实现中，如果某个子问题由于等待另外一个子问题的完成而无法继续运行。
+那么处理该子问题的线程会主动寻找其他尚未运行的子问题来执行。这种方式减少了线程的等待时间，提高了性能。
+```
+
+## JAVA7
+
+> Switch新增支持 String 类型
+
+```shell
+switch 支持的'byte，short，char，int，enum'都可以隐式的转换成 int 类型。不支持 boolean。
+另外，java7支持 String 类型，其实是通过调用'String.hashCode()'，将String转换为 int。
+```
+
+> 资源对象在程序结束之后必须关闭，`try-with-resources`确保在语句的最后每个资源都会被关闭。
+
+```shell
+任何实现了'java.lang.AutoCloseable'和'java.io.Closeable'的对象，在出了 try 大括号范围之后，都会自动关闭。
+所以，任意 catch 或者 finally 块都是在资源被关闭以后才运行的。
+```
+
+```java
+//jdk7之后
+public static String doIo7(String path) {
+    try (BufferedReader br = new BufferedReader(new FileReader(path))) {
+        return br.readLine();
+    } catch (IOException e) {
+        e.printStackTrace();
+    }
+    return null;
+}
+```
+
+```java
+//jdk9之后
+public static String doIo9(String path) throws IOException {
+    BufferedReader br = new BufferedReader(new FileReader(path));
+    try (br) {
+        return br.readLine();
+    }
+}
+```
+
+>异常抑制
+
+```shell
+#如果对资源对象的处理，和对资源对象的关闭均遭遇了异常，则关闭异常将被抑制，处理异常将被抛出。
+但关闭异常并没有丢失，而是存在处理异常的被抑制的异常列表中。通过异常的 getSuppressed()方法，可以提取出被抑制的异常。
+```
+
+```java
+try {
+    String s = doIo7("C:\\Users\\BlueCard\\Desktop\\123");
+    System.out.println(s);
+} catch (IOException e) {
+    System.out.println("资源处理异常：" + e);
+    
+    Throwable[] suppressed = e.getSuppressed();
+    System.out.println("资源关闭异常：" + Arrays.toString(suppressed));
+}
+```
