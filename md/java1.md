@@ -41,17 +41,6 @@ double d = Math.floor(-10 / -3); //3.0
 double d = Math.floor(-10 % -3); //-1.0 -->同sql，结果符号位和被除数（-10）一致。a%b = a-a/b*b
 ```
 
-> 保留两位有效小数（2种方式）
-
-```java
-//round()返回与参数最接近的长整数，参数加1/2后求其 floor()
-double val0 = (Math.round(1.1249 * 100)) / 100.0; //1.12
-double val1 = (Math.round(1.1250 * 100)) / 100.0; //1.13
-```
-
-```java
-String val0 = String.format("%.2f", 1.1249); //1.12
-String val1 = String.format("%.2f", 1.1250); //1.13
 ```
 
 > &，&&：都是逻辑 "与" 运算符，但后者为`短路运算`
@@ -544,39 +533,6 @@ String hex = Integer.toHexString(100);     //64，十进制转十六进制
 
 ## String
 
-> 字符串对象一旦创建（字符串常量池中），就无法修改。
-
-```shell
-String类的所有方法都没有改变字符串本身的值，而是返回了一个新的String对象。
-
-'String对象不可变（√）' 与 'String对象的引用变量不可变（×）'。
-
-final 类不一定线程安全，如: StringBuilder。
-#常见 final 类：LocalDateTime，StringBuffer，StringBuilder（非线程安全），Integer等。
-```
-
-```shell
-#String 不可变特性的应用
-'高效性' ：不可变性能保证其 hashcode 永远保持一致，不需要重新计算。这就使得字符串很适合作为 Map 中的 Key，字符串的处理速度要快过其它的键对象。
-'安全性' ：String被广泛的使用在其他Java类中充当参数。比如网络连接、打开文件等操作。如果字符串可变，那么类似操作可能导致安全问题。
-'线程安全'：因为不可变对象不能被改变，所以他们可以自由地在多个线程之间共享。不需要任何同步处理。
-```
-
-> 字符串常量池
-
-```sh
-#Java为了避免产生大量的String对象，设计了一个字符串常量池。
-工作原理：创建一个字符串时，JVM首先会检查字符串常量池中是否有'值相等'的字符串，如果有，则不再创建，直接返回该字符串的引用地址；
-如果没有，则创建，然后放到字符串常量池中，并返回新创建的字符串的引用地址。
-
-当遇到 'new String("Hollis");' 时，还会在堆内存（不是字符串常量池中，而是在堆里面）上创建一个新的String对象，存储'hollis'，
-并将内存上的引用地址返回。
-```
-
-```sh
-字符串常量池中的对象是'在编译期确定'，在类被加载时创建。如果类加载时，该字符串常量在常量池中已存在，那就跳过，不会重新创建一个。
-与之相反，堆中的对象是'在运行期才确定'，在代码执行到 new 的时候创建的。
-```
 
 > `intern()`
 
@@ -605,53 +561,6 @@ System.out.println(s1 == s3); //true
 
 ![](assets/string1.jpg)
 
-> 字符串拼接
-
-```java
-String s1 = "abc";
-String s2 = "ab" + "c";
-
-String s3 = "ab";
-String s4 = s3 + "c";
-
-System.out.println(s1 == s2); //true
-System.out.println(s1 == s4); //false
-```
-
-```sh
-对于'字符串常量相加'表达式，是在'编译期'直接处理成常量相连的结果，因此 s1==s2
-但是，对于 s4 是在'运行期'使用 new StringBuilder().append(s3).append("c").toString(); 进行拼接，生成新的对象，所以 s1!=s4 
-```
-
-> StringBuilder
-
-```java
-//内部拥有一个数组用来存放字符串内容。当进行字符串拼接时，直接在数组中加入新内容，并自动维护数组的扩容，不会产生中间字符串。
-String res = str0 + str1;
-String res = new StringBuilder(str0).append(str1).toString(); // + 的底层原理
-```
-
-```sh
-String          #线程安全     直接进行字符串拼接，会产生大量中间字符串，并且时间消耗长。
-StringBuffer    #线程安全     支持同步锁，性能稍差。
-StringBuilder   #线程不安全   单线程进行大量字符串操作时，推荐使用（√）。
-```
-
-```sh
-#循环中拼接字符串
-每次循环都需要创建一个 StringBuilder 对象（创建对象需要耗费时间和内存）。
-随着循环次数的增大，res字符串也就越长，把res中的字符复制到新建的 StringBuilder 中花费的时间也就越长。
-而且，StringBuilder(res).append(str).toString(); 会创建一个临时的字符串，随着循环次数的增加，
-这个操作花费的时间也会越来越长。总之，随着循环变量 i 的增大，每次循环会变得越来越慢。
-```
-
-> 字符串替换
-
-```sh
-replace();      #参数是 char 和 CharSequence，即支持字符和字符串的替换
-replaceAll();   #参数是 regex，即基于正则表达式的替换
-replaceFirst(); #参数也是 regex，但不同的是只替换第一个，即基于正则替换第一个满足条件的
-```
 
 
 
@@ -1158,15 +1067,6 @@ long或Long初始赋值时，必须使用大写的L，不能是小写的l，小�
 ```
 
 ##OOP规约
-
->避免在`循环体`中声明创建对象，也不要使用 `+` 进行字符串拼接
-
-```java
-Object obj = null;
-for (int i = 0; i < 100; i++) {
-    obj = new Object(); //推荐方式。字符串拼接使用 StringBuilder
-}
-```
 
 >推荐使用 `Integer.valueOf()`
 

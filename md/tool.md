@@ -421,7 +421,8 @@ http://localhost:8080/web/actuator/loggers
 http://localhost:8080/web/actuator/loggers/com.example.web.controller
 
 #发送 POST 请求到以上路径，动态修改以上模块的日志级别为 WARN，成功状态码为 '204'
-POST - 请求体: {"configuredLevel": "WARN"} - Content-Type: application/json
+curl -X POST http://localhost:8080/web/actuator/loggers/com.example.web.controller \
+-H "Content-Type: application/json" --data '{"configuredLevel":"WARN"}'
 ```
 > 使用方式
 

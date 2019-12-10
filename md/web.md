@@ -142,7 +142,24 @@ mybatis 需要加载的 xml 文件分别在：'com/example/web/student/sqlxml/*.
 
 ## 基础概念
 
-> 常见http状态码
+> 一个网页从开始请求到最终显示的完整过程
+
+```sh
+在浏览器中输入网址
+发送至DNS服务器，并获得域名对应的WEB服务器的IP地址
+与WEB服务器建立TCP连接
+浏览器向WEB服务器的IP地址发送相应的HTTP请求
+WEB服务器响应请求，并返回成功数据，或错误信息（如果有重定向，则重定向到新的URL地址），断开TCP连接，以保证其它浏览器能够与Web服务器建立连接
+-- 浏览器下载数据，解析HTML源文件，解析的过程中实现对页面的排版，解析完成后在浏览器中显示基础页面
+-- 分析页面中的超链接并显示在当前页面，重复以上过程直至无超链接需要发送，完成全部显示。
+
+浏览器拿到服务器响应数据后，就开始解析其中的html代码。当遇到'js/css/image'等静态资源时，就会再次向服务器请求下载，
+这个时候就用上'keep-alive'特性了，建立一次HTTP连接，可以请求多个资源，下载资源（使用'多线程'下载）的顺序就是按照代码里的顺序。
+
+https://www.cnblogs.com/aftree/p/9382204.html
+```
+
+> HTTP状态码
 
 ```sh
 200 OK 请求成功. 请求所希望的响应头或数据体将随此响应返回
@@ -155,17 +172,28 @@ mybatis 需要加载的 xml 文件分别在：'com/example/web/student/sqlxml/*.
 #500+ 服务器错误. 服务器在处理请求的过程中发生了错误
 ```
 
-> 标签区别 span & div
+> 标签区别
 
 ```sh
-多个<span/>的内容显示在同一行。
-一个<div/>显示一行，多个<div/>显示在不同的行。
+#<span> & <div>
+多个<span/>的内容显示在同一行。一个<div/>显示一行，多个<div/>显示在不同的行。
+
+#style="display: none" & style="visibility: hidden"
+前者'完全消失'。后者只是看不见，但占据的位置还在。
+```
+
+> 
+
+```sh
+
 ```
 
 
 
 > 
->
+
+
+
 >  
 
 ## 常见方法
@@ -174,52 +202,108 @@ mybatis 需要加载的 xml 文件分别在：'com/example/web/student/sqlxml/*.
 >
 > <https://www.jianshu.com/p/7fa6175f1db2>
 
->自执行函数（两种）
+>**（1）** 文档就绪函数（两种）
 
 ```js
-//表示文档结构已经加载完成（不包含图片等非文字媒体文件），window.onload=function(){} 则指示页面包含图片等文件在内的所有元素都加载完成。
 $(function () {
-    //TODO
+    //TODO ---> 区别于：window.onload = function(){}
 });
+
 $(document).ready(function () {
     //TODO
 });
 ```
 
->text()    html()    val()
+>**（2）** text()    html()    val()
 
-```js
+```sh
 text() 设置或返回被选元素的文本内容
 html() 设置或返回被选元素的内容（innerHTML）。返回只返回第一个匹配元素的内容
-val()  设置或返回被选元素的 value 属性。设置所有匹配元素的 value 属性的值，返回只返回第一个匹配元素的 value 属性的值
+val()  设置或返回被选元素的 value 属性。设置所有匹配元素的 value 属性的值。返回只返回第一个匹配元素的 value 属性的值
 ```
 
 ```js
-$(selector).val();
-$(selector).val(value);
-$(selector).val(function(index,currentvalue)); //index - 返回集合中元素的 index 位置。currentvalue - 返回被选元素的当前 value。
+let empName = $("#input_empName_add").val(); //获取指定标签用户输入的 value 值
 ```
 
-> **(14)** add()    remove()    append()    appendTo()
+
+
+> **（5）** parent()    children()    parents()    find()
+
+```sh
+parent()   返回被选元素的直接父元素
+parents()  返回被选元素的'所有'祖先元素
+children() 返回被选元素的所有直接子元素
+find()     返回被选元素的后代元素，根据条件进行过滤
+```
 
 ```js
+$(document).on("click", ".delete_btn", function () {
+    let empName = $(this).parents("tr").find("td:eq(2)").text(); //表格中删除单个元素时，找到当前行第二列的 text 内容
+    if (confirm("是否删除【" + empName + "】吗？")) { //弹框提示: 是否删除【xxx】吗？
+        //TODO
+    }
+});
+```
+
+> **（6）** eq()    siblings()    index()
+
+```sh
+eq()       返回带有被选元素的指定索引号的元素。索引号从 0 开头，使用负数将从被选元素的结尾开始计算索引
+siblings() 返回被选元素的所有同级元素。同级元素是共享相同父元素的元素
+index()    返回指定元素相对于其他指定元素的 index 位置。 #如果未找到元素，返回 -1
+```
+
+> **（7）** height()    width()
+
+```sh
+height()  设置或返回被选元素的高度
+width()   设置或返回被选元素的宽度
+```
+
+> **（8）** addClass()    removeClass()    hasClass() 
+
+```sh
+addClass()    向被选元素添加一个或多个类名
+removeClass() 从被选元素移除一个或多个类
+hasClass()    检查被选元素是否包含指定的类名称
+```
+
+```js
+$("table_test").attr({"border": "1", "cellspacing": "0", "cellpadding": "5"}); //设置多个属性
+```
+
+> **（10）** show()    hide()
+
+```sh
+show() 显示隐藏的被选元素  #适用于通过 style="display: none" 隐藏（完全消失）的元素。不能用于 style="visibility: hidden"
+hide() 隐藏被选元素       #完全消失
+```
+
+
+
+
+
+> **（14）** add()    remove()    append()    appendTo()
+
+```sh
 add()    把元素添加到已存在的元素组合中
 remove() 移除被选元素，包括所有的文本和子节点。该方法也会移除被选元素的数据和事件
-//提示：如需移除元素，但保留数据和事件，请使用 detach() 方法代替
-//提示：如只需从被选元素移除内容，请使用 empty() 方法
+#提示：如需移除元素，但保留数据和事件，请使用 detach() 方法代替
+#提示：如只需从被选元素移除内容，请使用 empty() 方法
 
-append() 方法在被选元素的结尾插入指定内容
-//提示：如需在被选元素的开头插入内容，请使用 prepend() 方法
+append() 方法在被选元素的结尾插入指定内容（可以是DOM对象、HTML string、jQuery对象）
+#提示：如需在被选元素的开头插入内容，请使用 prepend() 方法
 
-appendTo() 方法在被选元素的结尾插入 HTML 元素
-//提示：如需在被选元素的开头插入 HTML 元素，请使用 prependTo() 方法
+appendTo() 方法在被选元素的结尾插入指定内容（可以是selector、DOM对象、HTML string、元素集合、jQuery对象）
+#提示：如需在被选元素的开头插入 HTML 元素，请使用 prependTo() 方法
 ```
 
 
 
 
 
-## 其他方法
+## 方法练习
 
 > js 对象和 jQuery 对象的相互转换
 
@@ -350,7 +434,7 @@ function btn_fun(e) { //静态绑定事件
 ```
 > 表单提交
 
-```js
+```html
 
 ```
 
@@ -360,6 +444,25 @@ function btn_fun(e) { //静态绑定事件
 
 ```js
 
+```
+
+> 动态生成 table
+
+```js
+function create_table_2_2() {
+    let idTd = $("<td></td>").append("ID");
+    let nameTd = $("<td></td>").append("Name");
+    let headTr = $("<thead></thead>").attr("align", "center").append(idTd).append(nameTd);
+
+    idTd = $("<td></td>").append("111");
+    nameTd = $("<td></td>").append("张三");
+    let dataTr = $("<tr></tr>").attr("align", "center").append(idTd).append(nameTd);
+
+    $("<table></table>")
+        .attr({"id": "mytable", "border": "1", "cellspacing": "0", "cellpadding": "5"})
+        .append(headTr).append(dataTr)
+        .appendTo($("#create_table"));
+}
 ```
 
 
@@ -1010,22 +1113,12 @@ let checked_items = $(".check_item:checked").length; //class="check_item" 已选
 
 >  jQuery的页面加载完毕事件？
 
-```js
-$(function () { //简写前: $(document).ready(function () {
-    //文档就绪函数：为了防止文档在完全加载（就绪）之前运行 jQuery 代码
-    //jQuery的方法。在DOM加载完成时运行的代码，如果有多个定义则依次执行
-});
-```
-
-```js
-window.onload = function () {
-    //js原生的事件。在页面所有资源加载完后执行，如果有多个定义则只执行最后一个
-}
-```
-
 ```sh
-比如：当页面中只有一个 <img/> 标签，当 img 节点创建完后就会执行 $(function(){}) 中的代码，
-当 <img/> 的src指定的图片完全加载完后，才会触发'window.onload'事件。所以，前者的效率更高。
+$(function(){})：页面结构已经加载完成，不包含'img/css/js'等非文字媒体文件
+window.onload = function(){}：页面所有元素都加载完成，包含'img/css/js'等文件在内
+
+#比如：当页面中只有一个 <img/> 标签，当img节点创建完后就会执行 $(function(){}) 中的代码
+#当 <img/> 的src指定的图片完全加载完后，才会触发 window.onload 事件。所以，前者的效率更高
 ```
 
 > ### ajax
@@ -1069,6 +1162,14 @@ BootStrap 是一个移动设备优先的UI框架。可以不用写任何css、js
 程序员对页面的编写是有硬伤的，所有要自己写页面的话就要使用类似于 BootStrap 这样的UI框架。
 
 平时用得很多的：1、模态框 2、表单，表单项 3、布局 4、删格系统
+```
+
+> ### XML解析器
+
+```sh
+`DOM`：解析时'将整个文档加载到内存'，比较耗内存。但是，可以随机访问任何一个节点。
+`SAX`：事件驱动型解析。顺序读取xml文件，当遇到文档开头/结束，标签开头/结束时，都会触发一个事件，
+用户只需要在事件对应的回调函数中写入响应的处理逻辑即可。#只能顺序读取，不可随机访问。但速度快。
 ```
 
 
@@ -1193,10 +1294,15 @@ Cookie[] cookies = request.getCookies(); //遍历读取 Cookie
 
 #Session 销毁
 (1).服务器端调用方法 HttpSession.invalidate();
-(2).Session 过期。两次请求的时间间隔超过 Session 的最大过期时间（默认 30 分钟），则服务端自动删除 Session 对象。
+(2).Session过期。两次请求的时间间隔超过 Session 的最大过期时间（默认 30 分钟），则服务端自动删除 Session 对象。
+session.setMaxInactiveInterval(30 * 60); #tomcat配置文件设置 或 代码设置，单位秒
 
 (0).关闭浏览器，并不意味着 Session 销毁。
 当浏览器关闭再打开，浏览器可能丢失之前 Cookie 中的 SessionId，也就找不到服务器端的 Session 对象，所以无法自动登录
+
+#怎么实现关闭浏览器时，删除Session？
+在页面中添加 onunload 事件，当关闭浏览器时，执行服务器端删除 Session 代码。
+优点：退出时，能及时处理。缺点：当用户打开多个页面时，关闭任何一个都可能导致用户的退出。
 ```
 
 >Cookie & Session
@@ -1210,8 +1316,8 @@ Cookie[] cookies = request.getCookies(); //遍历读取 Cookie
 ```
 
 ```java
-request.getSession(true);  //根据 SessionId 查找，有则返回，无则创建。同 request.getSession();
-request.getSession(false); //..........................，无则为 null
+request.getSession(false); //没有SessionId 或 有SessionId但没找到Session对象，均返回 null
+request.getSession(true);  //有则返回，无则创建。同 getSession(); ---> 一定能得到一个 HttpSession 对象
 ```
 
 > Session 持久化
@@ -1347,11 +1453,9 @@ req.getRequestDispatcher("/hello").forward(req, res);
 <form method="post" th:action="@{/hello}"/>
 req.sendRedirect("/demo/hello");
 ```
-> ###xml解析
+> 
 
 ```sh
-`DOM`：解析时先'将整个文档加载到内存'。占用内存大，解析大型文件时性能有所下降。适合对xml进行'随机访问'
-`SAX`：顺序读取xml文件，'不需要一次性加载整个文件'。属于事件驱动型解析，当遇到文档开头/结束，标签开头/结束时，都会触发一个事件，
-用户只需要在事件对应的回调函数中写入响应的处理逻辑即可。适合对xml进行'顺序访问'
+
 ```
 

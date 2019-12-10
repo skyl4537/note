@@ -692,20 +692,6 @@ http://localhost:8090/demo/actuator        --> 返回所有已暴露的端点
 http://localhost:8090/demo/actuator/health --> 访问health端点
 ```
 
-> 动态修改日志级别 `必须 logback`
-
-```properties
-#所有模块的日志级别
-http://127.0.0.1:8090/demo/actuator/loggers
-#具体模块的日志级别
-http://127.0.0.1:8090/demo/actuator/loggers/com.example.controller
-```
-
-```properties
-#发送 POST 请求到以上路径，动态修改以上模块的日志级别为 DEBUG，成功状态码为 '204'
-POST - 请求体: {"configuredLevel": "DEBUG"} - Content-Type: application/json
-```
-
 ## Admin
 
 > 客户端（被监控者）：基于 Actuator 的可视化 WebUI
@@ -823,8 +809,8 @@ spring.mail.password=***
 @RestController
 @RequestMapping("mail")
 public class MailController {
-    private static final String EMAIL_FROM = "dongyan3131@163.com";
-    private static final String EMAIL_TO = "453705197@qq.com";
+    private static final String EMAIL_FROM = "453@163.com";
+    private static final String EMAIL_TO = "4537@qq.com";
     private static final String EMAIL_SUBJECT = "主题：邮件主题";
 
     @Autowired

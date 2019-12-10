@@ -151,17 +151,17 @@ amqpTemplate.convertAndSend("exchange", "routing-key", new Object());
 ## 三种模式
 
 ```sh
-`Fanout`：任何发送到Exchange的消息，都会路由到与其绑定的'所有Queue'中。`Queue与Exchange 直接相连，不需要 RoutingKey`
+`Fanout`：任何发送到Exchange的消息，都会路由到与其绑定的'所有Queue'中。#Queue与Exchange 直接相连，不需要 RoutingKey
 Queue与Exchange 的绑定是：多对多的关系。一个E上可以绑定多个Q，一个Q可以同多个E进行绑定
 ```
 
 ```sh
-`Direct`：任何发送到 E 的消息，都会被转发到'RK一致'的 Q 中。`Q与E 通过 RK 相连，RK需要完全匹配`
+`Direct`：任何发送到 E 的消息，都会被转发到'RK一致'的 Q 中。#Q与E 通过 RK 相连，RK需要完全匹配
 如，绑定的RK为"rk.info"，则只会转发标记为"rk.info"的消息，不会转发"rk.debug"，"rk.info.log"等
 ```
 
 ```sh
-`Topic`：任何发送到 E 的消息，都会被转发到'RK模糊匹配'的 Q 中。`Q与E 通过 RK 相连，RK支持模糊匹配`
+`Topic`：任何发送到 E 的消息，都会被转发到'RK模糊匹配'的 Q 中。#Q与E 通过 RK 相连，RK支持模糊匹配
 模糊匹配规则："#"表示0个或若干个关键词，"*"表示1个关键词
 所以，如"rk.*"能与"rk.info"匹配，无法与"rk.info.log"匹配；但是"rk.#"能与上述两者匹配。
 
@@ -170,6 +170,8 @@ RK='lazy.orange.fox'的消息会路由到 Q1 + Q2，
 RK='lazy.brown.fox'的消息会路由到 Q2，
 RK='lazy.pink.rabbit'的消息会路由到 Q2（只会投递给Q2一次，虽然这个 RK 与Q2的两个 Binding-Key 都匹配）
 RK='quick.brown.fox'，'orange'，'quick.orange.male.rabbit'的消息将会被丢弃，因为它们没有匹配任何 Binding-Key
+
+`Fanout 多个消费者，都能收到消息。Topic 是特殊的 Direct，多个同类型消费者，交替收到消息。`
 ```
 
 ![](assets/rabbitmq-01.png)
