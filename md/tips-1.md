@@ -221,10 +221,6 @@ String format = MessageFormat.format("{0}和{1}", "我", "你"); //我和你
 format = String.format("%s和%s", "我", "你"); //我和你
 ```
 
-
-
-
-
 > String替换
 
 ```java
@@ -239,7 +235,7 @@ replace(char|CharSequence target, char|CharSequence replacement); //参数不同
 ```java
 public void splitStringTest() {
     String str = "我 和 你!";
-    String regex = "[\\u4E00-\\u9FBF]+";
+    String regex = "[\\u4E00-\\u9FBF]+"; //汉字正则
 
     boolean matches = str.matches(regex);    //完全匹配. 全是汉字？ false
     Matcher matcher = Pattern.compile(regex).matcher(str);
@@ -284,7 +280,7 @@ public void countTest() {
 
 #高级部分
 
-##IO
+##IO&编码
 
 > 文件拷贝：字节流 & 字符流
 
@@ -292,94 +288,37 @@ public void countTest() {
 按数据流向：输入流，输出流
 按操作数据：字节流 （如音频，图片等 - 'InputStream,OutputStream'），字符流（如文本 - 'Reader,Writer'）
 ```
-```java
-try (BufferedInputStream bis = new BufferedInputStream(new FileInputStream(src));
-     BufferedOutputStream bos = new BufferedOutputStream(new FileOutputStream(dest))) {
-    int len;
-    byte[] buf = new byte[1024 * 4]; //字节流
-    while (-1 != (len = bis.read(buf))) {
-        bos.write(buf, 0, len);
-    }
-} catch (IOException e) {
-    System.out.println("系统找不到指定的文件：" + src);
-}
-```
-
-```java
-try (BufferedReader br = new BufferedReader(new FileReader(src));
-     BufferedWriter bw = new BufferedWriter(new FileWriter(dest))) {
-    String line;
-    while (null != (line = br.readLine())) { //如果已到达流末尾，则返回 null
-        bw.write(line);
-        bw.newLine(); //由于 readLine()方法不返回行的终止符，所以手动写入一个行分隔符
-        bw.flush();   //只要用到缓冲区技术，就一定要调用 flush() 方法刷新该流中的缓冲
-    }
-} catch (IOException e) {
-    System.out.println("系统找不到指定的文件：" + src);
-}
-```
-> 中文 & ASCII
-
-```java
-public class Utils {
-    public static void main(String[] args) {
-        String str = "p190428212426_测试数据库_3入口";
-
-        String asciiStr = str2Ascii(str);
-        System.out.println("ASCII: " + asciiStr);
-
-        String res = ascii2Str(asciiStr);
-        System.out.println("中文: " + res);
-    }
-
-    private static String ascii2Str(String asciiStr) {
-        String[] chars = asciiStr.split(" ");
-        StringBuilder sb = new StringBuilder();
-        for (String aChar : chars) {
-            sb.append((char) Integer.parseInt(aChar));
-        }
-        return sb.toString();
-    }
-
-    public static String str2Ascii(String str) {
-        char[] chars = str.toCharArray();
-        StringBuilder sb = new StringBuilder();
-        for (char aChar : chars) {
-            sb.append((int) aChar).append(" ");
-        }
-        return sb.toString();
-    }
-}
-```
-
-> 字符编码
+> 常见编码格式
 
 ```sh
-# GBK & UTF-8
-GBK   ：占用'2'个字节，比 GB2312 编码多了很多汉字，如"镕"字。
-UTF-8 ：一种变长编码方式，使用'1-4'个字节进行编码，有利于节约网络流量。是Unicode编码的一种具体实现。
+'ASCII'  : 一共128个代码，包括26个小写字母、26个大写字母、10个数字、32个符号、33个控制代码和1个空格
+'ANSI'   : 使用两个字节(2^16)。本身是对 ASCII 码的拓展，前128个与 ASCII 码相同，之后的字符全是某个国家语言的所有字符。
+中国有中国的ANSI，日本有日本的ANSI，各国有各国的标准，并且不能互相转换，这就会导致在多语言混合的文本中会有乱码。
 
-# UTF-8 编码规则
-① 对于单字节的符号，字节的第一位设为0，后面7位为这个符号的unicode码。因此对于英语字母，UTF-8编码和ASCII码是相同的。
-② 对于n字节的符号，第一个字节的前n位都设为1，第n+1位设为0，后面字节的前两位一律设为10。剩下的没有提及的二进制位，全部为这个符号的unicode码。
-③ 假如有个字符占用3个字节，则：第一个字节以 1110 开始，第二三个字节以 10 开始。
+'GB2312' : 中文对 ASCII 的扩编，可以表示6000多个常用汉字
+'GBK'    : 汉字实在是太多了，包括繁体和各种字符，于是产生了 GBK 编码，它包括了 GB2312 中的编码，同时扩充了很多
+'GB18030': 中国是个多民族国家，各个民族几乎都有自己独立的语言系统，为了表示那些字符，继续把 GBK 编码扩充为 GB18030 编码
 
-# '记事本'鄙视'联通'
-Windows自带的记事本，默认使用ANSI。如果在ANSI的编码输入汉字，那么实际就是GB系列的编码方式，在这种编码下，"联通"的内码是：
+'UNICODE': 每个国家都像中国一样，把自己的语言编码，于是出现了各种各样的编码，如果你不安装相应的编码，就无法解释相应编码想表达的内容。
+终于，有个叫 ISO 的组织看不下去了。他们一起创造了一种编码 UNICODE ，这种编码非常大，大到可以容纳世界上任何一个文字和标志。
+所以只要电脑上有 UNICODE 这种编码系统，无论是全球哪种文字，只需要保存文件的时候，保存成 UNICODE 编码就可以被其他电脑正常解释。
+UNICODE 在网络传输中，出现了两个标准 UTF-8 和 UTF-16，分别每次传输 8个位和 16个位。
+
+'UTF-8' : 一种变长的编码方式: 使用 1~4 个字节表示一个符号，根据不同的符号而变化字节长度。当字符在 ASCII 码的范围时，就用1个字节表示。
+值得注意的是: UNICODE 编码中一个中文字符占2个字节，而 UTF-8 一个中文字符占3个字节。
+```
+
+> 记事本鄙视【联通】
+
+```sh
+#Windows自带的记事本，默认编码格式为 ANSI
+如果在 ANSI 的编码环境输入汉字，那么实际就是 GB 系列的编码方式保存，"联通"的内码是：
 11000001 10101010 11001101 10101000 #两个汉字，4个字节
-注意到了吗？第一二个字节、第三四个字节的起始部分的都是"110"和"10"，正好与UTF8规则里的两字节模板是一致的。
-于是再次打开记事本时，记事本就误认为这是一个UTF8编码的文件，让我们把第一个字节的110和第二个字节的10去掉，
-我们就得到了"00001 101010"，再把各位对齐，补上前导的0，就得到了"0000 0000 0110 1010"，不好意思，这是UNICODE的006A，也就是小写的字母"j"，
-而之后的两字节用UTF8解码之后是0368，这个字符什么也不是。这就是只有"联通"两个字的文件没有办法在记事本里正常显示的原因。 
+也符合 UTF-8 的编码规则。所以再次打开记事本，记事本误以为是 UTF-8 编码的文件，以 UTF-8 解码就乱码
 ```
 
-```java
-byte[] bytes = "联通".getBytes("GBK");
-for (byte aByte : bytes) {
-    // 11000001 10101010 11001101 10101000 --> 两个汉字，4个字节
-    System.out.println(Integer.toBinaryString(aByte & 255));
-}
-```
+
+
 ##Socket
 
 > #### TCP UDP
@@ -622,7 +561,7 @@ private StringBuffer format(Date date, StringBuffer toAppendTo, FieldDelegate de
     //... ...
 }
 ```
-> 解决方案
+> 3 种解决方案
 
 ```java
 //(1).只在需要的时候创建实例，不用static修饰。【缺点】加重了创建对象的负担，会频繁地创建和销毁对象，效率较低

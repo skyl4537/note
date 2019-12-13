@@ -333,7 +333,26 @@
 #3-11S
     
 #3-12S
-    Ajax
+    区别 Statement & PreparedStatement & CallableStatement
+    1. Statement 是 PreparedStatement 和 CallableStatement 的父类
+    2. Statement 是直接发送 sql 语句到数据库，事先没有进行预编译。
+       PreparedStatement 会将 sql 进行预编译，当 sql 语句要重复执行时，
+       数据库会调用已编译好的 sql 语句。所以，PreparedStatement 在性能方面会更好。
+    3. PreparedStatement 在执行 sql 时，对传入的参数可以进行强制的类型转换。
+    以保证数据格式与底层的数据库格式一致
+    4. CallableStatement 适用于执行存储过程。
+      
+    注册驱动程序
+    建立连接
+    创建 Statement
+    执行sql语句
+    处理结果集
+    关闭连接
+    
+    1.44.
+
+
+    
     
 #1-1C
     
