@@ -4,7 +4,7 @@
 
 ## HTML
 
-> ### 基础概念
+> 基础概念
 
 ```sh
 # 一个网页从开始请求到最终显示的完整过程
@@ -19,12 +19,13 @@
 ```
 
 ```sh
-# 域名解析过程
-在浏览器地址栏中输入'https://www.baidu.com'后，系统会首先自动从本地 hosts 文件中寻找对应的IP地址。
-一旦找到，系统会立即打开对应网页；如果没有找到，则系统会将网址提交DNS域名解析服务器进行IP地址的解析。
+# 域名解析：本地域名解析 + DNS域名服务器解析
+在地址栏中输入网址后，系统首先会从本地 hosts 文件中寻找对应的IP地址，一旦找到，系统会立即打开对应网页。
+如果没有找到，系统则会将网址提交DNS域名解析服务器进行IP地址的解析。
 
-#本地Hosts文件所在位置：C:\Windows\System32\drivers\etc
-配置本地Hosts文件，一方面可以加快网站的访问速度（配置网站对应的正确IP），另一方面可以阻止某些流氓软件的网络请求（配置网站的IP为 127.0.0.1）
+#Windows --> C:/Windows/System32/drivers/etc/hosts    linux --> /etc/hosts
+配置本地Hosts文件：一方面可以加快网站的访问速度，另一方面可以阻止某些流氓软件的网络请求（配置流氓网站的地址为 127.0.0.1）
+可以使用软件'SwitchHosts'配置本地hosts
 ```
 
 ```sh
@@ -32,80 +33,63 @@
 
 ```
 
-> HTTP状态码
-
 ```sh
+#HTTP 状态码
 200 OK 请求成功. 请求所希望的响应头或数据体将随此响应返回
 302 Found 重定向. 请求的资源原本确实存在，但已经被临时改变了位置
+400 Bad-Request 请求有误. 可能是参数错误
 404 NOT-Found 请求失败. 请求的资源不存在
 500 Internal-Server-Error 服务器内部错误
-400 Bad-Request 请求有误. 可能是参数错误
 
-#400+ 客户端错误. 请求包含语法错误或无法完成请求
-#500+ 服务器错误. 服务器在处理请求的过程中发生了错误
+400+ '客户端错误'. 请求包含语法错误或无法完成请求
+500+ '服务器错误'. 服务器在处理请求的过程中发生了错误
 ```
 
-> 标签区别
-
-```sh
-#<span> & <div>
-多个<span/>的内容显示在同一行。一个<div/>显示一行，多个<div/>显示在不同的行。
-
-#style="display: none" & style="visibility: hidden"
-前者'完全消失'。后者只是看不见，但占据的位置还在。
-```
-> ### XML解析器
+> XML解析器
 
 ```sh
 `DOM`：解析时'将整个文档加载到内存'，比较耗内存。但是，可以随机访问任何一个节点。
 `SAX`：事件驱动型解析。顺序读取xml文件，当遇到文档开头/结束，标签开头/结束时，都会触发一个事件，
 用户只需要在事件对应的回调函数中写入响应的处理逻辑即可。#只能顺序读取，不可随机访问。但速度快。
 ```
-> ### javaScript
+> javaScript
 
 ```sh
 javaScript 用于操作 html 标签：改变标签内容、属性、样式
 jQuery 是一个'js框架'，封装了js的属性和方法，并且增强了js的功能，让用户使用起来更加便利，勿需考虑'浏览器兼容'问题。
 ```
-> js在页面的位置
-
-```sh
-js 作为一种脚本语言可以放在html页面中'任何位置'。但是浏览器解释 html 时是按先后顺序的，所以前面的 js 就先被执行。
-比如，进行页面显示初始化的 js 必须放在 <head/> 里面，因为初始化都要求提前进行（如给页面body设置css等）；
-而如果是通过事件调用执行的 function() 那么对位置没什么要求的，可以放在 <body/> 标签内。
-```
-
 ```sh
 #yahoo团队的最佳实践：样式在上，脚本在下
 当把样式放在 <head> 标签中时，浏览器在渲染页面时就能尽早的知道每个标签的样式，用户就会感觉这个页面加载的很快。
-但是如果将样式放在页面的结尾，浏览器在渲染页面时就无法知道每个标签的样式，直到CSS被下载执行后。
-另一方面，对于 js 来说，因为它在执行过程中会阻塞页面的渲染，所以我们要把它放在页面的结尾
+但是如果将样式放在页面的结尾，浏览器在渲染页面时就无法知道每个标签的样式，直到 CSS 被下载执行后。
+另一方面，对于 js 来说，因为它在执行过程中会阻塞页面的渲染，所以要把它放在页面的结尾，即'标签<body>的末尾'。
 ```
-> ###jQuery
-
-> 选择器
+> jQuery
 
 ```sh
+# 选择器
 $("#id_test")    -->  id选择器    -->  document.getElementById("id_test");
-$("p")           -->  标签选择器   -->  document.getElementsByTagName("p");  #所有<p>标签
+$("p")           -->  标签选择器   -->  document.getElementsByTagName("p");             #所有<p>标签
 $(".class_test") -->  class选择器  -->  document.getElementsByClassName("class_test"); #class为"class_test"的所有元素
 ```
 
-> jQuery的页面加载完毕事件？
-
 ```sh
+#区别：页面加载完毕事件
 $(function(){})：页面结构已经加载完成，不包含'img/css/js'等非文字媒体文件
 window.onload = function(){}：页面所有元素都加载完成，包含'img/css/js'等文件在内
 
-#比如：当页面中只有一个 <img/> 标签，当img节点创建完后就会执行 $(function(){}) 中的代码
-#当 <img/> 的src指定的图片完全加载完后，才会触发 window.onload 事件。所以，前者的效率更高
+比如：当页面中只有一个 <img/> 标签，当img节点创建完后就会执行 $(function(){}) 中的代码
+当 <img/> 的src指定的图片完全加载完后，才会触发 window.onload 事件。所以，前者的效率更高
 ```
 
-> ### ajax
+> ajax
 
 ```sh
 ajax 异步的 JavaScript 和 XML。
 实质是使用 XMLHttpRequest 对象异步地向服务器发送请求，服务器返回部分数据，而不是一个完整的页面，以实现页面的局部刷新。
+
+#jQuery的ajax和原生js实现ajax有什么关系？
+jQuery 中的 ajax 也是通过原生的 js 封装的。封装完成后使用起来更加便利，不用考虑底层实现或兼容性等处理。
 ```
 
 ```sh
@@ -120,13 +104,7 @@ ajax 主要功能就是提供与服务器的异步交互，比如需要输入一
 而同步提交就像注册完毕，将信息存储到数据库后提示注册成功。
 ```
 
->jQuery的ajax和原生js实现ajax有什么关系？
-
-```sh
-jQuery 中的 ajax 也是通过原生的 js 封装的。封装完成后使用起来更加便利，不用考虑底层实现或兼容性等处理。
-```
-
-> 简单说一下html5? 你对现在的那些新技术有了解?
+> html5
 
 ```sh
 Html5 是最新版本的html，是在原来 html4 的基础上增强了一些标签。
@@ -518,33 +496,33 @@ AOP 面向切面编程，就是将这些分散在各个业务逻辑代码中的�
 > 开发手册
 
 ```sh
-#【参考】 各层命名规约
+【参考】 各层命名规约
 get，list，count（统计值），insert/save（推荐），delete/remove（推荐），update
 
-#【强制】 xml 配置中参数注意使用：#{}，不要使用${}，此种方式容易出现 SQL 注入。
+【强制】 xml 配置中参数注意使用：#{}，不要使用${}，此种方式容易出现 SQL 注入。
 
-#【强制】 在表查询中，一律不要使用 * 作为查询的字段列表，需要哪些字段必须明确写明。
+【强制】 在表查询中，一律不要使用 * 作为查询的字段列表，需要哪些字段必须明确写明。
 -- 说明：（1）增加查询分析器解析成本。（2）增减字段容易与 resultMap 配置不一致。（3）无用字段增加网络消耗，尤其是 text 类型的字段。
 
-#【强制】 POJO类 boolean 属性不能加 is，而数据库字段必须加 is_，要求在 resultMap 中进行字段与属性的映射。
+【强制】 POJO类 boolean 属性不能加 is，而数据库字段必须加 is_，要求在 resultMap 中进行字段与属性的映射。
 -- 说明：参见定义POJO类以及数据库字段定义规定，在 sql.xml 增加映射，是必须的。
 
-#【推荐】 不要写一个大而全的数据更新接口，传入为 POJO 类，不管是不是自己的目标更新字段，
+【推荐】 不要写一个大而全的数据更新接口，传入为 POJO 类，不管是不是自己的目标更新字段，
 -- 都进行 update table set c1=value1, c2=value2, c3=value3; 这是不对的。
 -- 执行 SQL时，尽量不要更新无改动的字段。（1）易出错； （2）效率低； （3）binlog 增加存储。
 ```
 
 ```sh
-#【强制】 不允许直接拿 HashMap 与 Hashtable 作为查询结果集的输出。
+【强制】 不允许直接拿 HashMap 与 Hashtable 作为查询结果集的输出。
 -- HashMap 会置入字段名和属性值，但是值的类型不可控。
 
-#【强制】 不要用 resultClass 当返回参数，即使所有类属性名与数据库字段一一对应，也需要定义；反过来，每一个表也必然有一个与之对应。
+【强制】 不要用 resultClass 当返回参数，即使所有类属性名与数据库字段一一对应，也需要定义；反过来，每一个表也必然有一个与之对应。
 -- 说明：配置映射关系，使字段与 DO 类解耦，方便维护。
 
-#【强制】 mybatis 自带的 queryForList(String statementName, int start, int size) 不推荐使用。
+【强制】 mybatis 自带的 queryForList(String statementName, int start, int size) 不推荐使用。
 -- 说明：此方法属于'逻辑分页'，会先查询所有记录，然后再代码中进行分页
 
-#'【参考】 @Transactional 事务不要滥用。事务会影响数据库的 QPS。
+【参考】 @Transactional 事务不要滥用。事务会影响数据库的 QPS。
 -- 另外使用事务的地方需要考虑各方面的回滚方案，包括缓存回滚、搜索引擎回滚、消息补偿、统计修正等。
 ```
 
@@ -572,7 +550,7 @@ get，list，count（统计值），insert/save（推荐），delete/remove（�
 ORM（Object-Relational-Mapping）：对象-关系映射。Object 是指java语言中的对象，Relational 是指关系型数据库。
 ORM 就是把数据库表和实体类及实体类的属性对应起来，用操作实体类的方式来完成数据库操作的一种技术。
 
-#为什么使用 ORM?
+#为什么使用 ORM？
 当实现一个应用程序时，可能会写特别多数据访问层的代码，增删查改，而这些代码都是重复的。使用ORM则会大大减少重复性代码。
 
 #ORM 优缺点
@@ -598,21 +576,19 @@ name = person.getName();
 >JDBC
 
 ```sh
-（1）建立连接 （2）创建Statement对象 （3）组装sql及参数 （4）执行sql （5）读取结果集并解析 （6）关闭连接，释放资源
+(1).注册驱动 (2).建立连接 (3).创建对象Statement (4).组装和执行sql (5).处理结果集 (6).关闭连接，释放资源
 ```
 
 ```java
 public static void main(String[] args) throws Exception {
-    Class.forName("com.mysql.jdbc.Driver");
-    Connection conn = DriverManager.getConnection(url, username, password);              //（1）
-    Statement st = conn.createStatement();                                               //（2）
-    ResultSet rs = st.executeQuery("select id,name,password,email,birthday from users"); //（3-4）
+    Class.forName("com.mysql.jdbc.Driver");                                              //（1）
+    Connection conn = DriverManager.getConnection(url, username, password);              //（2）
+    Statement st = conn.createStatement();                                               //（3）
+    ResultSet rs = st.executeQuery("select id,name,password,email,birthday from users"); //（4）
     while(rs.next()){
         System.out.println("name=" + rs.getObject("name"));                              //（5）
     }
-    rs.close();
-    st.close();
-    conn.close();                                                                         //（6）
+    conn.close();                                                                        //（6）
 }
 ```
 
@@ -754,39 +730,31 @@ mapper中也可以使用 RowsBounds 来限制查询结果，逻辑分页，不�
 
 ## 问题
 
-> 特殊符号
+>特殊符号
 
 ```sh
-'${}' 表示拼接sql串。                    #参数拼接 --> 编译成sql指令 --> 运行
-'#{}' sql参数的占位符，可有效防止 sql 注入。#编译成sql指令 --> 动态传参 --> 运行
-mybatis会将sql中的 '#{}' 替换为 ? 号，在sql执行前使用 PreparedStatement 的方法设置参数。
+mybatis 在处理 '#{}' 时，会将SQL中的'#{}'替换为 ? 号，调用 PreparedStatement 的 set 方法来赋值。
+mybatis 在处理 '${}' 时，直接替换成参数的值，即直接将参数拼接在SQL语句的后面。
 
+#使用 #{} 可以有效的防止SQL注入，提高系统安全性。原因在于：预编译机制。
+'SQL注入'是发生在'编译的过程'中，因为恶意注入了某些特殊字符，最后被编译成了恶意的执行操作。
+'预编译机制'是提前对SQL语句进行预编译，而后套用输入的参数运行。
+预编译完成之后，SQL的结构已经固定，即便用户输入非法参数，也不会对SQL的结构产生影响，从而避免了潜在的安全风险。
+```
+
+```sh
 #特殊情况必须要用 ${}。如：动态传入字段，表名
 SELECT * FROM person ORDER BY ${field} DESC LIMIT 10
 ```
 
-```sh
-#为什么能防止sql注入？
-使用 PreparedStatemen 执行参数化查询时，数据库系统'不会将参数的内容视为 sql 指令的一部分'来处理，
-而是在数据库完成 sql 指令的编译后，才套用参数运行。因此，就算参数中含有破坏性的指令，也不会被数据库所运行。
-即，sql 语句在程序运行前已经进行了'预编译'，当运行时，动态地把参数传给 PreprareStatement。
-即使参数里有敏感字符如 or '1=1'、数据库也会作为一个参数一个字段的属性值来处理，而不会作为一个 sql 指令。
-
-userName = passWord = "1' OR '1'='1";
-strSQL = "SELECT * FROM users WHERE name = '1' OR '1'='1' and pw = '1' OR '1'='1';"
-```
+> 3 种查询
 
 ```sh
-#PreparedStatement 比 Statement 更快
-Java提供了 3 种方式来执行查询语句：
-`Statement` 用于通用查询，`PreparedStatement` 用于执行参数化查询，而 `CallableStatement` 则是用于存储过程。
+'Statement' 适用于通用查询，是其他两个类的父类。
+'PreparedStatement' 用于执行参数化查询，'CallableStatement' 则是用于存储过程。
 
-使用 PreparedStatement 最重要的一点好处是它拥有更佳的性能优势：'SQL语句会预编译在数据库系统中'。
-执行计划同样会被缓存起来，它允许数据库做参数化查询。使用预处理语句比普通的查询更快，
-因为它做的工作更少（数据库对SQL语句的分析，编译，优化已经在第一次查询前完成了）。
-为了减少数据库的负载，生产环境中的 jdbc 代码你应该总是使用 PreparedStatement 。
-
-总结：为了获得性能上的优势，应该使用参数化sql查询，而不是字符串追加的方式。下面两个查询，第 2 个效率更高
+Statement 是直接发送SQL语句到数据库，事先没有进行预编译。
+PreparedStatement 会将SQL进行'预编译'，当SQL要重复执行时，数据库会调用已编译好的SQL语句。所以，'性能方面会更好'。
 ```
 
 ```java
@@ -821,12 +789,6 @@ mybatis 仅支持 association 关联对象（一对一）和 collection 关联�
 （2）'分步查询'，先查出主对象，然后对于关联对象单独发送一个sql去查询，赋给主对象，然后返回主对象。
 ```
 
-> 
-
-```sh
-
-```
-
 > 分页
 
 ```sh
@@ -843,7 +805,9 @@ mybatis 使用 RowBounds 对象进行分页，它是针对 ResultSet 结果集�
 
 '分页插件'的基本原理是：使用 mybatis 提供的插件接口，实现自定义插件，在插件的拦截方法内拦截待执行的sql，然后重写sql，
 根据 dialect 方言，添加对应的物理分页语句和物理分页参数。
-#举例：select * from student，拦截sql后重写为：select t.* from （select * from student）t limit 0，10
+
+举例：select * from student
+拦截sql后重写为：select t.* from （select * from student）t limit 0，10
 ```
 
 > 插件
@@ -861,5 +825,11 @@ mybatis 使用JDK的动态代理，为需要拦截的接口生成代理对象以
 
 ```sh
 
+```
+
+> 其他
+
+```sh
+https://www.toutiao.com/a6769534253752386059/?timestamp=1576162260&app=news_article_lite&group_id=6769534253752386059&req_id=2019121222510001002607707339367137
 ```
 

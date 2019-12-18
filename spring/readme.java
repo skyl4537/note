@@ -333,25 +333,26 @@
 #3-11S
     
 #3-12S
-    区别 Statement & PreparedStatement & CallableStatement
-    1. Statement 是 PreparedStatement 和 CallableStatement 的父类
-    2. Statement 是直接发送 sql 语句到数据库，事先没有进行预编译。
-       PreparedStatement 会将 sql 进行预编译，当 sql 语句要重复执行时，
-       数据库会调用已编译好的 sql 语句。所以，PreparedStatement 在性能方面会更好。
-    3. PreparedStatement 在执行 sql 时，对传入的参数可以进行强制的类型转换。
-    以保证数据格式与底层的数据库格式一致
-    4. CallableStatement 适用于执行存储过程。
-      
-    注册驱动程序
-    建立连接
-    创建 Statement
-    执行sql语句
-    处理结果集
-    关闭连接
-    
-    1.44.
 
 
+http://192.168.5.25:8080/webpark/pass/getSimPlateList.do
+
+
+{
+carPlate: "",
+carTypeId: 0,
+endTime: "2019-12-11 23:59:59",
+pageNumber: 0,
+pageSize: 15,
+parkId: 0,
+passageId: "0",
+startTime: "2019-12-11 00:00:00"
+}
+
+'简化依赖管理'：提供一系列的Starter，将各种功能性模块进行了划分与封装
+'自动化配置'：为每一个Starter都提供了自动化的java配置类
+'嵌入式容器'：嵌入式tomcat，无需部署war文件
+'监控の端点'：通过 Actuator 模块暴露的http接口，可以轻松的了解和控制应用的运行情况
     
     
 #1-1C

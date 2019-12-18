@@ -1,45 +1,288 @@
+#基本使用
 
+##基础配置
 
-
-
-# 基础概念
-
-## 概念相关
-
-> 优点
-
-```sh
-'简化依赖管理'：提供一系列的Starter，将各种功能性模块进行了划分与封装
-'自动化配置'：为每一个Starter都提供了自动化的java配置类
-'嵌入式容器'：嵌入式tomcat，无需部署war文件
-'监控の端点'：通过 Actuator 模块暴露的http接口，可以轻松的了解和控制应用的运行情况
-```
-
-
-
-> 引入父工程
-
-```sh
-'父工程'对各种常用依赖（并非全部）进行了版本管理，引入父工程，则不用关心版本冲突问题，需要什么依赖，直接引入坐标即可！
-```
+> 固定依赖
 
 ```xml
 <parent>
     <groupId>org.springframework.boot</groupId>
     <artifactId>spring-boot-starter-parent</artifactId>
-    <version>2.1.5.RELEASE</version>
+    <version>2.2.2.RELEASE</version>
 </parent>
+<groupId>com.example</groupId>
+<artifactId>cloud_parent</artifactId>
+<version>1.0-SNAPSHOT</version>
+<packaging>pom</packaging>
+
+<properties>
+    <java.version>1.8</java.version>
+    <project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
+    <project.reporting.outputEncoding>UTF-8</project.reporting.outputEncoding>
+    <spring-cloud.version>Hoxton.RELEASE</spring-cloud.version>
+</properties>
+
+<!-- modules -->
+<!-- dependencies -->
+
+<build>
+    <plugins>
+        <plugin>
+            <groupId>org.springframework.boot</groupId>
+            <artifactId>spring-boot-maven-plugin</artifactId>
+        </plugin>
+    </plugins>
+</build>
 ```
+
+> 常用依赖
+
+```xml
+<dependencies>
+    <dependency>
+        <groupId>org.springframework.boot</groupId>
+        <artifactId>spring-boot-starter-test</artifactId>
+        <scope>test</scope> <!--测试时起作用-->
+    </dependency>
+    <dependency>
+        <groupId>org.springframework.boot</groupId>
+        <artifactId>spring-boot-devtools</artifactId>
+        <scope>runtime</scope> <!--只在运行时起作用-->
+        <optional>true</optional>  <!-- 依赖不传递 -->
+    </dependency>
+    <dependency>
+        <groupId>org.projectlombok</groupId>
+        <artifactId>lombok</artifactId>
+        <scope>provided</scope>
+        <optional>true</optional>
+    </dependency>
+    <dependency>
+        <groupId>org.springframework.boot</groupId>
+        <artifactId>spring-boot-starter-web</artifactId>
+    </dependency>
+    <dependency>
+        <groupId>mysql</groupId>
+        <artifactId>mysql-connector-java</artifactId>
+    </dependency>
+    <dependency>
+        <groupId>com.baomidou</groupId>
+        <artifactId>mybatis-plus-boot-starter</artifactId>
+        <version>3.1.2</version>
+    </dependency>
+    <dependency>
+        <groupId>com.github.pagehelper</groupId>
+        <artifactId>pagehelper-spring-boot-starter</artifactId>
+        <version>1.2.12</version>
+        <exclusions>
+            <exclusion>
+                <groupId>org.mybatis</groupId>
+                <artifactId>mybatis</artifactId>
+            </exclusion>
+            <exclusion>
+                <groupId>org.mybatis</groupId>
+                <artifactId>mybatis-spring</artifactId>
+            </exclusion>
+        </exclusions>
+    </dependency>
+</dependencies>
+```
+
+> 配置文件
+
+```properties
+server.port=9001
+#spring.application.name=cloud-emp
+
+spring.datasource.driverClassName=com.mysql.cj.jdbc.Driver
+spring.datasource.url=jdbc:mysql://192.168.8.7:33306/db0206?useSSL=false&serverTimezone=GMT%2B8
+spring.datasource.username=bluecardsoft
+spring.datasource.password=#$%_BC13439677375
+
+mybatis-plus.mapper-locations=classpath:com/example/mapper/sqlxml/*.xml
+mybatis-plus.configuration.map-underscore-to-camel-case=true
+logging.level.com.example.mapper=debug
+```
+
+## 单元测试
+
+```java
+@SpringBootTest
+@RunWith(SpringRunner.class)
+public class DeptControllerTest {
+
+    @Autowired
+    private WebApplicationContext context;
+    private MockMvc mockMvc;
+
+    @Before
+    public void setUp() throws Exception {
+        mockMvc = MockMvcBuilders.webAppContextSetup(context).build();
+    }
+
+    @Test
+    //@Transactional //对于需要删除回滚的逻辑，加此注解
+    public void selectAll() throws Exception {
+        MvcResult mvcResult = mockMvc.perform(MockMvcRequestBuilders.get("/dept"))
+            .andExpect(MockMvcResultMatchers.status().isOk())
+            .andExpect(MockMvcResultMatchers.jsonPath("$.data.length()").value(6))
+            .andReturn();
+        System.out.println(mvcResult.getResponse().getContentAsString(Charset.forName("UTF-8")));
+    }
+}
+```
+
+
+
+## 异常捕获
+
+> 异常枚举
+
+```java
+@Getter
+@NoArgsConstructor
+@AllArgsConstructor
+public enum ResultEnum {
+    /**/
+    SUCCESS(2000, "成功"),
+    PARAMS_ERROR(5000, "参数错误");
+
+
+    private Integer code;
+    private String msg;
+}
+```
+
+> 异常类
+
+```java
+@Data
+@EqualsAndHashCode(callSuper = true)
+public class AppException extends RuntimeException {
+    ResultEnum resultEnum;
+
+    public AppException(String message) {
+        super(message);
+    }
+
+    public AppException(ResultEnum resultEnum) {
+        this.resultEnum = resultEnum;
+    }
+}
+```
+
+> 抛出异常
+
+```java
+@GetMapping("/{empId}")
+public ResultVO selectById(@PathVariable("empId") Integer empId) {
+    Emp emp = empMapper.selectById(empId);
+    Dept dept = deptClient.selectById(emp.getDeptId());
+    if (null == dept) {
+        log.error("获取emp消息: 部门信息不存在");
+        throw new AppException(ResultEnum.PARAMS_ERROR);
+    }
+    emp.setDept(dept);
+    return ResultVOUtil.success(emp);
+}
+```
+
+> 捕获异常
+
+```java
+@Slf4j
+@RestControllerAdvice
+public class ExceptionConfig {
+
+    @ExceptionHandler(AppException.class)
+    public ResultVO appException(AppException e) {
+        log.error("异常处理类 - AppException: ", e);
+        return ResultVOUtil.fail(e.getResultEnum());
+    }
+
+    @ResponseStatus(HttpStatus.BAD_REQUEST) //自定义响应状态码：400。默认抛出异常也是 200
+    @ExceptionHandler(Exception.class)
+    public ResultVO exception(Exception e) {
+        log.error("异常处理类 - Exception ", e);
+        return ResultVOUtil.fail(40001, e.getMessage());
+    }
+}
+```
+
+> 补充说明
 
 ```sh
+错误页面：在项目的'/static'目录下新建页面：'/error/4xx.html'和'/error/5xx.html'
 
+#查找-优先级
+当执行过程中出现异常，首先在本类中查找 @ExceptionHandler 标识的方法。
+找不到，再去查找 @ControllerAdvice 标识类中的 @ExceptionHandler 标识方法来处理异常。
+
+#继承-优先级
+例如发生异常 NullPointerException; 但是声明的异常有 RuntimeException 和 Exception
+此时，根据异常的最近继承关系，找到继承深度最浅的那个，即 RuntimeException 的声明方法
 ```
 
 
+
+## 打包部署
+
+> 优先级：`加载顺序<从里到外>，外面的优先级高`
+
+```sh
+– classpath:/         #项目里 src/main/resources
+– classpath:/config/
+– file:./             #项目外 与jar包同级
+– file:./config/
+```
+
+>不同环境加载不同配置
+
+```sh
+application-dev.yml
+application-test.yml
+application-prod.yml
+
+spring.profiles.active=dev #默认配置中激活运行环境
+```
+
+> 启动命令行指定参数
+
+```sh
+#优先级：命令行参数 > 配置文件
+#命令行参数需要使用双杠 -- 指定，参数和配置文件中的参数配置相同
+java -jar cloud-dept.jar --server.port=8001
+... --spring.profiles.active=test
+```
+
+> 打包部署
+
+```sh
+mvn clean package -Dmaven.test.skip=true #跳过测试
+nohup java -jar /usr/local/seat/cloudService.jar >/dev/null 2>&1 & #后台启动
+```
 
 # 配置相关
 
-##基础概念
+##常用配置
+
+```properties
+#【推荐】配置外部logback -> logback的 scan 和 scanPeriod 两个属性保证了 热部署，即改即生效
+logging.config=file:./config/logback-spring.xml
+
+#值为 null 则不参加序列化
+spring.jackson.default-property-inclusion=non_null
+#分页合理化参数（pageNum<=0，返回第1页数据。pageNum>total，返回最后一页数据）
+pagehelper.reasonable=true
+#springboot2.0x中，默认不支持带后缀.do
+spring.mvc.pathmatch.use-suffix-pattern=true
+```
+
+```java
+@JsonInclude(JsonInclude.Include.NON_NULL) //局部配置：值为 null 则不参加序列化
+private Object data;
+```
+
+## 配置文件
 
 > properties
 
@@ -67,61 +310,7 @@ spring:
   datasource:
     password: "#$%_BC13439677375" #""双引号里的内容不会转义符，''单括号则会。（层级关系使用 2个或4个 空格）
 ```
-
-> 加载顺序 `从上到下，从里到外，后加载的优先级高`
-
-```sh
-– classpath:/         #项目 src/main/resources
-– classpath:/config/
-– file:./             #与 jar 包同级
-– file:./config/
-```
-
-> 不同环境加载不同配置
-
-```sh
-application-dev.yml   #开发环境
-application-test.yml  #测试环境
-application-prod.yml  #生产环境
-
-#在默认配置文件 application.properties 中激活
-spring.profiles.active=dev
-```
-
-> 配置外部 logback
-
-```properties
-#配置文件中指定log位置（内部或外部yml都可以）
-#推荐外部 -> logback的 scan 和 scanPeriod 两个属性保证了 热部署，即改即生效
-logging.config=file:./config/logback-spring.xml
-```
-
-## 常用配置
-
-```properties
-#值为 null 则不参加序列化
-spring.jackson.default-property-inclusion=non_null
-
-#分页合理化参数（pageNum<=0，返回第1页数据。pageNum>total，返回最后一页数据）
-pagehelper.reasonable=true
-```
-
-```java
-public class ResultVO {
-    private Integer code;
-
-    //如果此字段是必须返回字段，则可以赋初始值 ""。不然，就会被下面的配置影响，无此字段返回
-    private String msg;
-
-    //全局配置：spring.jackson.default-property-inclusion=non_null
-    // @JsonInclude(JsonInclude.Include.NON_NULL) //局部配置：值为 null 则不参加序列化
-    private Object data;
-}
-```
-
-
-
-## 读取配置
+##读取配置
 
 > 配置文件
 
@@ -148,8 +337,7 @@ Environment env;
 
 String pwd = env.getProperty("spring.mail.password");
 ```
-
-> 批量读取
+> 批量读取配置
 
 ```xml
 <dependency>
@@ -199,20 +387,6 @@ public class MyProperties {
 }
 ```
 
-> 区别：`@Value("#{}") 与 @Value("${}")`
-
-```java
-//${}：获取配置文件中配置的属性
-@Value("${info.enabled:'false'}")
-String enabled; //默认'false'
-```
-
-```java
-//#{} -> 通过SpEl表达式获取：bean属性值，调用bean的某个方法
-@Value("#{info.remoteAddress？:'127.0.0.1'}") //info的属性，默认 127.0.0.1
-String address;
-```
-
 ## 加密配置
 
 > 配置文件中敏感信息的加密
@@ -225,12 +399,6 @@ String address;
 </dependency>
 ```
 
-```properties
-#druid 也可以做到数据库明文加密，jasypt 任何配置都可以加密
-#配置文件中指定加密时使用的盐（salt）
-jasypt.encryptor.password=EbfYkitulv73I2p0mXI50JMXoaxZTKJ0
-```
-
 > 生成加密后的密钥
 
 ```java
@@ -238,17 +406,16 @@ public void getPwd() {
     BasicTextEncryptor encryptor = new BasicTextEncryptor();
     encryptor.setPassword("EbfYkitulv73I2p0mXI50JMXoaxZTKJ0"); //盐
 
-    String username = encryptor.encrypt("bluecardsoft"); //加密
-    System.out.println(username); //同一个字符加密多次结果不一样，但解密后是一样的
-
-    username = encryptor.decrypt(username); //解密
-    System.out.println(username);
+    String username = encryptor.encrypt("bluecardsoft"); //加密：同一个字符多次加密，结果都不一样
+    username = encryptor.decrypt(username); //解密：但解密后是一样的
 }
 ```
 
 > 用生成的密钥替换配置文件的相应位置
 
 ```properties
+#druid 数据库相关明文加密，jasypt 任何配置都加密。配置salt
+jasypt.encryptor.password=EbfYkitulv73I2p0mXI50JMXoaxZTKJ0
 #ENC()是固定写法，（）里面是加密后的信息
 spring.datasource.username=ENC(kZ11PHFbXpNzLsJ7bKq2atpDiCzJOAs8)
 ```
@@ -257,7 +424,7 @@ spring.datasource.username=ENC(kZ11PHFbXpNzLsJ7bKq2atpDiCzJOAs8)
 
 ```sh
 #（1）在项目部署的时候使用命令传入salt值
-java -jar -Djasypt.encryptor.password=G0CvDz7oJn6 xxx.jar
+java -jar xxx.jar -Djasypt.encryptor.password=G0CvDz7oJn6
 ```
 
 ```sh
@@ -266,14 +433,112 @@ vim /etc/profile
 export JASYPT_PASSWORD = G0CvDz7oJn6 #末尾插入
 source /etc/profile
 
-java -jar -Djasypt.encryptor.password=${JASYPT_PASSWORD} xxx.jar
+java -jar xxx.jar -Djasypt.encryptor.password=${JASYPT_PASSWORD}
 ```
 
-# 基础功能
+
+# 额外功能
+
+## 小众功能
+
+> `CommandLineRunner`：用于在应用初始化完成后执行代码逻辑，代码逻辑在整个应用生命周期内只会执行一次
+
+```java
+@Order(value=n) //对于多个该配置的情况，设置执行顺序。n越小，越先执行。
+@Component
+public class ApplicationStartupRunner implements CommandLineRunner { }
+```
+
+> 异步任务
+
+```sh
+'注意'：异步方法和调用方法'一定要写在不同的类中'，写在同一类中则不起作用。此种情况类似于 @Transactional
+
+'原因'：Spring扫描具有 @Transactional 注解方法的类时，是生成一个代理类，由代理类去开启关闭事务。
+而在同一个类中，方法调用是在类体内执行的，Spring无法截获这个方法调用。
+```
+
+```java
+@EnableAsync //全局注解
+@Async       //异步注解，可配置自定义的线程池Bean，如 @Async("demoThreadPool")
+public void sendA() throws Exception {
+    //...
+}
+```
+
+
+
+
+
+##静态资源
+
+> 默认目录：存放在以下目录的资源都可以直接访问
+
+```properties
+classpath:/static/
+classpath:/public/
+classpath:/resources/
+classpath:/META-INFO/resouces/
+```
+
+> 自定义目录
+
+```properties
+#此配置会覆盖默认目录，所以需要手动追加默认目录
+#file:/logs/ 表示与jar包同级的 /logs 目录
+spring.mvc.static-path-pattern=/log/**
+spring.resources.static-locations=classpath:/logs/,file:/logs/,classpath:/static/
+```
+
+> 代码配置
+
+```java
+@Configuration
+public class WebMvcConfig implements WebMvcConfigurer {
+    @Override
+    public void addResourceHandlers(ResourceHandlerRegistry registry) {
+        registry.addResourceHandler("/img/**")
+            .addResourceLocations("classpath:/img/", "file:./imgs/"); //不会覆盖默认配置
+    }
+}
+```
+
+##webjars
+
+```xml
+<dependency>
+    <groupId>org.webjars</groupId>
+    <artifactId>bootstrap</artifactId>
+    <version>3.3.7-1</version>
+</dependency>
+<dependency>
+    <groupId>org.webjars</groupId>
+    <artifactId>jquery</artifactId>
+    <version>3.3.1</version>
+</dependency>
+<dependency>
+    <groupId>org.webjars</groupId>
+    <artifactId>webjars-locator</artifactId> <!--页面引用时，可省略版本号（如 jquery-3.3.1）-->
+    <version>0.32</version>
+</dependency>
+```
+
+> 页面使用
+
+```html
+<head>
+    <link rel="stylesheet" th:href="@{/webjars/bootstrap/css/bootstrap.min.css}"/>
+</head>
+<body>
+    <!-- 注意：h5页面位于 /static/html/img.html，使用【相对路径】进行引用。推荐【绝对路径】 -->
+    <!--webjars-locator: 页面引用时，可省略版本号.(如 3.3.1)-->
+    <!--省略前: <script th:src="@{/webjars/jquery/3.3.1/jquery.min.js}"/>-->
+    <script th:src="@{/webjars/jquery/jquery.min.js}"></script>
+    <script th:src="@{/webjars/bootstrap/js/bootstrap.min.js}"></script>
+</body>
+```
 
 ## druid
-
-> pom
 
 ```xml
 <dependency>
@@ -287,6 +552,24 @@ java -jar -Djasypt.encryptor.password=${JASYPT_PASSWORD} xxx.jar
 #boot-1.x默认数据源为：org.apache.tomcat.jdbc.pool.DataSource
 #boot-2.x默认数据源为：com.zaxxer.hikari.HikariDataSource
 spring.datasource.type=com.alibaba.druid.pool.DruidDataSource
+```
+
+> 数据库密码加密
+
+```sh
+#生成数据库密码的密文和公钥（密码包含特殊符号，用引号括起来）
+#命令行切换到 'druid-1.1.18.jar' 所在的路径，然后打开 cmder 工具，执行以下命令：
+java -cp .\druid-1.1.18.jar com.alibaba.druid.filter.config.ConfigTools '#$%_BC13439677375'
+```
+
+```properties
+spring.datasource.username=bluecardsoft
+#spring.datasource.password=#$%_BC13439677375
+spring.datasource.password=nKGSYPDvmT2ytyLKH4u5yL7/s
+# 启用加密、过滤器，并配置公钥
+public-key=MFwwDQYJKoZIhvcNAQEBBQADSwAwSAJBAKUx2YO6H
+spring.datasource.druid.connection-properties=config.decrypt=true;config.decrypt.key=${public-key}
+spring.datasource.druid.filter.config.enabled=true
 ```
 
 > 进阶配置
@@ -308,7 +591,6 @@ spring.datasource.druid.test-while-idle=true
 # 每次获取到连接时，不检测连接的可用性
 spring.datasource.druid.test-on-borrow=false
 spring.datasource.druid.test-on-return=false
-
 ```
 
 ```properties
@@ -342,316 +624,6 @@ spring.datasource.druid.stat-view-servlet.login-password=123456
 spring.datasource.druid.stat-view-servlet.deny=192.168.8.8
 spring.datasource.druid.stat-view-servlet.reset-enable=false
 ```
-> 数据库密码加密
-
-```sh
-#生成数据库密码的密文和公钥（密码包含特殊符号，用引号括起来）
-#命令行切换到 'druid-1.1.18.jar' 所在的路径，然后打开 cmder 工具，执行以下命令：
-java -cp .\druid-1.1.18.jar com.alibaba.druid.filter.config.ConfigTools '#$%_BC13439677375'
-```
-
-```properties
-# 用户名不加密
-spring.datasource.username=bluecardsoft
-#spring.datasource.password=#$%_BC13439677375
-# 生成的加密后的密码
-spring.datasource.password=nKGSYPDvmT2ytyLKH4u5yL7/s
-# 生成的公钥
-public-key=MFwwDQYJKoZIhvcNAQEBBQADSwAwSAJBAKUx2YO6H
-# 配置 connection-properties，启用加密，配置公钥。
-spring.datasource.druid.connection-properties=config.decrypt=true;config.decrypt.key=${public-key}
-# 启用ConfigFilter
-spring.datasource.druid.filter.config.enabled=true
-```
-
-## 静态资源
-
-> 默认目录：存放在以下目录的资源都可以直接访问
-
-```properties
-classpath:/static/
-classpath:/public/
-classpath:/resources/
-classpath:/META-INFO/resouces/
-
-#classpath:/static/img/sql.png   ---> http://127.0.0.1:8090/demo/img/sql.png
-```
-
-> 自定义目录（1）：配置文件
-
-```sh
-'file:/logs/'      表示与jar包同级目录的 /logs 目录
-'classpath:/logs/' 表示与配置文件同级的 /logs 目录
-```
-
-```properties
-spring.mvc.static-path-pattern=/log/**
-#此配置会覆盖 springboot 默认配置，所以需要手动追加默认配置
-spring.resources.static-locations=classpath:/logs/,file:/logs/,classpath:/static/
-```
-
-> 自定义目录（2）：代码配置
-
-```java
-@Configuration
-public class WebMvcConfig implements WebMvcConfigurer {
-    @Override
-    public void addResourceHandlers(ResourceHandlerRegistry registry) {
-        registry.addResourceHandler("/img/**")
-            .addResourceLocations("classpath:/img/", "file:./imgs/"); //不会覆盖默认配置
-    }
-}
-```
-
-> webjars：将前端资源（js，css等）打成jar包，使用Maven统一管理。http://www.webjars.org/
-
-```xml
-<dependency>
-    <groupId>org.webjars</groupId>
-    <artifactId>bootstrap</artifactId>
-    <version>3.3.7-1</version>
-</dependency>
-<dependency>
-    <groupId>org.webjars</groupId>
-    <artifactId>jquery</artifactId>
-    <version>3.3.1</version>
-</dependency>
-<dependency>
-    <groupId>org.webjars</groupId>
-    <artifactId>webjars-locator</artifactId> <!--页面引用时，可省略版本号（如 jquery-3.3.1）-->
-    <version>0.32</version>
-</dependency>
-```
-
-```html
-<head>
-    <!-- 注意：h5页面位于 /static/html/img.html，使用【相对路径】进行引用。开发推荐【绝对路径】 -->
-    <script src="../webjars/jquery/jquery.min.js"></script>
-</head>
-```
-
-```html
-<head>
-    <!--webjars-locator: 页面引用时，可省略版本号.(如 3.3.1)-->
-    <!--省略前: <script th:src="@{/webjars/jquery/3.3.1/jquery.min.js}"/>-->
-    <script th:src="@{/webjars/jquery/jquery.min.js}"></script>
-    <script th:src="@{/webjars/bootstrap/js/bootstrap.min.js}"></script>
-    <link rel="stylesheet" th:href="@{/webjars/bootstrap/css/bootstrap.min.css}"/>
-</head>
-```
-
-## 异步调用
-
-> 可以使用线程池实现，也可以使用`Spring注解`
-
-```sh
-'【注意】'异步方法和调用方法'一定要写在不同的类中'，写在同一类中则不起作用。此种情况类似于 @Transactional
-
-原因：Spring扫描具有 @Transactional 注解方法的类时，是生成一个代理类，由代理类去开启关闭事务。
------而在同一个类中，方法调用是在类体内执行的，Spring无法截获这个方法调用。
-```
-
-```java
-@EnableAsync //全局注解
-@Async       //异步注解，可配置自定义的线程池Bean，如 @Async("demoThreadPool")
-public void sendA() throws Exception {
-    //...
-}
-```
-
-```sh
-
-```
-
-
-
-
-
-
-
-## 异常捕获
-
-> 错误页面
-
-```sh
-在项目的 /static 目录下新建页面：'/error/4xx.html'和'/error/5xx.html'
-```
-
-> 异常处理优先级
-
-```sh
-#查找-优先级
-当执行过程中出现异常，首先在本类中查找 @ExceptionHandler 标识的方法。
-找不到，再去查找 @ControllerAdvice 标识类中的 @ExceptionHandler 标识方法来处理异常。
-
-#继承-优先级
-例如发生异常 NullPointerException; 但是声明的异常有 RuntimeException 和 Exception
-此时，根据异常的最近继承关系，找到继承深度最浅的那个，即 RuntimeException 的声明方法
-```
-> （1）在Controller、Service、DAO层直接抛出异常
-
-```java
-@GetMapping("/{id}")
-public Result getEmpById(@PathVariable("id") Integer id) {
-    Emp emp = empMapper.selectById(id);
-    if (null == emp)
-        throw new CrudException(ExceptionEnum.EMP_NOT_EXISTS);
-    return Result.success(emp);
-}
-```
-
-> （2）定义异常枚举类
-
-```java
-@Getter
-public enum ExceptionEnum {
-    EMP_NOT_EXISTS(401, "员工不存在");
-
-    private Integer code;
-    private String msg;
-
-    ExceptionEnum(Integer code, String msg) {
-        this.code = code;
-        this.msg = msg;
-    }
-}
-```
-
-> （3）定义全局异常类
-
-```java
-@Data
-@EqualsAndHashCode(callSuper = true)
-public class CrudException extends RuntimeException {
-    private Integer code;
-
-    private CrudException(int code, String msg) {
-        super(msg);
-        this.code = code;
-    }
-
-    public CrudException(ExceptionEnum exceptionEnum) {
-        this(exceptionEnum.getCode(), exceptionEnum.getMsg());
-    }
-}
-```
-
-> （4）定义全局异常捕获类
-
-```java
-@Slf4j
-@RestControllerAdvice // @ControllerAdvice <-> @Controller
-public class ExceptionConfig {
-
-    @ExceptionHandler(CrudException.class)
-    public Result crudException(CrudException e) {
-        log.error("【异常处理类】CrudException: ", e);
-        return new Result(e.getCode(), e.getMessage());
-    }
-
-    @ResponseStatus(HttpStatus.BAD_REQUEST) //自定义响应状态码：400。默认抛出异常也是 200
-    @ExceptionHandler(Exception.class)
-    public Result exception(Exception e) {
-        log.error("【异常处理类】Exception: ", e);
-        return new Result(404, "未知异常");
-    }
-}
-```
-
-
-
-
-
-
-#小众功能
-
-## 单元测试
-
-```xml
-<dependency>
-    <groupId>org.springframework.boot</groupId>
-    <artifactId>spring-boot-starter-test</artifactId>
-    <scope>test</scope>
-</dependency>
-```
-
-```java
-@RunWith(SpringRunner.class)
-@SpringBootTest//(classes = {Application.class}) //加载项目启动类，当测试类的路径同启动类时，可省。
-public class EmpControllerTest {
-
-    @Autowired
-    private WebApplicationContext context;
-    private MockMvc mockMvc;
-
-    @Before
-    public void setUp() throws Exception {
-        mockMvc = MockMvcBuilders.webAppContextSetup(context).build();
-    }
-
-    @Test
-    @Rollback() //单元测试-自动回滚。默认true，可省
-    @Transactional
-    public void deleteByIds() throws Exception {
-        MvcResult result = mockMvc.perform(MockMvcRequestBuilders.delete("/emp/211,,212,"))
-            .andExpect(MockMvcResultMatchers.status().isOk())
-            .andExpect(MockMvcResultMatchers.jsonPath("$.code").value(200))
-            .andReturn();
-        System.out.println(result.getResponse().getContentAsString());
-    }
-}
-```
-
-## 热部署
-
-```xml
-<dependency>
-    <groupId>org.springframework.boot</groupId>
-    <artifactId>spring-boot-devtools</artifactId>
-    <scope>runtime</scope> <!--只在运行时起作用-->
-    <optional>true</optional>
-</dependency>
-```
-
-```sh
-原理：使用两个'ClassLoader'，一个加载那些不会改变的类（第三方Jar包），另一个加载会更改的类，自己写的代码。
-这样在有代码更改的时候，原来的类加载器被丢弃，重新创建一个，由于需要加载的类相比较少，所以实现了较快的重启时间（5秒以内）。
-```
-
-## 常用接口
-
->`CommandLineRunner`：用于在应用初始化完成后执行代码逻辑，代码逻辑在整个应用生命周期内只会执行一次
-
-```java
-@Order(value=n) //对于多个该配置的情况，设置执行顺序。n越小，越先执行。
-@Component
-public class ApplicationStartupRunner implements CommandLineRunner { }
-```
-
-> 匹配后缀访问
-
-```java
-@Configuration //boot2.x默认将 '/test' 和 '/test.do' 作为2个url
-public class MyWebMvcConfigurer implements WebMvcConfigurer {
-
-    @Override
-    public void configurePathMatch(PathMatchConfigurer configurer) {
-        configurer.setUseRegisteredSuffixPatternMatch(true); //true，统一以上两个url
-    }
-
-    @Bean
-    public ServletRegistrationBean servletRegistrationBean(DispatcherServlet dispatcherServlet) {
-        ServletRegistrationBean<DispatcherServlet> bean = new ServletRegistrationBean<>(dispatcherServlet);
-        bean.addUrlMappings("*.do"); //拦截'.do'结尾的url
-        return bean;
-    }
-}
-```
-
-
-
-
-
 ## Actuator
 
 ```xml
@@ -659,25 +631,6 @@ public class MyWebMvcConfigurer implements WebMvcConfigurer {
     <groupId>org.springframework.boot</groupId>
     <artifactId>spring-boot-starter-actuator</artifactId>
 </dependency>
-```
-
-> 常用端点
-
-```sh
-(*)mappings     #描述全部的URI路径，以及它们和控制器(包含Actuator端点)的映射关系
-(*)metrics      #报告各种应用程序度量信息，比如内存用量和HTTP请求计数
-(*)loggers      #显示和修改应用程序中的loggers配置
-(*)env          #获取全部环境属性
-
-health          #报告应用程序的健康指标，这些值由 HealthIndicator 的实现类提供
-info            #显示配置文件中以 'info' 打头的属性
-auditevents     #审计事件
-beans           #应用程序上下文里全部的Bean,以及它们的关系
-conditions      #自动配置报告,记录哪些自动配置条件通过了,哪些没通过
-configprops     #描述配置属性(包含默认值)如何注入Bean
-threaddump      #获取线程活动的快照
-scheduledtasks  #定时任务
-httptrace       #跟踪 HTTP 请求-响应交换的情况
 ```
 
 > 暴露端点
@@ -688,8 +641,8 @@ management.endpoints.web.exposure.include=*   #暴露所有
 management.endpoints.web.exposure.exclude=env #不暴露: env
 
 #访问端点
-http://localhost:8090/demo/actuator        --> 返回所有已暴露的端点
-http://localhost:8090/demo/actuator/health --> 访问health端点
+http://localhost:8090/demo/actuator
+http://localhost:8090/demo/actuator/health
 ```
 
 ## Admin
@@ -700,7 +653,6 @@ http://localhost:8090/demo/actuator/health --> 访问health端点
 <dependency>
     <groupId>de.codecentric</groupId>
     <artifactId>spring-boot-admin-starter-client</artifactId>
-    <version>2.1.3</version>
 </dependency>
 <dependency>
     <groupId>org.springframework.boot</groupId>
@@ -731,7 +683,6 @@ public class SecurityPermitAllConfig extends WebSecurityConfigurerAdapter {
 <dependency>
     <groupId>de.codecentric</groupId>
     <artifactId>spring-boot-admin-starter-server</artifactId>
-    <version>2.1.3</version>
 </dependency>
 <dependency>
     <groupId>org.springframework.boot</groupId>
@@ -743,18 +694,11 @@ public class SecurityPermitAllConfig extends WebSecurityConfigurerAdapter {
 @EnableAdminServer //全局注解
 ```
 
-## war
-
-> 修改打包方式
+##war
 
 ```xml
-<groupId>com.example</groupId>
-<artifactId>amqp_publisher</artifactId>
-<version>0.0.1-SNAPSHOT</version>
-<packaging>war</packaging> <!-- war -->
+<packaging>war</packaging>
 ```
-
-> 移除自带的嵌入式Tomcat
 
 ```xml
 <dependency>
@@ -768,8 +712,6 @@ public class SecurityPermitAllConfig extends WebSecurityConfigurerAdapter {
     </exclusions>
 </dependency>
 ```
-
-> 修改启动类
 
 ```java
 @SpringBootApplication
@@ -872,10 +814,6 @@ public class MailController {
     }
 }
 ```
-
-
-
-
 
 
 # thymeleaf
@@ -1311,6 +1249,10 @@ Websocket：Html5 提供的一种通过 js 与远程服务器建立连接，从�
 
 ## 客户端
 
+>java websocket如何设置心跳保持连接
+>
+>https://jingyan.baidu.com/article/67508eb461cb6c9ccb1ce442.html
+
 ```html
 <head>
     <meta charset="UTF-8">
@@ -1534,10 +1476,10 @@ spring.servlet.multipart.max-request-size=20MB
 
 ```sh
 'Content—Type'：告知浏览器当前的响应体是什么类型的数据
----------------当为'application/octet-stream'时，就说明 body 里是一堆不知道是啥的二进制数据
+当为'application/octet-stream'时，就说明 body 里是一堆不知道是啥的二进制数据
 
 'Content—Disposition'：用于向浏览器提供一些关于如何处理响应内容的额外的信息，同时也可以附带一些其它数据
-----------------------比如，在保存响应体到本地的时候应该使用什么样的文件名
+比如，在保存响应体到本地的时候应该使用什么样的文件名
 ```
 
 > 代码实现

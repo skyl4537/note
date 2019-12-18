@@ -833,20 +833,6 @@ boolean 1； byte 1； char 2; short 2； int 4； long 8; float：4； double 8
 
 ```
 
-> == & equals()
-
-```sh
-#System.out.println(2 == 2.0); //true（类型转换？）
-== 既可用于基础数据类型，也可用于引用数据类型。对于前者，比较二者值是否相等。对于后者，比较二者的内存地址是否相等，即判断二者是否为同一对象。
-equas() '只能用于引用数据类型'。默认调用 ==，即比较内存地址。可根据业重写此方法，如 String，比较两字符串的内容是否相同（两对象是否长的一样）。
-```
-
-```java
-public boolean equals(Object obj) { //Object 中的方法
-    return (this == obj);
-}
-```
-
 > String & StringBuffer & StringBuilder
 
 ```sh

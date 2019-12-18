@@ -268,6 +268,16 @@ let $v = $("#v");  //jQuery
 let v = $v.get(0); //js
 ```
 
+> 标签区别
+
+```sh
+#<span> & <div>
+多个<span/>的内容显示在同一行。一个<div/>显示一行，多个<div/>显示在不同的行。
+
+#style="display: none" & style="visibility: hidden"
+前者'完全消失'。后者只是看不见，但占据的位置还在。
+```
+
 > 获取选中的值：checkbox   radio    select 
 
 ```html

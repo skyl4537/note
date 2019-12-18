@@ -262,9 +262,9 @@ public class RestTemplateConfig {
             .setConnectionRequestTimeout(timeoutMills).setSocketTimeout(timeoutMills).build();
         HttpClient httpClient = HttpClientBuilder.create().setMaxConnTotal(maxTotal)
             .setMaxConnPerRoute(defaultMaxPerRoute).setDefaultRequestConfig(requestConfig).build();
-        HttpComponentsClientHttpRequestFactory httpRequestFactory =
+        HttpComponentsClientHttpRequestFactory factory =
             new HttpComponentsClientHttpRequestFactory(httpClient);
-        RestTemplate restTemplate = new RestTemplate(httpRequestFactory);
+        RestTemplate restTemplate = new RestTemplate(factory);
         restTemplate.getMessageConverters().set(1, new StringHttpMessageConverter(StandardCharsets.UTF_8)); //UTF-8
         return restTemplate;
     }
