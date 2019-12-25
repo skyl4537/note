@@ -1518,13 +1518,47 @@ https://cloud.tencent.com/developer/article/1443918
     
     
 
-支付开闸-outTradeNo: 本地-p180929163009_3_ 1368442 _192934 轮询推送-p180929163009_0_ 1368842 _192949
+#cloud-2
+    Ribbon 一个基于 HTTP 和 TCP 的客户端负载均衡器。
+    它可以通过在客户端中配置 ribbonServerList 来设置服务端列表去轮询访问以达到均衡负载的作用。
+    
+    当 Ribbon 与 Eureka 联合使用时，ribbonServerList 会被 DiscoveryEnabledNIWSServerList 重写，
+    扩展成从 Eureka 注册中心中获取服务实例列表。同时它也会用 NIWSDiscoveryPing 来取代 IPing，
+    它将职责委托给 Eureka 来确定服务端是否已经启动。
 
+#cloud-3
+    通过 Spring Cloud Feign 来实现服务调用的方式非常简单，通过 @FeignClient 定义的接口来统一的声明我们需要依赖的微服务接口。
+    而在具体使用的时候就跟调用本地方法一样的进行调用即可。由于 Feign 是基于 Ribbon 实现的，所以它自带了客户端负载均衡功能，
+    也可以通过 Ribbon 的 IRule 进行策略扩展。另外，Feign 还整合的 Hystrix 来实现服务的容错保护，这个在后边会详细讲。
+    （在 Finchley.RC1 版本中，Feign 的 Hystrix 默认是关闭的。）
+    
+    #Caused by: java.lang.IllegalStateException: PathVariable annotation was empty on param 0.
+    至于为什么出现这个 GET 变 POST 的情况，个人猜测应该是当参数没有被 @RequestParam 注解修饰时，会自动被当做 request body 来处理。
+    只要有 body，就会被 Feign 认为是 POST 请求，所以整个服务是被当作带有 request parameter 和 body 的 POST 请求发送出去的。
 
+#cloud-4
+    分布式系统中经常会出现某个基础服务不可用造成整个系统不可用的情况，这种现象被称为服务雪崩效应。
+    为了应对服务雪崩，一种常见的做法是手动服务降级。而 Hystrix 的出现，给我们提供了另一种选择。
 
-
-
-
-
-
+    服务雪崩效应是一种因'服务提供者'的不可用导致'服务调用者'的不可用，并将不可用'逐渐放大'的过程。
+    
+    服务雪崩的每个阶段都可能由不同的原因造成，比如造成'服务不可用'的原因有:
+        硬件故障
+        程序 Bug
+        缓存击穿
+        用户大量请求
+    
+    #缓存击穿: 
+    如果黑客每次故意查询一个在缓存内必然不存在的数据，导致每次请求都要去存储层去查询，这样缓存就失去了意义。如果在大流量下数据库可能挂掉。这就是缓存击穿。
+    
+    我们正常人在登录首页的时候，都是根据userID来命中数据，然而黑客的目的是破坏你的系统，黑客可以随机生成一堆userID,然后将这些请求怼到你的服务器上，
+    这些请求在缓存中不存在，就会穿过缓存，直接怼到数据库上,从而造成数据库连接异常。
+    
+    #解决方案：
+    https://www.cnblogs.com/wangwust/p/9467720.html
+    https://blog.csdn.net/weixin_34401479/article/details/94171645
+    
+    
+    
+    
 

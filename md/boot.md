@@ -26,12 +26,24 @@
 <!-- dependencies -->
 
 <build>
+    <finalName>demo-user</finalName>
     <plugins>
         <plugin>
             <groupId>org.springframework.boot</groupId>
             <artifactId>spring-boot-maven-plugin</artifactId>
         </plugin>
     </plugins>
+    <resources> <!--资源拷贝插件-->
+        <resource>
+            <directory>src/main/java</directory>
+            <includes>
+                <include>**/*.xml</include>
+            </includes>
+        </resource>
+        <resource>
+            <directory>src/main/resources</directory>
+        </resource>
+    </resources>
 </build>
 ```
 
@@ -63,6 +75,7 @@
     <dependency>
         <groupId>mysql</groupId>
         <artifactId>mysql-connector-java</artifactId>
+        <scope>runtime</scope>
     </dependency>
     <dependency>
         <groupId>com.baomidou</groupId>
@@ -647,34 +660,18 @@ http://localhost:8090/demo/actuator/health
 
 ## Admin
 
-> 客户端（被监控者）：基于 Actuator 的可视化 WebUI
+> 客户端：Boot/Cloud
 
 ```xml
 <dependency>
     <groupId>de.codecentric</groupId>
     <artifactId>spring-boot-admin-starter-client</artifactId>
 </dependency>
-<dependency>
-    <groupId>org.springframework.boot</groupId>
-    <artifactId>spring-boot-starter-security</artifactId>
-</dependency>
 ```
 
 ```properties
 management.endpoints.web.exposure.include=*
-spring.boot.admin.client.url=http://localhost:9090/hello
-```
-
-```java
-@Configuration
-public class SecurityPermitAllConfig extends WebSecurityConfigurerAdapter {
-    @Override
-    protected void configure(HttpSecurity http) throws Exception {
-        http.authorizeRequests()      //Security权限，授权的固定格式
-            .anyRequest().permitAll() //所有请求，所有权限都可以访问
-            .and().csrf().disable();  //固定写法：使 csrf()拦截失效
-    }
-}
+spring.boot.admin.client.url=http://localhost:9090/
 ```
 
 > 服务端
@@ -683,10 +680,6 @@ public class SecurityPermitAllConfig extends WebSecurityConfigurerAdapter {
 <dependency>
     <groupId>de.codecentric</groupId>
     <artifactId>spring-boot-admin-starter-server</artifactId>
-</dependency>
-<dependency>
-    <groupId>org.springframework.boot</groupId>
-    <artifactId>spring-boot-starter-web</artifactId>
 </dependency>
 ```
 

@@ -575,7 +575,8 @@ loopback_users.guest = false #false：远程访问；true：本地访问
 
 ```sh
 #subscribe() 消息头可以指定的参数：
-x-queue-name：指定队列名，默认随机生成，如 stomp-subscription-*****。   durable：持久化。   auto-delete：自动删除。   exclusive：独占。
+x-queue-name：指定队列名，默认随机生成，如 stomp-subscription-*****。   
+durable：持久化。   auto-delete：自动删除。   exclusive：独占。
 其他还有：x-expires、x-message-ttl 等等，详见'基本使用的队列参数'
 
 #云坐席要求：打开云坐席界面，能看到 5 分钟以内、未办理的异常消息。

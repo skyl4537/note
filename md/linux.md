@@ -707,18 +707,11 @@ mv /student/* .       #批量移动到当前目录
 > 后台启动程序
 
 ```sh
-#后台启动，不输出日志，将 pid 记录到文件
-nohup java -jar blue.jar > ./logs/blue.log >/dev/null 2>&1 &
-echo $! > pid_file
+
 ```
 
 ```sh
-nohup    ：在'退出帐户/关闭终端'之后继续运行相应的进程。默认，后台进程的日志输出到'nohup.out'文件
-/dev/null：表示空设备，把日志记录到空设备里，即不记录日志
-2>&1     ：表示将标准错误（2）重定向到标准输出（1），再将标准输出（1）重定到 'myout.file' 文件中
-&        ：表示后台运行
 
-echo $!  ：获取最新启动程序的 pid
 ```
 
 ## ps
@@ -819,162 +812,74 @@ scp -r -P 33022 /var/lib/logs/task/ parkmanager@192.168.5.78:/var/lib/logs/task/
 >文件第一行必须是 `#!/bin/sh`，注释符号为`#`。
 
 ```shell
-#变量：不需要声明。只能由字母，数字，下划线组成，不能以数字开头。
-echo $JAVA_HOME #输出变量的值
 
-#飘号为执行内容，类似于$(...)
-echo `$JAVA_HOME` #输出"/usr/local/jdk1.8.0_181"
-
-#单引号不解析变量，双引号会
-echo '$JAVA_HOME' #输出：$JAVA_HOME
-echo "$JAVA_HOME" #输出：/usr/local/jdk1.8.0_181
-
-#执行脚本时，传入的参数按照先后顺序使用 $1，$2 等顺序引用变量值（$0 就是文件名）
-test.sh abc 123 #在 test.sh 中，可通过 $2 读取 123
-
-#重定向
-'>>': 追加更新； '>': 覆盖更新
 ```
 
 > 时间格式化
 
 ```shell
-date '+%Y-%m-%d %H:%M:%S' #格式化输出
 
-date '+%S'                #提取当前时间的秒数
-date '+%s'                #自 1970-01-01 00:00:00 以来的总秒数
-
-echo $(date '+%Y-%m-%d %H:%M:%S')   #shell中输出日期
-echo `date '+%Y-%m-%d %H:%M:%S'`    #同上
-
-date --date='3 days ago'  #3天以前
-date --date="3 days ago" "+%Y-%m-%d %H:%M:%S" #3天以前,并格式化
-
-#shell中以日期命名文件
-FILE=$(date '+%Y%m%d-%H%M%S')
-sudo zip -qr slow-$FILE.zip slow.log >/dev/null 2>&1
 ```
 
 > if
 
 ```sh
-file="/logs/file"
 
-if [ -e $file ] then #if 和 fi 是一对闭合体，少一个则报语法错误
-    echo "文件存在"
-else
-    echo "文件不存在"
-fi
 ```
 
 > fori（3种风格）
 
 ```shell
-for i in {1..10}; do echo $i; done        #行内风格-1
 
-for ((i=1; i<11; i++)); do echo $i; done  #行内风格-2
-
-for((i=1; i<11; i++))  #shell脚本风格
-do
-   echo $i
-done
 ```
 
 >foreach（2种风格）
 
 ```shell
-for file in /var/tmp/*; do echo FILE_PATH: $file; done #行内风格
 
-for file in /var/tmp/*; #脚本风格
-do
-    echo FILE_PATH: $file
-done
 ```
 
 >引用其他shell
 
 ```shell
-#定义SHELL（func.sh）
-#!/bin/bash
-count=$1 #取值第一个参数
 
-echo $(date --date="$count days ago" "+%Y-%m-%d %H:%M:%S")
 ```
 
 ```shell
-#引用SHELL（test.sh）
-#!/bin/bash
-source ./func.sh 3 #引用shell，并传参3
+
 ```
 
 >自定义函数
 
 ```shell
-#函数定义（func.sh）
-#!/bin/bash
-function daysAgo(){
-    date --date="$1 days ago" "+%Y-%m-%d %H:%M:%S"
-}
 
-function daysAfter(){
-    date --date="-$1 days ago" "+%Y-%m-%d %H:%M:%S"
-}
 ```
 
 ```shell
-#调用函数（test.sh）
-#!/bin/bash
-source ./func.sh
 
-echo "3 daysAgo  :" $(daysAgo 3)
-echo "3 daysAfter:" $(daysAfter 3) #调用函数 daysAfter()
 ```
 
 > 算术运算符：原生bash不支持简单的数学运算，可通过其他命令来实现。如：expr
 
 ```shell
-#!/bin/bash
-a=10; b=20;
-val1=`expr $a + $b`
-val2=`expr $a \* $b` #转义符\
-if [ $a != $b ]; then #运算符 == 前后都有空格，且 [ 之后也得有空格
-  echo "$val1"
-  echo "$val2"
-fi
+
 ```
 
 > 关系运算符：关系运算符只支持数字，不支持字符串。除非字符串的值是数字，如ASCII表。
 
 ```shell
-#常用: gt(>); lt(<); eq(==); ne(!=); ge(>=); le(<=); o(||); a(&&)
-a=10; b=20;
 
-if(a>0 && (b>0 || c>0))  
-if [ $b -gt 0 || $c -gt 0 -a && -gt 0 ]; then #同上
-if [ $b -gt 0 -o $c -gt 0 -a $a -gt 0 ]; then #同上
 ```
 
 >字符串运算符：
 
 ```shell
-a="abc"; b="efg";
 
-if [ $a = $b ]  #两个字符串是否相等
-if [ -z $a ]    #长度是否为0
-if [ -n "$a" ]  #长度是否不为0
-if [ $a ]       #检测是否不为空
 ```
 > 文件测试运算符：用于检测 Unix 文件的各种属性
 
 ```shell
-if [ -e $file ] //文件存在
-if [ -r $file ] //可读
-if [ -w $file ] //可写
-if [ -x $file ] //可执行
 
-if [ -d $file ] //是否为目录
-if [ -s $file ] //不为空
-if [ -f $file ] //是否为普通文件(既不是目录,也不是设备文件)
 ```
 ##tail
 

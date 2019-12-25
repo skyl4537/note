@@ -1,23 +1,16 @@
 [TOC]
 
+# IDEA
 
+## 插件相关
 
-# Idea
+> IDEA插件
 
-## 相关插件
+```sh
+#IDEA-安装 lombok
+下载：https://github.com/mplushnikov/lombok-intellij-plugin/releases
+Settings -> Plugins -> install from disk -> 选择下载的*.zip
 
-> `lombok`：简化POJO的getter/setter/toString；异常处理；I/O流的关闭操作等等
-
-```xml
-<dependency>
-    <groupId>org.projectlombok</groupId>
-    <artifactId>lombok</artifactId>
-    <scope>provided</scope> <!-- 只在编译阶段生效，不需要打入包中 -->
-    <optional>true</optional> <!--默认false。当A依赖B，B依赖 lombok 并设为true，若A没有显式的引入lombok，则A不依赖lombok-->
-</dependency>
-```
-
-```shell
 #eclipse-安装
 下载: https://projectlombok.org/download
 将 lombok.jar 放在eclipse安装目录下，与 eclipse/sts.ini 同级
@@ -25,188 +18,107 @@
 成功标识: sts.ini最后一行：-javaagent:F:\sts-bundle\sts-3.9.3.RELEASE\lombok.jar
 ```
 
-```shell
-#idea-安装
-下载: https://github.com/mplushnikov/lombok-intellij-plugin/releases
-Settings -> Plugins -> install from disk -> 选择下载的*.zip，即可安装成功 
+```xml
+<dependency>
+    <groupId>org.projectlombok</groupId>
+    <artifactId>lombok</artifactId>
+    <scope>provided</scope> <!-- 只在编译期生效，不会打入包中 -->
+    <optional>true</optional> <!-- 依赖不传递? 默认 false. 即会传递到引用项目中 -->
+</dependency>
 ```
 
-```java
-//常用注解
-@Slf4j: 生成slf4j注解式logger
-@NonNull: 调用字段的setter方法时,传参为null，则报空指针异常。
-@Data: 组合注解，包含 @Getter; @Setter; @ToString, @EqualsAndHashCode; 无参构造函数.
+> 谷歌插件
 
-@Accessors: 定制化 @Getter 与 @Setter
-//(chain = true): 链式编写setter方法,如 Person hua = new Person().setName("HUA").setAge(18);
-//(fluent  = true): 流式编写setter方法,如 Person wang = new Person().name("WANG").age(18);
-
-@SneakyThrows(*.class): 
-//用在'方法'上，可将方法中的代码用 try-catch 语句包裹起来
-//捕获异常并在 catch 中用 Lombok.sneakyThrow(e) 把异常抛出
+```sh
+JSON-Handle
+OneTab_v1.18
+Advanced_Rest_Client_Chrome
 ```
 
+> 日常工具
 
-
-
-> `cmder`（cmd升级版）http://cmder.net/
-
-```java
-mini与full版：差别在于有没有内建 msysgit 工具
-
-右键菜单：'配置系统环境变量,然后使用系统cmd执行命令: Cmder.exe /register ALL'
-中文乱码：'settings -> Environment -> 添加: set LANG=zh_CN.UTF-8'
+```sh
+#cmder：mini 与 full 版的差别在于有没有内建 msysgit 工具
+右键菜单：配置系统环境变量,然后使用系统cmd执行命令: Cmder.exe /register ALL
+中文乱码：settings -> Environment -> 添加: set LANG=zh_CN.UTF-8
 ```
 
-> `JSON-Handle`（Chrome插件）
-
-```java
-浏览器输入：'chrome://extensions/' 将下载后的文件拖入浏览器即可
-```
-> `Advanced_Rest_Client_Chrome`（Chrome插件）
-
-```
-用于调试 http请求，类似 postman
+```sh
+#WinScp-代理上网
+登陆时，高级 - 连接 - 代理 - HTTP
 ```
 
->`OneTab_v1.18`（Chrome插件）
-
+```sh
+#SecurityCRT-代理上网
+选项 - 全局选项 - 防火墙 - 添加 - HTTP(no-auth)
+登录时，连接 - Sessions - 右键属性 - SSH2 - 防火墙 - 选择上一步添加的规则
 ```
-将已打开的 chrome 网页，保存成类书签形式，以便后续阅读，减少内存
-```
-
-
-
-> WinScp（代理上网）
-
-```shell
-登陆时，高级 - 连接 - 隧道 - (√)通过SSH隧道进行连接
-主机名：192.168.5.88；端口号：33022；用户名：sysman；密码：999999
-```
-
-> SecurityCRT（代理上网）
-
-```shell
-打开CRT界面，选项 - 全局选项 - 防火墙 - 添加（二者任选其一）
-名称：5.88；类型：SOCKES V5(username/pwd)；主机IP:192.168.5.88；端口号：33022；用户名：sysman；密码：999999
-
-名称：5.19；类型：HTTP(no auth)；用户名IP：192.168.5.19；密码：808
-```
-
-```shell
-打开连接页面，在待选连接点上右键 - 属性 - SSH2 - 防火墙：选择 5.88 或 5.19
-```
-
 
 ## 常见问题
 
 >如何在IDEA中多次启动同一个项目
 
-```java
+```sh
 启动绿三角 左边的 'Edit Config...'，在弹出窗口中取消勾选 'Single-instance-only（单例模式）'，点击OK
 每次运行 SpringBoot 项目前，修改配置文件中的端口号即可。
-
-注意：项目最好排除'spring-boot-devtools'
 ```
 
->如何在单个窗口打开多个Maven工程啊？
-
-```
-随便新建一个文件夹，然后将工程都扔进去，使用 IDEA 打开这个文件夹。
-```
 >复制警告或错误信息
 
-```
+```sh
 方式一：鼠标光标悬浮在报错的地方，待错误提示出现后，键盘按住 Alt，同时点击鼠标左键，Ctrl+V 到度娘即可。
-
 方式二：直接在界面的底部右键copy，错误信息显示在底部。
 ```
 
 > mvn打包时，跳过Test
 
-```java
-打开右侧"Maven-Projects"，当前项目'Lifecycle'，选中'Test'，点击菜单栏的"小闪电"，此时Test上多了一条横。
+```sh
+'mvn命令'：mvn clean package -Dmaven.test.skip=true
+打开右侧"Maven-Projects"，当前项目'Lifecycle'，选中'Test'，点击菜单栏的"小闪电"，此时Test上多了一条横
 ```
-
-> SpringBoot 项目的 Run Dashboard
-
-```
-工具栏，启动绿三角左边的 Edit Config...，找到 SpringBoot，点击 + 号新建一个标签，右侧 Main class 过滤启动类，修改 Name
-```
-
-
-
-
 
 ## 默认配置
 
 >当前项目配置 VS 默认配置
 
-```
-当前配置：顶部导航栏 -> File -> Settings / ProjectStructs
-
-默认配置：顶部导航栏 -> File -> Other Settings -> Default Settings /Project Structs
-```
-
-> （默认配置）JDK
-
-```
-顶部工具栏 File -> Other Settins -> Default Project Structure -> SDKs -> JDK
+```sh
+'当前配置'：顶部导航栏 -> File -> Settings
+'默认配置'：顶部导航栏 -> File -> Other_Settings -> Default Settings | Default Project Structure
 ```
 
-> （默认配置）Maven
+> 默认配置
 
-```java
-顶部工具栏 File -> Other Settings -> Default Settings -> Build & Tools -> Maven
+```SH
+#jdk
+Default Project Structure -> SDKs -> JDK
+#mvn
+Default Settings -> Build -> Maven
+#创建Maven项目速度慢问题
+Default Settings -> Builder -> Maven -> Runner -> VM Options：-DarchetypeCatalog=internal
+#svn
+Default Settings -> Version Control -> Git
 
-mvn命令：右侧工具栏 Maven -> 点击展开某工程或模块 ->快速执行Maven命令。
-        clean：清空； compile：编译； package：打包； install：发布到仓库
-```
+#自动编译
+Default Settings -> Build... -> Compiler -> （√）Build project auto...
+#自动导包
+Default_Settings -> Auto Import
+（√）add unambiguous...自动导入依赖
+（√）Optimize from... 优化导入和智能删除无关依赖
 
->（默认配置）Maven DarchetypeCatalog。IDEA 创建Maven项目速度慢问题
+#取消大小写敏感
+Default Settings -> Editor -> General -> Code Completion -> Case Sensitive Completion (选择)None
+#调整字体大小
+打开配置，搜索Font，然后再Font可以调整字体类型，Size可以调整字体大小
 
-```java
-解决 ：IDEA根据 maven archetype 的本质，其实是执行'mvn archetype:generate'命令，
-该命令执行时，需要指定一个'archetype-catalog.xml'文件。
-该命令的参数-DarchetypeCatalog，可选值为：remote，internal，local等，用来指定 archetype-catalog.xml 文件从哪里获取。
-默认为remote，即从'http://repo1.maven.org/maven2/archetype-catalog.xml'路径下载archetype-catalog.xml文件。
-
-顶部工具栏 File -> Other Settings -> Default Settings -> Build，... -> maven -> Runner -> VM Options 填写：
--DarchetypeCatalog=internal
-```
-
-> （默认配置）版本控制Git/Svn
-
-```
-顶部工具栏 File -> Other Settings -> Default Settings -> Version Control -> Git
-```
-
->（默认配置）自动导包和智能移除 
-
-```
-顶部工具栏 File -> Other Settings -> Default Settings -> Auto Import
-    （√）add unambiguous...自动导入依赖
-    （√）Optimize from... 优化导入和智能删除无关依赖
-```
-
-> （当前项目配置）Tomcat Server
-
-```
+#Tomcat
 顶部工具栏 File -> Settings -> Deployment -> Application Servers -> Tomcat Server，选择 Tomcat 的根目录
 ```
 
-> 其他配置
+> 快捷键
 
-```
-自动编译：File -> Other Settings -> Default Settings -> Build... -> Compiler -> （√）Build project auto...
-
-取消大小写敏感：File | Settings | Editor | General | Code Completion | Case Sensitive Completion = None
-
-调整字体大小：打开配置，搜索Font，然后再Font可以调整字体类型，Size可以调整字体大小
-
-F2修改文件名：File -> Settings -> Keymap -> 搜索 Rename -> 将快捷键设置为F2
-
-F3浏览目录结构：File -> Settings -> Keymap -> 搜索 Show In Explorer -> 将快捷键设置为F3
+```sh
+'F2修改文件名'  ：File -> Settings -> Keymap -> 搜索 Rename -> 将快捷键设置为F2
+'F3浏览目录结构'：File -> Settings -> Keymap -> 搜索 Show In Explorer -> 将快捷键设置为F3
 ```
 
 
@@ -285,7 +197,7 @@ Alt+7          #查看类结构
 
 （4）Abbreviation，即快捷方式，可填写 doc，然后在函数体上方输入doc加回车即可
 （5）输入注释模板
-    /**
+   /**
     * desc: TODO
     * @author: $user$
     * @date: $date$ $time$

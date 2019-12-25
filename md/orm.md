@@ -12,20 +12,9 @@
     <artifactId>mybatis-spring-boot-starter</artifactId>
     <version>1.3.2</version>
 </dependency>
-<dependency>
-    <groupId>mysql</groupId>
-    <artifactId>mysql-connector-java</artifactId>
-    <scope>runtime</scope>
-</dependency>
-<dependency>
-    <groupId>com.alibaba</groupId>
-    <artifactId>druid-spring-boot-starter</artifactId>
-    <version>1.1.10</version>
-</dependency>
 ```
 
 ```properties
-spring.datasource.type=com.alibaba.druid.pool.DruidDataSource
 spring.datasource.driverClassName=com.mysql.cj.jdbc.Driver
 spring.datasource.url=jdbc:mysql://192.168.8.7:33306/test0329?useSSL=false&serverTimezone=GMT%2B8
 spring.datasource.username=bluecardsoft
