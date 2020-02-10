@@ -7,75 +7,39 @@
 >必要配置
 
 ```xml
-<dependency>
-    <groupId>org.mybatis.spring.boot</groupId>
-    <artifactId>mybatis-spring-boot-starter</artifactId>
-    <version>1.3.2</version>
-</dependency>
+
 ```
 
 ```properties
-spring.datasource.driverClassName=com.mysql.cj.jdbc.Driver
-spring.datasource.url=jdbc:mysql://192.168.8.7:33306/test0329?useSSL=false&serverTimezone=GMT%2B8
-spring.datasource.username=bluecardsoft
-spring.datasource.password=#$%_BC13439677375
 
-mybatis.mapper-locations=classpath:com/example/mapper/sqlxml/*.xml
-mybatis.configuration.map-underscore-to-camel-case=true
-logging.level.com.example.demo.mapper=trace
 ```
 
 ```java
-@MapperScan(value = "com.example.mapper") //全局注解。可省去每个Mapper文件上的 @Mapper
+
 ```
 
 > 非必要配置
 
 ```properties
-#数据库返回为 null，也调用映射对象的setter方法
-mybatis.configuration.call-setters-on-nulls=true
-#全局设置：是否启用延迟加载
-mybatis.configuration.lazy-loading-enabled=true
-#局部设置：是否不启用延迟加载
-mybatis.configuration.aggressive-lazy-loading=true
+
 ```
 
 > xml版本
 
 ```xml
-<?xml version="1.0" encoding="UTF-8"?>
-<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
-<mapper namespace="com.example.base.mapper.LabelMapper">
-    <select id="listLabelsByPage" resultType="com.example.base.pojo.Label">
-        SELECT `id`, `labelname`, `state`, `count`, `recommend`, `fans` FROM tb_label
-    </select>
-</mapper>
+
 ```
 
 > 注解版
 
 ```java
-@Select("SELECT sname FROM student WHERE sid=#{id}")
-String getNameById(int id);
+
 ```
 
 > 资源拷贝插件
 
 ```xml
-<build>
-    <finalName>demo-user</finalName>
-    <resources> <!--资源拷贝插件-->
-        <resource>
-            <directory>src/main/java</directory>
-            <includes>
-                <include>**/*.xml</include>
-            </includes>
-        </resource>
-        <resource>
-            <directory>src/main/resources</directory>
-        </resource>
-    </resources>
-</build>
+
 ```
 
 ## 基本语法
@@ -726,252 +690,28 @@ public void test() throws IOException {
 }
 ```
 
-# plus
 
-## 基础概念
 
-> BOOT整合
+> 
 
-```xml
-<!-- mybatis-plus（内置 mybatis-starter） -->
-<dependency>
-    <groupId>com.baomidou</groupId>
-    <artifactId>mybatis-plus-boot-starter</artifactId>
-    <version>3.1.2</version>
-</dependency>
-```
+```java
 
-```properties
-#mybatis-plus
-#主键策略（默认 ID_WORKER），表名前缀
-mybatis-plus.global-config.db-config.id-type=ID_WORKER_STR
-mybatis-plus.global-config.db-config.table-prefix=tb_
-
-#也支持'mybatis'的配置，配置名换成'mybatis-plus'
-#驼峰命名（默认开启），xml路径
-mybatis-plus.configuration.map-underscore-to-camel-case=true
-mybatis-plus.mapper-locations=classpath:com/example/mapper/sqlxml/*.xml
 ```
 
 ```java
-@MapperScan(value = "com.example.mybatis.mapper") //全局注解，使用'mybatis'注解
-```
 
-> 主键策略
-
-```shell
-AUTO             #数据库自增
-ID_WORKER        #分布式全局唯一ID 长整型类型（java属性中的主键使用 Long 类型）
-ID_WORKER_STR    #分布式全局唯一ID 字符串类型（String）
-
-UUID             #32位UUID 字符串
-INPUT            #自行输入
-NONE             #无状态
-```
-
-> 实体类
-
-```java
-@Data
-@NoArgsConstructor
-@AllArgsConstructor
-@TableName(value = "user") //表名，如有统一前缀，可使用全局配置
-public class User {
-
-    @TableId(value = "userId", type = IdType.ID_WORKER_STR) //主键的数据库字段名为'userId'，及主键策略
-    private String userId;
-
-    @TableField("user_name") //数据库中字段名为'user_name'
-    private String userName;
-
-    private Integer account;
-
-    @TableField(exist = false) //数据表中不存在的字段
-    private Boolean gender;
-}
-```
-
-> Mapper接口
-
-```java
-@Component
-public interface UserMapper extends BaseMapper<User> {} //继承已有接口
-```
-
-## 条件构造器
-
->特殊说明
-
-```shell
-#（1）不支持以及不赞成在 RPC 调用中把 Wrapper 进行传输
-传输 wrapper 可以类比为你的 controller 用 map 接收值（开发一时爽，维护火葬场）
-正确的 RPC 调用姿势是写一个 DTO 进行传输，被调用方再根据 DTO 执行相应的操作
-
-#（2）使用的是数据库字段，而不是java属性
-#（3）两种 Wrapper --> QueryWrapper：查询和删除时使用，UpdateWrapper：更新时使用
-```
-
-> insert
-
-```java
-int insert(T entity); //插入一条记录，返回受影响的行数。可直接获取到新插入的主键 id
-```
-
-> AbstractWrapper
-
-```sql
--- like
-like("name", "王");     --name like '%王%'
-notLike("name", "王");  --name not like '%王%'
-likeLeft("name", "王"); --name like '%王'
-
--- isNull
-isNull("name");        --name is null
-isNotNull("name");     --name is not null
-
--- in相关
-in("age",{1,2,3});     --age in (1,2,3) ---> arg2：数组
-in("age", 1, 2, 3);    --age in (1,2,3) ---> arg2：可变数组
-
-inSql("age", "1,2,3"); --age in (1,2,3,4,5,6) --->arg2：sql字符串
-inSql("id", "select id from table where id < 3");
-                       --id in (select id from table where id < 3) --->arg2：sql查询语句
-
--- orderBy相关
-orderByDesc("name").orderByAsc("id"); --ORDER BY name DESC , id ASC.
-
--- having
-having("sum(age) > 10");       --having sum(age) > 10
-having("sum(age) > {0}", 11);  --having sum(age) > 11
-
--- or（主动调用 or，表示紧接着下一个方法不是用 and 连接！默认是 and）
-eq("id",1).or().eq("name","老王"); --id = 1 or name = '老王'
-
--- apply（拼接sql）
-apply("id = 1"); --id = 1
-apply("date_format(dateColumn,'%Y-%m-%d') = '2008-08-08'"); --date_format(dateColumn,'%Y-%m-%d') = '2008-08-08'")
-apply("date_format(dateColumn,'%Y-%m-%d') = {0}", "2008-08-08"); --date_format(dateColumn,'%Y-%m-%d') = '2008-08-08'")
-
--- last（只能调用一次，多次调用以最后一次为准。有sql注入的风险，请谨慎使用）
-last("limit 1");
-
--- exists（拼接 EXISTS 语句）
-exists("select id from table where age = 1"); --EXISTS(select id from table where age = 1)
-```
-
->QueryWrapper
-
-```sql
-select("id", "name", "age");  --设置查询字段
-```
-
-> UpdateWrapper
-
-```sql
-set("name", "老李头");     --设置 SET 字段
-set("name", "");          --数据库字段值变为 空字符串
-set("name", null);        --数据库字段值变为 null
-
-setSql("name = '老李头'"); --同上
-```
-
-> 分页插件
-
-```java
-@Bean
-public PaginationInterceptor paginationInterceptor() {
-    PaginationInterceptor paginationInterceptor = new PaginationInterceptor();
-    // paginationInterceptor.setLimit(最大单页限制数量，默认 500 条，小于 0 如 -1 不受限制);
-    return paginationInterceptor;
-}
 ```
 
 ```java
-Page<Student> page = new Page<>(2, 3); //第 2 页，每页 3 条
-// page.setOrders(Collections.singletonList(new OrderItem().setColumn("name"))); //设置排序字段
-Page<Student> studentIPage = (Page<Student>) studentMapper.selectPage(page, null);
-```
 
-#通用Mapper
-
-## 基础概念
-
-> 作用同 mybatis-plus，但是不好用。
-
-```xml
-<!-- https://mvnrepository.com/artifact/tk.mybatis/mapper-spring-boot-starter -->
-<dependency>
-    <groupId>tk.mybatis</groupId>
-    <artifactId>mapper-spring-boot-starter</artifactId>
-    <version>2.1.5</version>
-</dependency>
-```
-
-```properties
-#mapper
-mapper.mappers=com.example.friend.base.IBaseMapper
-mapper.not-empty=true
-mapper.identity=MYSQL
-
-#mybatis的sql打印
-logging.level.com.example.friend.mapper=debug
 ```
 
 ```java
-@MapperScan("com.example.friend.mapper") //tk.mybatis.spring.annotation.MapperScan，启动类
+
 ```
 
 ```java
-public interface EmployeeMapper extends Mapper<Employee>, MySqlMapper<Employee> {}
-```
 
-> 常用方法
-
-```java
-//xxxByPrimaryKey()：实体类需要使用 @Id 注解标明主键。否则，通用 Mapper 会将所有实体类字段作为联合主键。
-
-public void selectByPrimaryKey() { //主键查询
-    Employee employee = employeeMapper.selectByPrimaryKey(5);
-}
-```
-
-```java
-//xxxSelective：非主键字段如果为 null 值，则不加入到 SQL 语句中。
-UPDATE table_emp SET emp_salary = ? WHERE emp_id = ?
-
-public void updateByPrimaryKeySelective() {
-    Employee employee = new Employee(7, null, 2222.22, null);    
-    int update = employeeMapper.updateByPrimaryKeySelective(employee);
-}
-```
-
-```java
-//自增主键直接赋值到 employee
-INSERT INTO table_emp ( emp_id,emp_name,emp_salary,emp_age ) VALUES( ?,?,?,? )
-SELECT LAST_INSERT_ID()
-
-public void insert() { 
-    Employee employee = new Employee(null, "xiao3", 5555.55, 20);
-    int insert = employeeMapper.insert(employee);
-}
-```
-
-```java
-//使用非空的值生成 WHERE 子句，在条件表达式中使用 "=" 进行比较
-public void selectOne() {
-    Employee emp = new Employee(null, "bob", null, null);
-    Employee employee = employeeMapper.selectOne(emp);
-}
-```
-
-```java
-//同上。使用非空的值生成 WHERE 子句。特别注意，当参数为 null 或者 参数字段都为 null 时，将生成可怕的sql
-DELETE FROM table_emp
-
-public void delete() {
-    Employee employee = null;
-    int delete = employeeMapper.delete(employee);
-}
 ```
 
 # JPA
