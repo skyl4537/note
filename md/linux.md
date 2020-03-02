@@ -547,49 +547,6 @@ echo "It is a test"
 
 # F-G-H-I-J-K
 
-## find
-
->根据【文件属性】进行【递归】查找
-
-```shell
-#-name: 根据文件名查找。(-iname: 忽略大小写)
-#-size: 文件大小    
-#-user: 所属用户
-#-empty: 空文件
-```
-```shell
-find . -name 'sm*'  #【递归】查找当前目录下名为 'sm' 或 'sm*' 的文件及文件夹
-```
-
-> 案例：需要备份 20190820_10 这一小时，所有模块的日志
-
-```shell
-#查找并拷贝，注意 \;之前有个空格
-find /var/lib/webpark/logs -name '*.20190820_10.*' -exec cp {} /var/lib/webpark/logs/backup/20190820_10/ \;
-```
-
-> 其他属性
-
-```shell
-find . -empty       #（递归）-.......... '空' 文件或者文件夹
-find . -size +10M   #（递归）-.......... 大于10MB的文件（c:字节，w:双字，k:KB，M:MB，G:GB）（+:大于,-:小于）
-
-#查找目录中文件属主具有读、写权限，并且文件所属组的用户和其他用户具有读权限的文件
-find . -type f -perm 644 -exec ls -l {} \;
-
-#为了查找系统中所有文件长度为0的普通文件，并列出它们的完整路径
-find / -type f -size 0 -exec ls -l {} \;
-
-#查找/var/log目录中更改时间在7日以前的普通文件，并在删除之前询问它们
-find /var/log -type f -mtime +7 -ok rm {} \;
-```
-
-```shell
-#混合查找 ---> !(非); -and(且); -or(或)
-find /tmp -size +10000c -and -mtime +2  #在/tmp目录下查找大于10000字节并在最后2分钟内修改的文件
-find / -user fred -or -user george      #在/目录下查找用户是fred或者george的文件文件
-find /tmp ! -user panda                 #在/tmp目录中查找所有不属于panda用户的文件
-```
 
 ##free
 
