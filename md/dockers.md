@@ -300,155 +300,7 @@ docker run --name rabbitmq -d -p 4369:4369 -p 5671:5671 -p 5672:5672 -p 15671:15
 
 
 
-# EHCache
-
-##BOOT整合
-
-> 纯java的进程内缓存框架！快速，精干
-
-```xml
-<dependency>
-    <groupId>org.springframework.boot</groupId>
-    <artifactId>spring-boot-starter-cache</artifactId>
-</dependency>
-<dependency>
-    <groupId>net.sf.ehcache</groupId>
-    <artifactId>ehcache</artifactId>
-</dependency>
-```
-```properties
-#缓存类型，如用redis改为redis
-spring.cache.type=ehcache
-#存放'/resources'目录下
-spring.cache.ehcache.config=classpath:ehcache.xml
-```
->ehcahe.xml
-
-```xml
-<ehcache xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
-         xsi:noNamespaceSchemaLocation="ehcache.xsd"
-         updateCheck="true" monitoring="autodetect" dynamicConfig="true">
-
-    <!-- 磁盘缓存位置 -->
-    <diskStore path="java.io.tmpdir/ehcache" />
-
-    <!-- 默认缓存策略 -->
-    <defaultCache
-                  eternal="false" <!--是否永不过期？ 默认false。true则属性 timeTo* 将不起作用 -->
-    timeToIdleSeconds="120" <!--缓存最大闲置时间. 0无限.-->
-    timeToLiveSeconds="120" <!--........存活.........-->
-
-    maxEntriesLocalHeap="100" <!--内存缓存最大个数. 0无限. 过时属性 maxElementsInMemory-->
-    maxEntriesLocalDisk="100" <!--磁盘.......................... maxElementsOnDisk-->
-
-    <!--磁盘缓存相关-->
-    overflowToDisk="true" <!--内存中缓存过量是否输出到磁盘?? 默认true-->
-    diskSpoolBufferSizeMB="30" <!--写入磁盘时IO缓冲区大小. 默认30MB. 每个Cache一个缓冲区-->
-    diskExpiryThreadIntervalSeconds="120" <!--磁盘缓存清理线程的运行间隔. 默认120s.-->
-    diskPersistent="false" <!--磁盘缓存在jvm重启后是否保持. 默认为false-->
-
-    memoryStoreEvictionPolicy="LRU"> <!--内存中缓存过量后的移除策略. 默认 LRU(最近最少使用)-->
-
-    <persistence strategy="localTempSwap" />
-    </defaultCache>
-
-<!-- 自定义缓存策略 -->
-<cache
-       name="system_set"
-       eternal="false"
-       timeToLiveSeconds="300"
-       maxEntriesLocalHeap="2"
-       overflowToDisk="true"
-       maxEntriesLocalDisk="5">
-</cache>
-</ehcache>
-```
->配置说明
-
-```sh
-diskStore：过量缓存输出到磁盘的存储路径
-#默认 path="java.io.tmpdir".
-#windows-> "C:\Users\当前用户\AppData\Local\Temp\"; linux-> "/tmp"
-#缓存文件名为缓存name, 后缀为data. 如: C:\Users\当前用户\AppData\Local\Temp\system_set.data
-
-当 maxEntriesLocalHeap 过量时，两种情况：
-#overflowToDisk=true  --> 过量缓存输出磁盘. 
-#overflowToDisk=false --> 则按照 memoryStoreEvictionPolicy 从内存中移除缓存
-
-clearOnFlush：调用 flush() 方法时,是否清空内存缓存？ 默认true
-#设为true，则系统在初始化时会在磁盘中查找 CacheName.index 缓存文件, 如 system_set.index. 找到后将其加载到内存.
-#注意：在使用 net.sf.ehcache.Cache 的 void put (Element element) 方法后要使用 void flush() 方法
-```
-##测试DEMO
-
-> javaBean
-
-```java
-@Data
-public class Student implements Serializable { //对于磁盘缓存，必须'序列化'
-    private  int id;
-    private String name;
-}
-```
->Service
-
-```java
-@Service
-public class HelloServiceImpl implements HelloService {
-
-    @Override
-    @Cacheable(value = "student") //开启缓存，配合全局注解 @EnableCaching
-    public Student selStudentById(int id) {
-        return helloMapper.selStudentById(id);
-    }
-}
-```
->单元测试
-
-```java
-@RunWith(SpringRunner.class)
-@SpringBootTest
-public class ApplicationTests {
-    @Autowired
-    HelloService helloService;
-
-    @Test
-    public void test() {
-        System.out.println(helloService.selStudentById(3));
-        System.out.println(helloService.selStudentById(3)); //从日志看出，第二次不再查库
-    }
-}
-```
-#Redis
-
-## docker模式
-
->docker模式安装的redis没有配置文件
-
-```shell
-#需要通过 -v 指令将宿主机配置文件进行映射
-docker run --name redis -d -p 6379:6379 redis
-
-#下载默认配置
-wget https://raw.githubusercontent.com/antirez/redis/4.0/redis.conf -O conf/redis.conf
-
-#挂载宿主机的配置
-docker run --name redis -d -p 6379:6379 -v /var/tmp/docker/redis.conf:/etc/redis/redis.conf \
-      -v /var/tmp/docker/data:/data redis redis-server /etc/redis/redis.conf --appendonly yes
-
-#-v /var/tmp/docker/redis.conf:/etc/redis/redis.conf --> 文件映射，将宿主机的配置文件复制到docker中
-#-v /var/tmp/docker/data:/data        --> 容器映射/data
-#redis-server /etc/redis/redis.conf   --> redis启动时，加载配置文件（/etc/redis/redis.conf），默认不加载
-#--appendonly yes                     --> 开启redis持久化
-```
-
->
-
-```shell
-
-```
-
-##安装包模式
+# Redis安装包模式
 
 > 下载安装
 
@@ -527,23 +379,6 @@ sudo /etc/init.d/redis-server restart #重启redis
 
 ## BOOT整合
 
-> 配置文件
-
-```xml
-<dependency>
-    <groupId>org.springframework.boot</groupId>
-    <artifactId>spring-boot-starter-data-redis</artifactId>
-</dependency>
-```
-```properties
-spring.cache.type=redis
-spring.redis.host=192.168.5.25
-#spring.redis.password=redis #docker版没有配置文件，所以没有密码
-spring.redis.jedis.pool.max-idle=10
-spring.redis.jedis.pool.min-idle=5
-spring.redis.jedis.pool.max-active=20
-spring.redis.jedis.pool.max-wait=-1ms
-```
 > json序列化
 
 ```java
@@ -581,6 +416,7 @@ public class RedisConfig {
         // ObjectMapper om = new ObjectMapper();
         // om.setVisibility(PropertyAccessor.ALL, JsonAutoDetect.Visibility.ANY);
         // om.enableDefaultTyping(ObjectMapper.DefaultTyping.NON_FINAL);
+        // om.setDateFormat(new SimpleDateFormat("yyyy/MM/dd HH:mm:ss"));
         // redisSerializer.setObjectMapper(om);
 
         RedisCacheConfiguration redisCacheConfiguration = RedisCacheConfiguration.defaultCacheConfig();
@@ -609,64 +445,10 @@ public class RedisConfig {
 ```
 
 
->`神坑1：类型转换异常`
-
-```java
-//java.lang.Integer cannot be cast to java.lang.Long
-
-@Test
-public void test() {
-    redisTemplate.opsForValue().set("long", 2L);
-    
-    // Long l = (Long) redisTemplate.opsForValue().get("long"); //类型转换异常
-    Long l = Long.valueOf(redisTemplate.opsForValue().get("long").toString()); //常用作法
-    System.out.println("long: " + l);
-}
-```
->显示操作的常用方法
-
-```java
-redisTemplate.opsForValue().set("test", "100", 60 * 10, TimeUnit.SECONDS); //向redis里存入数据和设置缓存时间
-redisTemplate.opsForValue().get("test"); //根据key获取缓存中的val
-
-redisTemplate.boundValueOps("test").increment(-1); //val做-1操作
-redisTemplate.boundValueOps("test").increment(1); //val +1
-
-redisTemplate.expire("test", 1000, TimeUnit.MILLISECONDS); //设置过期时间
-redisTemplate.getExpire("test"); //根据key获取过期时间
-redisTemplate.getExpire("test", TimeUnit.SECONDS); //根据key获取过期时间并换算成指定单位
-
-redisTemplate.hasKey("test"); //检查key是否存在，返回boolean值
-redisTemplate.delete("test"); //根据key删除缓存
-
-redisTemplate.opsForSet().add("red_123", "1", "2", "3"); //向指定key中存放set集合
-redisTemplate.opsForSet().isMember("red_123", "1"); //根据key查看集合中是否存在指定数据
-redisTemplate.opsForSet().members("red_123");//根据key获取set集合
-```
-
-
->注解版：SpringCache
-
-```java
-@Override
-@Cacheable(value = "student", key = "'id-' + #p0")
-public Student findById(int id) {
-    return helloMapper.findById(id);
-}
-```
-```java
-@Test
-public void test() {
-    System.out.println(helloService.findById(2)); //必须: Student implements Serializable
-    System.out.println(helloService.findById(2)); //第二次不读库
-}
-```
-
-
 
 # SpringCache
 
-##基础概念
+## 基础概念
 
 >应用场景。`相比于 Redis 的缺点为：不能设置过期时间`
 
@@ -702,136 +484,13 @@ Java Caching 定义了5个核心接口：CachingProvider，CacheManager，Cache�
 ```java
 'Expiry'：每一个存储在 Cache 中的条目有一个定义的有效期。一旦过期，条目将不可访问，更新和删除。缓存有效期可以通过 ExpiryPolicy 设置
 ```
-## 常用注解
-
-> @EnableCaching：全局注解。系统默认缓存为：ConcurrentMapCacheManager
-
-```xml
-<dependency>
-    <groupId>org.springframework.boot</groupId>
-    <artifactId>spring-boot-starter-cache</artifactId>
-</dependency>
-```
-> @Cacheable：开启缓存，标注在（类/方法）上。根据方法的请求参数对其结果进行缓存。`适用于查询`
-
-```java
-//工作流程
-(0).目标方法调用之前，先检查缓存，有则返回；无则查库，并将结果放入缓存
-(1).检查缓存时，先根据 value/cacheNames 找到对应的Cache对象
-(2).再根据 key 从Cache对象（ConcurrentMapCache<K,V>）中取出对应的缓存值
-```
-
-```java
-//value/cacheNames：缓存名称，必须指定。数组形式，表示缓存到多个 Cache 中。如：value = {"people","emp"}
-//key：用来指定存储缓存时使用的key，默认使用方法参数对应的值（支持SpringEL表达式）。
-
-@Cacheable(value = "people", key = "#person.id") //自定义key: person.id
-public Person getOneById(Person person) {
-    return personMapper.getOneById(person.id);
-}
-```
-> @CacheEvict：清空缓存。`适用于添加，删除`
-
-```java
-//value：缓存名字，同上
-//allEntries：是否清空对应 value 中的所有缓存，默认 false
-//beforeInvocation：清空动作是否在方法调用之前，默认 false，即方法调用出错，则缓存不会清空
-
-@CacheEvict(value = "people"/*, allEntries = true*/) //默认key为方法参数值
-public int deleteOneById(int id) {
-    return personMapper.deleteOneById(id);
-}
-```
-
-> @CachePut：既调用方法，又更新缓存。`适用于更新`
-
-```java
-//此时若不指定 @CachePut 的value和key，则不能更新 @Cacheable 的缓存。即查询到的仍旧是更新前的数据
-//这是因为默认的 key 为方法参数对应的值，即 @CachePut 是以 Person对象 作为缓存的key
-
-//也可以这样指定：@CachePut(value = "people", key = "#result.id")
-//但是，@Cacheable 则不可以!!!! 
-//因为后者 #result.id 是在方法调用之前取值，为null，报错
-
-@CachePut(value = "people", key = "#person.id")
-public void updateOneById(Person person) {
-    personMapper.updateOneById(person);
-}
-```
-> @Caching：复杂场景使用的组合注解
-
-```java
-//方法调用后，将结果保存到三组缓存中： people:<name,VALUE>; people:<id,VALUE>; emp:<id,VALUE>;
-
-//此时，根据 value = "people" 的 id 查找，直接从缓存读取。
-//但是，根据 value = "people" 的 name 查找，则会调用方法。这是因为组合注解中包含 put 的缘故！
-
-@Caching(
-    cacheable = {
-        @Cacheable(value = "people", key = "#result.name")
-    },
-    put = {
-        @CachePut(value = "people", key = "#result.id"),
-        @CachePut(value = "emp", key = "@result.id")
-    }
-)
-public int getOneByName(String name) {
-    return personMapper.deleteOneById(1);
-}
-```
-> @CacheConfig：类注解，用于抽取当前类中所有缓存的共同属性。类比于 @RequestMapping
-
-```java
-//与全局配置不一致的方法，可单独的显示配置 cacheNames 属性
-@CacheConfig(cacheNames = "people")
-public class PersonServiceImpl { }
-```
-## 常用参数
-
-> 缓存的key值：根据SpEL表达式生成
-
-|     名字      |            描述            |                             示例                             |
-| :-----------: | :------------------------: | :----------------------------------------------------------: |
-|    method     |      当前被调用的方法      |                      #root.method.name                       |
-|  methodName   |     当前被调用的方法名     |      \#root.methodName+'['+#id+']' `如：getOneById[66]`      |
-|    target     |    当前被调用的目标对象    |                         #root.target                         |
-|  targetClass  |   当前被调用的目标对象类   |                      #root.targetClass                       |
-|     args      | 当前被调用的方法的参数列表 |               \#root.args[0] `如：第一个参数`                |
-|    caches     | 当前方法调用使用的缓存列表 |         \#root.caches[0].name `如：第一个缓存的name`         |
-| argument name |       方法参数的名字       | \#id，#a0，#p0 `可用 #参数名，也可 #p0或#a0 的形式，0 为参数索引` |
-|    result     |     方法执行后的返回值     |                           #result                            |
-
->自定义 KeyGenerator
-
-```java
-@Configuration
-public class CacheConfig {
-
-    @Bean(value = "myKeyGenerator") //自定义 KeyGenerator
-    public KeyGenerator keyGenerator() {
-        return (target, method, params) -> method.getName() + "[" + Arrays.asList(params) + "]";
-    }
-}
-```
-```java
-//使用自定义
-@Cacheable(value = "people", keyGenerator = "myKeyGenerator")
-```
-
-> 相关注解
-
-```sh
-@EnableCaching  开启缓存功能，放在配置类或启动类上
-@CacheConfig    缓存配置，设置缓存名称
-@Cacheable      执行方法前先查询缓存是否有数据。有则直接返回缓存数据；否则查询数据再将数据放入缓存
-@CachePut       执行新增或更新方法后，将数据放入缓存中
-@CacheEvict     清除缓存
-@Caching        将多个缓存操作重新组合到一个方法中
-```
 
 
 
-#ElasticSearch
+
+
+
+# ElasticSearch
 
 ## 安装配置
 
@@ -858,7 +517,7 @@ http://192.168.5.23:9200/ #检测是否启动成功
 
 ```shell
 #因为 ES 从5版本以后默认不开启远程连接，需要修改配置文件
-#NoNodeAvailableException[None of the configured nodes are available:[{#transport#‐1}{192.168.184.135:9300}]]
+#NoNodeAvailableException[None of the configured nodes are available:[{#transport#‐1}{192.168.184.135:9300}]]
 
 docker exec -it ES01 /bin/bash #进入容器内部
 cat /usr/share/elasticsearch/config/elasticsearch.yml #ES默认的配置文件
@@ -870,12 +529,12 @@ docker cp ES01:/usr/share/elasticsearch/config/elasticsearch.yml /var/lib/webpar
 http.host: 0.0.0.0
 
 #增加以下两句命令，解决 head 插件的跨域问题
-http.cors.enabled: true
-http.cors.allow‐origin: "*"
+http.cors.enabled: true
+http.cors.allow‐origin: "*"
 
 #停止和删除原来创建的容器
-docker stop ES01 
-docker rm  ES01
+docker stop ES01 
+docker rm  ES01
 
 #重新执行创建容器命令，使用 -v 加载宿主机的配置文件
 docker run --name ES01 -d -e ES_JAVA_OPTS="-Xms256m -Xmx256m" -p 9200:9200 -p 9300:9300 \
@@ -1007,19 +666,19 @@ POST  http://192.168.5.23:9200/megacorp/employee/_search
 ```shell
 #下载head插件
 #解压到任意目录，但是要和 elasticsearch 的安装目录区别开
-https://github.com/mobz/elasticsearch-head  elasticsearch-head-master.zip
+https://github.com/mobz/elasticsearch-head  elasticsearch-head-master.zip
 
 #安装nodejs，安装cnpm
-npm install ‐g cnpm ‐‐registry=https://registry.npm.taobao.org
+npm install ‐g cnpm ‐‐registry=https://registry.npm.taobao.org
 
 #将grunt安装为全局命令。Grunt是基于Node.js的项目构建工具。它可以自动运行所设定的任务
-npm install ‐g grunt‐cli
+npm install ‐g grunt‐cli
 
 #安装依赖 
-cnpm install
+cnpm install
 
 #进入head目录启动head，在命令提示符下输入命令
-grunt server
+grunt server
 
 #打开浏览器，验证 http://localhost:9100
 ```
@@ -1034,8 +693,8 @@ No 'Access-Control-Allow-Origin' header is present on the requested resource
 #修改elasticsearch的配置，让其允许跨域访问。
 
 #修改 elasticsearch 配置文件：elasticsearch.yml，增加以下两句命令：
-http.cors.enabled: true
-http.cors.allow‐origin: "*"
+http.cors.enabled: true
+http.cors.allow‐origin: "*"
 ```
 
 ##IK分词器
@@ -1285,7 +944,7 @@ output {
         
         # 自增编号id，%{id} 表示使用上述sql结果的id
         document_id => "%{id}"
-        document_type => "plate_document"
+        document_type => "plate_document"
     }
     stdout {
         #以JSON格式输出
@@ -1299,7 +958,6 @@ output {
 #需要 mysql 的连接驱动包：mysql-connector-java-8.0.16.jar
 logstash -f ../mysqletc/mysql.conf
 ```
-
 
 
 
