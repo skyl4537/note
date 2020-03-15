@@ -446,49 +446,6 @@ public class RedisConfig {
 
 
 
-# SpringCache
-
-## 基础概念
-
->应用场景。`相比于 Redis 的缺点为：不能设置过期时间`
-
-```sh
-高频热点数据 -> 频繁访问数据库，数据库压力过大
-
-临时性的数据 -> 手机号发送的验证码，三分钟有效，过期删掉
-```
->Java缓存规范：JSR107
-
-![](assets/docker0.jpg)
-
-```java
-Java Caching 定义了5个核心接口：CachingProvider，CacheManager，Cache，Entry 和 Expiry
-//其中，CachingProvider，CacheManager，Cache，Entry：都是一对多的关系！
-```
-```java
-'CachingProvider'（类比数据库）：定义创建，配置，获取，管理和控制多个 CacheManager
-//一个应用在运行期访问多个 CachingProvider。
-```
-```java
-'CacheManager'（数据表）：定义创建，配置，获取，管理和控制多个唯一命名的Cache。这些 Cache 存在于 CacheManager 的上下文中
-//CachingProvider 与 CacheManager 是一对多的关系。
-```
-```java
-'Cache'（数据行）：一个类似Map的数据结构，并临时存储以Key为索引的值。对缓存的真正CRUD操作是基于Cache对象的
-//CacheManager 与 Cache 是一对多的关系。
-```
-```java
-'Entry'（数据字段）：一个存储在Cache中的 key-value 对
-//Cache 与 Entry 是一对多的关系。
-```
-```java
-'Expiry'：每一个存储在 Cache 中的条目有一个定义的有效期。一旦过期，条目将不可访问，更新和删除。缓存有效期可以通过 ExpiryPolicy 设置
-```
-
-
-
-
-
 
 # ElasticSearch
 
