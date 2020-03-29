@@ -1,108 +1,12 @@
-
-
-
-
-# 基础概念
-
-> 什么是SpringCloud？ http://projects.spring.io/spring-cloud/
-
-```
-SpringCloud 是一系列框架的有序集合。
-
-它利用 SpringBoot 的开发便利性巧妙地简化了分布式系统基础设施的开发，
-如服务发现注册、配置中心、消息总线、负载均衡、熔断器、数据监控等，都可以用 SpringBoot 的开发风格做到一键启动和部署。
-
-Spring 并没有重复制造轮子，它只是将目前各家公司开发的比较成熟、经得起实际考验的服务框架组合起来，
-通过 SpringBoot 风格进行再封装，屏蔽掉了复杂的配置和实现原理，最终给开发者留出了一套简单易懂、易部署和易维护的分布式系统开发工具包。
-```
-
->SpringCloud 与 SpringBoot
-
-```sh
-SpringBoot 是一套快速配置框架，可以用于快速开发单个微服务，SpringCloud 是一个基于 SpringBoot 实现的云应用开发工具；
-
-SpringBoot 专注于快速、方便集成的单个微服务个体，Spring Cloud关注全局的服务治理框架；
-
-SpringBoot 使用了'默认大于配置'的理念，很多集成方案已经帮你选择好了，能不配置就不配置，
-SpringCloud 很大的一部分是基于 SpringBoot 来实现，可以不基于 SpringBoot吗？ '不可以'。
-
-SpringBoot 可以离开 SpringCloud 独立使用开发项目，但是 SpringCloud 离不开 SpringBoot，属于依赖的关系。
-```
-
-> SpringCloud 和 Dubbo
-
-```
-Dubbo 只是实现了服务治理，而 SpringCloud 下面有 21 个子项目（可能还会新增）分别覆盖了微服务架构下的方方面面，
-服务治理只是其中的一个方面，一定程度来说，Dubbo 只是 SpringCloud Netflix 中的一个子集。
-```
-
-> SpringBoot 与 SpringCloud 版本对应
-
-```
-2.0.x - Finchley
-2.1.x - Greenwich
-```
-
-> 镜像，容器，微服务
-
-```
-子项目做成镜像，镜像做成容器。
-
-微服务就是同类容器的集合，一个微服务包括一组容器。如，已有的 mysql 容器，或者自定义的交友容器等。
-```
-
-> 微服务的子项目中是否需要接口？ `不需要`
-
-```
-普通项目分为MVC三层，不同层由不同人员维护，所以在不同层进行相互调用时，就需要一套规范，即不同层的接口。
-但是对于微服务项目，每一个子项目都是单独的一个服务，由单独的人员进行维护，所以也就不需要定义接口。
-```
-
-> 概念解析
-
-```java
-'SpringBoot'：Spring的纯注解版，零配置文件，以最少的配置来开发项目。是一种开发风格。
-
-'SpringCloud'：Spring整合第三方技术的架构，将已有的第三方技术以'SpringBoot'的形式（即零配置的形式）封装到Spring框架中。
-               所以，SpringCloud 依赖于 SpringBoot，但 SpringBoot 不依赖 SpringCloud。
-
-'SpringMVC'：一种web层MVC框架，用于替代servlet（处理-响应请求，获取表单参数，表单校验等）。
-
-'SpringData'：持久层框架。不仅能够适用于关系型数据库，还能够适用于非~。如 MongoDB，Redis，Hadoop
-```
-
-
-
-
 # 父项目
 
-##基础概念
-
-> `demo-parent` 父项目。项目创建：https://start.spring.io/
 
 ```java
-项目名最好使用下划线进行分割 'demo_parent'。但是，微服务名称只能用-进行分割，不能用下划线 'demo-parent'。
-由于父项目不写代码逻辑，所以可将 src 目录删除。
-```
-
->项目规划
-
-```java
-父项目 'demo-parent' 不写逻辑
-公共模块 'demo-common' 最终以jar包形式供其他微服务调用，非微服务
-用户微服务 'demo-user' 依赖 'demo-common'
-交友微服务 'demo-friend' 依赖 'demo-common'，并调用 'demo-user'
-
-父项目的打包方式选择 pom 类型，'不要配置 build 节点的打包插件，子微服务（demo-common 除外）自行配置 build 插件'。
-```
-
->区别 IDEA 中的 project 和 module
 
 ```
 
-```
 
->随机端口号：采用随机端口的方式来设置各个服务实例
+> 随机端口号：采用随机端口的方式来设置各个服务实例
 
 ```properties
 #两种方式。
@@ -115,489 +19,11 @@ server.port=${random.int[10000,19999]}
 eureka.instance.instance-id=${spring.application.name}:${server.port}
 ```
 
-##基础配置
-
-> 父项目打包类型必须选择 pom 类型。
-
-```xml
-<modelVersion>4.0.0</modelVersion>
-<parent>
-    <groupId>org.springframework.boot</groupId>
-    <artifactId>spring-boot-starter-parent</artifactId>
-    <version>2.1.5.RELEASE</version>
-    <relativePath /> <!-- lookup parent from repository -->
-</parent>
-<groupId>com.example</groupId>
-<artifactId>demo_parent</artifactId>
-<version>1.0-SNAPSHOT</version>
-<packaging>pom</packaging> <!--父项目的打包类型必须设置为 pom-->
-
-<modules>
-    <module>demo_common</module>
-    <module>demo_user</module>
-    <module>demo_friend</module>
-    <module>demo_eureka</module>
-    <module>demo_zuul</module>
-    <module>demo_config</module>
-</modules>
-```
-
-> 父项目只依赖通用的jar包。如 mysql 驱动包只在部分子模块使用，就不要写在父项目中。
-
-```xml
-<properties>
-    <!--G:2.1.x; F:2.0.x-->
-    <spring-cloud.version>Greenwich.SR1</spring-cloud.version>
-    <java.version>1.8</java.version>
-</properties>
-
-<!--父项目锁定 spring-cloud 和 demo-common 版本-->
-<dependencyManagement>
-    <dependencies>
-        <dependency>
-            <groupId>org.springframework.cloud</groupId>
-            <artifactId>spring-cloud-dependencies</artifactId>
-            <version>${spring-cloud.version}</version>
-            <type>pom</type>
-            <scope>import</scope>
-        </dependency>
-        <dependency>
-            <groupId>com.example</groupId>
-            <artifactId>demo_common</artifactId>
-            <version>${demo_common.version}</version>
-        </dependency>
-    </dependencies>
-</dependencyManagement>
-
-<!--公共依赖-->
-<dependencies>
-    <dependency>
-        <groupId>org.projectlombok</groupId>
-        <artifactId>lombok</artifactId>
-        <scope>provided</scope> <!--参与编译，测试，运行，但不会打包-->
-        <optional>true</optional> <!--true: 依赖不会传递，但是该依赖写在父项目则所有子类都可用。false: 会传递-->
-    </dependency>
-    <dependency>
-        <groupId>org.springframework.boot</groupId>
-        <artifactId>spring-boot-devtools</artifactId>
-        <scope>runtime</scope> <!--只在运行时起作用-->
-        <optional>true</optional>
-    </dependency>
-    <dependency>
-        <groupId>org.springframework.boot</groupId>
-        <artifactId>spring-boot-starter-test</artifactId>
-        <scope>test</scope> <!--测试时起作用-->
-    </dependency>
-    <dependency>
-        <groupId>org.springframework.boot</groupId>
-        <artifactId>spring-boot-starter-web</artifactId>
-    </dependency>
-</dependencies>
-
-<!--SpringBoot打包插件-->
-<build>
-    <plugins>
-        <plugin>
-            <groupId>org.springframework.boot</groupId>
-            <artifactId>spring-boot-maven-plugin</artifactId>
-        </plugin>
-    </plugins>
-</build>
-```
-
-#公共模块
-
-##基础配置
-
-> `demo-common` 公共模块，最终是以jar包被其他微服务调用。`没有配置文件，也勿需指定微服务名`。
-
-```java
-选中父项目，然后右键选择 new -> module，项目名称：'demo_common'
-
-对于公共模块只写公共方法，不写业务逻辑，所以 pom.xml 不用引用其他jar包
-```
-
-> 基础配置 `一定要跳过 SpringBoot 打包插件`
-
-```xml
-<parent>
-    <artifactId>demo_parent</artifactId>
-    <groupId>com.example</groupId>
-    <version>1.0-SNAPSHOT</version>
-</parent>
-<modelVersion>4.0.0</modelVersion>
-
-<artifactId>demo_common</artifactId>
-
-<dependencies>
-    <!-- https://mvnrepository.com/artifact/io.jsonwebtoken/jjwt -->
-    <dependency>
-        <groupId>io.jsonwebtoken</groupId>
-        <artifactId>jjwt</artifactId>
-        <version>0.9.1</version>
-    </dependency>
-</dependencies>
-
-<build>
-    <finalName>demo-common</finalName>
-    <plugins>
-        <plugin>
-            <groupId>org.springframework.boot</groupId>
-            <artifactId>spring-boot-maven-plugin</artifactId>
-            <configuration>
-                <skip>true</skip> <!--公共模块demo-common，跳过此打包插件-->
-            </configuration>
-        </plugin>
-    </plugins>
-</build>
-```
-
-##公共方法
-
-> 状态码实体类。新建包`entity`
-
-```java
-public class StatusCode {
-    public static final int OK = 20000; //成功
-    public static final int ERROR = 20001; //失败
-    public static final int LOGIN_ERROR = 20002; //用户名或密码错误
-    public static final int ACCESS_ERROR = 20003; //权限不足
-    public static final int REMOTE_ERROR = 20004; //远程调用失败
-    public static final int REP_ERROR = 20005; //重复操作
-}
-```
-
-> 控制类的统一返回
-
-```java
-@Data
-@AllArgsConstructor
-@NoArgsConstructor
-public class Result {
-    private boolean flag; //是否成功 （规范2）
-    private Integer code; //返回码 （规范1）
-    private String message; //返回信息
-
-    private Object data; //返回数据
-
-    public Result(boolean flag, Integer code, String message) { //三个参数的构造
-        this.flag = flag;
-        this.code = code;
-        this.message = message;
-    }
-}
-```
-
-> Ali规约
-
-```java
-//【强制】所有的 POJO 类属性必须使用包装数据类型。
-//【强制】RPC 方法的返回值和参数必须使用包装数据类型。
-
-//【推荐】所有的局部变量使用基本数据类型。
-
-说明：POJO 类属性没有初值是提醒使用者在需要使用时，必须自己显式地进行赋值，任何 NPE 问题，或者入库检查，都由使用者来保证。
-
-正例：数据库的查询结果可能是 null，因为自动拆箱，用基本数据类型接收有 NPE 风险。
-
-反例：比如显示成交总额涨跌情况，即正负 x%，x 为基本数据类型，调用的 RPC 服务，调用不成功时，返回的是默认值，页面显示为 0%，
-这是不合理的，应该显示成中划线。所以包装数据类型的 null 值，能够表示额外的信息，如：远程调用失败，异常退出。
-```
-
-```java
-//【强制】POJO 类中布尔类型变量都不要加 is 前缀，否则部分框架解析会引起序列化错误。
-
-说明：在本文 MySQL 规约中的建表约定第一条，表达是与否的值采用 is_xxx 的命名方式，所以，需要在<resultMap>设置从 is_xxx 到 xxx 的映射关系。
-
-反例：定义为基本数据类型 Boolean isDeleted 的属性，它的方法也是 isDeleted()，RPC 框架在反向解析的时候，“误以为”对应的属性名称是 deleted，
-导致属性获取不到，进而抛出异常。
-```
-## 工具类
-
-> 雪花算法（代码略）
-
-> JWT认证（代码略）
-
-
-
-#用户微服务
-
-## 基础配置
-
-> `demo-user` 用户微服务。
-
-```java
-//与公共模块的区别：
-公共模块只写一些公共类，不写逻辑代码，最终是以 jar 包形式在各个微服务中被依赖。
-基础微服务是整个项目的一个子模块，也是微服务的一个。
-
-二者创建方式相同，都是右键选择 new -> module，项目名称：'demo_user'
-```
-
-```properties
-server.port=9001
-
-#微服务名称只能用-进行分割，不能用下划线
-spring.application.name=demo-user
-
-spring.datasource.type=com.alibaba.druid.pool.DruidDataSource
-spring.datasource.driverClassName=com.mysql.cj.jdbc.Driver
-spring.datasource.url=jdbc:mysql://192.168.8.7:33306/demo_user?useSSL=false&allowMultiQueries=true&serverTimezone=GMT%2B8
-spring.datasource.username=bluecardsoft
-spring.datasource.password=#$%_BC13439677375
-
-#jpa
-spring.jpa.database=mysql
-spring.jpa.show-sql=true
-spring.jpa.generate-ddl=true
-spring.jpa.open-in-view=false
-```
-
-```xml
-<parent>
-    <artifactId>demo_parent</artifactId>
-    <groupId>com.example</groupId>
-    <version>1.0-SNAPSHOT</version>
-</parent>
-<modelVersion>4.0.0</modelVersion>
-
-<artifactId>demo_user</artifactId>
-
-<dependencies>
-    <!--引用公共模块-->
-    <dependency>
-        <groupId>com.example</groupId>
-        <artifactId>demo_common</artifactId>
-    </dependency>
-
-    <dependency>
-        <groupId>org.springframework.boot</groupId>
-        <artifactId>spring-boot-starter-data-jpa</artifactId>
-    </dependency>
-    <dependency>
-        <groupId>com.alibaba</groupId>
-        <artifactId>druid-spring-boot-starter</artifactId>
-        <version>1.1.10</version>
-    </dependency>
-    <dependency>
-        <groupId>mysql</groupId>
-        <artifactId>mysql-connector-java</artifactId>
-        <scope>runtime</scope>
-    </dependency>
-</dependencies>
-
-<build>
-    <finalName>demo-user</finalName> <!--打包名称-->
-    <resources>
-        <resource> <!--资源拷贝插件-->
-            <directory>src/main/java</directory>
-        </resource>
-        <resource>
-            <directory>src/main/resources</directory>
-        </resource>
-    </resources>
-</build>
-```
-
-> 启动类
-
-```java
-@SpringBootApplication
-public class UserApplication {
-    public static void main(String[] args) {
-        SpringApplication.run(UserApplication.class, args);
-    }
-
-    //id生成器，并不是所有的微服务项目都使用，所以不要在 IdWork 类上加 @Component
-    //而应该在使用 id生成器 的微服务中用 @Bean 标签注入
-    @Bean
-    public IdWorker idWorker() {
-        return new IdWorker();
-    }
-}
-```
-
-## 常用方法
-
-> pojo：实体类
-
-```java
-@Data
-@NoArgsConstructor
-@AllArgsConstructor
-@Entity
-@Table(name = "tb_user") //数据表名
-public class User {
-    @Id //主键id
-    private String id;
-
-    @Column(name = "loginname") //非主键，列名。默认是驼峰转下划线
-    private String loginName;
-
-    @Column(name = "password")
-    private String password;
-
-    @Column(name = "fanscount")
-    private Integer fansCount;
-
-    @Column(name = "followcount")
-    private Integer followCount;
-}
-```
-
-> DAO：JpaRepository（常用接口）
-
-```java
-public interface UserDao extends JpaRepository<User, String> { }
-```
-
->Service：`微服务中不需要使用接口，直接写实现类即可`
-
-```java
-@Service
-public class UserService {
-
-    @Autowired
-    UserDao userDao;
-
-    public User findById(String userId) {
-        return userDao.findById(userId).get();
-    }
-}
-```
-
-> Controller：
-
-```java
-@Slf4j
-@RequestMapping("/user")
-@RestController
-public class UserController {
-
-    @Autowired
-    UserService userService;
-
-    //获取多个对象的方法用 list 做前缀，复数形式结尾如：listObjects
-    //获取单个对象的方法用 get 做前缀
-    //插入的方法用 save/insert 做前缀
-    //修改的方法用 update 做前缀
-    //删除的方法用 remove/delete 做前缀
-    //获取统计值的方法用 count 做前缀
-    @GetMapping("/{userId}")
-    public Result getUser(@PathVariable("userId") String userId) {
-        User user = userService.findById(userId);
-        log.info("User: {}", user);
-        return new Result(true, StatusCode.OK, "查询成功", user);
-    }
-}
-```
-
-##特殊说明
-
-> JWT认证的定义（依赖和工具类）写在公共模块 `demo_common`，供其他微服务所共享。
-
-```java
-@Data
-@ConfigurationProperties(prefix = "jwt.config")
-public class JwtUtil {
-    //...略
-}
-```
-
->各个微服务在使用JWT认证时，必须在启动类中注入 Bean，并添加配置
-
-```java
-@Bean
-public JwtUtil jwtUtil() {
-    return new JwtUtil();
-}
-```
-
-```properties
-jwt.config.key=bluecard
-#jwt.config.ttl=300000
-```
-
-
-
-#交友微服务
-
-##基础配置
-
-> `demo-friend` 交友微服务。
-
-```properties
-server.port=9003
-spring.application.name=demo-friend
-```
-
-> 两张数据表：好友表（tb_friend） 和 非好友表（tb_nofriend）
-
-```sql
-DROP TABLE IF EXISTS `tb_friend`;
-CREATE TABLE `tb_friend` (
-  `userid` varchar(20) NOT NULL COMMENT '用户ID',
-  `friendid` varchar(20) NOT NULL COMMENT '好友ID',
-  -- tb_nofriend 去掉此行
-  `islike` varchar(1) DEFAULT NULL COMMENT '是否互相喜欢', --0：单向喜欢，1：互相喜欢
-  PRIMARY KEY (`userid`,`friendid`)
-) ENGINE=InnoDB DEFAULT CHARSET=utf8;
-```
-
-##业务逻辑
-
-> 主要逻辑
-
-```sh
-当用户登陆后，在推荐好友列表中点击“心”，表示喜欢此人，在数据库 tb_friend 表中插入一条数据，islike 为0
-当你点击了喜欢过的人，也喜欢了你，表示互粉成功！ 也向 tb_friend 表中插入一条数据，islike为1，并且将你喜欢她的数据 islike 也修改为1
-当你点击了不喜欢某人（点击了叉），向 tb_nofriend 添加一条记录
-当两个人互粉后，其中一人不喜欢对方了，删除好友表中的记录 ，向非好友表中添加记录
-```
-
->什么场景下使用 SpringCloud 呢？
-
-```sh
-用户表有两列：fanscount 表示粉丝数，followcount 表示关注数
-（1）当用户点击了喜欢：比如小宝关注了楚楚，小宝的 followcount（关注数）加1， 楚楚的 fanscount（粉丝数）加1
-（2）当用户删除了好友：比如楚楚删除了好友小宝，小宝的 fanscount（粉丝数）减1，楚楚的 followcount（关注数）减1
-```
-
-> 逻辑梳理
-
-```java
-//A 添加 B 好友时，A 的 followcount 加1，B的 fanscount 加1。
-若 A，B之间毫无关系。添加后，tb_friend 插入一条数据，islike 为0。
-若 B 已添加 A 好友。添加后，tb_friend 插入一条数据，islike 为1。'并且，tb_friend 中B对A的 islike 为1'。
-
-//A 删除 B 好友时，A 的 followcount 减1，B的 fanscount 减1。
-若 A，B只是单向好友。删除后，tb_friend 移除一条数据，tb_nofriend 增加一条数据。
-若 A，B是双向的好友。删除后，tb_friend 移除一条数据，tb_nofriend 增加一条数据。'并且，将 tb_friend 中B对A的 islike 为0'。
-```
-
-#------------
-
-> SpringCloud主要框架
-
-```sh
-服务发现——Netflix Eureka
-服务调用——Netflix Feign
-熔断器——Netflix Hystrix
-服务网关——Netflix Zuul
-分布式配置——Spring Cloud Config
-消息总线——Spring Cloud Bus
-```
-
-
-
-
-
-
 
 
 # Eureka
 
-##基础概念
+## 基础配置
 
 > `服务发现`：遵守AP原则
 
@@ -665,43 +91,7 @@ Eureka看明白了这一点，因此在设计时就优先保证可用性。Eurek
 
 
 
-##基础配置
-
->服务端の微服务：`demo-eureka` 。网页验证：<http://localhost:8761/>
-
-```properties
-
-```
-
-```xml
-
-```
-
-```java
-
-```
-
-> 客户端の微服务：以 `demo-user` 为例
-
-```properties
-
-```
-
-```xml
-
-```
-
-```java
-
-```
-
-> 服务发现
-
-```java
-
-```
-
-##集群配置
+## 集群配置
 
 > 基本原理
 
@@ -781,7 +171,7 @@ public class FriendTest {
 
 # Feign
 
-## 基础概念
+##  基础概念
 
 >`服务调用`：一个声明式的 WebService（Web服务）客户端
 
@@ -811,7 +201,7 @@ Feign 通过接口的方法调用Rest服务，Ribbon 是通过 RestTemplate
 请求发送给 Eureka服务器，通过 Feign 直接找到服务接口，由于在进行服务调用的时候融合了 Ribbon 技术，所以也支持负载均衡作用。
 ```
 
-##基础配置
+## 基础配置
 
 > 交友微服务 `demo-friend` 调用用户微服务 `demo-user` 。所以，在 `demo-friend` 中添加依赖
 
@@ -870,9 +260,9 @@ public class FeignConfig implements RequestInterceptor {
 
 ```
 
-#Hystrix
+# Hystrix
 
-##基础概念
+## 基础概念
 
 > `熔断器`：用于处理分布式系统的延迟和容错的开源库
 
@@ -924,7 +314,7 @@ Hystrix 会监控微服务间调用的状况，当失败的调用到一定阈值
 这种模式不能解决服务依赖的问题，只能解决系统整体资源分配问题，因为没有被限流的请求依然有可能造成雪崩效应。
 ```
 
-##熔断Feign
+## 熔断Feign
 
 > Feign 本身支持Hystrix，不需要额外引入依赖。`demo-friend`中开启Hystrix
 
@@ -943,7 +333,7 @@ Hystrix 会监控微服务间调用的状况，当失败的调用到一定阈值
 ```java
 
 ```
-##熔断Hystrix
+## 熔断Hystrix
 
 > `服务熔断`：某个微服务不可用或者响应时间太长时，会进行服务熔断，快速返回"错误"的响应信息。
 
@@ -995,7 +385,7 @@ public class FriendController {
 }
 ```
 
-##服务监控
+## 服务监控
 
 > 服务监控の微服务`demo-hystrix`
 
@@ -1041,7 +431,7 @@ public class FriendController {
 
 # Zuul
 
-## 基础概念
+##  基础概念
 
 > `服务网关`：对请求的 路由 + 过滤
 
@@ -1053,7 +443,7 @@ Zuul 和 Eureka 进行整合，'将Zuul自身注册为Eureka服务治理下的�
 也即以后的访问微服务都是通过Zuul跳转后获得。
 ```
 
-##基本配置
+## 基本配置
 
 > 网关微服务：`demo-zuul`
 
@@ -1153,22 +543,22 @@ http://localhost:9011/actuator/routes
 > 配置网关后，使用 IDEA 的 REST_API 测试
 
 ```properties
-###获取 user 的id为1信息
+## #获取 user 的id为1信息
 GET http://localhost:9002/friend/1
 
-###获取 user 的id为1信息（zuul）
+## #获取 user 的id为1信息（zuul）
 GET http://localhost:9011/demo/friends/friend/1
 Authorization: Bearer eyJhbGciOiJIUzI1NiJ9.*.*
 ```
 
 ```properties
-###登陆
+## #登陆
 POST http://localhost:9001/user/login
 Content-Type: application/json
 
 {"loginName": "aaa","password": "111"}
 
-###登陆（zuul）
+## #登陆（zuul）
 POST http://localhost:9011/demo/users/user/login
 Content-Type: application/json
 
@@ -1176,15 +566,15 @@ Content-Type: application/json
 ```
 
 ```properties
-###删除用户
+## #删除用户
 DELETE http://localhost:9001/user/5
 Authorization: Bearer eyJhbGciOiJIUzI1NiJ9.*.*
 
-###删除用户（zuul）
+## #删除用户（zuul）
 DELETE http://localhost:9011/demo/users/user/5
 Authorization: Bearer eyJhbGciOiJIUzI1NiJ9.*.*
 ```
-## 性能调优
+##  性能调优
 
 ><https://github.com/leonzm/springcloud_zuul>
 
@@ -1203,7 +593,7 @@ server.tomcat.max-connections=2000
 
 # Config
 
-##基础概念
+## 基础概念
 
 > `分布式配置`：将配置文件放到云端，方便后期维护
 
@@ -1228,7 +618,7 @@ Config-Server 是一个可横向扩展、集中式的配置服务器，它用于
 Config-Client 用于操作存储在 Config-Server 中的配置内容。微服务在启动时会请求 Config-Server 获取配置文件的内容，请求到后再启动容器。
 ```
 
-##基础配置
+## 基础配置
 
 > 服务端の微服务：`demo-config`。页面测试：<http://192.168.5.23:12000/user-dev.properties>
 
@@ -1324,7 +714,7 @@ http://localhost:12000/user-a.properties #a换成其他字符也是可以访问�
 
 # Bus
 
-##基础概念
+## 基础概念
 
 > `消息总线`：可以在不重启微服务的情况下，更新码云中的配置文件，让其立刻生效
 
@@ -1332,7 +722,7 @@ http://localhost:12000/user-a.properties #a换成其他字符也是可以访问�
 事件、消息总线，用于在集群（例如，配置变化事件）中传播状态变化，可与 Spring-Cloud-Config 联合实现热部署。
 ```
 
-##基础配置
+## 基础配置
 
 > 服务端の微服务：Bus 配合 Config 使用，在 `demo-config` 中配置
 
@@ -1415,7 +805,7 @@ GET http://192.168.5.23:9001/user/info
 
 # 容器部署
 
-##Dockerfile
+## Dockerfile
 
 > 一系列命令和参数构成的脚本，这些命令应用于基础镜像并最终创建一个新的镜像（只是镜像，而非容器）。
 
@@ -1501,7 +891,7 @@ docker start registry
 docker push 192.168.5.23:5000/jdk1.8
 ```
 
-##Mvm插件
+## Mvm插件
 
 >微服务部署有两种方法
 
@@ -1520,7 +910,7 @@ docker push 192.168.5.23:5000/jdk1.8
 #对于ubuntu系统，更改 /etc/default/docker。添加
 DOCKER_OPTS="-H unix:///var/run/docker.sock -H tcp://0.0.0.0:2375"
 
-##对于CentOS系统，更改 /lib/systemd/system/docker.service。ExecStart=后追加配置
+## 对于CentOS系统，更改 /lib/systemd/system/docker.service。ExecStart=后追加配置
 ExecStart=/usr/bin/dockerd ‐H tcp://0.0.0.0:2375 ‐H unix:///var/run/docker.sock
 
 #刷新配置，重启 docker 和私有仓库
@@ -1573,7 +963,7 @@ docker run --name demo-config -d -p 12000:12000 192.168.5.23:5000/demo_config:1.
 http://192.168.5.23:12000/user-dev.properties
 ```
 
-## 常见问题
+##  常见问题
 
 >http请求方式
 
@@ -1607,7 +997,7 @@ DOCKER_OPTS="--insecure-registry juandapc:5000 --insecure-registry 192.168.5.23:
 
 # 持续集成
 
-##基础概念
+## 基础概念
 
 >持续集成 Continuous integration ，简称CI
 
@@ -1632,7 +1022,7 @@ DOCKER_OPTS="--insecure-registry juandapc:5000 --insecure-registry 192.168.5.23:
 2.持续集成中的任何一个环节都是自动完成的，无需太多的人工干预，有利于减少重复过程以节省时间、费用和工作量；
 ```
 
-##Gogs
+## Gogs
 
 >Gogs：一款极易搭建的自助 Git 服务，`管理代码`。
 
@@ -1673,7 +1063,7 @@ Git - Commit Directory... #提交到本地仓库
 Git - Repository - Push - push - 输入用户名和密码 #提交到远程仓库
 ```
 
-##Jenkins
+## Jenkins
 
 >Jenkins：一款持续集成工具，可以将更新后的代码自动部署到服务器上运行。
 
@@ -1770,7 +1160,7 @@ http://192.168.5.23:5000/v2/_catalog
 
 # 容器管理
 
-## Rancher
+##  Rancher
 
 > 一个开源的企业级全栈化容器部署及管理平台。
 
@@ -1824,7 +1214,7 @@ rancher/agent:v1.2.11 http://192.168.5.23:9090/v1/scripts/304DB40722A32FF5FA63:1
 #点击关闭按钮后，会看到界面中显示此主机。可以很方便地管理主机的每个容器的开启和关闭。
 ```
 
-## 应用部署
+##  应用部署
 
 > 添加应用
 
